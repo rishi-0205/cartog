@@ -1,0 +1,36 @@
+# Virtual Environments
+venv/
+.venv/
+env/
+
+# Python cache & build artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Testing & Coverage
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.mypy_cache/
+
+# Cartog cache & default outputs
+.cartog/
+cartog-out/
+
+# Real repo samples for manual verification (Section 11.2)
+samples/
+
+# Node
+node_modules/
+
+# IDE & Editor files
+.vscode/
+.idea/
+*.swp
+*.swo

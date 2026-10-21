@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cartog"
+version = "0.1.0"
+description = "Cartography for codebases: maps source files with tree-sitter + SCIP into JSON + Mermaid"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [
+    { name = "Cartog Contributors" }
+]
+dependencies = [
+    "tree-sitter>=0.23.0",
+    "tree-sitter-python>=0.23.0",
+    "tree-sitter-javascript>=0.23.0",
+    "tree-sitter-typescript>=0.23.0",
+    "protobuf>=4.21.0",
+    "typer>=0.12.0",
+    "pathspec>=0.11.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "grimp>=3.0",
+    "grpcio-tools>=1.50.0",
+]
+
+[project.scripts]
+cartog = "cartog.cli:app"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["cartog*"]
