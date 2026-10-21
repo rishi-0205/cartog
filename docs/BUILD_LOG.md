@@ -89,4 +89,65 @@ This is an append-only log tracking the construction, verification, and decision
 - **Known issues:**
   - `scip-python` on Windows has an upstream RegExp separator bug in its CLI wrapper that will be addressed in Milestone 5.
 
+---
+
+## Entry 3: Native Tree-Sitter Queries (Approach A) & py-tree-sitter Pinning Resolution
+
+- **Step:** Implemented declarative tree-sitter queries for Python symbol and import extraction; resolved upstream `Point` refcount bug by pinning `tree-sitter>=0.25.2,<0.26`.
+- **What was built / done:**
+  - Transitioned `cartog/langs/python_adapter.py` to declarative S-expression pattern queries (`tree_sitter.Query`):
+    - `SYMBOL_QUERY`: captures `(class_definition)` and `(function_definition)` declarations.
+    - `DECORATOR_QUERY`: captures `(decorated_definition (decorator)+ @decorator definition: [...] @target)` in a single quantified pass.
+    - `IMPORT_QUERY`: captures `(import_statement)` and `(import_from_statement)`.
+  - Added multi-decorator unit test cases to `tests/test_python_adapter.py`.
+  - Diagnosed and resolved Windows access violation:
+    - *Symptom:* Delayed access violation (`0xc0000005`) in `_get_node_text` / `symbols.sort` when parsing files with >256 lines (Click repository).
+    - *Verified Cause:* Upstream `py-tree-sitter 0.26.0` refcount bug in `Point.row` and `Point.column` C getters returning borrowed references (tracked in upstream issue **#500** on `tree-sitter/py-tree-sitter`), triggering use-after-free heap corruption when values exceed 256.
+    - *Unverified Hypothesis:* A secondary hypothesis that `Node` objects hold dangling pointers to the `Tree` in `QueryCursor` results was unconfirmed by upstream sources and is treated as unverified.
+    - *Decision:* Pinned `pyproject.toml` to `"tree-sitter>=0.25.2,<0.26"`. Installed `tree-sitter==0.25.2`. Kept standard Tree-sitter AST coordinates without implementing a pure-Python line-offset rewrite.
+    - *Upstream Warning on `match_limit`:* Documented upstream issue **#502** where `QueryCursor.match_limit` arms an unintended 10ms timeout on 0.25.x; verified Cartog never sets `match_limit`.
+- **Why:** Delivers 100% C-engine pattern matching for Python AST extraction, guarantees future-proof extensibility for comments and docstrings, and eliminates native heap corruption across multi-thousand-line source files.
+- **How it was verified:**
+  - Reinstalled `tree-sitter==0.25.2` and verified via `pip show tree-sitter`.
+  - Verified grammar loading across all language packages via `cartog doctor`.
+  - Ran full test suite via `pytest -v`: **all 12 tests passed in 2.01s**, including `test_parse_click_sample` parsing all 91 Click source files.
+
+---
+
+## Checkpoint Report: Milestone 1 (Tree-Sitter on Python)
+
+- **Command executed:** `cartog parse samples/click --out cartog-out/click-parse`
+- **Output summary:**
+  - Files scanned: 180 total files discovered in `samples/click`
+  - Files parsed: 91 Python source files
+  - Files skipped: 89 non-Python / unsupported / ignored files (each logged with reason in `parse.json`)
+  - Functions: 1,408
+  - Classes: 181
+  - Methods: 489
+  - Total Symbols: 2,078
+  - Raw Imports Extracted: 689
+  - Content Cache: `.cartog/cache.json` populated (subsequent execution reported 91 / 0 cache hits in 0.15s)
+  - Output File: `cartog-out/click-parse/parse.json` generated successfully (schema version 1.0.0, 1.18 MB)
+- **Top Files by Symbol Count:**
+  1. `tests/test_options.py`: 250 symbols, 16 imports
+  2. `src/click/core.py`: 172 symbols, 63 imports
+  3. `tests/test_termui.py`: 138 symbols, 21 imports
+  4. `tests/test_arguments.py`: 116 symbols, 9 imports
+  5. `src/click/types.py`: 103 symbols, 25 imports
+- **Things to spot-check by hand:**
+  1. Open `cartog-out/click-parse/parse.json` and inspect `src/click/core.py`:
+     - Verify classes `BaseCommand`, `Command`, `Group`, `Context` are present with `qualified_name` (e.g. `click.core.Command`).
+     - Verify methods have `parent` set to their enclosing class (e.g. `parent: "Command"`).
+     - Verify decorators on decorated commands (e.g. `@classmethod` or `@click.pass_context`) appear under `attrs.decorators`.
+  2. Inspect `src/click/parser.py`:
+     - Verify `OptionParser`, `split_opt`, `_unpack_args` declarations and imports.
+  3. Run `cartog parse samples/click --out cartog-out/click-parse` a second time:
+     - Verify output displays `Cache Hits / Misses: 91 / 0` and executes in sub-second time.
+  4. Run `pytest -v`:
+     - Verify all 12 unit tests in `tests/test_cli.py`, `tests/test_scan.py`, and `tests/test_python_adapter.py` pass.
+- **Known issues:**
+  - `tree-sitter` is pinned to `>=0.25.2,<0.26` to avoid upstream `Point.row`/`column` refcount bug in `0.26.0` (upstream issue #500).
+
+
+
 

@@ -47,18 +47,18 @@ Understanding unfamiliar software repositories is laborious. Developers manually
 ---
 
 ### Phase 1: Source Discovery & AST Parsing
-- [ ] **Milestone 1: Tree-sitter on Python**
-  - [ ] Clone `pallets/click` into `samples/click`
-  - [ ] Build `cartog/scan.py` (file walker with `pathspec` `.gitignore` support, file hashing, size filter)
-  - [ ] Build `cartog/cache.py` (content-hash AST caching in `.cartog/cache.json`)
-  - [ ] Define language adapter interface in `cartog/langs/base.py`
-  - [ ] Implement `cartog/langs/python_adapter.py` (symbol extraction: functions, classes, methods; raw imports)
-  - [ ] Implement `cartog/langs/__init__.py` (adapter registry and language detector)
-  - [ ] Implement `cartog/export_json.py` (`parse.json` serializer)
-  - [ ] Wire `cartog parse` CLI command with human-readable summary
-  - [ ] Write unit tests for scan and Python tree-sitter AST extraction
-  - [ ] Run Demo Checkpoint 1 (`cartog parse samples/click`) and record in `BUILD_LOG.md`
-  - [ ] **PAUSE FOR USER CONFIRMATION**
+- [x] **Milestone 1: Tree-sitter on Python**
+  - [x] Clone `pallets/click` into `samples/click`
+  - [x] Build `cartog/scan.py` (file walker with `pathspec` `.gitignore` support, file hashing, size filter)
+  - [x] Build `cartog/cache.py` (content-hash AST caching in `.cartog/cache.json`)
+  - [x] Define language adapter interface in `cartog/langs/base.py`
+  - [x] Implement `cartog/langs/python_adapter.py` (symbol extraction: functions, classes, methods; raw imports via native queries)
+  - [x] Implement `cartog/langs/__init__.py` (adapter registry and language detector)
+  - [x] Implement `cartog/export_json.py` (`parse.json` serializer)
+  - [x] Wire `cartog parse` CLI command with human-readable summary
+  - [x] Write unit tests for scan and Python tree-sitter AST extraction
+  - [x] Run Demo Checkpoint 1 (`cartog parse samples/click`) and record in `BUILD_LOG.md`
+  - [x] **PAUSE FOR USER CONFIRMATION**
 
 - [ ] **Milestone 4: Tree-sitter on JavaScript/TypeScript & Monorepos**
   - [ ] Clone `sindresorhus/ky` into `samples/ky`
@@ -165,6 +165,7 @@ cartog/                               # Repository root
 ├── docs/
 │   ├── IMPLEMENTATION_PLAN.md        # This living document
 │   ├── BUILD_LOG.md                  # Append-only chronological build log
+│   ├── ISSUES_AND_DECISIONS.md        # Technical incident log, tradeoffs, and design choices
 │   ├── ARCHITECTURE.md               # Final architecture & design document (Milestone 9)
 │   └── USAGE.md                      # CLI usage guide & flag documentation (Milestone 9)
 ├── cartog/                           # Main Python package
@@ -583,6 +584,9 @@ class Edge:
 5. **Deterministic Serialization:**
    - *Problem:* Set iterations and dictionary ordering can introduce diff noise across runs.
    - *Decision:* Sort nodes by `(kind, path or "", name, id)`. Sort edges by `(source, target, kind)`. Omit timestamps from graph payloads.
+6. **AST Expression Subtree Pruning (Issue #1 in docs/ISSUES_AND_DECISIONS.md):**
+   - *Problem:* Deep recursive traversal of expression leaf nodes in large files caused tree-sitter C wrapper object explosion and Windows GC access violations (`0xc0000005`).
+   - *Decision:* Prune all expression subtrees (`expression_statement`, `binary_operator`, `call`, literals). Restrict traversal exclusively to statement containers (`module`, `block`, `if_statement`, `try_statement`, `with_statement`, `for_statement`, `while_statement`, `decorated_definition`).
 
 ---
 
@@ -590,3 +594,5 @@ class Edge:
 *(Record plan modifications here during execution)*
 - Initial creation of plan following user specification.
 - **File size limit customization & toggle (Milestone 1 onwards):** Added `--max-file-size` flag (accepting a float in MB, default 1.0) and `--no-max-file-size` flag (to disable file size filtering completely) across CLI commands (`parse`, `build`, `map`). Updated scanner to support disabling or overriding the 1 MB default.
+- **Dedicated Issues & Decisions Log (docs/ISSUES_AND_DECISIONS.md):** Added tracking document for all technical incidents, evaluated tradeoffs, and architectural resolutions.
+- **Scope-targeted AST traversal:** Replaced naive full-tree recursion in PythonAdapter with statement-targeted traversal to prevent GC crashes on large repos.

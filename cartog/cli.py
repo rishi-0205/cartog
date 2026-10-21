@@ -8,8 +8,13 @@ import typer
 from rich.console import Console
 from rich.table import Table
 
+from pathlib import Path
 from cartog import __version__
 from cartog.config import DEFAULT_MAX_FILE_SIZE_MB
+from cartog.scan import walk_files
+from cartog.cache import ParseCache
+from cartog.langs import parse_source_file
+from cartog.export_json import write_parse_json
 
 app = typer.Typer(
     name="cartog",
@@ -220,9 +225,121 @@ def parse(
     lang: Optional[str] = typer.Option(None, "--lang", help="Override language detection (e.g. py, js)."),
     max_file_size: Optional[float] = typer.Option(DEFAULT_MAX_FILE_SIZE_MB, "--max-file-size", help="Maximum file size in MB to parse (default: 1.0)."),
     no_max_file_size: bool = typer.Option(False, "--no-max-file-size", help="Disable file size limit."),
+    verbose: bool = typer.Option(False, "--verbose", "-V", help="Enable verbose logging."),
 ):
     """Run Stage 1: tree-sitter AST syntax, imports, and framework pattern extraction."""
-    console.print(f"[yellow]Stage 1 'parse' will be built in Milestone 1. Target: {path}[/yellow]")
+    target_path = Path(path).resolve()
+    if not target_path.exists() or not target_path.is_dir():
+        console.print(f"[bold red]Error:[/bold red] Target directory not found: {path}")
+        raise typer.Exit(code=1)
+
+    out_dir = Path(out).resolve()
+    out_dir.mkdir(parents=True, exist_ok=True)
+    cache_dir = out_dir / ".cartog"
+
+    # Compute max bytes limit
+    max_bytes: Optional[int] = None if no_max_file_size else (int(max_file_size * 1024 * 1024) if max_file_size else None)
+
+    # Determine language filter
+    target_langs = None
+    if lang:
+        normalized = lang.lower().strip()
+        lang_map = {
+            "py": ["python"],
+            "python": ["python"],
+            "js": ["javascript"],
+            "javascript": ["javascript"],
+            "ts": ["typescript"],
+            "typescript": ["typescript"],
+            "tsx": ["typescript"],
+        }
+        target_langs = lang_map.get(normalized, [normalized])
+
+    console.print(f"\n[bold cyan]Cartog Stage 1 (Parse):[/bold cyan] Scanning [bold]{target_path.as_posix()}[/bold]...")
+
+    # 1. Walk and filter files
+    try:
+        scan_result = walk_files(
+            target_path,
+            max_size_bytes=max_bytes,
+            target_langs=target_langs,
+        )
+    except Exception as e:
+        console.print(f"[bold red]Scan error:[/bold red] {e}")
+        raise typer.Exit(code=2)
+
+    console.print(f"Discovered [green]{len(scan_result.files)}[/green] source files ([yellow]{len(scan_result.skipped)}[/yellow] skipped).")
+
+    # 2. Parse files with tree-sitter & cache
+    cache = ParseCache(cache_dir)
+    parsed_files = []
+    symbol_kind_counts = {"function": 0, "class": 0, "method": 0}
+    total_raw_imports = 0
+
+    for file_info in scan_result.files:
+        res = parse_source_file(file_info, cache=cache)
+        parsed_files.append(res)
+        for sym in res.symbols:
+            symbol_kind_counts[sym.kind] = symbol_kind_counts.get(sym.kind, 0) + 1
+        total_raw_imports += len(res.imports)
+
+    cache.save()
+
+    # 3. Write parse.json
+    detected_languages = sorted(list({f.language for f in scan_result.files})) or ["python"]
+    out_file = out_dir / "parse.json"
+    write_parse_json(
+        target_path=target_path.as_posix(),
+        roots=scan_result.roots,
+        languages=detected_languages,
+        parsed_files=parsed_files,
+        skipped_files=scan_result.skipped,
+        out_file=out_file,
+    )
+
+    # 4. Display human-readable summary table
+    summary_table = Table(title="Stage 1 Parse Summary", show_header=True, header_style="bold magenta")
+    summary_table.add_column("Metric", style="cyan")
+    summary_table.add_column("Count", justify="right", style="bold")
+
+    summary_table.add_row("Files Parsed", str(len(parsed_files)))
+    summary_table.add_row("Files Skipped", str(len(scan_result.skipped)))
+    summary_table.add_row("Functions", str(symbol_kind_counts.get("function", 0)))
+    summary_table.add_row("Classes", str(symbol_kind_counts.get("class", 0)))
+    summary_table.add_row("Methods", str(symbol_kind_counts.get("method", 0)))
+    total_symbols = sum(symbol_kind_counts.values())
+    summary_table.add_row("Total Symbols", str(total_symbols))
+    summary_table.add_row("Raw Imports Extracted", str(total_raw_imports))
+    summary_table.add_row("Cache Hits / Misses", f"{cache.hits} / {cache.misses}")
+
+    console.print()
+    console.print(summary_table)
+
+    # Top files by symbol density
+    if parsed_files:
+        top_files = sorted(parsed_files, key=lambda f: len(f.symbols), reverse=True)[:5]
+        top_table = Table(title="Top Files by Symbol Count", show_header=True, header_style="bold blue")
+        top_table.add_column("File Path", style="dim")
+        top_table.add_column("Symbols", justify="right")
+        top_table.add_column("Imports", justify="right")
+        for tf in top_files:
+            top_table.add_row(tf.path, str(len(tf.symbols)), str(len(tf.imports)))
+        console.print()
+        console.print(top_table)
+
+    # Show skipped summary
+    if scan_result.skipped and (verbose or len(scan_result.skipped) <= 10):
+        skipped_table = Table(title="Skipped Files Summary", show_header=True, header_style="bold yellow")
+        skipped_table.add_column("Path", style="dim")
+        skipped_table.add_column("Reason")
+        for s in scan_result.skipped[:15]:
+            skipped_table.add_row(s.path, s.reason)
+        if len(scan_result.skipped) > 15:
+            skipped_table.add_row("...", f"+{len(scan_result.skipped) - 15} more skipped files")
+        console.print()
+        console.print(skipped_table)
+
+    console.print(f"\n[bold green]Success:[/bold green] Stage 1 output written to [bold]{out_file.as_posix()}[/bold]\n")
 
 
 @app.command()
