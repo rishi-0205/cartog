@@ -80,6 +80,7 @@ class ParseFileResult:
 @dataclass
 class ProjectContext:
     """Repository-wide context for import and reference resolution."""
+    target_path: str = "."
     roots: list[str] = field(default_factory=lambda: ["."])
     all_files: set[str] = field(default_factory=set)
     module_to_file: dict[str, str] = field(default_factory=dict)

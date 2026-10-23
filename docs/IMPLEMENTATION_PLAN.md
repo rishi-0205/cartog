@@ -490,7 +490,7 @@ class Edge:
   - Command 2: `cartog map samples/click --out cartog-out/click-patterns --no-scip`
     - Spot-check: Look for `command` nodes and `entrypoint` nodes in `graph.json` derived from Click decorators and `[project.scripts]`.
 
-### Milestone 4: Tree-sitter on JavaScript & TypeScript
+### Milestone 4: Tree-sitter on JavaScript & TypeScript [COMPLETE]
 - **Goal:** JS/TS adapter: grammars for JS, TS, TSX; symbol extraction; import resolution with `tsconfig.json` `paths`, `baseUrl`, and monorepo `workspaces`; Express and Next.js pattern extraction; monorepo root detection.
 - **Files Built:**
   - `cartog/langs/js_adapter.py`: JS/TS parser, symbol extractor, import resolver, Express & Next.js extractor

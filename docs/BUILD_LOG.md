@@ -324,6 +324,78 @@ This is an append-only log tracking the construction, verification, and decision
     2. Verified 199 `command` nodes correctly link to their implementation handler functions via `serves` edges.
     3. Architecture diagram generated: `cartog-out/click-patterns/overview.mmd` and rendered `overview.png` (56.8 KB).
 
+---
+
+## Entry 7: Tree-sitter on JavaScript, TypeScript & Monorepos (Milestone 4)
+
+- **Step:** Built polyglot support for JS/TS/TSX: Tree-sitter grammar loading, symbol extraction (classes, methods, functions, arrow functions), ESM/CJS import extraction and resolution (`tsconfig.json` `paths`/`baseUrl`, monorepo `workspaces`, `.js` $\rightarrow$ `.ts` extension rewriting), Express and Next.js pattern extraction, and monorepo root detection.
+- **What was built / done:**
+  - `cartog/langs/js_adapter.py`:
+    - Implemented `JsAdapter(LanguageAdapter)` supporting `.js`, `.jsx`, `.mjs`, `.cjs`, `.ts`, `.tsx`.
+    - Integrated `tree_sitter_javascript`, `tree_sitter_typescript.language_typescript()`, and `language_tsx()`.
+    - Extracted symbols: `class_declaration`, `method_definition`, `function_declaration`, `generator_function_declaration`, and `variable_declarator` with `arrow_function` or `function_expression`. Extracted async flags, decorators, and qualified names (`module.Class.method` or `module.function`).
+    - Extracted imports: ESM standard/default/namespace imports, ESM `export ... from` re-exports, CommonJS `require()`, and dynamic `import()`.
+    - Resolved relative imports with modern TypeScript ESM extension rewriting (`.js`/`.jsx` $\rightarrow$ `.ts`/`.tsx`) and directory index probing (`index.ts`, `index.tsx`, `index.js`, etc.).
+    - Resolved `tsconfig.json`/`jsconfig.json` `compilerOptions.paths` aliases and `baseUrl`, with comment-tolerant JSON loading.
+    - Resolved monorepo workspace packages using `package.json` `workspaces` globs (e.g. `@monorepo/core` $\rightarrow$ `packages/core/src/index.ts`).
+    - Extracted framework patterns: Express routes (`app.get()`, `router.post()`, `router.delete()`, `app.use()`), Next.js App Router HTTP method exports (`GET`, `POST`, `PUT`, `DELETE`, etc.), Pages Router API routes (`pages/api/**`), and CommonJS entrypoint blocks (`if (require.main === module)`).
+  - `cartog/langs/__init__.py`: Registered `JsAdapter` for both `"javascript"` and `"typescript"`.
+  - `cartog/langs/base.py` & `cartog/merge.py`: Added `target_path: str = "."` to `ProjectContext` and passed `target_path` from `build_graph()` to enable target-relative `tsconfig.json` and `package.json` resolution when invoked from any working directory.
+  - `cartog/scan.py`: Recognized `tsconfig.json` and `jsconfig.json` as project root markers in `detect_roots()`.
+  - Tests:
+    - Added `tests/test_js_adapter.py` with 8 comprehensive unit tests. Expanded test suite from 35 to 43 tests.
+- **How it was verified:**
+  - `pytest -v`: All 43 tests passed in 2.44s.
+  - Checkpoint 4 command 1: `cartog map samples/ky --out cartog-out/ky-map --no-scip` verified TypeScript symbols, internal imports, external dependencies, and diagram render.
+  - Checkpoint 4 command 2: `cartog map tests/fixtures/mixed_repo --out cartog-out/mixed-map --no-scip` verified polyglot Python FastAPI + TypeScript Express architecture mapping with clean root partitioning.
+- **Problems and decisions:**
+  - Documented Issue 11 in `docs/ISSUES_AND_DECISIONS.md`.
+
+---
+
+## Checkpoint Report: Milestone 4 (Tree-sitter on JavaScript & TypeScript)
+
+- **Command 1 executed:** `cartog map samples/ky --out cartog-out/ky-map --no-scip`
+- **Output 1 summary:**
+  - Discovered 98 TypeScript source files (18 skipped due to lockfiles/configs).
+  - Total Graph Nodes: **742**
+    - `file`: 100
+    - `folder`: 10
+    - `class`: 14
+    - `method`: 207
+    - `function`: 189
+    - `route`: 188 (HTTP method test and core router endpoints)
+    - `dependency`: 27 (External npm packages)
+    - `entrypoint`: 5 (npm scripts from `package.json`)
+    - `ci_job`: 2 (GitHub Actions CI workflows)
+  - Total Graph Edges: **1,031**
+    - `contains`: 710 (file and symbol containment)
+    - `imports`: 182 (file-to-file TypeScript imports)
+    - `depends_on`: 136 (file-to-external dependency relationships)
+    - `serves`: 3 (route handler links)
+  - Spot-Check Details:
+    1. Verified `source/index.ts` has `imports` edges to 19 internal modules (`source/core/Ky.ts`, `source/core/constants.ts`, error classes, types, utilities), proving modern TypeScript ESM `.js` extension rewriting resolves cleanly to disk `.ts` files.
+    2. Architecture diagram generated: `cartog-out/ky-map/overview.mmd` and rendered `overview.png` (43.2 KB).
+
+- **Command 2 executed:** `cartog map tests/fixtures/mixed_repo --out cartog-out/mixed-map --no-scip`
+- **Output 2 summary:**
+  - Detected Languages: `python`, `typescript`
+  - Discovered Roots: `.`, `backend`, `frontend`
+  - Total Graph Nodes: **22**
+    - Python backend: `pyproject.toml`, `backend/app/main.py`, `backend/app/models.py`, `backend/app/__init__.py`, FastAPI route `GET /items`, function `get_items`, class `Item`, method `__init__`, dependencies `fastapi`, `uvicorn`, entrypoint `api`.
+    - TypeScript frontend: `package.json`, `frontend/src/server.ts`, `frontend/src/index.ts`, Express route `GET /api/status`, function `start`, dependency `express`, entrypoint `npm run start`.
+  - Total Graph Edges: **25**
+    - `imports`: `main.py` $\rightarrow$ `models.py`, `index.ts` $\rightarrow$ `server.ts`.
+    - `serves`: `GET /items` $\rightarrow$ `get_items`.
+    - `starts`: `api` $\rightarrow$ `main.py`.
+    - `depends_on`: `server.ts` $\rightarrow$ `express`, `main.py` $\rightarrow$ `fastapi`, manifests $\rightarrow$ dependencies.
+  - Spot-Check Details:
+    1. Generated `overview.mmd` cleanly partitions subgraphs:
+       - `subgraph_backend ["📁 backend"]` and `subgraph_backend_app ["📁 backend/app"]`
+       - `subgraph_frontend ["📁 frontend"]` and `subgraph_frontend_src ["📁 frontend/src"]`
+    2. Architecture diagram rendered cleanly to `cartog-out/mixed-map/overview.png`.
+
+
 
 
 

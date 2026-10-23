@@ -56,8 +56,16 @@ def build_graph(
                 module_to_file[mod] = f.path
                 enc_root = get_enclosing_root(f.path, resolved_roots)
                 root_to_modules.setdefault(enc_root, {})[mod] = f.path
+        elif f.language in ("javascript", "typescript"):
+            from cartog.langs.js_adapter import path_to_js_module_name
+            mod = path_to_js_module_name(f.path, roots=resolved_roots)
+            if mod:
+                module_to_file[mod] = f.path
+                enc_root = get_enclosing_root(f.path, resolved_roots)
+                root_to_modules.setdefault(enc_root, {})[mod] = f.path
 
     context = ProjectContext(
+        target_path=target_path,
         roots=resolved_roots,
         all_files=all_files,
         module_to_file=module_to_file,

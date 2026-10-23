@@ -349,6 +349,29 @@ In `test_patterns.py`, unit test `test_graph_merges_patterns_with_serves_and_sta
 - **Pipeline Stage Separation:** File discovery and manifest parsing are performed in Stage 1 / CLI orchestration (`_execute_parse()`), which passes `manifests=manifest_facts` to `build_graph()`.
 - **Gitignore Respect in Manifest Scanning:** Updated `parse_manifests()` to load `.gitignore` using `pathspec`, ensuring gitignored directories (such as `samples/` in the Cartog repository root) are never crawled during repository scanning.
 
+---
+
+## Issue 11: Project-Relative Path Context for `tsconfig.json` and Monorepo Workspace Resolution
+
+- **Component:** `cartog.langs.js_adapter`, `cartog.langs.base.ProjectContext`, `cartog.merge.build_graph`
+- **Phase / Milestone:** Phase 1 / Milestone 4 (Tree-sitter on JavaScript & TypeScript)
+- **Environment:** Python 3.13.1, Windows 11 AMD64
+
+### 1. Symptom
+In `tests/test_js_adapter.py`, `test_resolve_tsconfig_paths_and_workspaces` failed assertion:
+`assert 'external:@core/utils' == 'packages/core/src/utils.ts'`
+
+### 2. Root Cause Analysis
+- `JsAdapter._get_tsconfig()` and `_discover_workspace_packages()` looked for `tsconfig.json` and `package.json` relative to the current working directory (`.`).
+- When Cartog maps a repository located at an arbitrary path (e.g., `tests/fixtures/ts_monorepo` or `samples/ky`), the process cwd remains the top-level Cartog repo directory, which does not contain `tsconfig.json`.
+- Consequently, `_get_tsconfig()` returned `None`, path aliases like `@core/*` could not be matched, and imports fell back to external packages.
+
+### 3. Solution & Decision
+- **Add `target_path` to `ProjectContext`:** Added `target_path: str = "."` to [cartog/langs/base.py](file:///c:/Users/rishi/OneDrive/Desktop/Dev/cartog/cartog/langs/base.py) `ProjectContext`.
+- **Pass `target_path` from `build_graph()`:** In [cartog/merge.py](file:///c:/Users/rishi/OneDrive/Desktop/Dev/cartog/cartog/merge.py), passed `target_path=target_path` when creating `ProjectContext`.
+- **Target-Relative Config Resolution:** Updated `_get_tsconfig()` and `_discover_workspace_packages()` in [cartog/langs/js_adapter.py](file:///c:/Users/rishi/OneDrive/Desktop/Dev/cartog/cartog/langs/js_adapter.py) to resolve `tsconfig.json` and `package.json` relative to `project_context.target_path / root_dir`.
+- **Test Alignment:** In `tests/test_js_adapter.py`, passed `target_path="tests/fixtures/ts_monorepo"` to `ProjectContext`. All 43 tests pass cleanly.
+
 
 
 

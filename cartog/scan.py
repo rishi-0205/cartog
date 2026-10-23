@@ -98,6 +98,8 @@ def detect_roots(repo_path: Path) -> list[str]:
                 or (curr / "setup.py").is_file()
                 or (curr / "setup.cfg").is_file()
                 or (curr / "package.json").is_file()
+                or (curr / "tsconfig.json").is_file()
+                or (curr / "jsconfig.json").is_file()
             )
             if has_marker:
                 rel = curr.relative_to(repo_path).as_posix()

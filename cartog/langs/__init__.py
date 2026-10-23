@@ -5,6 +5,7 @@ from typing import Optional
 
 from cartog.cache import ParseCache
 from cartog.langs.base import LanguageAdapter, ParseFileResult
+from cartog.langs.js_adapter import JsAdapter
 from cartog.langs.python_adapter import PythonAdapter
 from cartog.scan import FileInfo
 
@@ -14,6 +15,9 @@ _ADAPTERS: dict[str, LanguageAdapter] = {}
 def _init_adapters():
     if not _ADAPTERS:
         _ADAPTERS["python"] = PythonAdapter()
+        js_adapter = JsAdapter()
+        _ADAPTERS["javascript"] = js_adapter
+        _ADAPTERS["typescript"] = js_adapter
 
 
 def get_adapter(name: str) -> Optional[LanguageAdapter]:
@@ -105,7 +109,10 @@ def parse_source_file(
 
     # Parse with adapter
     if hasattr(adapter, "parse"):
-        tree = adapter.parse(source_bytes)
+        try:
+            tree = adapter.parse(source_bytes, Path(file_info.path))
+        except TypeError:
+            tree = adapter.parse(source_bytes)
     else:
         grammar = adapter.grammar_for(Path(file_info.path))
         import tree_sitter
