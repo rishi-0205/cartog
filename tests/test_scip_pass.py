@@ -158,3 +158,34 @@ def test_run_scip_indexer_fallback_on_unsupported_environment():
     res = run_scip_indexer("nonexistent", "out", language="unknown_language")
     assert res.ran is False
     assert res.error is not None
+
+
+def test_scip_typescript_live_indexer_execution(tmp_path):
+    """Verify live scip-typescript indexer execution on ts_monorepo fixture."""
+    res = run_scip_indexer("tests/fixtures/ts_monorepo", tmp_path, language="typescript")
+    assert res.ran is True
+    assert res.error is None
+    assert len(res.documents) == 4
+
+    doc_paths = [d.relative_path for d in res.documents]
+    assert any("utils.ts" in p for p in doc_paths)
+    assert any("app.ts" in p for p in doc_paths)
+
+    greeting_defs = [
+        sym for sym in res.definitions_by_symbol.keys() if sym.endswith("formatGreeting().")
+    ]
+    assert len(greeting_defs) == 1
+
+
+def test_scip_typescript_missing_node_modules_hint(tmp_path):
+    """Verify hint is included in error when scip-typescript fails on missing node_modules."""
+    dummy_repo = tmp_path / "dummy_repo"
+    dummy_repo.mkdir()
+    (dummy_repo / "package.json").write_text('{"name": "dummy"}', encoding="utf-8")
+    (dummy_repo / "tsconfig.json").write_text('{"extends": "@nonexistent/tsconfig"}', encoding="utf-8")
+
+    res = run_scip_indexer(dummy_repo, tmp_path / "out", language="typescript")
+    assert res.ran is False
+    assert res.error is not None
+    assert "node_modules" in res.error.lower()
+

@@ -201,10 +201,23 @@ def run_scip_indexer(
 
     proj = project_name or target_p.name
 
+    has_node_modules = (target_p / "node_modules").is_dir()
+    if language != "python" and (target_p / "package.json").is_file() and not has_node_modules:
+        logger.info(
+            f"Notice: 'node_modules' directory not found in '{target_p.as_posix()}'. "
+            "If indexing fails, run 'npm install' in the project directory."
+        )
+
     if language == "python":
         indexer_cmd = [indexer_name, "index", target_p.as_posix(), "--project-name", proj]
     else:
-        indexer_cmd = [indexer_name, "index", "--infer-tsconfig"]
+        indexer_cmd = [
+            indexer_name,
+            "index",
+            "--infer-tsconfig",
+            "--output",
+            scip_out_file.as_posix(),
+        ]
 
     logger.info(f"Running SCIP indexer: {' '.join(indexer_cmd)}")
 
@@ -218,13 +231,16 @@ def run_scip_indexer(
             shell=is_win,
         )
         if proc.returncode != 0:
-            reason = f"SCIP indexer exited with code {proc.returncode}: {proc.stderr.strip()[:200]}"
+            err_snippet = proc.stderr.strip()[:200] or proc.stdout.strip()[:200]
+            reason = f"SCIP indexer exited with code {proc.returncode}: {err_snippet}"
+            if language != "python" and not has_node_modules:
+                reason += " (Hint: 'node_modules' not found. Run 'npm install' in target directory.)"
             logger.warning(reason)
             return ScipIndexResult(ran=False, indexer=indexer_name, error=reason)
 
-        # Move generated index.scip into scip_out_file
+        # Fallback check if indexer placed output in local index.scip
         local_index = target_p / "index.scip"
-        if local_index.is_file():
+        if not scip_out_file.is_file() and local_index.is_file():
             shutil.move(local_index, scip_out_file)
 
         if not scip_out_file.is_file():

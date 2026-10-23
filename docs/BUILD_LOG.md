@@ -460,6 +460,59 @@ This is an append-only log tracking the construction, verification, and decision
     3. Architecture diagram generated: `cartog-out/ts-monorepo-map/overview.mmd` and rendered `overview.png`.
     4. Graph validation passed with 0 errors.
 
+---
+
+## Entry 9: SCIP on JavaScript & TypeScript (Milestone 6)
+
+- **Step:** Enhanced SCIP pass for TypeScript indexing, environment pre-checks (`node_modules`, `tsconfig.json`), `--output` routing, diagnostic failure hints, and end-to-end call graph resolution on `samples/ky`.
+- **What was built / done:**
+  - `cartog/scip_pass.py`:
+    - Added TypeScript pre-check for `package.json` vs `node_modules` existence, providing a clear user notice if dependencies have not been installed.
+    - Updated `scip-typescript` invocation flags to pass `--output <path>` directly to write cleanly into Cartog's isolated hash directory (`.cartog/scip/<hash>/index.scip`).
+    - Added error handling with informative hint: if `scip-typescript` exits non-zero and `node_modules` is absent, appends hint advising `npm install` in the project directory.
+  - Tests:
+    - Added `test_scip_typescript_live_indexer_execution()` in `tests/test_scip_pass.py` verifying real `scip-typescript` binary execution on `ts_monorepo`.
+    - Added `test_scip_typescript_missing_node_modules_hint()` verifying the actionable remediation hint when `node_modules` is missing and tsconfig extension fails.
+    - Test suite expanded to 52 passing tests.
+- **How it was verified:**
+  - `pytest -v`: All 52 tests passed in 6.88s.
+  - Executed `npm install --ignore-scripts` in `samples/ky` to provide `@sindresorhus/tsconfig`.
+  - Ran Demo Checkpoint 6: `cartog map samples/ky --out cartog-out/ky-map-scip`.
+  - Verified `scip.json` (31 documents indexed, 0 errors).
+  - Verified `graph.json` generated **392 `calls` edges** with `confidence: "resolved"`.
+  - Verified graph integrity via `validate_graph()`: 0 errors, 0 warnings.
+  - Verified rendered diagram `overview.png` (34.3 KB).
+
+---
+
+## Checkpoint Report: Milestone 6 (SCIP on JavaScript & TypeScript)
+
+- **Command executed:** `cartog map samples/ky --out cartog-out/ky-map-scip`
+- **Output summary:**
+  - Indexer: `scip-typescript` (31 documents indexed, 55,555 lines in `scip.json`, 0 errors).
+  - Total Graph Nodes: **742**
+    - `file`: 100, `folder`: 10, `class`: 14, `method`: 207, `function`: 189, `route`: 188, `dependency`: 27, `entrypoint`: 5, `ci_job`: 2.
+  - Total Graph Edges: **1,423**
+    - `contains`: 710
+    - `imports`: 182
+    - `depends_on`: 136
+    - `serves`: 3
+    - `calls`: **392** (all with `confidence: "resolved"`, exact evidence line strings and counts)
+  - Graph Validation: **0 errors, 0 warnings (PASS)**
+  - Spot-Check Details (Verified in Source Code):
+    1. `source/core/Ky.ts:#throwProcessedError` $\rightarrow$ `source/utils/is.ts:isError` (`evidence: source/core/Ky.ts:784`). Source code at line 784: `if (!isError(error)) { throw error; }`. Accurate.
+    2. `source/core/Ky.ts:#throwProcessedError` $\rightarrow$ `source/core/Ky.ts:#getNormalizedOptions` (`evidence: source/core/Ky.ts:799`). Source code at line 799-800: `options: this.#getNormalizedOptions()`. Accurate.
+    3. `source/core/Ky.ts:#retryFromError` $\rightarrow$ `source/errors/ForceRetryError.ts:ForceRetryError` (`evidence: source/core/Ky.ts:1155`). Source code at line 1155: `throw new ForceRetryError()`. Accurate.
+    4. `source/core/Ky.ts:#retryFromError` $\rightarrow$ `source/errors/NonError.ts:wrap` (`evidence: source/core/Ky.ts:1169`). Accurate.
+    5. `source/core/Ky.ts:#retryFromError` $\rightarrow$ `source/utils/is.ts:isNonArrayObject` (`evidence: source/core/Ky.ts:1206`). Accurate.
+    6. `source/core/Ky.ts:#retryFromError` $\rightarrow$ `source/core/Ky.ts:#getRemainingTotalTimeout` (`evidence: source/core/Ky.ts:1130`). Accurate.
+    7. `source/core/Ky.ts:#retryFromError` $\rightarrow$ `source/core/Ky.ts:#raceWithTotalTimeout` (`evidence: source/core/Ky.ts:1166`). Accurate.
+    8. `source/core/Ky.ts:#retryFromError` $\rightarrow$ `source/core/Ky.ts:#createManagedSignal` (`evidence: source/core/Ky.ts:1149`). Accurate.
+    9. `source/core/Ky.ts:#retryFromError` $\rightarrow$ `source/core/Ky.ts:#assignRequest` (`evidence: source/core/Ky.ts:1150`). Accurate.
+    10. `source/core/Ky.ts:#retryFromError` $\rightarrow$ `source/core/Ky.ts:#throwIfAbortedByUser` (`evidence: source/core/Ky.ts:1125`). Accurate.
+  - Architecture diagram generated: `cartog-out/ky-map-scip/overview.mmd` and rendered `overview.png` (34.3 KB).
+
+
 
 
 

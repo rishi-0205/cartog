@@ -114,12 +114,12 @@ Understanding unfamiliar software repositories is laborious. Developers manually
   - [x] Run Demo Checkpoint 5b (`cartog map samples/click`), spot-check 10 call edges, record in `BUILD_LOG.md`
   - [x] **PAUSE FOR USER CONFIRMATION (Checkpoint 5b)**
 
-- [ ] **Milestone 6: SCIP on JavaScript & TypeScript**
-  - [ ] Integrate `scip-typescript` indexer runner and environment pre-checks in `scip_pass.py`
-  - [ ] Connect JS/TS references to definitions in `merge.py`
-  - [ ] Run Demo Checkpoint 6 (`cartog map samples/ky`) and spot-check call edges
-  - [ ] Record in `BUILD_LOG.md`
-  - [ ] **PAUSE FOR USER CONFIRMATION**
+- [x] **Milestone 6: SCIP on JavaScript & TypeScript**
+  - [x] Integrate `scip-typescript` indexer runner and environment pre-checks in `scip_pass.py`
+  - [x] Connect JS/TS references to definitions in `merge.py`
+  - [x] Run Demo Checkpoint 6 (`cartog map samples/ky`) and spot-check call edges
+  - [x] Record in `BUILD_LOG.md`
+  - [x] **PAUSE FOR USER CONFIRMATION**
 
 ---
 
@@ -520,7 +520,7 @@ class Edge:
     2. Spot-check 10 call edges: verify caller function actually calls callee function in source code.
     3. Run with indexer disabled or `--no-scip` and verify graceful fallback to tree-sitter-only graph.
 
-### Milestone 6: SCIP on JavaScript & TypeScript
+### Milestone 6: SCIP on JavaScript & TypeScript [COMPLETE]
 - **Goal:** `scip-typescript` runner, pre-checks (`node_modules`, tsconfig), decoding, linking calls for JS/TS projects.
 - **Files Built:**
   - Enhancements to `cartog/scip_pass.py` for TypeScript project indexing (`scip-typescript index`).
