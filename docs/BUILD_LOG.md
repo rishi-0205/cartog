@@ -247,6 +247,83 @@ This is an append-only log tracking the construction, verification, and decision
   3. `examples/complex` imports (`from complex.cli import pass_environment`) are resolved internally to `examples/complex/complex/cli.py` and summarized inside the `examples` category node.
   4. All 24 unit tests in `pytest -v` pass cleanly.
 
+---
+
+## Entry 6: Python Framework Patterns & Project Manifests (Milestone 3)
+
+- **Step:** Implemented framework pattern extraction (Flask, FastAPI, Click, `__main__`), build/project manifest parsing (`pyproject.toml`, `requirements*.txt`, `Dockerfile`, `docker-compose.yml`, `.github/workflows/*.yml`, `package.json`), and graph integration with `serves` and `starts` edges.
+- **What was built / done:**
+  - `cartog/langs/python_adapter.py`:
+    - Implemented `extract_patterns()` using Tree-sitter query cursor and AST helpers.
+    - Handled `@app.route()`, `@bp.route()`, `@app.get/post/put/delete/patch()`, methods lists, URL paths, and handler names.
+    - Handled `@click.command()`, `@click.group()`, `@<group>.command()`, custom command names, and handler names.
+    - Handled `if __name__ == '__main__':` entrypoint blocks and target invocation resolution.
+  - `cartog/manifests.py`:
+    - Built manifest discovery respecting `.gitignore` rules via `pathspec`.
+    - Parsed `pyproject.toml` `[project.scripts]`, `[project.gui-scripts]`, `[tool.poetry.scripts]`, `[project.dependencies]`, `[dependency-groups]`.
+    - Parsed `requirements*.txt` stripping comments, options, and environment markers.
+    - Parsed `Dockerfile` base images (`FROM`), exposed ports (`EXPOSE`), and commands (`CMD`/`ENTRYPOINT`).
+    - Parsed `docker-compose.yml` services, images, ports, and build directories.
+    - Parsed GitHub Actions `.github/workflows/*.{yml,yaml}` workflow names and job IDs.
+  - `cartog/merge.py` & `cartog/validate.py`:
+    - Linked AST pattern nodes (`route`, `command`, `entrypoint`) into graph containment.
+    - Created `serves` edges: `route` $\rightarrow$ handler function, `command` $\rightarrow$ handler function.
+    - Created `starts` edges: `entrypoint` $\rightarrow$ target function/file.
+    - Merged manifest items (`entrypoint`, `service`, `ci_job`, `dependency`) with file containment and `depends_on`.
+    - Added validation rules in `validate_graph()` enforcing valid endpoints for `serves` and `starts`.
+  - `cartog/cli.py` & `cartog/export_json.py`:
+    - Updated Stage 1 summary table to report HTTP routes, CLI commands, entrypoints, container services, CI jobs, and manifest dependencies.
+    - Included `manifests` section in `parse.json`.
+  - Tests:
+    - Added `tests/test_patterns.py` and `tests/test_manifests.py`. Expanded test suite from 24 to 35 tests.
+- **How it was verified:**
+  - `pytest -v`: All 35 tests passed in 2.50s.
+  - Checkpoint 3 command 1: `cartog parse samples/flask --out cartog-out/flask-parse` (305 routes, 21 commands, 2 entrypoints, 8 CI jobs, 57 dependencies).
+  - Checkpoint 3 command 2: `cartog map samples/click --out cartog-out/click-patterns --no-scip` (199 commands, 10 entrypoints, 201 serves edges, 10 starts edges connecting entrypoints to target `cli` functions).
+- **Problems and decisions:**
+  - Documented Issue 10 in `docs/ISSUES_AND_DECISIONS.md`.
+
+---
+
+## Checkpoint Report: Milestone 3 (Python Framework Patterns & Project Manifests)
+
+- **Command 1 executed:** `cartog parse samples/flask --out cartog-out/flask-parse`
+- **Output 1 summary:**
+  - Discovered 83 source files, 1,622 symbols, 648 raw imports.
+  - Framework Patterns Extracted:
+    - **HTTP Routes:** 305 routes (e.g. `GET /`, `POST /add`, `GET /result/<id>`, custom methods, parameters, and handler attribution).
+    - **CLI Commands:** 21 commands.
+    - **Entrypoints:** 2 (1 AST `__main__` block + 1 `flask` CLI entrypoint from `pyproject.toml`).
+  - Manifest Facts Extracted:
+    - **CI Jobs:** 8 jobs from `.github/workflows/` (lock, main, create-release, dist, publish, tests, typing, zizmor).
+    - **Dependencies:** 57 unique package requirements from `pyproject.toml` (standard, optional, and dependency-groups).
+  - Output File: `cartog-out/flask-parse/parse.json` (37,913 lines, 949 KB) containing files, symbols, imports, patterns, and manifests.
+
+- **Command 2 executed:** `cartog map samples/click --out cartog-out/click-patterns --no-scip`
+- **Output 2 summary:**
+  - Total Graph Nodes: **2,460**
+    - `file`: 108
+    - `folder`: 23
+    - `function`: 1,374
+    - `class`: 178
+    - `method`: 473
+    - `command`: 199 (Click `@click.command()` and `@click.group()` nodes with group flags and handler functions)
+    - `entrypoint`: 10 (Derived from `[project.scripts]` across Click example packages)
+    - `dependency`: 84
+    - `ci_job`: 10
+    - `route`: 1
+  - Total Graph Edges: **3,077**
+    - `contains`: 2,370 (hierarchy)
+    - `imports`: 167 (internal file-to-file imports)
+    - `depends_on`: 329 (file-to-dependency relationships)
+    - `serves`: 201 (commands and routes $\rightarrow$ target handler functions)
+    - `starts`: 10 (entrypoints $\rightarrow$ target functions)
+  - Graph Validation: **0 errors, 0 warnings (PASS)**
+  - Spot-Check Details:
+    1. Verified all 10 Click example entrypoints in `graph.json` (`aliases`, `colors`, `completion`, `complex`, `imagepipe`, `inout`, `naval`, `repo`, `termui`, `validation`) create `entrypoint` nodes and resolve `starts` edges directly to their target `cli` functions (e.g. `imagepipe -> imagepipe:cli`).
+    2. Verified 199 `command` nodes correctly link to their implementation handler functions via `serves` edges.
+    3. Architecture diagram generated: `cartog-out/click-patterns/overview.mmd` and rendered `overview.png` (56.8 KB).
+
 
 
 

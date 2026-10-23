@@ -68,6 +68,18 @@ def validate_graph(graph: Graph) -> ValidationResult:
                         f"Edge '{edge.source}' -> '{edge.target}' of kind 'depends_on' must connect file to dependency, "
                         f"but connects {src_node.kind} to {tgt_node.kind}"
                     )
+            elif edge.kind == "serves":
+                if src_node.kind not in ("route", "command") or tgt_node.kind not in ("function", "method", "class"):
+                    errors.append(
+                        f"Edge '{edge.source}' -> '{edge.target}' of kind 'serves' must connect route/command to function/method/class, "
+                        f"but connects {src_node.kind} to {tgt_node.kind}"
+                    )
+            elif edge.kind == "starts":
+                if src_node.kind != "entrypoint" or tgt_node.kind not in ("function", "method", "class", "file"):
+                    errors.append(
+                        f"Edge '{edge.source}' -> '{edge.target}' of kind 'starts' must connect entrypoint to function/method/class/file, "
+                        f"but connects {src_node.kind} to {tgt_node.kind}"
+                    )
 
         key = (edge.source, edge.target, edge.kind)
         if key in seen_edge_keys:

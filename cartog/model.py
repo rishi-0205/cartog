@@ -48,6 +48,32 @@ class Location:
         return cls(path=data["path"], range=rng)
 
 
+@dataclass
+class ManifestFacts:
+    """Facts extracted from configuration and build manifests."""
+    dependencies: list[dict[str, Any]] = field(default_factory=list)
+    entrypoints: list[dict[str, Any]] = field(default_factory=list)
+    services: list[dict[str, Any]] = field(default_factory=list)
+    ci_jobs: list[dict[str, Any]] = field(default_factory=list)
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "dependencies": self.dependencies,
+            "entrypoints": self.entrypoints,
+            "services": self.services,
+            "ci_jobs": self.ci_jobs,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> ManifestFacts:
+        return cls(
+            dependencies=data.get("dependencies", []),
+            entrypoints=data.get("entrypoints", []),
+            services=data.get("services", []),
+            ci_jobs=data.get("ci_jobs", []),
+        )
+
+
 def make_node_id(kind: str, path: Optional[str], qualified_name: str) -> str:
     """Generate a stable 10-char SHA-1 prefix node ID."""
     key = f"{kind}:{path or ''}:{qualified_name}"

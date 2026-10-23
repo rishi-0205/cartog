@@ -89,15 +89,15 @@ Understanding unfamiliar software repositories is laborious. Developers manually
   - [x] Record in `BUILD_LOG.md`
   - [x] **PAUSE FOR USER CONFIRMATION**
 
-- [ ] **Milestone 3: Python Framework Patterns & Project Manifests**
-  - [ ] Clone `pallets/flask` into `samples/flask`
-  - [ ] Implement Python framework pattern extractors in `python_adapter.py` (Flask `@app.route`, FastAPI `@app.get`, Click commands/groups, `__main__`)
-  - [ ] Build `cartog/manifests.py` (`pyproject.toml`, `requirements*.txt`, `Dockerfile`, `docker-compose.yml`, GitHub Actions)
-  - [ ] Link framework nodes into graph (`route` with `serves`, `entrypoint` with `starts`, `service`, `ci_job`)
-  - [ ] Write unit tests for pattern and manifest extraction
-  - [ ] Run Demo Checkpoint 3 (`cartog parse samples/flask`, `cartog map samples/click --no-scip`)
-  - [ ] Record in `BUILD_LOG.md`
-  - [ ] **PAUSE FOR USER CONFIRMATION**
+- [x] **Milestone 3: Python Framework Patterns & Project Manifests**
+  - [x] Clone `pallets/flask` into `samples/flask`
+  - [x] Implement Python framework pattern extractors in `python_adapter.py` (Flask `@app.route`, FastAPI `@app.get`, Click commands/groups, `__main__`)
+  - [x] Build `cartog/manifests.py` (`pyproject.toml`, `requirements*.txt`, `Dockerfile`, `docker-compose.yml`, GitHub Actions)
+  - [x] Link framework nodes into graph (`route` with `serves`, `entrypoint` with `starts`, `service`, `ci_job`)
+  - [x] Write unit tests for pattern and manifest extraction
+  - [x] Run Demo Checkpoint 3 (`cartog parse samples/flask`, `cartog map samples/click --no-scip`)
+  - [x] Record in `BUILD_LOG.md`
+  - [x] **PAUSE FOR USER CONFIRMATION**
 
 ---
 
@@ -477,7 +477,7 @@ class Edge:
     2. Check `unresolved` in `report.txt` is small and only contains dynamic/conditional imports.
     3. Render `overview.mmd` with `mmdc` (or inspect DSL): verify subgraphs group files by directory under `src/click`, with solid edges indicating import relationships.
 
-### Milestone 3: Python Patterns & Manifests
+### Milestone 3: Python Patterns & Manifests [COMPLETE]
 - **Goal:** Framework extractors for Flask, FastAPI, Click; entry points; manifest extraction (`pyproject.toml`, requirements, Docker, docker-compose, GitHub Actions).
 - **Files Built:**
   - `cartog/langs/python_adapter.py`: `extract_patterns()` for `@app.route`, `@bp.route`, `@click.command`, `@click.group`, `@group.command`, `if __name__ == '__main__'`

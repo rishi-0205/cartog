@@ -40,7 +40,7 @@ def classify_path(rel_path: str) -> str:
         return "docs"
     if top in ("examples", "example", "samples"):
         return "examples"
-    if top in ("scripts", "tools", "benchmarks"):
+    if top in ("scripts", "tools", "benchmarks", ".github"):
         return "scripts"
     return "source"
 

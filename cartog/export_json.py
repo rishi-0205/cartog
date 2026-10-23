@@ -2,10 +2,11 @@
 
 import json
 from pathlib import Path
-from typing import Any, Sequence
+from typing import Any, Optional, Sequence
 
 from cartog.config import SCHEMA_VERSION
 from cartog.langs.base import ParseFileResult
+from cartog.model import ManifestFacts
 from cartog.scan import SkippedFile
 
 
@@ -16,6 +17,7 @@ def write_parse_json(
     parsed_files: Sequence[ParseFileResult],
     skipped_files: Sequence[SkippedFile],
     out_file: str | Path,
+    manifests: Optional[ManifestFacts] = None,
 ) -> dict[str, Any]:
     """Serialize Stage 1 tree-sitter parse results into parse.json deterministically."""
     out_path = Path(out_file)
@@ -51,6 +53,12 @@ def write_parse_json(
             "skipped_count": len(skipped_data),
         },
         "files": files_data,
+        "manifests": manifests.to_dict() if manifests else {
+            "dependencies": [],
+            "entrypoints": [],
+            "services": [],
+            "ci_jobs": [],
+        },
         "skipped": skipped_data,
     }
 

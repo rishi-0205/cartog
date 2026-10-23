@@ -15,6 +15,7 @@ from cartog.scan import walk_files
 from cartog.cache import ParseCache
 from cartog.langs import parse_source_file
 from cartog.export_json import write_parse_json
+from cartog.manifests import parse_manifests
 from cartog.model import Graph
 from cartog.merge import build_graph
 from cartog.validate import validate_graph
@@ -284,6 +285,8 @@ def _execute_parse(
 
     cache.save()
 
+    manifest_facts = parse_manifests(target_path)
+
     detected_languages = sorted(list({f.language for f in scan_result.files})) or ["python"]
     out_file = out_dir / "parse.json"
     write_parse_json(
@@ -293,9 +296,10 @@ def _execute_parse(
         parsed_files=parsed_files,
         skipped_files=scan_result.skipped,
         out_file=out_file,
+        manifests=manifest_facts,
     )
 
-    return target_path, out_dir, scan_result, parsed_files, symbol_kind_counts, total_raw_imports, cache, out_file
+    return target_path, out_dir, scan_result, parsed_files, symbol_kind_counts, total_raw_imports, cache, out_file, manifest_facts
 
 
 @app.command()
@@ -308,7 +312,7 @@ def parse(
     verbose: bool = typer.Option(False, "--verbose", "-V", help="Enable verbose logging."),
 ):
     """Run Stage 1: tree-sitter AST syntax, imports, and framework pattern extraction."""
-    target_path, out_dir, scan_result, parsed_files, symbol_kind_counts, total_raw_imports, cache, out_file = _execute_parse(
+    target_path, out_dir, scan_result, parsed_files, symbol_kind_counts, total_raw_imports, cache, out_file, manifest_facts = _execute_parse(
         path=path,
         out=out,
         lang=lang,
@@ -329,6 +333,24 @@ def parse(
     total_symbols = sum(symbol_kind_counts.values())
     summary_table.add_row("Total Symbols", str(total_symbols))
     summary_table.add_row("Raw Imports Extracted", str(total_raw_imports))
+
+    routes_count = sum(1 for f in parsed_files for p in getattr(f, "patterns", []) if p.get("kind") == "route")
+    commands_count = sum(1 for f in parsed_files for p in getattr(f, "patterns", []) if p.get("kind") == "command")
+    entrypoints_count = sum(1 for f in parsed_files for p in getattr(f, "patterns", []) if p.get("kind") == "entrypoint") + len(manifest_facts.entrypoints)
+
+    if routes_count:
+        summary_table.add_row("HTTP Routes", str(routes_count))
+    if commands_count:
+        summary_table.add_row("CLI Commands", str(commands_count))
+    if entrypoints_count:
+        summary_table.add_row("Entrypoints", str(entrypoints_count))
+    if manifest_facts.services:
+        summary_table.add_row("Container Services", str(len(manifest_facts.services)))
+    if manifest_facts.ci_jobs:
+        summary_table.add_row("CI Jobs", str(len(manifest_facts.ci_jobs)))
+    if manifest_facts.dependencies:
+        summary_table.add_row("Manifest Dependencies", str(len(manifest_facts.dependencies)))
+
     summary_table.add_row("Cache Hits / Misses", f"{cache.hits} / {cache.misses}")
 
     console.print()
@@ -379,7 +401,7 @@ def build(
     verbose: bool = typer.Option(False, "--verbose", "-V", help="Enable verbose logging."),
 ):
     """Run Stage 3: Merge parse representations into graph.json."""
-    target_path, out_dir, scan_result, parsed_files, _, _, _, _ = _execute_parse(
+    target_path, out_dir, scan_result, parsed_files, _, _, _, _, manifest_facts = _execute_parse(
         path=path,
         out=out,
         lang=lang,
@@ -395,6 +417,7 @@ def build(
         target_path=target_path.as_posix(),
         roots=scan_result.roots,
         skipped_files=scan_result.skipped,
+        manifests=manifest_facts,
     )
 
     val_res = validate_graph(graph)
@@ -440,7 +463,7 @@ def map(
     verbose: bool = typer.Option(False, "--verbose", "-V", help="Enable verbose logging."),
 ):
     """Run full pipeline (parse -> build -> export) and produce Mermaid diagrams."""
-    target_path, out_dir, scan_result, parsed_files, _, _, _, _ = _execute_parse(
+    target_path, out_dir, scan_result, parsed_files, _, _, _, _, manifest_facts = _execute_parse(
         path=path,
         out=out,
         lang=lang,
@@ -455,6 +478,7 @@ def map(
         target_path=target_path.as_posix(),
         roots=scan_result.roots,
         skipped_files=scan_result.skipped,
+        manifests=manifest_facts,
     )
     graph_out = out_dir / "graph.json"
     graph.save(graph_out)

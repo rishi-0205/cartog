@@ -9,7 +9,7 @@ from typing import Any, Optional
 from cartog.langs import get_adapter
 from cartog.langs.base import ParseFileResult, ProjectContext
 from cartog.langs.python_adapter import get_enclosing_root, path_to_module_name
-from cartog.model import Edge, Graph, Node, SourceRange, make_node_id
+from cartog.model import Edge, Graph, ManifestFacts, Node, SourceRange, make_node_id
 
 
 def build_graph(
@@ -18,6 +18,7 @@ def build_graph(
     roots: Optional[list[str]] = None,
     skipped_files: Optional[list[dict[str, Any]]] = None,
     languages: Optional[list[str]] = None,
+    manifests: Optional[ManifestFacts] = None,
 ) -> Graph:
     """Build a complete structural graph from parsed file results."""
     resolved_roots = roots or ["."]
@@ -167,6 +168,63 @@ def build_graph(
                     )
                 )
 
+        # Patterns (routes, commands, entrypoints)
+        enc_root = get_enclosing_root(f.path, resolved_roots)
+        for pat in getattr(f, "patterns", []):
+            kind = pat["kind"]
+            name = pat["name"]
+            pat_range = SourceRange.from_list(pat["range"]) if pat.get("range") else None
+            qual_name = f"{f.path}:{name}"
+            pat_node = Node.create(
+                kind=kind,
+                name=name,
+                qualified_name=qual_name,
+                path=f.path,
+                range=pat_range,
+                language=f.language,
+                root=enc_root,
+                attrs=pat,
+            )
+            graph.add_node(pat_node)
+            graph.add_edge(
+                Edge(
+                    source=file_node.id,
+                    target=pat_node.id,
+                    kind="contains",
+                    confidence="resolved",
+                )
+            )
+
+            # Link serves or starts
+            if kind in ("route", "command"):
+                handler_name = pat.get("handler")
+                if handler_name and handler_name in symbols_by_name:
+                    handler_node = symbols_by_name[handler_name]
+                    ev_line = f"{f.path}:{pat['range'][0]}" if pat.get("range") else f"{f.path}:0"
+                    graph.add_edge(
+                        Edge(
+                            source=pat_node.id,
+                            target=handler_node.id,
+                            kind="serves",
+                            confidence="resolved",
+                            evidence=[ev_line],
+                        )
+                    )
+            elif kind == "entrypoint":
+                target_name = pat.get("target")
+                if target_name and target_name in symbols_by_name:
+                    target_node = symbols_by_name[target_name]
+                    ev_line = f"{f.path}:{pat['range'][0]}" if pat.get("range") else f"{f.path}:0"
+                    graph.add_edge(
+                        Edge(
+                            source=pat_node.id,
+                            target=target_node.id,
+                            kind="starts",
+                            confidence="resolved",
+                            evidence=[ev_line],
+                        )
+                    )
+
     # 3. Resolve imports and create dependency edges
     for f in parsed_files:
         adapter = get_adapter(f.language)
@@ -221,6 +279,178 @@ def build_graph(
                             evidence=[evidence_str],
                         )
                     )
+
+    # 4. Manifest processing (entrypoints, services, ci_jobs, dependencies)
+    if manifests:
+        def _ensure_manifest_file(file_path: str) -> str:
+            fid = make_node_id("file", file_path, file_path)
+            if fid in graph.nodes:
+                return fid
+            p = Path(file_path)
+            node = Node.create(
+                kind="file",
+                name=p.name or file_path,
+                qualified_name=file_path,
+                path=file_path,
+                root=".",
+                attrs={"manifest": True},
+            )
+            graph.add_node(node)
+            parent_dir = p.parent.as_posix()
+            if parent_dir and parent_dir != ".":
+                folder_id = _ensure_folder(parent_dir)
+                graph.add_edge(
+                    Edge(
+                        source=folder_id,
+                        target=fid,
+                        kind="contains",
+                        confidence="inferred",
+                    )
+                )
+            return fid
+
+        # 4.1 Entrypoints from manifests
+        for ep in manifests.entrypoints:
+            m_file = ep.get("file", "pyproject.toml")
+            m_file_id = _ensure_manifest_file(m_file)
+            ep_node = Node.create(
+                kind="entrypoint",
+                name=ep["name"],
+                qualified_name=f"{m_file}:{ep['name']}",
+                path=m_file,
+                attrs=ep,
+            )
+            graph.add_node(ep_node)
+            graph.add_edge(
+                Edge(
+                    source=m_file_id,
+                    target=ep_node.id,
+                    kind="contains",
+                    confidence="resolved",
+                )
+            )
+
+            # Resolve starts target
+            target = ep.get("target")
+            if target:
+                if ":" in target:
+                    mod_part, sym_part = target.split(":", 1)
+                    target_file = context.module_to_file.get(mod_part)
+                    if not target_file:
+                        m_dir = Path(m_file).parent.as_posix()
+                        candidate = f"{m_dir}/{mod_part}.py" if m_dir != "." else f"{mod_part}.py"
+                        if candidate in context.all_files:
+                            target_file = candidate
+                        elif f"{mod_part}.py" in context.all_files:
+                            target_file = f"{mod_part}.py"
+
+                    if target_file:
+                        target_sym_node = None
+                        for n in graph.nodes.values():
+                            if (
+                                n.path == target_file
+                                and n.name == sym_part
+                                and n.kind in ("function", "method", "class")
+                            ):
+                                target_sym_node = n
+                                break
+                        if target_sym_node:
+                            graph.add_edge(
+                                Edge(
+                                    source=ep_node.id,
+                                    target=target_sym_node.id,
+                                    kind="starts",
+                                    confidence="resolved",
+                                )
+                            )
+                        else:
+                            t_file_id = make_node_id("file", target_file, target_file)
+                            if t_file_id in graph.nodes:
+                                graph.add_edge(
+                                    Edge(
+                                        source=ep_node.id,
+                                        target=t_file_id,
+                                        kind="starts",
+                                        confidence="resolved",
+                                    )
+                                )
+                else:
+                    if target in context.all_files:
+                        t_file_id = make_node_id("file", target, target)
+                        if t_file_id in graph.nodes:
+                            graph.add_edge(
+                                Edge(
+                                    source=ep_node.id,
+                                    target=t_file_id,
+                                    kind="starts",
+                                    confidence="resolved",
+                                )
+                            )
+
+        # 4.2 Services from manifests
+        for svc in manifests.services:
+            m_file = svc.get("file", "docker-compose.yml")
+            m_file_id = _ensure_manifest_file(m_file)
+            svc_node = Node.create(
+                kind="service",
+                name=svc["name"],
+                qualified_name=f"{m_file}:{svc['name']}",
+                path=m_file,
+                attrs=svc,
+            )
+            graph.add_node(svc_node)
+            graph.add_edge(
+                Edge(
+                    source=m_file_id,
+                    target=svc_node.id,
+                    kind="contains",
+                    confidence="resolved",
+                )
+            )
+
+        # 4.3 CI Jobs from manifests
+        for job in manifests.ci_jobs:
+            m_file = job.get("file", ".github/workflows/ci.yml")
+            m_file_id = _ensure_manifest_file(m_file)
+            job_node = Node.create(
+                kind="ci_job",
+                name=job["name"],
+                qualified_name=f"{m_file}:{job['name']}",
+                path=m_file,
+                attrs=job,
+            )
+            graph.add_node(job_node)
+            graph.add_edge(
+                Edge(
+                    source=m_file_id,
+                    target=job_node.id,
+                    kind="contains",
+                    confidence="resolved",
+                )
+            )
+
+        # 4.4 Dependencies from manifests
+        for dep in manifests.dependencies:
+            pkg_name = dep["name"]
+            dep_node = Node.create(
+                kind="dependency",
+                name=pkg_name,
+                qualified_name=pkg_name,
+                path=None,
+                attrs=dep,
+            )
+            graph.add_node(dep_node)
+            m_file = dep.get("file")
+            if m_file:
+                m_file_id = _ensure_manifest_file(m_file)
+                graph.add_edge(
+                    Edge(
+                        source=m_file_id,
+                        target=dep_node.id,
+                        kind="depends_on",
+                        confidence="import",
+                    )
+                )
 
     graph.compute_stats()
     return graph

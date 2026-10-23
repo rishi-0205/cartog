@@ -1,6 +1,8 @@
 """Python Language Adapter using tree-sitter-python and tree-sitter Query."""
 
+import ast
 from pathlib import Path
+import re
 from typing import Any, NamedTuple, Optional
 import tree_sitter
 import tree_sitter_python
@@ -34,6 +36,88 @@ IMPORT_QUERY = """
 (import_statement) @import
 (import_from_statement) @import_from
 """
+
+PATTERN_QUERY = """
+(decorated_definition
+  (decorator) @decorator
+  definition: (function_definition
+    name: (identifier) @func_name) @func)
+
+(if_statement
+  condition: (_) @cond
+  consequence: (_) @body) @if_stmt
+"""
+
+
+def parse_route_decorator(dec_text: str) -> Optional[dict[str, Any]]:
+    """Parse Flask or FastAPI route decorator to extract HTTP methods and URL path."""
+    text = dec_text.lstrip("@").strip()
+    route_match = re.search(r'\.(route|get|post|put|delete|patch)\s*\((.*)\)', text, re.DOTALL)
+    if not route_match:
+        return None
+    method_kind = route_match.group(1).lower()
+    args_str = route_match.group(2).strip()
+
+    url_path = "/"
+    methods = []
+    try:
+        parsed_call = ast.parse(f"f({args_str})").body[0].value
+        if parsed_call.args:
+            first_arg = parsed_call.args[0]
+            if isinstance(first_arg, ast.Constant) and isinstance(first_arg.value, str):
+                url_path = first_arg.value
+        if method_kind != "route":
+            methods = [method_kind.upper()]
+        else:
+            for kw in parsed_call.keywords:
+                if kw.arg == "methods":
+                    if isinstance(kw.value, (ast.List, ast.Tuple, ast.Set)):
+                        methods = [
+                            elt.value for elt in kw.value.elts
+                            if isinstance(elt, ast.Constant) and isinstance(elt.value, str)
+                        ]
+            if not methods:
+                methods = ["GET"]
+    except Exception:
+        p_match = re.search(r'["\']([^"\']+)["\']', args_str)
+        if p_match:
+            url_path = p_match.group(1)
+        methods = [method_kind.upper()] if method_kind != "route" else ["GET"]
+
+    return {
+        "url_path": url_path,
+        "methods": methods,
+        "name": f"{', '.join(methods)} {url_path}",
+    }
+
+
+def parse_command_decorator(dec_text: str, default_name: str) -> Optional[dict[str, Any]]:
+    """Parse Click command or group decorator to extract CLI command name and group status."""
+    text = dec_text.lstrip("@").strip()
+    is_group = ".group" in text or text.startswith("group")
+    is_command = ".command" in text or text.startswith("command") or "click.command" in text or "click.group" in text
+    if not (is_group or is_command):
+        return None
+
+    cmd_name = default_name.replace("_", "-")
+    try:
+        call_str = text if "(" in text else f"{text}()"
+        parsed_call = ast.parse(call_str).body[0].value
+        if hasattr(parsed_call, "args") and parsed_call.args:
+            first = parsed_call.args[0]
+            if isinstance(first, ast.Constant) and isinstance(first.value, str):
+                cmd_name = first.value
+        if hasattr(parsed_call, "keywords"):
+            for kw in parsed_call.keywords:
+                if kw.arg == "name" and isinstance(kw.value, ast.Constant) and isinstance(kw.value.value, str):
+                    cmd_name = kw.value.value
+    except Exception:
+        pass
+
+    return {
+        "command_name": cmd_name,
+        "is_group": is_group,
+    }
 
 
 class ScopeEntry(NamedTuple):
@@ -98,7 +182,7 @@ class PythonAdapter(LanguageAdapter):
 
     name = "python"
     extensions = (".py", ".pyi")
-    version = "1.0.0"
+    version = "1.1.0"
 
     def __init__(self):
         self._language = tree_sitter.Language(tree_sitter_python.language())
@@ -107,6 +191,7 @@ class PythonAdapter(LanguageAdapter):
         self._query_symbols = tree_sitter.Query(self._language, SYMBOL_QUERY)
         self._query_decorators = tree_sitter.Query(self._language, DECORATOR_QUERY)
         self._query_imports = tree_sitter.Query(self._language, IMPORT_QUERY)
+        self._query_patterns = tree_sitter.Query(self._language, PATTERN_QUERY)
 
     def grammar_for(self, path: Path) -> tree_sitter.Language:
         return self._language
@@ -314,6 +399,89 @@ class PythonAdapter(LanguageAdapter):
         # Sort imports deterministically by line number and specifier
         imports.sort(key=lambda i: (i.line, i.specifier))
         return imports
+
+    def extract_patterns(
+        self, tree: tree_sitter.Tree, source_bytes: bytes, path: str
+    ) -> list[dict[str, Any]]:
+        """Extract framework patterns: routes, CLI commands, entrypoints."""
+        patterns: list[dict[str, Any]] = []
+        cursor = tree_sitter.QueryCursor(self._query_patterns)
+
+        for pat_idx, match in cursor.matches(tree.root_node):
+            if "decorator" in match and "func_name" in match:
+                dec_node = match["decorator"][0]
+                func_node = match["func_name"][0]
+                dec_text = source_bytes[dec_node.start_byte:dec_node.end_byte].decode("utf-8", errors="ignore").strip()
+                func_name = source_bytes[func_node.start_byte:func_node.end_byte].decode("utf-8", errors="ignore").strip()
+
+                route_info = parse_route_decorator(dec_text)
+                if route_info:
+                    patterns.append(
+                        {
+                            "kind": "route",
+                            "name": route_info["name"],
+                            "url_path": route_info["url_path"],
+                            "methods": route_info["methods"],
+                            "handler": func_name,
+                            "range": [
+                                dec_node.start_point.row,
+                                dec_node.start_point.column,
+                                dec_node.end_point.row,
+                                dec_node.end_point.column,
+                            ],
+                            "raw_text": dec_text,
+                        }
+                    )
+
+                cmd_info = parse_command_decorator(dec_text, func_name)
+                if cmd_info:
+                    patterns.append(
+                        {
+                            "kind": "command",
+                            "name": cmd_info["command_name"],
+                            "is_group": cmd_info["is_group"],
+                            "handler": func_name,
+                            "range": [
+                                dec_node.start_point.row,
+                                dec_node.start_point.column,
+                                dec_node.end_point.row,
+                                dec_node.end_point.column,
+                            ],
+                            "raw_text": dec_text,
+                        }
+                    )
+
+            elif "if_stmt" in match:
+                cond_node = match["cond"][0]
+                if_node = match["if_stmt"][0]
+                cond_text = source_bytes[cond_node.start_byte:cond_node.end_byte].decode("utf-8", errors="ignore")
+                if "__name__" in cond_text and ("'__main__'" in cond_text or '"__main__"' in cond_text):
+                    body_node = match.get("body", [None])[0]
+                    target_call = None
+                    if body_node:
+                        body_text = source_bytes[body_node.start_byte:body_node.end_byte].decode("utf-8", errors="ignore")
+                        call_match = re.search(r'([a-zA-Z_][a-zA-Z0-9_]*)\s*\(', body_text)
+                        if call_match and call_match.group(1) not in ("print", "exit", "sys"):
+                            target_call = call_match.group(1)
+
+                    patterns.append(
+                        {
+                            "kind": "entrypoint",
+                            "name": "__main__",
+                            "target": target_call,
+                            "range": [
+                                if_node.start_point.row,
+                                if_node.start_point.column,
+                                if_node.end_point.row,
+                                if_node.end_point.column,
+                            ],
+                            "raw_text": cond_text.strip(),
+                        }
+                    )
+
+        # Sort patterns deterministically by line number
+        patterns.sort(key=lambda p: (p["range"][0], p["name"]))
+        return patterns
 
     def resolve_import(
         self, record: ImportRecord, from_file: str, project_context: ProjectContext

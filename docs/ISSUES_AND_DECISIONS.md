@@ -328,6 +328,28 @@ In `examples/complex`, statements like `from complex.cli import pass_environment
   - `depends_on`: Exclusively connects file node $\rightarrow$ external dependency node.
 - **Validation Rule:** Added strict endpoint checks in `validate_graph()` that reject graphs where `imports` connects to non-files or `depends_on` connects non-dependencies. Added test coverage in `tests/test_merge.py`.
 
+---
+
+## Issue 10: Manifest Discovery Side Effects in In-Memory Graph Merge
+
+- **Component:** `cartog.merge.build_graph`, `cartog.manifests.parse_manifests`
+- **Phase / Milestone:** Phase 1 / Milestone 3 (Python Framework Patterns & Project Manifests)
+- **Environment:** Python 3.13.1, Windows 11 AMD64
+
+### 1. Symptom
+In `test_patterns.py`, unit test `test_graph_merges_patterns_with_serves_and_starts_edges` failed with `assert 13 == 1` for `nodes_entrypoint`. The test expected 1 entrypoint from AST `if __name__ == '__main__':`, but 13 were created.
+
+### 2. Root Cause Analysis
+- `build_graph` had a default parameter `target_path="."`. When `manifests` was `None`, `build_graph` executed `parse_manifests(target_path)`.
+- When invoked in unit tests with `target_path="."`, `parse_manifests` scanned the workspace root on disk, discovering `pyproject.toml` in the repository root and across all cloned example subprojects in `samples/click/examples/` and `samples/flask/`.
+- This violated the principle of separation of concerns: `build_graph` should be an in-memory graph merger, not an I/O scanner that couples unit tests to whatever files happen to be on the local filesystem.
+
+### 3. Solution & Decision
+- **Pure In-Memory Graph Merger:** Removed filesystem scanning from `build_graph()`. `build_graph()` receives `manifests: Optional[ManifestFacts] = None` and merges only what is explicitly passed. If `None`, no manifest nodes are added.
+- **Pipeline Stage Separation:** File discovery and manifest parsing are performed in Stage 1 / CLI orchestration (`_execute_parse()`), which passes `manifests=manifest_facts` to `build_graph()`.
+- **Gitignore Respect in Manifest Scanning:** Updated `parse_manifests()` to load `.gitignore` using `pathspec`, ensuring gitignored directories (such as `samples/` in the Cartog repository root) are never crawled during repository scanning.
+
+
 
 
 
