@@ -80,6 +80,16 @@ def validate_graph(graph: Graph) -> ValidationResult:
                         f"Edge '{edge.source}' -> '{edge.target}' of kind 'starts' must connect entrypoint to function/method/class/file, "
                         f"but connects {src_node.kind} to {tgt_node.kind}"
                     )
+            elif edge.kind == "calls":
+                if src_node.kind not in ("function", "method", "class", "file") or tgt_node.kind not in ("function", "method", "class"):
+                    errors.append(
+                        f"Edge '{edge.source}' -> '{edge.target}' of kind 'calls' must connect function/method/class/file to function/method/class, "
+                        f"but connects {src_node.kind} to {tgt_node.kind}"
+                    )
+                if edge.confidence != "resolved":
+                    errors.append(
+                        f"Edge '{edge.source}' -> '{edge.target}' of kind 'calls' must have confidence 'resolved', got '{edge.confidence}'"
+                    )
 
         key = (edge.source, edge.target, edge.kind)
         if key in seen_edge_keys:

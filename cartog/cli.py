@@ -20,6 +20,12 @@ from cartog.model import Graph
 from cartog.merge import build_graph
 from cartog.validate import validate_graph
 from cartog.export_mermaid import generate_overview_mermaid, render_mermaid
+from cartog.scip_pass import (
+    ScipIndexResult,
+    decode_scip_index,
+    run_scip_indexer,
+    write_scip_json,
+)
 
 app = typer.Typer(
     name="cartog",
@@ -381,13 +387,86 @@ def parse(
     console.print(f"\n[bold green]Success:[/bold green] Stage 1 output written to [bold]{out_file.as_posix()}[/bold]\n")
 
 
+def _resolve_scip(
+    target_path: Path,
+    out_dir: Path,
+    lang: Optional[str] = None,
+    no_scip: bool = False,
+    verbose: bool = False,
+) -> Optional[ScipIndexResult]:
+    """Resolve SCIP data via existing index.scip, or by executing external indexer with fallback."""
+    if no_scip:
+        return None
+
+    # 1. Direct index.scip file or local index.scip in target_path
+    if target_path.is_file() and target_path.name.endswith(".scip"):
+        res = decode_scip_index(target_path)
+        write_scip_json(res, out_dir / "scip.json")
+        return res
+    if (target_path / "index.scip").is_file():
+        res = decode_scip_index(target_path / "index.scip")
+        write_scip_json(res, out_dir / "scip.json")
+        return res
+
+    # 2. Determine indexer language
+    detected_lang = "python"
+    if lang:
+        l_low = lang.lower().strip()
+        if l_low in ("ts", "typescript", "js", "javascript", "tsx"):
+            detected_lang = "typescript"
+    else:
+        if (target_path / "tsconfig.json").is_file() or (target_path / "package.json").is_file():
+            detected_lang = "typescript"
+
+    res = run_scip_indexer(target_path, out_dir, language=detected_lang)
+    write_scip_json(res, out_dir / "scip.json")
+    return res
+
+
 @app.command()
 def scip(
-    path: str = typer.Argument(..., help="Path to project directory."),
+    path: str = typer.Argument(..., help="Path to project directory or index.scip file."),
     out: str = typer.Option("cartog-out", "--out", help="Output directory."),
+    lang: Optional[str] = typer.Option(None, "--lang", help="Override language detection (e.g. py, js, ts)."),
+    verbose: bool = typer.Option(False, "--verbose", "-V", help="Enable verbose logging."),
 ):
-    """Run Stage 2: SCIP indexer execution and decoding."""
-    console.print(f"[yellow]Stage 2 'scip' will be built in Milestone 5. Target: {path}[/yellow]")
+    """Run Stage 2: SCIP indexer execution and decoding into scip.json."""
+    target_path = Path(path).resolve()
+    if not target_path.exists():
+        console.print(f"[bold red]Error:[/bold red] Target path not found: {path}")
+        raise typer.Exit(code=1)
+
+    out_dir = Path(out).resolve()
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    console.print(f"\n[bold cyan]Cartog Stage 2 (SCIP):[/bold cyan] Processing [bold]{target_path.as_posix()}[/bold]...")
+
+    res = _resolve_scip(target_path, out_dir, lang=lang, no_scip=False, verbose=verbose)
+    out_file = out_dir / "scip.json"
+
+    total_defs = sum(len(d.definitions) for d in res.documents) if res else 0
+    total_refs = sum(len(d.references) for d in res.documents) if res else 0
+
+    scip_table = Table(title="Stage 2 SCIP Summary", show_header=True, header_style="bold magenta")
+    scip_table.add_column("Metric", style="cyan")
+    scip_table.add_column("Status / Count", justify="right", style="bold")
+
+    if res and res.ran:
+        scip_table.add_row("Indexer Status", "[green]SUCCESS[/green]")
+        if res.indexer:
+            scip_table.add_row("Indexer", res.indexer)
+        scip_table.add_row("Documents", str(len(res.documents)))
+        scip_table.add_row("Definitions", str(total_defs))
+        scip_table.add_row("References", str(total_refs))
+        console.print()
+        console.print(scip_table)
+        console.print(f"\n[bold green]Success:[/bold green] Stage 2 output written to [bold]{out_file.as_posix()}[/bold]\n")
+    else:
+        err_msg = res.error if res else "Unknown error"
+        scip_table.add_row("Indexer Status", f"[yellow]DISABLED ({err_msg})[/yellow]")
+        console.print()
+        console.print(scip_table)
+        console.print(f"\n[yellow]Notice:[/yellow] Stage 2 SCIP output written to [bold]{out_file.as_posix()}[/bold] (indexer disabled: {err_msg})\n")
 
 
 @app.command()
@@ -410,6 +489,8 @@ def build(
         verbose=verbose,
     )
 
+    scip_res = _resolve_scip(target_path, out_dir, lang=lang, no_scip=no_scip, verbose=verbose)
+
     console.print(f"\n[bold cyan]Cartog Stage 3 (Build):[/bold cyan] Merging structural graph for [bold]{target_path.as_posix()}[/bold]...")
 
     graph = build_graph(
@@ -418,6 +499,7 @@ def build(
         roots=scan_result.roots,
         skipped_files=scan_result.skipped,
         manifests=manifest_facts,
+        scip_result=scip_res,
     )
 
     val_res = validate_graph(graph)
@@ -472,6 +554,8 @@ def map(
         verbose=verbose,
     )
 
+    scip_res = _resolve_scip(target_path, out_dir, lang=lang, no_scip=no_scip, verbose=verbose)
+
     console.print(f"\n[bold cyan]Cartog Stage 3 (Build):[/bold cyan] Merging structural graph for [bold]{target_path.as_posix()}[/bold]...")
     graph = build_graph(
         parsed_files=parsed_files,
@@ -479,6 +563,7 @@ def map(
         roots=scan_result.roots,
         skipped_files=scan_result.skipped,
         manifests=manifest_facts,
+        scip_result=scip_res,
     )
     graph_out = out_dir / "graph.json"
     graph.save(graph_out)

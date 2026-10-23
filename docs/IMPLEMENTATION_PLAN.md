@@ -60,19 +60,19 @@ Understanding unfamiliar software repositories is laborious. Developers manually
   - [x] Run Demo Checkpoint 1 (`cartog parse samples/click`) and record in `BUILD_LOG.md`
   - [x] **PAUSE FOR USER CONFIRMATION**
 
-- [ ] **Milestone 4: Tree-sitter on JavaScript/TypeScript & Monorepos**
-  - [ ] Clone `sindresorhus/ky` into `samples/ky`
-  - [ ] Create test fixtures: `tests/fixtures/ts_monorepo` and `tests/fixtures/mixed_repo`
-  - [ ] Build `cartog/langs/js_adapter.py` (grammars for JS, TS, TSX)
-  - [ ] Implement JS/TS symbol extraction (functions, arrow functions, classes, methods, default exports)
-  - [ ] Implement JS/TS import extraction (ESM, CJS `require`, dynamic `import()`)
-  - [ ] Implement JS/TS import resolver (`tsconfig.json` `paths`, `baseUrl`, monorepo `workspaces`)
-  - [ ] Implement Express and Next.js pattern extraction
-  - [ ] Implement monorepo multi-root detection
-  - [ ] Write unit tests for JS/TS adapter and monorepo resolution
-  - [ ] Run Demo Checkpoint 4 (`cartog map samples/ky --no-scip`, `cartog map tests/fixtures/mixed_repo --no-scip`)
-  - [ ] Record in `BUILD_LOG.md`
-  - [ ] **PAUSE FOR USER CONFIRMATION**
+- [x] **Milestone 4: Tree-sitter on JavaScript/TypeScript & Monorepos**
+  - [x] Clone `sindresorhus/ky` into `samples/ky`
+  - [x] Create test fixtures: `tests/fixtures/ts_monorepo` and `tests/fixtures/mixed_repo`
+  - [x] Build `cartog/langs/js_adapter.py` (grammars for JS, TS, TSX)
+  - [x] Implement JS/TS symbol extraction (functions, arrow functions, classes, methods, default exports)
+  - [x] Implement JS/TS import extraction (ESM, CJS `require`, dynamic `import()`)
+  - [x] Implement JS/TS import resolver (`tsconfig.json` `paths`, `baseUrl`, monorepo `workspaces`)
+  - [x] Implement Express and Next.js pattern extraction
+  - [x] Implement monorepo multi-root detection
+  - [x] Write unit tests for JS/TS adapter and monorepo resolution
+  - [x] Run Demo Checkpoint 4 (`cartog map samples/ky --no-scip`, `cartog map tests/fixtures/mixed_repo --no-scip`)
+  - [x] Record in `BUILD_LOG.md`
+  - [x] **PAUSE FOR USER CONFIRMATION**
 
 ---
 
@@ -102,17 +102,17 @@ Understanding unfamiliar software repositories is laborious. Developers manually
 ---
 
 ### Phase 3: Precise Call Graph Resolution with SCIP
-- [ ] **Milestone 5: SCIP on Python**
-  - [ ] Obtain `scip.proto` and generate protobuf bindings `cartog/scip_pb2.py`
-  - [ ] Build `cartog/scip_pass.py` (`run_scip()`, `decode_scip()`, range conversion, occurrence splitting)
-  - [ ] Implement `cartog scip` command producing `scip.json`
-  - [ ] Run Demo Checkpoint 5a (`cartog scip samples/click`) and record in `BUILD_LOG.md`
-  - [ ] **PAUSE FOR USER CONFIRMATION (Checkpoint 5a)**
-  - [ ] Implement enclosing-function mapping (Step 15) and reference-to-definition linking (Step 16)
-  - [ ] Integrate resolved call edges into `cartog/merge.py` (`confidence: "resolved"`)
-  - [ ] Implement graceful fallback when SCIP indexer fails
-  - [ ] Run Demo Checkpoint 5b (`cartog map samples/click`), spot-check 10 call edges, record in `BUILD_LOG.md`
-  - [ ] **PAUSE FOR USER CONFIRMATION (Checkpoint 5b)**
+- [x] **Milestone 5: SCIP on Python**
+  - [x] Obtain `scip.proto` and generate protobuf bindings `cartog/scip_pb2.py`
+  - [x] Build `cartog/scip_pass.py` (`run_scip()`, `decode_scip()`, range conversion, occurrence splitting)
+  - [x] Implement `cartog scip` command producing `scip.json`
+  - [x] Run Demo Checkpoint 5a (`cartog scip samples/click`) and record in `BUILD_LOG.md`
+  - [x] **PAUSE FOR USER CONFIRMATION (Checkpoint 5a)**
+  - [x] Implement enclosing-function mapping (Step 15) and reference-to-definition linking (Step 16)
+  - [x] Integrate resolved call edges into `cartog/merge.py` (`confidence: "resolved"`)
+  - [x] Implement graceful fallback when SCIP indexer fails
+  - [x] Run Demo Checkpoint 5b (`cartog map samples/click`), spot-check 10 call edges, record in `BUILD_LOG.md`
+  - [x] **PAUSE FOR USER CONFIRMATION (Checkpoint 5b)**
 
 - [ ] **Milestone 6: SCIP on JavaScript & TypeScript**
   - [ ] Integrate `scip-typescript` indexer runner and environment pre-checks in `scip_pass.py`
@@ -502,7 +502,7 @@ class Edge:
   - Command 2: `cartog map tests/fixtures/mixed_repo --out cartog-out/mixed-map --no-scip`
     - Spot-check: Distinct language roots for Python backend and TS frontend; subgraphs partitioned cleanly by language and root.
 
-### Milestone 5: SCIP on Python (Two Checkpoints)
+### Milestone 5: SCIP on Python (Two Checkpoints) [COMPLETE]
 - **Goal:** Protobuf bindings for SCIP; indexer runner for `scip-python`; decoding `index.scip`; enclosing-function attribution; linking calls to target definition; fallback handling.
 - **Files Built:**
   - `cartog/scip_pb2.py`: protobuf bindings

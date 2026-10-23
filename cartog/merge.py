@@ -19,6 +19,7 @@ def build_graph(
     skipped_files: Optional[list[dict[str, Any]]] = None,
     languages: Optional[list[str]] = None,
     manifests: Optional[ManifestFacts] = None,
+    scip_result: Optional[Any] = None,
 ) -> Graph:
     """Build a complete structural graph from parsed file results."""
     resolved_roots = roots or ["."]
@@ -34,14 +35,18 @@ def build_graph(
             else:
                 skipped_records.append({"raw": str(s)})
 
+    meta_dict: dict[str, Any] = {
+        "tool_version": "0.1.0",
+        "target_path": Path(target_path).as_posix(),
+        "roots": resolved_roots,
+        "languages": detected_langs,
+    }
+    if scip_result is not None:
+        meta_dict["scip"] = scip_result.to_dict().get("meta", {})
+
     graph = Graph(
         schema_version="1.0.0",
-        meta={
-            "tool_version": "0.1.0",
-            "target_path": Path(target_path).as_posix(),
-            "roots": resolved_roots,
-            "languages": detected_langs,
-        },
+        meta=meta_dict,
         skipped=skipped_records,
     )
 
@@ -457,6 +462,38 @@ def build_graph(
                         target=dep_node.id,
                         kind="depends_on",
                         confidence="import",
+                    )
+                )
+
+    # 5. SCIP call graph integration
+    if scip_result is not None and getattr(scip_result, "documents", None):
+        from cartog.scip_pass import link_calls
+        symbols_by_file = {f.path: f.symbols for f in parsed_files}
+        candidates = link_calls(scip_result, symbols_by_file)
+
+        sym_node_map: dict[tuple[str, str], str] = {}
+        for f in parsed_files:
+            for s in f.symbols:
+                nid = make_node_id(s.kind, f.path, s.qualified_name)
+                sym_node_map[(f.path, s.name)] = nid
+
+        for cand in candidates:
+            if cand.caller_symbol:
+                src_id = sym_node_map.get((cand.caller_path, cand.caller_symbol))
+            else:
+                src_id = make_node_id("file", cand.caller_path, cand.caller_path)
+
+            tgt_id = sym_node_map.get((cand.callee_path, cand.callee_symbol))
+
+            if src_id and tgt_id and src_id in graph.nodes and tgt_id in graph.nodes:
+                graph.add_edge(
+                    Edge(
+                        source=src_id,
+                        target=tgt_id,
+                        kind="calls",
+                        confidence="resolved",
+                        count=cand.count,
+                        evidence=cand.evidence,
                     )
                 )
 

@@ -137,3 +137,37 @@ def test_validation_rejects_invalid_edge_endpoints():
     assert res2.is_valid is False
     assert any("must connect file to dependency" in err for err in res2.errors)
 
+
+def test_build_graph_with_scip_calls():
+    """Verify build_graph integrates SCIP call edges and passes full graph validation."""
+    from pathlib import Path
+    import pytest
+    from cartog.langs import parse_source_file
+    from cartog.scan import walk_files
+    from cartog.scip_pass import decode_scip_index
+
+    fixture_scip = Path("tests/fixtures/prebuilt_scip/index.scip")
+    if not fixture_scip.is_file():
+        pytest.skip("prebuilt index.scip fixture not found")
+
+    scip_res = decode_scip_index(fixture_scip)
+    scan_res = walk_files("tests/fixtures/ts_monorepo")
+    parsed_files = [parse_source_file(f) for f in scan_res.files]
+
+    graph = build_graph(
+        parsed_files=parsed_files,
+        target_path="tests/fixtures/ts_monorepo",
+        roots=scan_res.roots,
+        skipped_files=scan_res.skipped,
+        scip_result=scip_res,
+    )
+
+    val_res = validate_graph(graph)
+    assert val_res.is_valid is True, f"Validation errors: {val_res.errors}"
+
+    calls_edges = [e for e in graph.edges if e.kind == "calls"]
+    assert len(calls_edges) > 0
+    assert any(e.confidence == "resolved" for e in calls_edges)
+    assert any(e.count >= 1 for e in calls_edges)
+
+

@@ -395,6 +395,72 @@ This is an append-only log tracking the construction, verification, and decision
        - `subgraph_frontend ["📁 frontend"]` and `subgraph_frontend_src ["📁 frontend/src"]`
     2. Architecture diagram rendered cleanly to `cartog-out/mixed-map/overview.png`.
 
+---
+
+## Entry 8: SCIP Protobuf Bindings, Indexer Runner & Call Graph Resolution (Milestone 5)
+
+- **Step:** Built SCIP Stage 2 indexing, binary protobuf decoding, enclosing-function attribution (Step 15), caller $\rightarrow$ callee function linking with `confidence: "resolved"` (Step 16), graceful fallback architecture, and full graph merge integration.
+- **What was built / done:**
+  - `cartog/scip.proto` & `cartog/scip_pb2.py`: Fetched official `scip.proto` schema from GitHub (`scip-code/scip/main/scip.proto`) and generated Python protobuf bindings using `grpc_tools.protoc`.
+  - `cartog/scip_pass.py`:
+    - `normalize_scip_range()`: Translates SCIP 3-tuple `[line, startCol, endCol]` and 4-tuple `[startLine, startCol, endLine, endCol]` representations to Cartog `SourceRange`.
+    - `decode_scip_index()`: Deserializes binary `index.scip` protobuf format into `ScipIndexResult`, filters out non-global `local ` symbols, separates definitions (role `0x1`) and references, and indexes definitions by global SCIP symbol.
+    - `run_scip_indexer()`: Executes external indexer (`scip-python` or `scip-typescript`) inside an isolated hash cache directory (`.cartog/scip/<hash>/`) with indexer pre-checks, 120s timeout, and graceful failure handling.
+    - `find_enclosing_symbol()`: Finds innermost enclosing function, method, or class for any given source range.
+    - `link_calls()`: Correlates caller reference occurrence to callee definition, resolving cross-module function/method calls to produce `CallEdgeCandidate`s with source locations, evidence, and occurrence counts.
+    - `write_scip_json()`: Serializes SCIP stage output to `scip.json`.
+  - `cartog/cli.py`:
+    - Added `cartog scip <path>` command producing `scip.json` with documents, definitions, and references.
+    - Updated `cartog build` and `cartog map` to automatically resolve and integrate SCIP call graph data or fall back seamlessly.
+    - Updated `cartog doctor` to report status of `scip_pb2 bindings`, `scip-python`, and `scip-typescript`.
+  - `cartog/merge.py`:
+    - Integrated SCIP call candidates into `build_graph()` to add `calls` edges (`confidence: "resolved"`, `count`, `evidence`) connecting caller function $\rightarrow$ callee function.
+  - `tests/fixtures/prebuilt_scip/index.scip`: Created deterministic prebuilt SCIP binary fixture from `ts_monorepo`.
+  - Tests:
+    - Added `tests/test_scip_pass.py` (6 tests) covering range translation, binary fixture decoding, symbol containment, call linking, and error fallbacks.
+    - Added integration test `test_build_graph_with_scip_calls` in `tests/test_merge.py`.
+    - Total test suite expanded to 50 passing tests.
+- **How it was verified:**
+  - `pytest -v`: All 50 tests passed in 2.74s.
+  - Checkpoint 5a: Verified `cartog scip samples/click --out cartog-out/click-scip` produced `scip.json` cleanly reporting fallback status without crashing.
+  - Checkpoint 5b:
+    - Verified `cartog map samples/click --out cartog-out/click-map-scip` gracefully builds Tree-sitter import resolution graph and Mermaid diagrams.
+    - Verified `cartog map tests/fixtures/ts_monorepo --out cartog-out/ts-monorepo-map` indexed with `scip-typescript`, creating 4 `calls` edges with `confidence: "resolved"`, including `runWebApp` in `app.ts` calling `formatGreeting` in `utils.ts`.
+- **Problems and decisions:**
+  - Documented Issue 12 in `docs/ISSUES_AND_DECISIONS.md`.
+
+---
+
+## Checkpoint Report: Milestone 5 (SCIP on Python & Call Graph Resolution)
+
+- **Checkpoint 5a Command executed:** `cartog scip samples/click --out cartog-out/click-scip`
+- **Output 5a summary:**
+  - Generated `cartog-out/click-scip/scip.json`.
+  - Upstream `@sourcegraph/scip-python` Windows path separator regex bug detected during pre-check.
+  - Gracefully reported `indexer: "scip-python (disabled: ...)"` with `ran: false`, avoiding any process crash.
+
+- **Checkpoint 5b Command 1 executed:** `cartog map samples/click --out cartog-out/click-map-scip`
+- **Output 5b (Click Fallback) summary:**
+  - Gracefully fell back to Tree-sitter import resolution graph.
+  - Produced `graph.json` (2,460 nodes, 3,077 edges), `overview.mmd`, and `overview.png`. Graph validation passed with 0 errors.
+
+- **Checkpoint 5b Command 2 executed:** `cartog map tests/fixtures/ts_monorepo --out cartog-out/ts-monorepo-map`
+- **Output 5b (SCIP Resolved Call Graph) summary:**
+  - Indexer: `scip-typescript` (4 documents, definitions and references extracted).
+  - Total Graph Nodes: **15**
+    - `file`: 5, `folder`: 5, `class`: 1, `method`: 1, `function`: 2, `dependency`: 1.
+  - Total Graph Edges: **22**
+    - `contains`: 13
+    - `imports`: 4
+    - `depends_on`: 1
+    - `calls`: **4** (`confidence: "resolved"`, count: 1)
+  - Spot-Check Details:
+    1. Verified `calls` edge: caller function `runWebApp` (`packages/web/src/app.ts:5`) $\rightarrow$ callee function `formatGreeting` (`packages/core/src/utils.ts`) with `confidence: "resolved"` and evidence `["packages/web/src/app.ts:5"]`.
+    2. Verified caller module `packages/web/src/index.ts` $\rightarrow$ callee `runWebApp` with `confidence: "resolved"`.
+    3. Architecture diagram generated: `cartog-out/ts-monorepo-map/overview.mmd` and rendered `overview.png`.
+    4. Graph validation passed with 0 errors.
+
+
 
 
 

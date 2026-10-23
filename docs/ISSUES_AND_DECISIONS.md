@@ -372,6 +372,35 @@ In `tests/test_js_adapter.py`, `test_resolve_tsconfig_paths_and_workspaces` fail
 - **Target-Relative Config Resolution:** Updated `_get_tsconfig()` and `_discover_workspace_packages()` in [cartog/langs/js_adapter.py](file:///c:/Users/rishi/OneDrive/Desktop/Dev/cartog/cartog/langs/js_adapter.py) to resolve `tsconfig.json` and `package.json` relative to `project_context.target_path / root_dir`.
 - **Test Alignment:** In `tests/test_js_adapter.py`, passed `target_path="tests/fixtures/ts_monorepo"` to `ProjectContext`. All 43 tests pass cleanly.
 
+---
+
+## Issue 12: Upstream `scip-python` Windows Regex Escape Crash & Graceful Fallback Architecture
+
+- **Component:** `cartog.scip_pass`, `cartog.cli`, `cartog.doctor`
+- **Phase / Milestone:** Phase 1 / Milestone 5 (SCIP on Python & Call Graph Resolution)
+- **Environment:** Windows 11 AMD64, Node.js v22.13.0, `@sourcegraph/scip-python` v0.1.7
+
+### 1. Symptom
+Invoking `@sourcegraph/scip-python` on Windows immediately crashes with exit code 1:
+`SyntaxError: Invalid regular expression: /\/: \ at end of pattern` in `dist/scip-python/src/virtualFile.js`.
+
+### 2. Root Cause Analysis
+- In `@sourcegraph/scip-python`, the upstream JavaScript implementation contains `const pathSepRegex = new RegExp(path.sep, 'g');`.
+- On POSIX platforms, `path.sep` is `/`.
+- On Windows, `path.sep` is `\`. Passing `\` to `new RegExp('\\')` without escaping produces a trailing unescaped backslash, triggering a V8 syntax error before the CLI can even parse arguments or print `--version`.
+- Modifying local files in npm global packages would be brittle, non-portable, and would break on other developers' machines or CI environments.
+
+### 3. Solution & Decision
+- **Fail-Safe Pre-Check Execution:** In [cartog/scip_pass.py](file:///c:/Users/rishi/OneDrive/Desktop/Dev/cartog/cartog/scip_pass.py) `run_scip_indexer()`, run an isolated pre-check `[indexer_name, "--version"]`. If the indexer returns a non-zero exit code or throws, catch it immediately without halting the pipeline.
+- **Graceful SCIP Stage Fallback:**
+  - Record the failure reason in `scip.json` under `meta.error` and set `meta.ran: false`.
+  - In `cartog map` and `cartog build`, if SCIP is disabled or unavailable, log a clean user notice and seamlessly fall back to the Tree-sitter import resolution graph (`confidence: "import"`).
+- **Deterministic Prebuilt Fixture for Tests & CI:**
+  - Index `tests/fixtures/ts_monorepo` with `scip-typescript` (which does not suffer from the Windows regex bug) and save a prebuilt binary to `tests/fixtures/prebuilt_scip/index.scip`.
+  - Use this fixture in `test_scip_pass.py` and `test_merge.py` to ensure unit tests and CI verify protobuf decoding, range translation, enclosing-symbol lookup, and call-linking deterministically on all platforms.
+- **Doctor Diagnostic Transparency:** `cartog doctor` executes `--version` on `scip-python` and cleanly displays `WARN (Exit code 1)` alongside npm remediation instructions instead of crashing.
+
+
 
 
 
