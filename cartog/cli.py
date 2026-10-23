@@ -15,6 +15,10 @@ from cartog.scan import walk_files
 from cartog.cache import ParseCache
 from cartog.langs import parse_source_file
 from cartog.export_json import write_parse_json
+from cartog.model import Graph
+from cartog.merge import build_graph
+from cartog.validate import validate_graph
+from cartog.export_mermaid import generate_overview_mermaid, render_mermaid
 
 app = typer.Typer(
     name="cartog",
@@ -218,16 +222,15 @@ def doctor():
         console.print("\n[bold red]Some core prerequisites failed. Please see the remediation instructions above.[/bold red]\n")
 
 
-@app.command()
-def parse(
-    path: str = typer.Argument(..., help="Path to project directory to parse."),
-    out: str = typer.Option("cartog-out", "--out", help="Output directory."),
-    lang: Optional[str] = typer.Option(None, "--lang", help="Override language detection (e.g. py, js)."),
-    max_file_size: Optional[float] = typer.Option(DEFAULT_MAX_FILE_SIZE_MB, "--max-file-size", help="Maximum file size in MB to parse (default: 1.0)."),
-    no_max_file_size: bool = typer.Option(False, "--no-max-file-size", help="Disable file size limit."),
-    verbose: bool = typer.Option(False, "--verbose", "-V", help="Enable verbose logging."),
+def _execute_parse(
+    path: str,
+    out: str,
+    lang: Optional[str] = None,
+    max_file_size: Optional[float] = DEFAULT_MAX_FILE_SIZE_MB,
+    no_max_file_size: bool = False,
+    verbose: bool = False,
 ):
-    """Run Stage 1: tree-sitter AST syntax, imports, and framework pattern extraction."""
+    """Execute Stage 1 parsing pipeline and return (target_path, out_dir, scan_result, parsed_files)."""
     target_path = Path(path).resolve()
     if not target_path.exists() or not target_path.is_dir():
         console.print(f"[bold red]Error:[/bold red] Target directory not found: {path}")
@@ -237,10 +240,8 @@ def parse(
     out_dir.mkdir(parents=True, exist_ok=True)
     cache_dir = out_dir / ".cartog"
 
-    # Compute max bytes limit
     max_bytes: Optional[int] = None if no_max_file_size else (int(max_file_size * 1024 * 1024) if max_file_size else None)
 
-    # Determine language filter
     target_langs = None
     if lang:
         normalized = lang.lower().strip()
@@ -257,7 +258,6 @@ def parse(
 
     console.print(f"\n[bold cyan]Cartog Stage 1 (Parse):[/bold cyan] Scanning [bold]{target_path.as_posix()}[/bold]...")
 
-    # 1. Walk and filter files
     try:
         scan_result = walk_files(
             target_path,
@@ -270,7 +270,6 @@ def parse(
 
     console.print(f"Discovered [green]{len(scan_result.files)}[/green] source files ([yellow]{len(scan_result.skipped)}[/yellow] skipped).")
 
-    # 2. Parse files with tree-sitter & cache
     cache = ParseCache(cache_dir)
     parsed_files = []
     symbol_kind_counts = {"function": 0, "class": 0, "method": 0}
@@ -285,7 +284,6 @@ def parse(
 
     cache.save()
 
-    # 3. Write parse.json
     detected_languages = sorted(list({f.language for f in scan_result.files})) or ["python"]
     out_file = out_dir / "parse.json"
     write_parse_json(
@@ -297,7 +295,28 @@ def parse(
         out_file=out_file,
     )
 
-    # 4. Display human-readable summary table
+    return target_path, out_dir, scan_result, parsed_files, symbol_kind_counts, total_raw_imports, cache, out_file
+
+
+@app.command()
+def parse(
+    path: str = typer.Argument(..., help="Path to project directory to parse."),
+    out: str = typer.Option("cartog-out", "--out", help="Output directory."),
+    lang: Optional[str] = typer.Option(None, "--lang", help="Override language detection (e.g. py, js)."),
+    max_file_size: Optional[float] = typer.Option(DEFAULT_MAX_FILE_SIZE_MB, "--max-file-size", help="Maximum file size in MB to parse (default: 1.0)."),
+    no_max_file_size: bool = typer.Option(False, "--no-max-file-size", help="Disable file size limit."),
+    verbose: bool = typer.Option(False, "--verbose", "-V", help="Enable verbose logging."),
+):
+    """Run Stage 1: tree-sitter AST syntax, imports, and framework pattern extraction."""
+    target_path, out_dir, scan_result, parsed_files, symbol_kind_counts, total_raw_imports, cache, out_file = _execute_parse(
+        path=path,
+        out=out,
+        lang=lang,
+        max_file_size=max_file_size,
+        no_max_file_size=no_max_file_size,
+        verbose=verbose,
+    )
+
     summary_table = Table(title="Stage 1 Parse Summary", show_header=True, header_style="bold magenta")
     summary_table.add_column("Metric", style="cyan")
     summary_table.add_column("Count", justify="right", style="bold")
@@ -315,7 +334,6 @@ def parse(
     console.print()
     console.print(summary_table)
 
-    # Top files by symbol density
     if parsed_files:
         top_files = sorted(parsed_files, key=lambda f: len(f.symbols), reverse=True)[:5]
         top_table = Table(title="Top Files by Symbol Count", show_header=True, header_style="bold blue")
@@ -327,7 +345,6 @@ def parse(
         console.print()
         console.print(top_table)
 
-    # Show skipped summary
     if scan_result.skipped and (verbose or len(scan_result.skipped) <= 10):
         skipped_table = Table(title="Skipped Files Summary", show_header=True, header_style="bold yellow")
         skipped_table.add_column("Path", style="dim")
@@ -355,10 +372,56 @@ def scip(
 def build(
     path: str = typer.Argument(..., help="Path to project directory."),
     out: str = typer.Option("cartog-out", "--out", help="Output directory."),
+    lang: Optional[str] = typer.Option(None, "--lang", help="Override language detection (e.g. py, js)."),
+    max_file_size: Optional[float] = typer.Option(DEFAULT_MAX_FILE_SIZE_MB, "--max-file-size", help="Maximum file size in MB to parse (default: 1.0)."),
+    no_max_file_size: bool = typer.Option(False, "--no-max-file-size", help="Disable file size limit."),
     no_scip: bool = typer.Option(False, "--no-scip", help="Build graph without SCIP data."),
+    verbose: bool = typer.Option(False, "--verbose", "-V", help="Enable verbose logging."),
 ):
-    """Run Stage 3: Merge parse and SCIP representations into graph.json."""
-    console.print(f"[yellow]Stage 3 'build' will be built in Milestone 2. Target: {path}[/yellow]")
+    """Run Stage 3: Merge parse representations into graph.json."""
+    target_path, out_dir, scan_result, parsed_files, _, _, _, _ = _execute_parse(
+        path=path,
+        out=out,
+        lang=lang,
+        max_file_size=max_file_size,
+        no_max_file_size=no_max_file_size,
+        verbose=verbose,
+    )
+
+    console.print(f"\n[bold cyan]Cartog Stage 3 (Build):[/bold cyan] Merging structural graph for [bold]{target_path.as_posix()}[/bold]...")
+
+    graph = build_graph(
+        parsed_files=parsed_files,
+        target_path=target_path.as_posix(),
+        roots=scan_result.roots,
+        skipped_files=scan_result.skipped,
+    )
+
+    val_res = validate_graph(graph)
+
+    graph_out = out_dir / "graph.json"
+    graph.save(graph_out)
+
+    build_table = Table(title="Stage 3 Graph Summary", show_header=True, header_style="bold magenta")
+    build_table.add_column("Category", style="cyan")
+    build_table.add_column("Type")
+    build_table.add_column("Count", justify="right", style="bold")
+
+    for k, v in sorted(graph.stats.items()):
+        if k.startswith("nodes_"):
+            build_table.add_row("Node", k[6:], str(v))
+        elif k.startswith("edges_"):
+            build_table.add_row("Edge", k[6:], str(v))
+
+    build_table.add_row("Total", "Nodes", str(graph.stats.get("total_nodes", 0)))
+    build_table.add_row("Total", "Edges", str(graph.stats.get("total_edges", 0)))
+    val_status = "[green]VALID[/green]" if val_res.is_valid else f"[red]INVALID ({len(val_res.errors)} errors)[/red]"
+    build_table.add_row("Integrity", "Validation", val_status)
+
+    console.print()
+    console.print(build_table)
+    console.print(f"\n[bold green]Success:[/bold green] Graph written to [bold]{graph_out.as_posix()}[/bold]\n")
+    return graph
 
 
 @app.command()
@@ -368,14 +431,49 @@ def map(
     lang: Optional[str] = typer.Option(None, "--lang", help="Override language detection."),
     focus: Optional[str] = typer.Option(None, "--focus", help="Focus on specific subpath."),
     depth: int = typer.Option(3, "--depth", help="Folder depth for overview."),
-    max_nodes: int = typer.Option(50, "--max-nodes", help="Maximum diagram nodes."),
+    max_nodes: int = typer.Option(60, "--max-nodes", help="Maximum diagram nodes before collapsing."),
+    include: Optional[str] = typer.Option(None, "--include", help="Comma-separated categories to expand (e.g. tests,docs,examples,scripts)."),
     max_file_size: Optional[float] = typer.Option(DEFAULT_MAX_FILE_SIZE_MB, "--max-file-size", help="Maximum file size in MB to parse (default: 1.0)."),
     no_max_file_size: bool = typer.Option(False, "--no-max-file-size", help="Disable file size limit."),
     no_scip: bool = typer.Option(False, "--no-scip", help="Skip SCIP indexing."),
     include_heuristic: bool = typer.Option(False, "--include-heuristic", help="Include heuristic edges."),
+    verbose: bool = typer.Option(False, "--verbose", "-V", help="Enable verbose logging."),
 ):
-    """Run full pipeline (parse -> scip -> build -> export) and produce Mermaid diagrams."""
-    console.print(f"[yellow]Full 'map' pipeline will be assembled in Milestone 2+. Target: {path}[/yellow]")
+    """Run full pipeline (parse -> build -> export) and produce Mermaid diagrams."""
+    target_path, out_dir, scan_result, parsed_files, _, _, _, _ = _execute_parse(
+        path=path,
+        out=out,
+        lang=lang,
+        max_file_size=max_file_size,
+        no_max_file_size=no_max_file_size,
+        verbose=verbose,
+    )
+
+    console.print(f"\n[bold cyan]Cartog Stage 3 (Build):[/bold cyan] Merging structural graph for [bold]{target_path.as_posix()}[/bold]...")
+    graph = build_graph(
+        parsed_files=parsed_files,
+        target_path=target_path.as_posix(),
+        roots=scan_result.roots,
+        skipped_files=scan_result.skipped,
+    )
+    graph_out = out_dir / "graph.json"
+    graph.save(graph_out)
+
+    console.print(f"\n[bold cyan]Cartog Stage 4 (Map):[/bold cyan] Generating Mermaid diagrams for [bold]{target_path.as_posix()}[/bold]...")
+    include_set = {s.strip().lower() for s in include.split(",")} if include else None
+    mmd_content = generate_overview_mermaid(graph, max_nodes=max_nodes, include=include_set)
+    mmd_file = out_dir / "overview.mmd"
+    mmd_file.write_text(mmd_content, encoding="utf-8")
+    console.print(f"  Mermaid source written: [bold]{mmd_file.as_posix()}[/bold]")
+
+    png_file = out_dir / "overview.png"
+    rendered, msg = render_mermaid(mmd_file, png_file)
+    if rendered:
+        console.print(f"  [green]Rendered image written:[/green] [bold]{png_file.as_posix()}[/bold]")
+    else:
+        console.print(f"  [yellow]Notice:[/yellow] {msg} (Mermaid source is saved in {mmd_file.name})")
+
+    console.print(f"\n[bold green]Success:[/bold green] Architecture map complete in [bold]{out_dir.as_posix()}[/bold]\n")
 
 
 @app.command()
@@ -392,13 +490,50 @@ def flow(
 
 @app.command()
 def check(
-    path: str = typer.Argument(..., help="Path to project directory."),
-    out: str = typer.Option("cartog-out", "--out", help="Output directory."),
+    path: str = typer.Argument(..., help="Path to project directory or graph.json."),
+    out: str = typer.Option("cartog-out", "--out", help="Output directory containing graph.json."),
     strict: bool = typer.Option(False, "--strict", help="Fail with non-zero exit code on validation errors."),
 ):
     """Validate graph integrity and report findings."""
-    console.print(f"[yellow]'check' command will be built in Milestone 7. Target: {path}[/yellow]")
+    p = Path(path)
+    if p.is_file() and p.suffix == ".json":
+        graph_file = p
+    elif (p / "graph.json").is_file():
+        graph_file = p / "graph.json"
+    else:
+        graph_file = Path(out) / "graph.json"
+
+    if not graph_file.exists():
+        console.print(f"[bold red]Error:[/bold red] graph.json not found at {graph_file.as_posix()}")
+        raise typer.Exit(code=1)
+
+    graph = Graph.load(graph_file)
+    res = validate_graph(graph)
+
+    check_table = Table(title="Graph Integrity Report", show_header=True, header_style="bold magenta")
+    check_table.add_column("Check", style="cyan")
+    check_table.add_column("Status")
+    check_table.add_column("Count", justify="right")
+
+    status_str = "[green]PASS[/green]" if res.is_valid else "[red]FAIL[/red]"
+    check_table.add_row("Overall Integrity", status_str, f"{len(res.errors)} errors")
+    check_table.add_row("Warnings", "[yellow]WARN[/yellow]" if res.warnings else "[green]CLEAN[/green]", str(len(res.warnings)))
+    console.print()
+    console.print(check_table)
+
+    if res.errors:
+        console.print("\n[bold red]Validation Errors:[/bold red]")
+        for err in res.errors[:10]:
+            console.print(f"  - [red]{err}[/red]")
+    if res.warnings:
+        console.print("\n[bold yellow]Validation Warnings:[/bold yellow]")
+        for w in res.warnings[:10]:
+            console.print(f"  - [yellow]{w}[/yellow]")
+
+    if strict and not res.is_valid:
+        raise typer.Exit(code=1)
 
 
 if __name__ == "__main__":
     app()
+

@@ -79,15 +79,37 @@ def detect_language(path: Path) -> Optional[str]:
 
 
 def detect_roots(repo_path: Path) -> list[str]:
-    """Detect project roots in repository (monorepos or single packages)."""
-    roots = ["."]
-    # Check for src layout or nested packages with pyproject.toml / package.json
-    for child in repo_path.iterdir():
-        if child.is_dir() and child.name not in DEFAULT_IGNORED_DIRS and not child.name.startswith("."):
-            if (child / "pyproject.toml").exists() or (child / "package.json").exists() or (child / "setup.py").exists():
-                rel = child.relative_to(repo_path).as_posix()
-                if rel not in roots:
-                    roots.append(rel)
+    """Detect project roots in repository recursively (monorepos or nested packages).
+
+    A root is any folder containing pyproject.toml, setup.py, setup.cfg, or package.json.
+    Respects DEFAULT_IGNORED_DIRS and hidden folders.
+    """
+    roots: set[str] = {"."}
+
+    def _walk(curr: Path):
+        try:
+            entries = list(curr.iterdir())
+        except (PermissionError, OSError):
+            return
+
+        if curr != repo_path:
+            has_marker = (
+                (curr / "pyproject.toml").is_file()
+                or (curr / "setup.py").is_file()
+                or (curr / "setup.cfg").is_file()
+                or (curr / "package.json").is_file()
+            )
+            if has_marker:
+                rel = curr.relative_to(repo_path).as_posix()
+                roots.add(rel)
+
+        for entry in entries:
+            if entry.is_dir():
+                if entry.name in DEFAULT_IGNORED_DIRS or entry.name.startswith("."):
+                    continue
+                _walk(entry)
+
+    _walk(repo_path)
     return sorted(roots)
 
 

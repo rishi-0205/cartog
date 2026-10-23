@@ -191,5 +191,143 @@ The crash appeared intermittently in unrelated code (such as buffer slicing in `
 - On `tree-sitter 0.25.x`, setting `QueryCursor.match_limit` has a known upstream defect where it arms an unintended 10 ms timeout instead of setting the match count limit (upstream issue **#502** on `tree-sitter/py-tree-sitter`). This can cause queries to silently truncate AST captures.
 - **Rule for Cartog:** Never call or configure `match_limit` on `QueryCursor` anywhere in Cartog codebase.
 
+---
+
+## Issue 4: `TypeError: Object of type SkippedFile is not JSON serializable` in `cartog map`
+
+- **Component:** `cartog.merge.build_graph`, `cartog.model.Graph.to_dict`
+- **Phase / Milestone:** Phase 1 / Milestone 2 (Imports & The First Map)
+- **Environment:** Python 3.13.1, Windows 11 AMD64
+
+### 1. Symptom
+During `cartog map samples/click --no-scip --out cartog-out/click-map`, execution halted with:
+```text
+TypeError: Object of type SkippedFile is not JSON serializable
+File "cartog\model.py", line 250 in save
+File "cartog\model.py", line 245 in to_json
+```
+
+### 2. Root Cause Analysis
+- In `cartog.scan`, `scan_result.skipped` contains `SkippedFile` dataclass objects (`path`, `reason`).
+- In `cartog.merge.build_graph()`, `skipped_files=scan_result.skipped` was assigned directly into `graph.skipped`.
+- Python's standard `json.dumps()` cannot serialize arbitrary Python objects or dataclasses without explicit conversion to dictionaries or custom encoders.
+
+### 3. Solution & Decision
+- **In `cartog.merge.build_graph()`:** Explicitly normalize items in `skipped_files` to `{"path": s.path, "reason": s.reason}` if they are `SkippedFile` instances.
+- **In `cartog.model.Graph.to_dict()`:** Add defensive normalization ensuring any `SkippedFile` object is mapped to its dictionary representation before `json.dumps()` is called.
+
+---
+
+## Issue 5: Directory Output Path Fallback in `cartog check`
+
+- **Component:** `cartog.cli.check`
+- **Phase / Milestone:** Phase 1 / Milestone 2 (Imports & The First Map)
+- **Environment:** Python 3.13.1, Windows 11 AMD64
+
+### 1. Symptom
+Running `cartog check cartog-out/click-map` produced:
+```text
+Error: graph.json not found at cartog-out/graph.json
+```
+
+### 2. Root Cause Analysis
+- `cartog check` was checking `if p.is_file() and p.suffix == ".json"`.
+- When passed an output directory path (`cartog-out/click-map`), `p.is_file()` evaluated to `False`.
+- The CLI command fell back unconditionally to `Path(out) / "graph.json"` (defaulting `out` to `cartog-out`), failing to inspect the supplied directory for `graph.json`.
+
+### 3. Solution & Decision
+- In `cartog/cli.py`, updated path resolution order:
+  1. If `p` is a `.json` file, use `p`.
+  2. Else if `(p / "graph.json").is_file()`, use `p / "graph.json"`.
+  3. Otherwise fall back to `Path(out) / "graph.json"`.
+- This seamlessly supports passing a path directly to a `graph.json` file, an output directory, or specifying the output folder via `--out`.
+
+---
+
+## Issue 6: Submodule Import Resolution Order (`from pkg import submodule`)
+
+- **Component:** `cartog.langs.python_adapter.resolve_import`
+- **Phase / Milestone:** Phase 1 / Milestone 2 (Imports & The First Map)
+- **Environment:** Python 3.13.1, Windows 11 AMD64
+
+### 1. Symptom
+`tests/test_import_resolution.py` failed assertion:
+`from click import core` resolved to `src/click/__init__.py` instead of `src/click/core.py`.
+
+### 2. Root Cause Analysis
+- In `resolve_import`, `if specifier in project_context.module_to_file:` was evaluated before checking if any name in `record.names` matched a known submodule (`f"{specifier}.{name}"`).
+- Because `"click"` maps to `src/click/__init__.py` in `module_to_file`, the resolver matched early and resolved to the package root.
+
+### 3. Solution & Decision
+- Following Python's actual import semantics (where Python's import machinery checks whether `pkg.submodule` is a loadable module before looking for attributes in `pkg`), prioritized checking whether `f"{specifier}.{name}"` exists in `module_to_file` or as a submodule file on disk before resolving `specifier` to the package `__init__.py`.
+- If no imported name corresponds to a submodule, resolution cleanly falls back to the package `__init__.py`.
+
+---
+
+## Issue 7: Inverted & Silently Dropped Edges in Overview Mermaid Exporter
+
+- **Component:** `cartog.export_mermaid`
+- **Phase / Milestone:** Phase 1 / Milestone 2 (Imports & The First Map)
+- **Environment:** Python 3.13.1, Windows 11 AMD64
+
+### 1. Symptom
+In the Click overview diagram, `src/click` was collapsed into a single box containing 17 files, with zero internal edges displayed. Conversely, `tests/test_types` and `tests/test_utils` were fully expanded into file subgraphs, resulting in a diagram dominated by test files while Click's core library appeared as an edge sink.
+
+### 2. Root Cause Analysis & Why the Old Rule Was Wrong
+- **The Old Rule:** `if collapse and len(files) > 15:` collapsed any folder containing more than 15 files.
+- **Why It Was Wrong:**
+  1. *Star Diagram:* In real-world repositories, the main library folder (such as `src/click` with 17 files) naturally has the most files. Collapsing based purely on `len(files) > 15` collapsed the very code users need to understand, while keeping small auxiliary subfolders expanded.
+  2. *Silent Edge Deletion:* Any edge between two files inside the collapsed folder mapped to `src_visible == tgt_visible == cluster_src_click`. Because self-loops were discarded, all 61 intra-library edges were silently dropped without any summary or indication.
+  3. *Unweighted Edges:* Incoming edges from multiple files into the same target were drawn with equal weight without aggregating counts.
+
+### 3. Solution & Decision
+- **Categorized Folder Collapse:** Folders are classified into `source` (default), `tests`, `docs`, `examples`, and `scripts`. By default, `source` folders remain expanded at file level, while auxiliary categories (`tests`, `docs`, `examples`, `scripts`) collapse into a single category node each (e.g. `tests (59 files)`), with `--include` available to selectively expand them.
+- **Never Drop Edges Silently:** When a folder or category is collapsed, internal edges between its constituent files are summarized in its label (e.g. `examples (14 files, 2 internal imports)`).
+- **Aggregated Weighted Edges:** Edges between collapsed nodes and files are aggregated with the count rendered on the edge label (e.g. `cat_tests -->|57| file_init`).
+- **Budget-Aware Max-Nodes Enforcement:** Budget (`--max-nodes`) collapses auxiliary categories first, then least-connected source folders by degree, never collapsing the main source folder before others.
+
+---
+
+## Issue 8: Non-Recursive Root Detection and False External Package Classification
+
+- **Component:** `cartog.scan.detect_roots`, `cartog.langs.python_adapter`
+- **Phase / Milestone:** Phase 1 / Milestone 2 (Imports & The First Map)
+- **Environment:** Python 3.13.1, Windows 11 AMD64
+
+### 1. Symptom
+In `examples/complex`, statements like `from complex.cli import pass_environment` in `commands/cmd_init.py` were classified as external dependencies (`external:complex`), creating an external dependency node instead of resolving to repo-internal file `examples/complex/complex/cli.py`.
+
+### 2. Root Cause Analysis & Why the Old Rule Was Wrong
+- **The Old Rule:** `detect_roots()` only inspected immediate children (`repo_path.iterdir()`).
+- **Why It Was Wrong:** Nested subprojects, example packages, or monorepo packages located more than one level deep (e.g., `examples/complex/pyproject.toml`) were completely missed. `roots` defaulted only to `["."]`. Consequently, module names were computed relative to the repo root (`examples.complex.complex.cli`) rather than the nested package root (`complex.cli`). When resolving `complex.cli`, the resolver found no matching module and fell back to marking it as external.
+
+### 3. Solution & Decision
+- **Recursive Root Detection:** `detect_roots()` walks directories recursively (respecting ignore lists) and identifies any folder containing `pyproject.toml`, `setup.py`, `setup.cfg`, or `package.json`.
+- **Nearest Enclosing Root Module Naming:** Each file is assigned to its nearest enclosing root. Module names are computed relative to that root and its `src`/`lib` directory.
+- **Ordered Root Resolution:** Absolute import resolution tries the file's enclosing root first, then other roots in the repo (enabling examples and tests to import both their local package and the main library).
+- **Repo-Match Fallback Warning:** Only falls back to `external:<pkg>` after all roots have been tried. If the package name matches any file or folder in the repository, a warning is logged naming the file and import.
+
+---
+
+## Issue 9: Inverted Edge Kinds for Internal Imports vs External Dependencies
+
+- **Component:** `cartog.merge.build_graph`, `cartog.validate.validate_graph`
+- **Phase / Milestone:** Phase 1 / Milestone 2 (Imports & The First Map)
+- **Environment:** Python 3.13.1, Windows 11 AMD64
+
+### 1. Symptom
+`graph.json` contained both `imports` and `depends_on` edges connecting the exact same pairs of internal repo files (e.g., 61 `imports` and 61 `depends_on` edges within `src/click`), while external dependencies were linked via `imports` edges.
+
+### 2. Root Cause Analysis & Why the Old Rule Was Wrong
+- **The Old Rule:** `merge.py` created `kind="imports"` when connecting to external dependency nodes, and created an additional `kind="depends_on"` edge for every internal file-to-file import.
+- **Why It Was Wrong:** This duplicated every file-to-file relationship into two separate edge types in the graph, inflating edge counts and confusing graph semantics. `imports` should represent file-to-file code imports, while `depends_on` should represent package-level dependency relationships from files to external dependencies.
+
+### 3. Solution & Decision
+- **Strict Edge Semantics:**
+  - `imports`: Exclusively connects file node $\rightarrow$ file node.
+  - `depends_on`: Exclusively connects file node $\rightarrow$ external dependency node.
+- **Validation Rule:** Added strict endpoint checks in `validate_graph()` that reject graphs where `imports` connects to non-files or `depends_on` connects non-dependencies. Added test coverage in `tests/test_merge.py`.
+
+
 
 

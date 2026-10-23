@@ -77,6 +77,15 @@ class ParseFileResult:
         }
 
 
+@dataclass
+class ProjectContext:
+    """Repository-wide context for import and reference resolution."""
+    roots: list[str] = field(default_factory=lambda: ["."])
+    all_files: set[str] = field(default_factory=set)
+    module_to_file: dict[str, str] = field(default_factory=dict)
+    root_to_modules: dict[str, dict[str, str]] = field(default_factory=dict)
+
+
 class LanguageAdapter(ABC):
     """Abstract Base Class for language-specific tree-sitter adapters."""
 

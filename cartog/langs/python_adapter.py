@@ -8,6 +8,7 @@ import tree_sitter_python
 from cartog.langs.base import (
     ImportRecord,
     LanguageAdapter,
+    ProjectContext,
     SymbolRecord,
 )
 
@@ -41,15 +42,45 @@ class ScopeEntry(NamedTuple):
     is_class: bool
 
 
-def path_to_module_name(rel_path: str) -> str:
-    """Convert a repo-relative path like 'src/click/core.py' or 'click/core.py' into a module path."""
-    p = Path(rel_path)
-    parts = list(p.parts)
+def get_enclosing_root(rel_path: str, roots: list[str]) -> str:
+    """Find the nearest enclosing project root for a repo-relative file path."""
+    p_str = rel_path.replace("\\", "/")
+    matching = []
+    for r in roots:
+        r_norm = r.replace("\\", "/").rstrip("/")
+        if r_norm == "." or not r_norm:
+            matching.append((".", 0))
+        elif p_str == r_norm or p_str.startswith(r_norm + "/"):
+            matching.append((r_norm, len(r_norm)))
+    if not matching:
+        return "."
+    matching.sort(key=lambda x: x[1], reverse=True)
+    return matching[0][0]
+
+
+def path_to_module_name(
+    rel_path: str,
+    roots: Optional[list[str]] = None,
+    all_files: Optional[set[str]] = None,
+) -> str:
+    """Convert a repo-relative path into a Python module name relative to its enclosing root and source folder."""
+    p_str = rel_path.replace("\\", "/")
+    roots_list = roots or ["."]
+    enc_root = get_enclosing_root(p_str, roots_list)
+
+    if enc_root == "." or not enc_root:
+        subpath = p_str
+    elif p_str.startswith(enc_root + "/"):
+        subpath = p_str[len(enc_root) + 1 :]
+    else:
+        subpath = p_str
+
+    parts = list(Path(subpath).parts)
     if parts and parts[0] in ("src", "lib"):
         parts = parts[1:]
     if not parts:
         return ""
-    # Strip .py / .pyi
+
     last = parts[-1]
     if last.endswith(".py"):
         last = last[:-3]
@@ -283,3 +314,125 @@ class PythonAdapter(LanguageAdapter):
         # Sort imports deterministically by line number and specifier
         imports.sort(key=lambda i: (i.line, i.specifier))
         return imports
+
+    def resolve_import(
+        self, record: ImportRecord, from_file: str, project_context: ProjectContext
+    ) -> str:
+        """Resolve a Python ImportRecord to an internal repo path, external package, or unresolved."""
+        # 1. Relative import resolution (level > 0 or kind == "relative")
+        if record.level > 0 or record.kind == "relative":
+            from_p = Path(from_file).parent
+            base_p = from_p
+            for _ in range(record.level - 1):
+                base_p = base_p.parent
+
+            spec = record.specifier.replace(".", "/") if record.specifier else ""
+            target_base = (base_p / spec) if spec else base_p
+
+            # When specifier is empty (e.g. 'from . import utils'), check if names correspond to sibling modules
+            if not spec:
+                for name in record.names:
+                    sub_py = (target_base / f"{name}.py").as_posix()
+                    if sub_py in project_context.all_files:
+                        return sub_py
+                    sub_init = (target_base / name / "__init__.py").as_posix()
+                    if sub_init in project_context.all_files:
+                        return sub_init
+
+            c_py = target_base.with_suffix(".py").as_posix()
+            if c_py in project_context.all_files:
+                return c_py
+            c_pyi = target_base.with_suffix(".pyi").as_posix()
+            if c_pyi in project_context.all_files:
+                return c_pyi
+            c_init = (target_base / "__init__.py").as_posix()
+            if c_init in project_context.all_files:
+                return c_init
+            c_raw = target_base.as_posix()
+            if c_raw in project_context.all_files:
+                return c_raw
+
+            for name in record.names:
+                sub_py = (target_base / f"{name}.py").as_posix()
+                if sub_py in project_context.all_files:
+                    return sub_py
+                sub_init = (target_base / name / "__init__.py").as_posix()
+                if sub_init in project_context.all_files:
+                    return sub_init
+
+            return "unresolved"
+
+        # 2. Absolute import resolution
+        specifier = record.specifier.strip()
+        if not specifier:
+            return "unresolved"
+
+        roots = getattr(project_context, "roots", ["."]) or ["."]
+        own_root = get_enclosing_root(from_file, roots)
+        ordered_roots = [own_root] + [r for r in roots if r != own_root]
+        root_to_modules = getattr(project_context, "root_to_modules", {})
+
+        # A. Check roots in order (own root first, then remaining roots)
+        for r in ordered_roots:
+            # Check module mapping for root r
+            r_mods = root_to_modules.get(r, {})
+            for name in record.names:
+                sub_mod = f"{specifier}.{name}"
+                if sub_mod in r_mods:
+                    return r_mods[sub_mod]
+            if specifier in r_mods:
+                return r_mods[specifier]
+
+            # Check filesystem candidates under root r
+            r_p = Path(r) if r != "." else Path("")
+            search_bases = [r_p / "src", r_p / "lib", r_p]
+            spec_rel = specifier.replace(".", "/")
+
+            for base in search_bases:
+                for name in record.names:
+                    sub_candidates = [
+                        (base / spec_rel / f"{name}.py").as_posix().lstrip("/"),
+                        (base / spec_rel / name / "__init__.py").as_posix().lstrip("/"),
+                    ]
+                    for sc in sub_candidates:
+                        if sc in project_context.all_files:
+                            return sc
+
+                candidates = [
+                    (base / f"{spec_rel}.py").as_posix().lstrip("/"),
+                    (base / f"{spec_rel}.pyi").as_posix().lstrip("/"),
+                    (base / spec_rel / "__init__.py").as_posix().lstrip("/"),
+                ]
+                for c in candidates:
+                    if c in project_context.all_files:
+                        return c
+
+        # B. Fallback to global module_to_file if present
+        for name in record.names:
+            sub_mod = f"{specifier}.{name}"
+            if sub_mod in project_context.module_to_file:
+                return project_context.module_to_file[sub_mod]
+        if specifier in project_context.module_to_file:
+            return project_context.module_to_file[specifier]
+
+        # C. External package (stdlib or third-party)
+        top_pkg = specifier.split(".")[0]
+
+        # Check if top-level module matches a directory or file name anywhere in the repo
+        matched = False
+        for af in project_context.all_files:
+            for p_part in Path(af).parts:
+                if p_part == top_pkg or p_part == f"{top_pkg}.py" or p_part == f"{top_pkg}.pyi":
+                    matched = True
+                    break
+            if matched:
+                break
+
+        if matched:
+            import logging
+            logging.getLogger("cartog").warning(
+                f"Import '{record.raw_text or record.specifier}' in '{from_file}' matches repo directory or file '{top_pkg}' but could not be resolved; treating as external."
+            )
+
+        return f"external:{top_pkg}"
+

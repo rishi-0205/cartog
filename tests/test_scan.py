@@ -73,3 +73,14 @@ def test_walk_files_size_limit(tmp_path: Path):
     discovered_unlimited = [f.path for f in res_unlimited.files]
     assert "small.py" in discovered_unlimited
     assert "large.py" in discovered_unlimited
+
+
+def test_detect_roots_recursive(tmp_path: Path):
+    (tmp_path / "pyproject.toml").write_text("[project]\nname='root'", encoding="utf-8")
+    nested_pkg = tmp_path / "examples" / "complex"
+    nested_pkg.mkdir(parents=True)
+    (nested_pkg / "pyproject.toml").write_text("[project]\nname='complex'", encoding="utf-8")
+
+    roots = detect_roots(tmp_path)
+    assert "." in roots
+    assert "examples/complex" in roots

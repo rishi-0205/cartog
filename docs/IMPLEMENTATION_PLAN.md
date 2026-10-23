@@ -77,17 +77,17 @@ Understanding unfamiliar software repositories is laborious. Developers manually
 ---
 
 ### Phase 2: Graph Modeling, Import Resolution & Merging
-- [ ] **Milestone 2: Imports & The First Map (Tree-sitter Only)**
-  - [ ] Build `cartog/model.py` (dataclasses: Node, Edge, Range, Location, Graph; stable SHA-1 IDs)
-  - [ ] Implement Python import resolver in `python_adapter.py` (absolute, relative, `__init__.py`, `src/` layout)
-  - [ ] Build `cartog/merge.py` (structural graph merge: file nodes, symbol nodes, `contains`, `imports`, `depends_on`)
-  - [ ] Build `cartog/validate.py` (basic graph integrity checks)
-  - [ ] Build `cartog/export_mermaid.py` (Mermaid overview exporter with folder subgraphs)
-  - [ ] Implement `cartog build --no-scip` and `cartog map --no-scip`
-  - [ ] Write unit tests for import resolution and graph merging
-  - [ ] Run Demo Checkpoint 2 (`cartog map samples/click --no-scip`, validate `overview.mmd` with `mmdc`)
-  - [ ] Record in `BUILD_LOG.md`
-  - [ ] **PAUSE FOR USER CONFIRMATION**
+- [x] **Milestone 2: Imports & The First Map (Tree-sitter Only)**
+  - [x] Build `cartog/model.py` (dataclasses: Node, Edge, Range, Location, Graph; stable SHA-1 IDs)
+  - [x] Implement Python import resolver in `python_adapter.py` (absolute, relative, `__init__.py`, `src/` layout)
+  - [x] Build `cartog/merge.py` (structural graph merge: file nodes, symbol nodes, `contains`, `imports`, `depends_on`)
+  - [x] Build `cartog/validate.py` (basic graph integrity checks)
+  - [x] Build `cartog/export_mermaid.py` (Mermaid overview exporter with folder subgraphs)
+  - [x] Implement `cartog build --no-scip` and `cartog map --no-scip`
+  - [x] Write unit tests for import resolution and graph merging
+  - [x] Run Demo Checkpoint 2 (`cartog map samples/click --no-scip`, validate `overview.mmd` with `mmdc`)
+  - [x] Record in `BUILD_LOG.md`
+  - [x] **PAUSE FOR USER CONFIRMATION**
 
 - [ ] **Milestone 3: Python Framework Patterns & Project Manifests**
   - [ ] Clone `pallets/flask` into `samples/flask`
@@ -426,7 +426,7 @@ class Edge:
 
 ## 5. Milestone Breakdown & Demo Checkpoints
 
-### Milestone 0: Installable Skeleton
+### Milestone 0: Installable Skeleton [COMPLETE]
 - **Goal:** Project setup, `pyproject.toml`, virtual environment, dependencies installed, `cartog` CLI entrypoint registered, `cartog --version` and `cartog doctor` working.
 - **Files Built:**
   - `docs/IMPLEMENTATION_PLAN.md`, `docs/BUILD_LOG.md`
@@ -440,7 +440,7 @@ class Edge:
   - Command: `cartog --version` and `cartog doctor` run from outside the package directory.
   - Expectation: `cartog, version 0.1.0`. `doctor` prints green checks for installed tools and clear instructions for missing tools without crashing or modifying files.
 
-### Milestone 1: Tree-sitter on Python (First Thing Watched Working)
+### Milestone 1: Tree-sitter on Python (First Thing Watched Working) [COMPLETE]
 - **Goal:** File walking, `.gitignore` filtering, content hashing, Python tree-sitter symbol and raw import extraction, `cartog parse` producing `parse.json`.
 - **Files Built:**
   - `cartog/scan.py`: `walk_files()`, `detect_roots()`, `hash_file()`
@@ -460,7 +460,7 @@ class Edge:
     3. Check `src/click/parser.py` has function `_split_opt`.
     4. Confirm skipped files list `.git` or tests cache if present.
 
-### Milestone 2: Imports & The First Map (Tree-sitter Only)
+### Milestone 2: Imports & The First Map (Tree-sitter Only) [COMPLETE]
 - **Goal:** Python import resolution, graph model with stable IDs, tree-sitter only merge, basic validation, Mermaid overview exporter, `cartog build --no-scip`, `cartog map --no-scip`.
 - **Files Built:**
   - `cartog/model.py`: Node, Edge, Graph, stable ID hashing
