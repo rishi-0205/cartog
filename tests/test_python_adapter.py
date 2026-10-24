@@ -163,3 +163,38 @@ def test_parse_click_sample():
     parsed = [parse_source_file(f) for f in scan_res.files]
     assert len(parsed) == len(scan_res.files)
 
+
+def test_cache_invalidation_on_schema_version_change(tmp_path):
+    """Verify that bumping the schema_version / cartog version automatically invalidates stale cached parse results."""
+    from cartog.scan import FileInfo
+
+    file_path = tmp_path / "test_mod.py"
+    file_path.write_text("def hello(): pass\n", encoding="utf-8")
+    file_info = FileInfo(
+        path="test_mod.py",
+        abs_path=file_path.as_posix(),
+        size_bytes=file_path.stat().st_size,
+        sha1="abcdef1234567890123456789012345678901234",
+        language="python",
+    )
+
+    cache_dir = tmp_path / ".cartog"
+    cache_v1 = ParseCache(cache_dir, schema_version="v1.0.0")
+    res1 = parse_source_file(file_info, cache=cache_v1)
+    assert cache_v1.misses == 1
+    assert cache_v1.hits == 0
+    cache_v1.save()
+
+    # Re-reading with same schema version hits the cache
+    cache_v1_reload = ParseCache(cache_dir, schema_version="v1.0.0")
+    res2 = parse_source_file(file_info, cache=cache_v1_reload)
+    assert cache_v1_reload.hits == 1
+    assert cache_v1_reload.misses == 0
+
+    # Reading with bumped schema version (e.g. upgraded extractor / cartog version) automatically invalidates and misses
+    cache_v2 = ParseCache(cache_dir, schema_version="v2.0.0")
+    res3 = parse_source_file(file_info, cache=cache_v2)
+    assert cache_v2.hits == 0
+    assert cache_v2.misses == 1
+
+

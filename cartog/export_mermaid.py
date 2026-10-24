@@ -131,7 +131,7 @@ def generate_overview_mermaid(
         # Compute connectivity (degree) for each folder
         folder_connectivity: dict[str, int] = defaultdict(int)
         for e in graph.edges:
-            if e.kind == "imports":
+            if e.kind in ("imports", "calls"):
                 src_n = graph.nodes.get(e.source)
                 tgt_n = graph.nodes.get(e.target)
                 if src_n and tgt_n and src_n.path and tgt_n.path:
@@ -157,6 +157,15 @@ def generate_overview_mermaid(
     file_to_visible: dict[str, str] = {}
     cluster_to_file_ids: dict[str, set[str]] = {}
     cluster_labels: dict[str, str] = {}
+
+    # Map each graph node to its enclosing file node ID
+    path_to_file_id: dict[str, str] = {f.path: f.id for f in file_nodes if f.path}
+    node_to_file_id: dict[str, str] = {}
+    for n in graph.nodes.values():
+        if n.kind == "file":
+            node_to_file_id[n.id] = n.id
+        elif n.path and n.path in path_to_file_id:
+            node_to_file_id[n.id] = path_to_file_id[n.path]
 
     # A. Collapsed category nodes
     for cat in sorted(collapsed_categories):
@@ -184,51 +193,76 @@ def generate_overview_mermaid(
     for f in root_files:
         file_to_visible[f.id] = sanitize_id(f"file_{f.id}")
 
-    # 7. Compute internal import counts for collapsed clusters (never drop edges silently!)
-    cluster_internal_counts: dict[str, int] = defaultdict(int)
-    for e in graph.edges:
-        if e.kind == "imports":
-            src_vis = file_to_visible.get(e.source)
-            tgt_vis = file_to_visible.get(e.target)
-            if src_vis and tgt_vis and src_vis == tgt_vis:
-                # Internal edge inside the same collapsed cluster
-                cluster_internal_counts[src_vis] += e.count
+    # 7. Compute internal counts (calls and imports) for collapsed clusters
+    cluster_internal_imports: dict[str, int] = defaultdict(int)
+    cluster_internal_calls: dict[str, int] = defaultdict(int)
 
-    # 8. Aggregate external edges between visible nodes
-    edge_counts: dict[tuple[str, str], int] = defaultdict(int)
     for e in graph.edges:
-        if e.kind == "imports":
-            src_vis = file_to_visible.get(e.source)
-            tgt_vis = file_to_visible.get(e.target)
-            if src_vis and tgt_vis and src_vis != tgt_vis:
-                edge_counts[(src_vis, tgt_vis)] += e.count
+        if e.kind not in ("imports", "calls"):
+            continue
+        src_file = node_to_file_id.get(e.source)
+        tgt_file = node_to_file_id.get(e.target)
+        if not src_file or not tgt_file:
+            continue
+        src_vis = file_to_visible.get(src_file)
+        tgt_vis = file_to_visible.get(tgt_file)
+        if src_vis and tgt_vis and src_vis == tgt_vis:
+            if e.kind == "imports":
+                cluster_internal_imports[src_vis] += e.count
+            elif e.kind == "calls":
+                cluster_internal_calls[src_vis] += e.count
+
+    # 8. Aggregate external edges between visible nodes (imports and calls)
+    edge_calls: dict[tuple[str, str], int] = defaultdict(int)
+    edge_imports: dict[tuple[str, str], int] = defaultdict(int)
+
+    for e in graph.edges:
+        if e.kind not in ("imports", "calls"):
+            continue
+        src_file = node_to_file_id.get(e.source)
+        tgt_file = node_to_file_id.get(e.target)
+        if not src_file or not tgt_file:
+            continue
+        src_vis = file_to_visible.get(src_file)
+        tgt_vis = file_to_visible.get(tgt_file)
+        if src_vis and tgt_vis and src_vis != tgt_vis:
+            if e.kind == "calls":
+                edge_calls[(src_vis, tgt_vis)] += e.count
+            elif e.kind == "imports":
+                edge_imports[(src_vis, tgt_vis)] += e.count
 
     # 9. Render Mermaid flowchart
     lines: list[str] = [f"flowchart {direction}"]
 
+    def _render_cluster_node(cluster_id: str) -> None:
+        count_files = len(cluster_to_file_ids[cluster_id])
+        internal_calls = cluster_internal_calls.get(cluster_id, 0)
+        internal_imports = cluster_internal_imports.get(cluster_id, 0)
+        base_label = cluster_labels[cluster_id]
+
+        summary_parts = []
+        if internal_calls > 0:
+            c_lbl = f"{internal_calls} internal calls" if internal_calls != 1 else "1 internal call"
+            summary_parts.append(c_lbl)
+        if internal_imports > 0:
+            i_lbl = f"{internal_imports} internal imports" if internal_imports != 1 else "1 internal import"
+            summary_parts.append(i_lbl)
+
+        if summary_parts:
+            label_text = f"{base_label} ({count_files} files, {', '.join(summary_parts)})"
+        else:
+            label_text = f"{base_label} ({count_files} files)"
+        lines.append(f'  {cluster_id}["📁 {sanitize_label(label_text)}"]:::folder')
+
     # Render collapsed category nodes
     for cat_id in sorted(cluster_labels.keys()):
         if cat_id.startswith("cat_"):
-            count_files = len(cluster_to_file_ids[cat_id])
-            internal = cluster_internal_counts.get(cat_id, 0)
-            base_label = cluster_labels[cat_id]
-            if internal > 0:
-                label_text = f"{base_label} ({count_files} files, {internal} internal imports)"
-            else:
-                label_text = f"{base_label} ({count_files} files)"
-            lines.append(f'  {cat_id}["📁 {sanitize_label(label_text)}"]:::folder')
+            _render_cluster_node(cat_id)
 
     # Render collapsed folder nodes
     for cl_id in sorted(cluster_labels.keys()):
         if cl_id.startswith("cluster_"):
-            count_files = len(cluster_to_file_ids[cl_id])
-            internal = cluster_internal_counts.get(cl_id, 0)
-            base_label = cluster_labels[cl_id]
-            if internal > 0:
-                label_text = f"{base_label} ({count_files} files, {internal} internal imports)"
-            else:
-                label_text = f"{base_label} ({count_files} files)"
-            lines.append(f'  {cl_id}["📁 {sanitize_label(label_text)}"]:::folder')
+            _render_cluster_node(cl_id)
 
     # Render expanded folder subgraphs
     for folder, flist in sorted(expanded_folder_to_files.items()):
@@ -247,12 +281,25 @@ def generate_overview_mermaid(
         label = sanitize_label(f.name)
         lines.append(f'  {f_id}["{label}"]')
 
-    # Render aggregated edges (with counts if > 1)
-    for (src, tgt), count in sorted(edge_counts.items(), key=lambda x: (x[0][0], x[0][1])):
-        if count > 1:
-            lines.append(f"  {src} -->|{count}| {tgt}")
+    # Render aggregated edges
+    all_pairs = sorted(list(set(edge_calls.keys()) | set(edge_imports.keys())), key=lambda x: (x[0], x[1]))
+
+    for src, tgt in all_pairs:
+        calls = edge_calls.get((src, tgt), 0)
+        imports = edge_imports.get((src, tgt), 0)
+
+        if calls > 0 and imports > 0:
+            c_text = f"{calls} calls" if calls != 1 else "1 call"
+            i_text = f"{imports} imports" if imports != 1 else "1 import"
+            lines.append(f"  {src} -->|{c_text}, {i_text}| {tgt}")
+        elif calls > 0:
+            c_text = f"{calls} calls" if calls != 1 else "1 call"
+            lines.append(f"  {src} -.->|{c_text}| {tgt}")
         else:
-            lines.append(f"  {src} --> {tgt}")
+            if imports > 1:
+                lines.append(f"  {src} -->|{imports}| {tgt}")
+            else:
+                lines.append(f"  {src} --> {tgt}")
 
     # Styles
     lines.append("")

@@ -512,6 +512,163 @@ This is an append-only log tracking the construction, verification, and decision
     10. `source/core/Ky.ts:#retryFromError` $\rightarrow$ `source/core/Ky.ts:#throwIfAbortedByUser` (`evidence: source/core/Ky.ts:1125`). Accurate.
   - Architecture diagram generated: `cartog-out/ky-map-scip/overview.mmd` and rendered `overview.png` (34.3 KB).
 
+---
+
+## Entry 10: SCIP on Python Resolution (Windows Node Shim), Loud Failure Semantics, and Full Call Linking on Click
+
+- **Step:** Diagnosed and fixed the upstream `scip-python` Windows path separator RegExp crash without modifying `node_modules`. Implemented loud failure logging, strict CLI validation, and verified end-to-end call graph generation on `samples/click`.
+- **What was built / done:**
+  - Diagnosed `scip-python` Windows bug:
+    - Upstream `scip-python` contains `new RegExp(path.sep, 'g')` which fails on Windows (`path.sep === '\\'`) with `SyntaxError: Invalid regular expression: /\/g: \ at end of pattern`.
+    - Implemented `cartog/scip_windows_shim.js`: an in-repo Node preload shim that monkey-patches `RegExp` to safely escape `\\` when passed as a single backslash pattern.
+    - Injected via `get_indexer_env("scip-python")` in `cartog/scip_pass.py` using `NODE_OPTIONS="-r <path_to_shim>"`, requiring zero modifications to any global or dependency files.
+  - Loud failure semantics:
+    - Preserved untruncated error strings in `ScipIndexResult.error` and `graph.meta["scip"]["error"]`.
+    - Added automated writing of `scip_error.log` to the output directory on any SCIP indexer failure.
+    - Added clear final output line in `cartog scip`, `build`, and `map`: `SCIP: FAILED (<one-line reason>). No call edges in this graph.`
+    - Updated `cartog check` to inspect `graph.meta["scip"]`, flag SCIP failures as validation errors, and exit non-zero (code 1) under `--strict`.
+    - Updated `docs/IMPLEMENTATION_PLAN.md` Milestone 5 DoD to require `stats.edges_calls > 0` on `samples/click`.
+  - Tests:
+    - Added tests in `tests/test_cli.py` for non-strict check warnings, `--strict` non-zero exit on SCIP failure, and loud terminal messages.
+    - Added tests in `tests/test_scip_pass.py` verifying full untruncated errors and `scip_error.log` emission.
+    - All 56 test cases in `pytest` passing.
+- **How it was verified:**
+  - Ran `cartog map samples/click --out cartog-out/click-map-scip`.
+  - Live `scip-python` indexed all 91 documents cleanly with exit code 0.
+  - Generated **2,003 `calls` edges** with `confidence: "resolved"`.
+  - Verified 5 sample calls and inspected 3 directly against `samples/click` source code.
+
+---
+
+## Checkpoint Report: Milestone 5 (SCIP on Python & Real Calls Verification on samples/click)
+
+- **Command executed:** `cartog map samples/click --out cartog-out/click-map-scip`
+- **Output summary:**
+  - Indexer: `scip-python` (91 documents indexed, `meta.scip.ran: true`, `error: null`).
+  - Total Graph Nodes: **2,460**
+    - `file`: 108, `folder`: 23, `class`: 178, `method`: 473, `function`: 1,374, `command`: 199, `route`: 1, `dependency`: 84, `entrypoint`: 10, `ci_job`: 10.
+  - Total Graph Edges: **5,080**
+    - `contains`: 2,370
+    - `serves`: 201
+    - `depends_on`: 329
+    - `imports`: 167
+    - `starts`: 10
+    - `calls`: **2,003** (`confidence: "resolved"`, with exact callsite line evidence)
+  - Caller / Callee Breakdown:
+    - Distinct Callers: **911**
+    - Distinct Callees: **690**
+    - Calls within `src/click`: **1,304**
+  - Graph Validation: **0 errors, 0 warnings (PASS)**
+- **Sample Calls Edges (1-Based Verification):**
+  1. **Caller:** `click.formatting.join_options` (`src/click/formatting.py:302`)
+     **Callee:** `click.parser._split_opt` (`src/click/parser.py:111`)
+     **Callsite Evidence:** `src/click/formatting.py:312`
+  2. **Caller:** `click._compat.get_text_stderr` (`src/click/_compat.py:354`)
+     **Callee:** `click._winconsole._get_windows_console_stream` (`src/click/_winconsole.py:272`)
+     **Callsite Evidence:** `src/click/_compat.py:355`
+  3. **Caller:** `click._compat.get_text_stderr` (`src/click/_compat.py:354`)
+     **Callee:** `click._compat._force_correct_text_writer` (`src/click/_compat.py:303`)
+     **Callsite Evidence:** `src/click/_compat.py:358`
+  4. **Caller:** `click.core.Context.lookup_default` (`src/click/core.py:815`)
+     **Callee:** `click.core.Context._default_map_has` (`src/click/core.py:791`)
+     **Callsite Evidence:** `src/click/core.py:825`
+  5. **Caller:** `click._termui_impl.raw_terminal` (`src/click/_termui_impl.py:938`)
+     **Callee:** `click._compat.isatty` (`src/click/_compat.py:540`)
+     **Callsite Evidence:** `src/click/_termui_impl.py:942`
+- **Source Code Verification:**
+  - **Edge 1 (`join_options` $\rightarrow$ `_split_opt`):** In `samples/click/src/click/formatting.py:312`, `join_options` calls `prefix = _split_opt(opt)[0]`. In `samples/click/src/click/parser.py:111`, `def _split_opt(opt: str)` is defined. Real cross-file call verified.
+  - **Edge 2 (`get_text_stderr` $\rightarrow$ `_get_windows_console_stream`):** In `samples/click/src/click/_compat.py:355`, `get_text_stderr` invokes `rv = _get_windows_console_stream(sys.stderr, encoding, errors)`. In `samples/click/src/click/_winconsole.py:272`, `def _get_windows_console_stream` is defined. Real cross-file call verified.
+  - **Edge 4 (`Context.lookup_default` $\rightarrow$ `Context._default_map_has`):** In `samples/click/src/click/core.py:825`, `lookup_default` executes `if not self._default_map_has(name):`. In the same class at line 791, `def _default_map_has(self, name: str | None) -> bool:` is defined. Real method call verified.
+  - **Edge 5 (`raw_terminal` $\rightarrow$ `isatty`):** In `samples/click/src/click/_termui_impl.py:942`, `raw_terminal` executes `if not isatty(sys.stdin):`. In `samples/click/src/click/_compat.py:540`, `def isatty(stream: t.IO[t.Any]) -> bool:` is defined. Real cross-file call verified.
+
+- **Harder Verification (Non-Simple Calls):**
+  1. `self.method()` #1: `click.core.Command.get_help_option` (`src/click/core.py:1222`) calling `self.get_help_option_names(ctx)` at line 1235 $\rightarrow$ `click.core.Command.get_help_option_names` (`src/click/core.py:1207`). Callee correct: YES.
+  2. `self.method()` #2: `click.core.Command.format_arguments` (`src/click/core.py:1337`) calling `self.get_params(ctx)` at line 1344 $\rightarrow$ `click.core.Command.get_params` (`src/click/core.py:1132`). Callee correct: YES.
+  3. `self.method()` #3: `click._termui_impl.ProgressBar.render_progress` (`src/click/_termui_impl.py:250`) calling `self.format_progress_line()` at lines 268 & 281 $\rightarrow$ `click._termui_impl.ProgressBar.format_progress_line` (`src/click/_termui_impl.py:223`). Callee correct: YES.
+  4. Inherited method: `click.types.Tuple.convert` (`src/click/types.py:1289`, subclass of `CompositeParamType` $\rightarrow$ `ParamType`) calling `self.fail(...)` at line 1296 $\rightarrow$ `click.types.ParamType.fail` (`src/click/types.py:215`). Callee correct: YES.
+  5. Call through parameter: `click.core.Command.format_arguments` (`src/click/core.py:1337`) calling `formatter.write_dl(...)` at line 1348 $\rightarrow$ `click.formatting.HelpFormatter.write_dl` (`src/click/formatting.py:229`). Callee correct: YES.
+
+- **Recall Checks on `src/click/core.py`:**
+  1. `_complete_visible_commands` (lines 64-80):
+     - Calls `multi.list_commands(ctx)` at line 75 $\rightarrow$ Present in `graph.json` (`b45fb9120f` $\rightarrow$ `3573571051`).
+     - Calls `multi.get_command(ctx, name)` at line 77 $\rightarrow$ Present in `graph.json` (`b45fb9120f` $\rightarrow$ `4d5c0495b2`).
+     - Missing calls to repo functions: None (100% recall).
+  2. `_echo_aborted` (lines 103-105):
+     - Calls `echo(...)` at line 105 $\rightarrow$ Present in `graph.json` (`c261111e7b` $\rightarrow$ `a4e3f5c879`, `click.utils.echo`).
+     - Note: `_("Aborted!")` calls stdlib `gettext.gettext as _` (not an internal repo function).
+     - Missing calls to repo functions: None (100% recall).
+  3. `Command.format_help` (lines 1288-1305):
+     - Calls `self.format_usage(ctx, formatter)` at line 1301 $\rightarrow$ Present in `graph.json` (`ca1921bcb6` $\rightarrow$ `264ed29574`).
+     - Calls `self.format_help_text(ctx, formatter)` at line 1302 $\rightarrow$ Present in `graph.json` (`ca1921bcb6` $\rightarrow$ `46cfebc040`).
+     - Calls `self.format_arguments(ctx, formatter)` at line 1303 $\rightarrow$ Present in `graph.json` (`ca1921bcb6` $\rightarrow$ `0fd58fc401`).
+     - Calls `self.format_options(ctx, formatter)` at line 1304 $\rightarrow$ Present in `graph.json` (`ca1921bcb6` $\rightarrow$ `38a54a4bad`, `click.core.Command.format_options`).
+     - Calls `self.format_epilog(ctx, formatter)` at line 1305 $\rightarrow$ Present in `graph.json` (`ca1921bcb6` $\rightarrow$ `726753c3db`).
+     - Missing calls to repo functions: None (100% recall).
+
+---
+
+## Entry 11: Pre-Step 4 Hardening: Cache Schema Invalidation, Strict SCIP Defaults, Package Data Wheel Inclusion, and Qualified Call Attribution
+
+- **Step:** Pre-Step 4 verification hardening and recall check round two.
+- **What was built / done:**
+  1. **Cache Schema Versioning:**
+     - Included `DEFAULT_EXTRACTOR_SCHEMA_VERSION = f"cartog-v{CARTOG_VERSION}"` in `ParseCache` key (`cartog/cache.py`).
+     - Stale parse cache entries are invalidated automatically whenever Cartog or AST extraction logic is upgraded.
+     - Added test `test_cache_invalidation_on_schema_version_change` in `tests/test_python_adapter.py`.
+     - Documented in `docs/ISSUES_AND_DECISIONS.md` under Issue 14.
+  2. **`cartog check` Default Strictness & `--no-scip` Opt-Out:**
+     - Updated `cartog check` in `cartog/cli.py` to exit non-zero (code 1) by default if SCIP was requested but not run or failed.
+     - Added `--no-scip` flag to allow opting out of SCIP validation.
+     - Updated CLI tests in `tests/test_cli.py` to verify default non-zero exit and clean opt-out via `--no-scip`.
+  3. **Package Data Wheel Inclusion for Windows Node Shim:**
+     - Configured `[tool.setuptools.package-data] cartog = ["*.js"]` in `pyproject.toml`.
+     - Verified clean wheel packaging includes `cartog/scip_windows_shim.js`.
+     - Restricted shim application strictly to `sys.platform == "win32"` in `cartog/scip_pass.py`.
+  4. **Qualified Name Call Candidate Linking:**
+     - Extended `CallEdgeCandidate` in `cartog/scip_pass.py` with `caller_qualified_name` and `callee_qualified_name`.
+     - Updated `sym_node_map` in `cartog/merge.py` to map by `(f.path, s.qualified_name)` first, eliminating method name collisions across classes in the same file.
+     - Verified `Command.format_help` $\rightarrow$ `self.format_options` now correctly links to `click.core.Command.format_options` (`38a54a4bad`) instead of `Group.format_options`.
+  5. **Recall Check Round Two:**
+     - Checked `Command.main` and `Group.invoke` against `cartog-out/click-map-scip/graph.json`.
+     - Verified all 59 tests in pytest pass cleanly.
+
+---
+
+## Entry 12: Step 4 - Mermaid Overview Exporter Call Graph Integration
+
+- **Step:** Updated Mermaid overview exporter (`cartog/export_mermaid.py`) so that SCIP `calls` edges appear alongside `imports` edges in architecture diagrams.
+- **What was built / done:**
+  1. **Node-to-File Call Mapping:**
+     - Constructed `node_to_file_id` mapping to map function- and method-level calls directly to their enclosing visible file nodes or collapsed clusters.
+  2. **Multi-Faceted Edge Aggregation & Styling:**
+     - **Both Calls & Imports:** Rendered with solid line and combined label `-->|X calls, Y imports|` (handling singular `1 call`, `1 import`).
+     - **Calls Only:** Rendered with distinct dashed line style `-.->|X calls|` (or `-.->|1 call|`).
+     - **Imports Only:** Retained solid line `-->` (single) and `-->|count|` (multiple).
+  3. **Collapsed Folder Internal Summaries:**
+     - Included internal calls count alongside internal imports count in cluster headers:
+       - `tests (59 files, 1171 internal calls)`
+       - `examples (24 files, 104 internal calls, 2 internal imports)`
+  4. **Budget Management Connectivity:**
+     - Included both imports and calls in folder degree calculations when determining least-connected folders for budget collapsing.
+  5. **Tests:**
+     - Added 3 unit tests in `tests/test_mermaid.py`:
+       - `test_mermaid_edge_combinations_calls_and_imports`: Asserts solid line combined labels, dashed lines for calls-only, and single/multiple imports.
+       - `test_mermaid_collapsed_folder_internal_calls_and_imports`: Asserts collapsed folder internal call and import summaries.
+       - `test_mermaid_function_level_calls_attributed_to_files`: Asserts function-level calls are attributed to enclosing file nodes.
+     - All 62 test cases in `pytest` pass cleanly in 4.76s.
+- **Verification on `samples/click`:**
+  - Ran `cartog map samples/click --out cartog-out/click-map-scip`.
+  - Generated `cartog-out/click-map-scip/overview.mmd` (106 lines, 5.3 KB) and rendered `overview.png` (39.9 KB).
+  - Validated edge breakdown on Click:
+    - 57 visible edge pairs with both calls and imports (e.g. `core.py -->|41 calls, 8 imports| exceptions.py`, `core.py -->|43 calls, 2 imports| parser.py`).
+    - 1 visible edge pair with calls only: `exceptions.py -.->|3 calls| types.py`.
+    - 19 visible edge pairs with imports only: e.g. `cat_tests -->|57| __init__.py`.
+    - Collapsed `cat_tests` summarizes 1,171 internal calls.
+    - Collapsed `cat_examples` summarizes 104 internal calls and 2 internal imports.
+
+
+
+
 
 
 

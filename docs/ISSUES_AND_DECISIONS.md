@@ -391,14 +391,49 @@ Invoking `@sourcegraph/scip-python` on Windows immediately crashes with exit cod
 - Modifying local files in npm global packages would be brittle, non-portable, and would break on other developers' machines or CI environments.
 
 ### 3. Solution & Decision
-- **Fail-Safe Pre-Check Execution:** In [cartog/scip_pass.py](file:///c:/Users/rishi/OneDrive/Desktop/Dev/cartog/cartog/scip_pass.py) `run_scip_indexer()`, run an isolated pre-check `[indexer_name, "--version"]`. If the indexer returns a non-zero exit code or throws, catch it immediately without halting the pipeline.
-- **Graceful SCIP Stage Fallback:**
-  - Record the failure reason in `scip.json` under `meta.error` and set `meta.ran: false`.
-  - In `cartog map` and `cartog build`, if SCIP is disabled or unavailable, log a clean user notice and seamlessly fall back to the Tree-sitter import resolution graph (`confidence: "import"`).
-- **Deterministic Prebuilt Fixture for Tests & CI:**
-  - Index `tests/fixtures/ts_monorepo` with `scip-typescript` (which does not suffer from the Windows regex bug) and save a prebuilt binary to `tests/fixtures/prebuilt_scip/index.scip`.
-  - Use this fixture in `test_scip_pass.py` and `test_merge.py` to ensure unit tests and CI verify protobuf decoding, range translation, enclosing-symbol lookup, and call-linking deterministically on all platforms.
-- **Doctor Diagnostic Transparency:** `cartog doctor` executes `--version` on `scip-python` and cleanly displays `WARN (Exit code 1)` alongside npm remediation instructions instead of crashing.
+- **In-Repo Node Preload Shim (`cartog/scip_windows_shim.js`):**
+  - Rather than modifying global npm packages or dependency files (which breaks across machines), Cartog includes a lightweight JavaScript shim that monkey-patches `RegExp` to safely escape `\\` when passed as an unescaped single backslash string on Windows.
+  - Cartog automatically injects this shim via `NODE_OPTIONS="-r <path_to_shim>"` in subprocess `env` when invoking `scip-python` on Windows platforms.
+  - This allows `scip-python` to execute cleanly, successfully index Python repositories, and generate call graphs on any Windows system with zero external file modifications.
+- **Loud Failure & Strict CLI Semantics:**
+  - If SCIP indexing fails for any reason, the full untruncated error is preserved in `meta.scip.error` and dumped to `scip_error.log` in the output directory.
+  - A prominent failure line is printed in terminal output: `SCIP: FAILED (<reason>). No call edges in this graph.`
+  - `cartog check` detects SCIP failure and marks integrity as `FAIL`, exiting non-zero (code 1) when `--strict` is passed.
+
+---
+
+## Issue 13: 1-Based Line Numbers Standardization Across `graph.json`
+
+- **Phase / Milestone:** Phase 1 / Milestone 5 & 6 (Call Graph Resolution & Validation)
+- **Component:** `cartog/scip_pass.py`, `cartog/langs/python_adapter.py`, `cartog/langs/js_adapter.py`, `cartog/model.py`
+
+### 1. Symptom
+In `graph.json`, `evidence` lines (e.g. `src/click/formatting.py:311`) and symbol `range` values (`[301, 0, 319, 59]`) were 0-based because Tree-sitter row indices and SCIP protocol ranges are 0-based. When cross-referencing against source code in text editors (which are 1-based), lines were consistently off-by-one (e.g. line 311 instead of 312).
+
+### 2. Decision
+- Standardize all line numbers in `graph.json` to be **1-based** (both `range: [start_line, start_col, end_line, end_col]` and `evidence: ["path:line"]`).
+- Column offsets remain **0-based** character offsets.
+- `normalize_scip_range()` converts SCIP's 0-based line offsets to 1-based line numbers upon decoding (`start_line + 1`, `end_line + 1`).
+- Tree-sitter symbol extractors in `python_adapter.py` and `js_adapter.py` add `+ 1` to row numbers.
+- Added regression test `test_known_call_evidence_line_against_source()` in `tests/test_scip_pass.py` verifying that evidence line numbers match exact source lines in the indexed codebase.
+
+---
+
+## Issue 14: Cache Key Schema Versioning for Automatic Invalidation of Stale Parse Results
+
+- **Phase / Milestone:** Phase 1 / Milestone 5 & 6 (AST Parsing & Incremental Cache)
+- **Component:** `cartog/cache.py`, `cartog/langs/__init__.py`
+
+### 1. Context & Symptom
+In `cartog/cache.py`, the parse cache key was originally formed as `{file_sha1}:{adapter_version}`. When internal AST extraction logic was modified (such as shifting symbol line ranges from 0-based to 1-based, or expanding queries for decorators/async definitions), source files with unchanged content hashes (`file_sha1`) continued to return stale cached AST symbols from earlier runs. Developers had to manually delete `.cartog/cache.json` or `.cartog/` to see updated parser outputs.
+
+### 2. Decision & Architecture
+- Incorporate the Cartog package version and extractor schema version into the cache key:
+  `{schema_version}:{file_sha1}:{adapter_version}`, where `schema_version` defaults to `cartog-v{cartog.__version__}`.
+- Any upgrade to Cartog or bump to the extractor schema automatically changes the cache key, triggering a cache miss and forcing automatic re-parsing of source files without requiring manual cache wiping.
+- Added regression test `test_cache_invalidation_on_schema_version_change()` in `tests/test_python_adapter.py`.
+
+
 
 
 

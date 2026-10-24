@@ -5,12 +5,18 @@ from pathlib import Path
 from typing import Any, Optional
 
 
+from cartog import __version__ as CARTOG_VERSION
+
+DEFAULT_EXTRACTOR_SCHEMA_VERSION = f"cartog-v{CARTOG_VERSION}"
+
+
 class ParseCache:
     """Manages disk caching of per-file tree-sitter AST parse results."""
 
-    def __init__(self, cache_dir: str | Path):
+    def __init__(self, cache_dir: str | Path, schema_version: Optional[str] = None):
         self.cache_dir = Path(cache_dir)
         self.cache_file = self.cache_dir / "cache.json"
+        self.schema_version = schema_version or DEFAULT_EXTRACTOR_SCHEMA_VERSION
         self._entries: dict[str, Any] = {}
         self._dirty = False
         self.hits = 0
@@ -18,7 +24,7 @@ class ParseCache:
         self.load()
 
     def _make_key(self, file_sha1: str, adapter_version: str) -> str:
-        return f"{file_sha1}:{adapter_version}"
+        return f"{self.schema_version}:{file_sha1}:{adapter_version}"
 
     def load(self) -> None:
         """Load cache entries from disk."""

@@ -158,9 +158,11 @@ def doctor():
     scip_py_path = shutil.which("scip-python")
     if scip_py_path:
         try:
-            res = subprocess.run(["scip-python", "--help"], capture_output=True, text=True, timeout=5, shell=is_win)
+            from cartog.scip_pass import get_indexer_env
+            env = get_indexer_env("scip-python")
+            res = subprocess.run(["scip-python", "--version"], capture_output=True, text=True, timeout=5, shell=is_win, env=env)
             if res.returncode == 0:
-                table.add_row("scip-python", "[green]PASS[/green]", "Installed & operational", "-")
+                table.add_row("scip-python", "[green]PASS[/green]", f"v{res.stdout.strip()}", "-")
             else:
                 table.add_row("scip-python", "[yellow]WARN[/yellow]", f"Exit code {res.returncode}", "npm install -g @sourcegraph/scip-python")
         except Exception as e:
@@ -423,6 +425,16 @@ def _resolve_scip(
     return res
 
 
+def _format_scip_fail_line(error: Optional[str]) -> str:
+    if not error:
+        reason = "SCIP indexer did not run"
+    else:
+        lines = [line.strip() for line in error.splitlines() if line.strip()]
+        first_line = lines[0] if lines else "SCIP indexer did not run"
+        reason = first_line[:117] + "..." if len(first_line) > 120 else first_line
+    return f"SCIP: FAILED ({reason}). No call edges in this graph."
+
+
 @app.command()
 def scip(
     path: str = typer.Argument(..., help="Path to project directory or index.scip file."),
@@ -463,10 +475,11 @@ def scip(
         console.print(f"\n[bold green]Success:[/bold green] Stage 2 output written to [bold]{out_file.as_posix()}[/bold]\n")
     else:
         err_msg = res.error if res else "Unknown error"
-        scip_table.add_row("Indexer Status", f"[yellow]DISABLED ({err_msg})[/yellow]")
+        err_display = err_msg[:120] + "..." if len(err_msg) > 120 else err_msg
+        scip_table.add_row("Indexer Status", f"[yellow]DISABLED ({err_display})[/yellow]")
         console.print()
         console.print(scip_table)
-        console.print(f"\n[yellow]Notice:[/yellow] Stage 2 SCIP output written to [bold]{out_file.as_posix()}[/bold] (indexer disabled: {err_msg})\n")
+        console.print(f"\n[bold red]{_format_scip_fail_line(err_msg)}[/bold red]\n")
 
 
 @app.command()
@@ -525,6 +538,9 @@ def build(
 
     console.print()
     console.print(build_table)
+    if not no_scip and (scip_res is None or not scip_res.ran):
+        err_msg = scip_res.error if scip_res else "SCIP indexer did not run"
+        console.print(f"\n[bold red]{_format_scip_fail_line(err_msg)}[/bold red]")
     console.print(f"\n[bold green]Success:[/bold green] Graph written to [bold]{graph_out.as_posix()}[/bold]\n")
     return graph
 
@@ -582,6 +598,10 @@ def map(
     else:
         console.print(f"  [yellow]Notice:[/yellow] {msg} (Mermaid source is saved in {mmd_file.name})")
 
+    if not no_scip and (scip_res is None or not scip_res.ran):
+        err_msg = scip_res.error if scip_res else "SCIP indexer did not run"
+        console.print(f"\n[bold red]{_format_scip_fail_line(err_msg)}[/bold red]")
+
     console.print(f"\n[bold green]Success:[/bold green] Architecture map complete in [bold]{out_dir.as_posix()}[/bold]\n")
 
 
@@ -601,7 +621,8 @@ def flow(
 def check(
     path: str = typer.Argument(..., help="Path to project directory or graph.json."),
     out: str = typer.Option("cartog-out", "--out", help="Output directory containing graph.json."),
-    strict: bool = typer.Option(False, "--strict", help="Fail with non-zero exit code on validation errors."),
+    no_scip: bool = typer.Option(False, "--no-scip", help="Opt out of requiring SCIP call graph resolution."),
+    strict: bool = typer.Option(True, "--strict/--no-strict", help="Fail with non-zero exit code on validation errors (default: True)."),
 ):
     """Validate graph integrity and report findings."""
     p = Path(path)
@@ -618,6 +639,15 @@ def check(
 
     graph = Graph.load(graph_file)
     res = validate_graph(graph)
+
+    scip_meta = graph.meta.get("scip", {})
+    if scip_meta and scip_meta.get("ran") is False:
+        err_reason = scip_meta.get("error", "SCIP did not run")
+        if not no_scip:
+            res.errors.append(_format_scip_fail_line(err_reason))
+            res.is_valid = False
+        else:
+            res.warnings.append(f"SCIP did not run (opted out via --no-scip): {err_reason or 'disabled'}")
 
     check_table = Table(title="Graph Integrity Report", show_header=True, header_style="bold magenta")
     check_table.add_column("Check", style="cyan")

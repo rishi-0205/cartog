@@ -85,21 +85,23 @@ class CallEdgeCandidate:
     callee_symbol: str
     evidence: list[str] = field(default_factory=list)
     count: int = 1
+    caller_qualified_name: Optional[str] = None
+    callee_qualified_name: Optional[str] = None
 
 
 def normalize_scip_range(raw_range: list[int]) -> SourceRange:
-    """Convert SCIP 3-tuple or 4-tuple range into a standard SourceRange."""
+    """Convert SCIP 3-tuple or 4-tuple range into a standard 1-based SourceRange."""
     if len(raw_range) == 3:
         line, start_col, end_col = raw_range
-        return SourceRange(start_line=line, start_col=start_col, end_line=line, end_col=end_col)
+        return SourceRange(start_line=line + 1, start_col=start_col, end_line=line + 1, end_col=end_col)
     elif len(raw_range) >= 4:
         return SourceRange(
-            start_line=raw_range[0],
+            start_line=raw_range[0] + 1,
             start_col=raw_range[1],
-            end_line=raw_range[2],
+            end_line=raw_range[2] + 1,
             end_col=raw_range[3],
         )
-    return SourceRange(start_line=0, start_col=0, end_line=0, end_col=0)
+    return SourceRange(start_line=1, start_col=0, end_line=1, end_col=0)
 
 
 def decode_scip_index(scip_path: str | Path) -> ScipIndexResult:
@@ -154,6 +156,19 @@ def decode_scip_index(scip_path: str | Path) -> ScipIndexResult:
     )
 
 
+def get_indexer_env(indexer_name: str) -> dict[str, str]:
+    """Return subprocess environment with Windows Node compatibility shims if necessary."""
+    env = os.environ.copy()
+    if sys.platform == "win32" and indexer_name == "scip-python":
+        shim_path = (Path(__file__).parent / "scip_windows_shim.js").resolve()
+        if shim_path.is_file():
+            current_options = env.get("NODE_OPTIONS", "")
+            shim_flag = f'-r "{shim_path.as_posix()}"'
+            if shim_flag not in current_options:
+                env["NODE_OPTIONS"] = f"{current_options} {shim_flag}".strip()
+    return env
+
+
 def run_scip_indexer(
     target_path: str | Path,
     out_dir: str | Path,
@@ -168,12 +183,22 @@ def run_scip_indexer(
     indexer_cmd: list[str] = []
     indexer_name = "scip-python" if language == "python" else "scip-typescript"
 
+    def _fail(reason: str) -> ScipIndexResult:
+        try:
+            out_p.mkdir(parents=True, exist_ok=True)
+            (out_p / "scip_error.log").write_text(reason, encoding="utf-8")
+        except Exception:
+            pass
+        return ScipIndexResult(ran=False, indexer=indexer_name, error=reason)
+
     is_win = sys.platform.startswith("win")
     which_bin = shutil.which(indexer_name)
     if not which_bin:
         reason = f"Indexer '{indexer_name}' not found on PATH."
         logger.warning(reason)
-        return ScipIndexResult(ran=False, indexer=indexer_name, error=reason)
+        return _fail(reason)
+
+    env = get_indexer_env(indexer_name)
 
     # Pre-check execution (ensure indexer runs cleanly without crash)
     try:
@@ -183,15 +208,17 @@ def run_scip_indexer(
             text=True,
             timeout=5,
             shell=is_win,
+            env=env,
         )
         if check_res.returncode != 0:
-            reason = f"Indexer '{indexer_name}' failed pre-check (exit code {check_res.returncode}): {check_res.stderr.strip()[:100]}"
-            logger.warning(reason)
-            return ScipIndexResult(ran=False, indexer=indexer_name, error=reason)
+            full_err = check_res.stderr.strip() or check_res.stdout.strip()
+            reason = f"Indexer '{indexer_name}' failed pre-check (exit code {check_res.returncode}): {full_err}"
+            logger.warning(f"Indexer '{indexer_name}' failed pre-check (exit code {check_res.returncode}): {full_err[:120]}")
+            return _fail(reason)
     except Exception as e:
         reason = f"Indexer '{indexer_name}' pre-check raised exception: {e}"
         logger.warning(reason)
-        return ScipIndexResult(ran=False, indexer=indexer_name, error=reason)
+        return _fail(reason)
 
     # Root hash directory in out_dir/.cartog/scip/<hash>/
     path_hash = hashlib.sha1(target_p.as_posix().encode("utf-8")).hexdigest()[:12]
@@ -229,14 +256,15 @@ def run_scip_indexer(
             text=True,
             timeout=timeout_sec,
             shell=is_win,
+            env=env,
         )
         if proc.returncode != 0:
-            err_snippet = proc.stderr.strip()[:200] or proc.stdout.strip()[:200]
-            reason = f"SCIP indexer exited with code {proc.returncode}: {err_snippet}"
+            full_err = proc.stderr.strip() or proc.stdout.strip()
+            reason = f"SCIP indexer exited with code {proc.returncode}: {full_err}"
             if language != "python" and not has_node_modules:
                 reason += " (Hint: 'node_modules' not found. Run 'npm install' in target directory.)"
-            logger.warning(reason)
-            return ScipIndexResult(ran=False, indexer=indexer_name, error=reason)
+            logger.warning(f"SCIP indexer failed (exit code {proc.returncode}): {full_err[:120]}")
+            return _fail(reason)
 
         # Fallback check if indexer placed output in local index.scip
         local_index = target_p / "index.scip"
@@ -246,16 +274,16 @@ def run_scip_indexer(
         if not scip_out_file.is_file():
             reason = "SCIP indexer completed but output index.scip was not produced."
             logger.warning(reason)
-            return ScipIndexResult(ran=False, indexer=indexer_name, error=reason)
+            return _fail(reason)
 
     except subprocess.TimeoutExpired:
         reason = f"SCIP indexer timed out after {timeout_sec}s."
         logger.warning(reason)
-        return ScipIndexResult(ran=False, indexer=indexer_name, error=reason)
+        return _fail(reason)
     except Exception as e:
         reason = f"SCIP indexer execution error: {e}"
         logger.warning(reason)
-        return ScipIndexResult(ran=False, indexer=indexer_name, error=reason)
+        return _fail(reason)
 
     result = decode_scip_index(scip_out_file)
     result.indexer = indexer_name
@@ -306,19 +334,23 @@ def link_calls(
             # Step 15: Find enclosing function of reference in caller file
             caller_sym = find_enclosing_symbol(ref.range, caller_symbols)
             caller_sym_name = caller_sym.name if caller_sym else None
+            caller_qual_name = caller_sym.qualified_name if caller_sym else None
 
             # Step 16: Find defining function of target symbol in callee file
             callee_sym = find_enclosing_symbol(def_range, callee_symbols)
             if not callee_sym:
                 continue
             callee_sym_name = callee_sym.name
+            callee_qual_name = callee_sym.qualified_name
 
             # Skip self-call unless inside the same function (recursive call)
-            if caller_path == callee_path and caller_sym_name == callee_sym_name:
+            caller_identity = caller_qual_name or caller_sym_name
+            callee_identity = callee_qual_name or callee_sym_name
+            if caller_path == callee_path and caller_identity == callee_identity:
                 continue
 
             evidence_str = f"{caller_path}:{ref.range.start_line}"
-            key = (caller_path, caller_sym_name, callee_path, callee_sym_name)
+            key = (caller_path, caller_identity, callee_path, callee_identity)
 
             if key not in candidates_map:
                 candidates_map[key] = CallEdgeCandidate(
@@ -328,6 +360,8 @@ def link_calls(
                     callee_symbol=callee_sym_name,
                     evidence=[evidence_str],
                     count=1,
+                    caller_qualified_name=caller_qual_name,
+                    callee_qualified_name=callee_qual_name,
                 )
             else:
                 c = candidates_map[key]
@@ -338,7 +372,7 @@ def link_calls(
     # Sort deterministically
     return sorted(
         candidates_map.values(),
-        key=lambda c: (c.caller_path, c.caller_symbol or "", c.callee_path, c.callee_symbol),
+        key=lambda c: (c.caller_path, c.caller_qualified_name or c.caller_symbol or "", c.callee_path, c.callee_qualified_name or c.callee_symbol),
     )
 
 

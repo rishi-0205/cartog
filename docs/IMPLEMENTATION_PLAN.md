@@ -237,10 +237,10 @@ class Position:
 
 @dataclass(frozen=True)
 class SourceRange:
-    start_line: int
-    start_col: int
-    end_line: int
-    end_col: int
+    start_line: int  # 1-based line number (matching editor lines)
+    start_col: int   # 0-based character column offset
+    end_line: int    # 1-based line number (inclusive)
+    end_col: int     # 0-based character column offset
 
 @dataclass(frozen=True)
 class Location:
@@ -516,7 +516,7 @@ class Edge:
 - **Demo Checkpoint 5b:**
   - Command: `cartog map samples/click --out cartog-out/click-map-scip`
   - Spot-check:
-    1. `graph.json` contains `calls` edges with `confidence: "resolved"`.
+    1. `graph.json` contains `calls` edges with `confidence: "resolved"` (`stats.edges_calls > 0` on `samples/click`).
     2. Spot-check 10 call edges: verify caller function actually calls callee function in source code.
     3. Run with indexer disabled or `--no-scip` and verify graceful fallback to tree-sitter-only graph.
 
@@ -575,9 +575,9 @@ class Edge:
 2. **TypeScript Barrel Files (`index.ts` re-exporting modules):**
    - *Problem:* Barrel files act as routing hubs.
    - *Decision:* Treat barrel files as standard file nodes. Files importing from the barrel have an `imports` edge to the barrel. When SCIP runs, `calls` edges connect directly from caller to the ultimate defining function, bypassing the barrel. Cross-checker allows cross-file calls if an import path exists directly or via re-export.
-3. **Column Offsets and Encodings:**
-   - *Problem:* Tree-sitter uses byte or character offsets; SCIP supports UTF-8, UTF-16, and UTF-32 character offsets.
-   - *Decision:* Standardize on 0-indexed line and character offsets. Implement `scip_range_to_source_range()` helper with explicit unit tests.
+3. **Line Numbers and Column Offsets:**
+   - *Problem:* Tree-sitter AST nodes use 0-indexed row numbers, and SCIP stores 0-indexed line ranges, which caused off-by-one errors when viewing lines in source editors (e.g. `formatting.py:311` instead of line 312).
+   - *Decision:* Standardize on 1-based line numbers across all `graph.json` node ranges and edge evidence lines (e.g. `path:line`) to match source code editors and compiler diagnostics, while column offsets remain 0-based character offsets. Convert SCIP ranges and Tree-sitter row indices to 1-based during extraction.
 4. **Local and Unresolved Symbols in SCIP:**
    - *Problem:* `local ` symbols represent local variables; external symbols (from third-party libraries) have no file definition in repo.
    - *Decision:* Ignore `local ` symbols. External symbols are recorded as dependency usage counts but do not create `calls` edges to internal functions.

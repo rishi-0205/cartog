@@ -36,6 +36,9 @@ cartog = "cartog.cli:app"
 where = ["."]
 include = ["cartog*"]
 
+[tool.setuptools.package-data]
+cartog = ["*.js"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 norecursedirs = ["samples", "venv", ".cartog", "cartog-out"]

@@ -43,6 +43,13 @@ def build_graph(
     }
     if scip_result is not None:
         meta_dict["scip"] = scip_result.to_dict().get("meta", {})
+    else:
+        meta_dict["scip"] = {
+            "ran": False,
+            "indexer": None,
+            "documents_count": 0,
+            "error": "SCIP skipped or not executed",
+        }
 
     graph = Graph(
         schema_version="1.0.0",
@@ -475,15 +482,25 @@ def build_graph(
         for f in parsed_files:
             for s in f.symbols:
                 nid = make_node_id(s.kind, f.path, s.qualified_name)
-                sym_node_map[(f.path, s.name)] = nid
+                sym_node_map[(f.path, s.qualified_name)] = nid
+                if (f.path, s.name) not in sym_node_map:
+                    sym_node_map[(f.path, s.name)] = nid
 
         for cand in candidates:
-            if cand.caller_symbol:
-                src_id = sym_node_map.get((cand.caller_path, cand.caller_symbol))
-            else:
-                src_id = make_node_id("file", cand.caller_path, cand.caller_path)
+            src_id = None
+            if cand.caller_qualified_name:
+                src_id = sym_node_map.get((cand.caller_path, cand.caller_qualified_name))
+            if not src_id:
+                if cand.caller_symbol:
+                    src_id = sym_node_map.get((cand.caller_path, cand.caller_symbol))
+                else:
+                    src_id = make_node_id("file", cand.caller_path, cand.caller_path)
 
-            tgt_id = sym_node_map.get((cand.callee_path, cand.callee_symbol))
+            tgt_id = None
+            if cand.callee_qualified_name:
+                tgt_id = sym_node_map.get((cand.callee_path, cand.callee_qualified_name))
+            if not tgt_id:
+                tgt_id = sym_node_map.get((cand.callee_path, cand.callee_symbol))
 
             if src_id and tgt_id and src_id in graph.nodes and tgt_id in graph.nodes:
                 graph.add_edge(
