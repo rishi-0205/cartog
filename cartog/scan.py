@@ -43,12 +43,32 @@ class SkippedFile:
 
 
 @dataclass
+class IgnoreMetrics:
+    """Statistics tracking excluded files and dropped crossing edges."""
+    rules_hash: str = ""
+    gitignore_files_excluded: int = 0
+    cartogignore_files_excluded: int = 0
+    cli_ignore_files_excluded: int = 0
+    default_files_excluded: int = 0
+    dropped_edges_count: int = 0
+
+    def to_dict(self) -> dict[str, int]:
+        return {
+            "gitignore_files_excluded": self.gitignore_files_excluded,
+            "cartogignore_files_excluded": self.cartogignore_files_excluded,
+            "cli_ignore_files_excluded": self.cli_ignore_files_excluded,
+            "dropped_edges_count": self.dropped_edges_count,
+        }
+
+
+@dataclass
 class ScanResult:
     """Aggregated scan results."""
     root_path: str
     roots: list[str] = field(default_factory=list)
     files: list[FileInfo] = field(default_factory=list)
     skipped: list[SkippedFile] = field(default_factory=list)
+    ignore_metrics: IgnoreMetrics = field(default_factory=IgnoreMetrics)
 
 
 def hash_file(filepath: Path) -> str:
@@ -129,27 +149,84 @@ def _load_gitignore(dir_path: Path) -> Optional[pathspec.PathSpec]:
     return None
 
 
+def _load_cartogignore(dir_path: Path) -> Optional[pathspec.PathSpec]:
+    """Load .cartogignore in a directory if present, using gitwildmatch syntax."""
+    cartogignore_file = dir_path / ".cartogignore"
+    if cartogignore_file.is_file():
+        try:
+            with open(cartogignore_file, "r", encoding="utf-8", errors="ignore") as f:
+                lines = [line.strip() for line in f if line.strip() and not line.startswith("#")]
+                if lines:
+                    return pathspec.PathSpec.from_lines("gitignore", lines)
+        except Exception:
+            pass
+    return None
+
+
+def compute_ignore_hash(root_path: Path, cli_ignores: Optional[list[str]] = None) -> str:
+    """Compute SHA-1 hash of combined active .gitignore, .cartogignore, and CLI patterns."""
+    hasher = hashlib.sha1()
+    gi_path = root_path / ".gitignore"
+    if gi_path.is_file():
+        try:
+            hasher.update(b"gitignore:")
+            hasher.update(gi_path.read_bytes())
+        except Exception:
+            pass
+    ci_path = root_path / ".cartogignore"
+    if ci_path.is_file():
+        try:
+            hasher.update(b"cartogignore:")
+            hasher.update(ci_path.read_bytes())
+        except Exception:
+            pass
+    if cli_ignores:
+        hasher.update(b"cli:")
+        for pat in sorted(cli_ignores):
+            hasher.update(pat.encode("utf-8"))
+            hasher.update(b"\n")
+    return hasher.hexdigest()[:16]
+
+
 def walk_files(
     root_dir: str | Path,
     max_size_bytes: Optional[int] = DEFAULT_MAX_FILE_SIZE_BYTES,
     extra_ignore_globs: Optional[list[str]] = None,
     target_langs: Optional[list[str]] = None,
+    cli_ignores: Optional[list[str]] = None,
 ) -> ScanResult:
-    """Walk repository tree, applying gitignore, default ignore rules, and size limits."""
+    """Walk repository tree, applying gitignore, cartogignore, CLI ignores, and size limits.
+
+    Precedence chain:
+    1. .gitignore (root and nested) - forms the immutable base exclusion set.
+    2. .cartogignore (root) - additive exclusions; negations (!) cannot re-include .gitignore items.
+    3. CLI --ignore <pattern> - ad-hoc patterns.
+    4. Default ignore globs and directories (.git, node_modules, minified files, lockfiles).
+    """
     root_path = Path(root_dir).resolve()
     if not root_path.exists() or not root_path.is_dir():
         raise ValueError(f"Target path does not exist or is not a directory: {root_dir}")
 
-    ignore_globs = list(DEFAULT_IGNORED_GLOBS)
-    if extra_ignore_globs:
-        ignore_globs.extend(extra_ignore_globs)
-    glob_spec = pathspec.PathSpec.from_lines("gitignore", ignore_globs)
-
+    # Build specs in strict precedence order
     root_gitignore_spec = _load_gitignore(root_path)
+    root_cartogignore_spec = _load_cartogignore(root_path)
+
+    cli_spec = None
+    if cli_ignores:
+        cli_spec = pathspec.PathSpec.from_lines("gitignore", cli_ignores)
+
+    default_globs = list(DEFAULT_IGNORED_GLOBS)
+    if extra_ignore_globs:
+        default_globs.extend(extra_ignore_globs)
+    glob_spec = pathspec.PathSpec.from_lines("gitignore", default_globs)
+
+    rules_hash = compute_ignore_hash(root_path, cli_ignores=cli_ignores)
+    ignore_metrics = IgnoreMetrics(rules_hash=rules_hash)
 
     result = ScanResult(
         root_path=root_path.as_posix(),
         roots=detect_roots(root_path),
+        ignore_metrics=ignore_metrics,
     )
 
     # Walk directory
@@ -158,45 +235,61 @@ def walk_files(
         rel_dir = current_dir.relative_to(root_path)
         rel_dir_posix = rel_dir.as_posix()
 
-        # Prune ignored directories
-        pruned_dirs = []
+        # Prune default ignored directories and base gitignored directories
         for d in list(dirnames):
             if d in DEFAULT_IGNORED_DIRS:
-                pruned_dirs.append(d)
                 dirnames.remove(d)
-                rel_d = (rel_dir / d).as_posix()
+                rel_d = (rel_dir / d).as_posix() if rel_dir_posix != "." else d
                 result.skipped.append(SkippedFile(path=rel_d, reason=f"default ignored directory '{d}'"))
+                ignore_metrics.default_files_excluded += 1
                 continue
 
-            rel_sub_posix = (rel_dir / d).as_posix()
+            rel_sub_posix = (rel_dir / d).as_posix() if rel_dir_posix != "." else d
+            # 1. Base immutable .gitignore pruning
             if root_gitignore_spec and (root_gitignore_spec.match_file(rel_sub_posix) or root_gitignore_spec.match_file(rel_sub_posix + "/")):
                 dirnames.remove(d)
                 result.skipped.append(SkippedFile(path=rel_sub_posix, reason="matched .gitignore"))
+                ignore_metrics.gitignore_files_excluded += 1
                 continue
 
-        # Check for directory-specific .gitignore
+        # Check for directory-specific nested .gitignore
         dir_gitignore = _load_gitignore(current_dir) if current_dir != root_path else None
 
         for fname in filenames:
             file_path = current_dir / fname
             rel_file = file_path.relative_to(root_path).as_posix()
 
-            # 1. Match default ignore globs (e.g. lockfiles, min.js, images)
-            if glob_spec.match_file(rel_file) or glob_spec.match_file(fname):
-                result.skipped.append(SkippedFile(path=rel_file, reason="matched default ignore pattern"))
-                continue
-
-            # 2. Match root .gitignore
-            if root_gitignore_spec and root_gitignore_spec.match_file(rel_file):
+            # Precedence 1: Root .gitignore (base, immutable)
+            if root_gitignore_spec and (root_gitignore_spec.match_file(rel_file) or root_gitignore_spec.match_file(fname)):
                 result.skipped.append(SkippedFile(path=rel_file, reason="matched .gitignore"))
+                ignore_metrics.gitignore_files_excluded += 1
                 continue
 
-            # 3. Match nested .gitignore
+            # Precedence 1b: Nested .gitignore
             if dir_gitignore and (dir_gitignore.match_file(fname) or dir_gitignore.match_file(file_path.relative_to(current_dir).as_posix())):
                 result.skipped.append(SkippedFile(path=rel_file, reason="matched nested .gitignore"))
+                ignore_metrics.gitignore_files_excluded += 1
                 continue
 
-            # 4. Check file size
+            # Precedence 2: .cartogignore (additive exclusions; ! applies strictly within cartogignore)
+            if root_cartogignore_spec and (root_cartogignore_spec.match_file(rel_file) or root_cartogignore_spec.match_file(fname)):
+                result.skipped.append(SkippedFile(path=rel_file, reason="matched .cartogignore"))
+                ignore_metrics.cartogignore_files_excluded += 1
+                continue
+
+            # Precedence 3: CLI --ignore <pattern>
+            if cli_spec and (cli_spec.match_file(rel_file) or cli_spec.match_file(fname)):
+                result.skipped.append(SkippedFile(path=rel_file, reason="matched CLI --ignore pattern"))
+                ignore_metrics.cli_ignore_files_excluded += 1
+                continue
+
+            # Precedence 4: Default ignore globs (e.g. lockfiles, min.js, images)
+            if glob_spec.match_file(rel_file) or glob_spec.match_file(fname):
+                result.skipped.append(SkippedFile(path=rel_file, reason="matched default ignore pattern"))
+                ignore_metrics.default_files_excluded += 1
+                continue
+
+            # 5. Check file size
             try:
                 stat = file_path.stat()
                 size = stat.st_size
@@ -212,12 +305,12 @@ def walk_files(
                 )
                 continue
 
-            # 5. Check if binary
+            # 6. Check if binary
             if is_binary_file(file_path):
                 result.skipped.append(SkippedFile(path=rel_file, reason="binary file"))
                 continue
 
-            # 6. Check language support
+            # 7. Check language support
             lang = detect_language(file_path)
             if not lang:
                 # Not a recognized source language
@@ -228,7 +321,7 @@ def walk_files(
                 result.skipped.append(SkippedFile(path=rel_file, reason=f"language '{lang}' filtered out"))
                 continue
 
-            # 7. Hash file content
+            # 8. Hash file content
             sha1 = hash_file(file_path)
 
             result.files.append(

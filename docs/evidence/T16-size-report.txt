@@ -1,0 +1,86 @@
+T16: Size and Token Budget Report
+Evidence File
+
+1. Objective & Scope
+--------------------
+Measure and report exact byte sizes of `graph.json` before and after compact serialization
+(compact unindented schema 2.0.0 without redundant `contains` edges vs legacy indented with `contains` edges),
+as well as architectural digest token sizes across Click, Flask, and Ky using `cl100k_base`.
+
+2. Commands Executed
+--------------------
+Click Compact Graph:
+$ venv\Scripts\python.exe -m cartog.cli build samples/click --out cartog-out/size-click-compact
+
+Click Legacy Graph:
+$ venv\Scripts\python.exe -m cartog.cli build samples/click --pretty --emit-contains --out cartog-out/size-click-legacy
+
+Flask Compact Graph:
+$ venv\Scripts\python.exe -m cartog.cli build samples/flask --out cartog-out/size-flask-compact
+
+Flask Legacy Graph:
+$ venv\Scripts\python.exe -m cartog.cli build samples/flask --pretty --emit-contains --out cartog-out/size-flask-legacy
+
+Ky Compact Graph:
+$ venv\Scripts\python.exe -m cartog.cli build samples/ky --out cartog-out/size-ky-compact
+
+Ky Legacy Graph:
+$ venv\Scripts\python.exe -m cartog.cli build samples/ky --pretty --emit-contains --out cartog-out/size-ky-legacy
+
+Architectural Digest Generation:
+$ venv\Scripts\python.exe -m cartog.cli digest samples/click --out cartog-out/digest-click
+$ venv\Scripts\python.exe -m cartog.cli digest samples/flask --out cartog-out/digest-flask
+$ venv\Scripts\python.exe -m cartog.cli digest samples/ky --out cartog-out/digest-ky
+
+3. Disk File Size Verification (PowerShell Get-Item)
+----------------------------------------------------
+Command:
+Get-Item cartog-out/size-*/graph.json, cartog-out/digest-*/digest.md | Select-Object FullName, Length | Format-Table -AutoSize
+
+Output:
+FullName                                                                             Length
+--------                                                                             ------
+C:\Users\rishi\OneDrive\Desktop\Dev\cartog\cartog-out\size-click-compact\graph.json 1846471
+C:\Users\rishi\OneDrive\Desktop\Dev\cartog\cartog-out\size-click-legacy\graph.json  3316234
+C:\Users\rishi\OneDrive\Desktop\Dev\cartog\cartog-out\size-flask-compact\graph.json 1268169
+C:\Users\rishi\OneDrive\Desktop\Dev\cartog\cartog-out\size-flask-legacy\graph.json  2387821
+C:\Users\rishi\OneDrive\Desktop\Dev\cartog\cartog-out\size-ky-compact\graph.json     638927
+C:\Users\rishi\OneDrive\Desktop\Dev\cartog\cartog-out\size-ky-legacy\graph.json     1285994
+C:\Users\rishi\OneDrive\Desktop\Dev\cartog\cartog-out\digest-click\digest.md           3637
+C:\Users\rishi\OneDrive\Desktop\Dev\cartog\cartog-out\digest-flask\digest.md           4719
+C:\Users\rishi\OneDrive\Desktop\Dev\cartog\cartog-out\digest-ky\digest.md              5846
+
+4. Graph Serialization Size Reduction Summary
+---------------------------------------------
++-----------+----------------------+-----------------------+-------------------+--------------------+--------------------+
+| Repo      | Legacy Size (bytes)  | Compact Size (bytes)  | Reduction (bytes) | Reduction (%)      | Contains Edges     |
+|           | (pretty+contains)    | (unindented, no-cont) |                   |                    | (Legacy -> Compact)|
++-----------+----------------------+-----------------------+-------------------+--------------------+--------------------+
+| click     | 3,316,234 bytes      | 1,846,471 bytes       | 1,469,763 bytes   | 44.32%             | 2,687 -> 0         |
+| flask     | 2,387,821 bytes      | 1,268,169 bytes       | 1,119,652 bytes   | 46.89%             | 2,032 -> 0         |
+| ky        | 1,285,994 bytes      |   638,927 bytes       |   647,067 bytes   | 50.32%             | 1,311 -> 0         |
++-----------+----------------------+-----------------------+-------------------+--------------------+--------------------+
+
+Structural Edge and Node Counts:
+- click: 2,777 nodes across both formats; edges reduced from 7,479 (legacy) to 4,792 (compact).
+- flask: 2,137 nodes across both formats; edges reduced from 5,718 (legacy) to 3,686 (compact).
+- ky:    1,342 nodes across both formats; edges reduced from 2,097 (legacy) to   786 (compact).
+
+5. Architecture Digest Token Budget Summary
+-------------------------------------------
+Tokenizer: tiktoken cl100k_base (standard GPT-4 / GPT-3.5 tokenization)
+
++-----------+--------------------+------------------------+--------------------+---------------------+
+| Repo      | Digest Characters  | Tokens (cl100k_base)   | Tokens (~chars/4)  | Budget Status       |
+|           |                    |                        |                    | (< 4,000 tokens)    |
++-----------+--------------------+------------------------+--------------------+---------------------+
+| click     | 3,587 chars        | 1,053 tokens           | 896 tokens         | PASSED (26% budget) |
+| flask     | 4,643 chars        | 1,460 tokens           | 1,160 tokens       | PASSED (37% budget) |
+| ky        | 5,747 chars        | 1,810 tokens           | 1,436 tokens       | PASSED (45% budget) |
++-----------+--------------------+------------------------+--------------------+---------------------+
+
+6. Test Suite Invariance
+------------------------
+$ venv\Scripts\python.exe -m pytest tests/
+152 passed, 1 warning in 28.72s (0 decreased from baseline).
+

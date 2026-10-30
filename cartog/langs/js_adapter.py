@@ -9,6 +9,7 @@ import tree_sitter
 import tree_sitter_javascript
 import tree_sitter_typescript
 
+from cartog.jsonc import load_jsonc_file, load_strict_json_file
 from cartog.langs.base import (
     ImportRecord,
     LanguageAdapter,
@@ -46,19 +47,9 @@ def clean_string_literal(text: str) -> str:
     return text
 
 
-def load_json_with_comments(path: Path) -> Optional[dict[str, Any]]:
-    """Load JSON file tolerating single-line comments and trailing commas."""
-    if not path.is_file():
-        return None
-    try:
-        content = path.read_text(encoding="utf-8", errors="ignore")
-        # Strip single-line comments (// ...)
-        content = re.sub(r"//.*", "", content)
-        # Strip trailing commas before closing braces/brackets
-        content = re.sub(r",(\s*[}\]])", r"\1", content)
-        return json.loads(content)
-    except Exception:
-        return None
+def load_json_with_comments(path: Path, project_context: Optional[Any] = None) -> Optional[dict[str, Any]]:
+    """Load JSON file tolerating single-line comments, block comments, and trailing commas."""
+    return load_jsonc_file(path, project_context=project_context)
 
 
 def get_enclosing_root(rel_path: str, roots: list[str]) -> str:
@@ -340,11 +331,16 @@ class JsAdapter(LanguageAdapter):
                 specifier = clean_string_literal(_get_node_text(source_node))
                 names: list[str] = []
                 aliases: dict[str, str] = {}
+                is_type_only = False
 
                 for c in node.children:
-                    if c.type == "import_clause":
+                    if _get_node_text(c).strip() == "type":
+                        is_type_only = True
+                    elif c.type == "import_clause":
                         for gc in c.children:
-                            if gc.type == "identifier":
+                            if _get_node_text(gc).strip() == "type":
+                                is_type_only = True
+                            elif gc.type == "identifier":
                                 default_name = _get_node_text(gc).strip()
                                 names.append("default")
                                 aliases["default"] = default_name
@@ -373,9 +369,10 @@ class JsAdapter(LanguageAdapter):
                         names=names,
                         aliases=aliases,
                         kind=kind,
-                        line=node.start_point.row,
+                        line=node.start_point.row + 1,
                         level=_count_level(specifier),
                         raw_text=raw_text,
+                        is_type_only=is_type_only,
                     )
                 )
 
@@ -391,11 +388,16 @@ class JsAdapter(LanguageAdapter):
                     specifier = clean_string_literal(_get_node_text(source_node))
                     names: list[str] = []
                     aliases: dict[str, str] = {}
+                    is_type_only = False
 
                     for c in node.children:
-                        if c.type == "export_clause":
+                        if _get_node_text(c).strip() == "type":
+                            is_type_only = True
+                        elif c.type == "export_clause":
                             for sc in c.children:
-                                if sc.type == "export_specifier":
+                                if _get_node_text(sc).strip() == "type":
+                                    is_type_only = True
+                                elif sc.type == "export_specifier":
                                     n_c = sc.child_by_field_name("name")
                                     a_c = sc.child_by_field_name("alias")
                                     if n_c:
@@ -414,9 +416,10 @@ class JsAdapter(LanguageAdapter):
                             names=names,
                             aliases=aliases,
                             kind=kind,
-                            line=node.start_point.row,
+                            line=node.start_point.row + 1,
                             level=_count_level(specifier),
                             raw_text=raw_text,
+                            is_type_only=is_type_only,
                         )
                     )
 
@@ -438,7 +441,7 @@ class JsAdapter(LanguageAdapter):
                                     names=[],
                                     aliases={},
                                     kind=kind,
-                                    line=node.start_point.row,
+                                    line=node.start_point.row + 1,
                                     level=_count_level(specifier),
                                     raw_text=_get_node_text(node).strip(),
                                 )
@@ -453,7 +456,9 @@ class JsAdapter(LanguageAdapter):
         imports.sort(key=lambda i: (i.line, i.specifier))
         return imports
 
-    def _get_tsconfig(self, root_dir: str, target_path: str = ".") -> Optional[dict[str, Any]]:
+    def _get_tsconfig(
+        self, root_dir: str, target_path: str = ".", project_context: Optional[ProjectContext] = None
+    ) -> Optional[dict[str, Any]]:
         """Load and cache tsconfig.json or jsconfig.json for a given directory."""
         cache_key = f"{target_path}::{root_dir}"
         if cache_key in self._tsconfig_cache:
@@ -465,23 +470,24 @@ class JsAdapter(LanguageAdapter):
         js_p = base_p / "jsconfig.json"
 
         data = None
+        ctx = project_context or getattr(self, "context", None)
         if ts_p.is_file():
-            data = load_json_with_comments(ts_p)
+            data = load_jsonc_file(ts_p, ctx)
         elif js_p.is_file():
-            data = load_json_with_comments(js_p)
+            data = load_jsonc_file(js_p, ctx)
 
         self._tsconfig_cache[cache_key] = data
         return data
 
     def _discover_workspace_packages(
         self, project_context: ProjectContext
-    ) -> dict[str, dict[str, str]]:
-        """Discover packages in monorepo workspaces and map package name -> info."""
+    ) -> dict[str, dict[str, Any]]:
+        """Discover packages in root package.json and monorepo workspaces."""
         target_path = getattr(project_context, "target_path", ".") or "."
         if self._workspaces_cache is not None and target_path in self._workspaces_cache:
             return self._workspaces_cache[target_path]
 
-        packages: dict[str, dict[str, str]] = {}
+        packages: dict[str, dict[str, Any]] = {}
         roots = getattr(project_context, "roots", ["."]) or ["."]
         target_p = Path(target_path) if target_path != "." else Path("")
 
@@ -491,10 +497,29 @@ class JsAdapter(LanguageAdapter):
             if not pkg_json.is_file():
                 continue
 
-            data = load_json_with_comments(pkg_json)
+            data = load_strict_json_file(pkg_json, project_context)
             if not data or not isinstance(data, dict):
                 continue
 
+            try:
+                rel_pkg_dir = base_p.relative_to(target_p).as_posix() if target_p != Path("") else (r if r != "." else ".")
+            except ValueError:
+                rel_pkg_dir = r if r != "." else "."
+            if rel_pkg_dir == "":
+                rel_pkg_dir = "."
+
+            # 1. Register package itself if it defines a name
+            if "name" in data and isinstance(data["name"], str):
+                packages[data["name"]] = {
+                    "dir": rel_pkg_dir,
+                    "data": data,
+                    "main": data.get("main"),
+                    "module": data.get("module"),
+                    "types": data.get("types"),
+                    "exports": data.get("exports"),
+                }
+
+            # 2. Register child workspace packages if declared
             workspaces = data.get("workspaces", [])
             if isinstance(workspaces, dict):
                 workspaces = workspaces.get("packages", [])
@@ -502,7 +527,6 @@ class JsAdapter(LanguageAdapter):
                 continue
 
             for pattern in workspaces:
-                # e.g. "packages/*"
                 clean_pat = pattern.rstrip("/")
                 if clean_pat.endswith("/*"):
                     parent_dir = base_p / clean_pat[:-2]
@@ -512,16 +536,19 @@ class JsAdapter(LanguageAdapter):
                                 if child.is_dir():
                                     child_pkg = child / "package.json"
                                     if child_pkg.is_file():
-                                        c_data = load_json_with_comments(child_pkg)
-                                        if c_data and "name" in c_data:
+                                        c_data = load_strict_json_file(child_pkg, project_context)
+                                        if c_data and "name" in c_data and isinstance(c_data["name"], str):
                                             try:
-                                                rel_pkg_dir = child.relative_to(target_p).as_posix()
+                                                c_rel = child.relative_to(target_p).as_posix() if target_p != Path("") else child.as_posix()
                                             except ValueError:
-                                                rel_pkg_dir = child.as_posix()
+                                                c_rel = child.as_posix()
                                             packages[c_data["name"]] = {
-                                                "dir": rel_pkg_dir,
-                                                "main": c_data.get("main", "src/index.ts"),
-                                                "module": c_data.get("module", ""),
+                                                "dir": c_rel,
+                                                "data": c_data,
+                                                "main": c_data.get("main"),
+                                                "module": c_data.get("module"),
+                                                "types": c_data.get("types"),
+                                                "exports": c_data.get("exports"),
                                             }
                         except Exception:
                             pass
@@ -529,22 +556,190 @@ class JsAdapter(LanguageAdapter):
                     target_dir = base_p / clean_pat
                     child_pkg = target_dir / "package.json"
                     if child_pkg.is_file():
-                        c_data = load_json_with_comments(child_pkg)
-                        if c_data and "name" in c_data:
+                        c_data = load_strict_json_file(child_pkg, project_context)
+                        if c_data and "name" in c_data and isinstance(c_data["name"], str):
                             try:
-                                rel_pkg_dir = target_dir.relative_to(target_p).as_posix()
+                                c_rel = target_dir.relative_to(target_p).as_posix() if target_p != Path("") else target_dir.as_posix()
                             except ValueError:
-                                rel_pkg_dir = target_dir.as_posix()
+                                c_rel = target_dir.as_posix()
                             packages[c_data["name"]] = {
-                                "dir": rel_pkg_dir,
-                                "main": c_data.get("main", "src/index.ts"),
-                                "module": c_data.get("module", ""),
+                                "dir": c_rel,
+                                "data": c_data,
+                                "main": c_data.get("main"),
+                                "module": c_data.get("module"),
+                                "types": c_data.get("types"),
+                                "exports": c_data.get("exports"),
                             }
 
         if self._workspaces_cache is None:
             self._workspaces_cache = {}
         self._workspaces_cache[target_path] = packages
         return packages
+
+    def _get_tsconfig_build_dirs(
+        self, pkg_dir: str, target_path: str = ".", project_context: Optional[ProjectContext] = None
+    ) -> list[tuple[str, str]]:
+        """Return list of (outDir, rootDir) mappings from tsconfig files in pkg_dir."""
+        target_p = Path(target_path) if target_path != "." else Path("")
+        base_p = (target_p / pkg_dir) if pkg_dir != "." else target_p
+        mappings: list[tuple[str, str]] = []
+        ctx = project_context or getattr(self, "context", None)
+
+        for fn in ("tsconfig.dist.json", "tsconfig.build.json", "tsconfig.json"):
+            cfg_p = base_p / fn
+            if cfg_p.is_file():
+                data = load_jsonc_file(cfg_p, ctx)
+                if data and isinstance(data, dict):
+                    copts = data.get("compilerOptions", {})
+                    if isinstance(copts, dict) and "outDir" in copts:
+                        out_d = copts["outDir"].strip()
+                        root_d = copts.get("rootDir", ".").strip()
+                        out_norm = os.path.normpath(out_d).replace("\\", "/").lstrip("./")
+                        root_norm = os.path.normpath(root_d).replace("\\", "/").lstrip("./")
+                        if out_norm and (out_norm, root_norm) not in mappings:
+                            mappings.append((out_norm, root_norm))
+        return mappings
+
+    def _resolve_package_entry(
+        self,
+        pkg_name: str,
+        subpath: Optional[str],
+        pkg_info: dict[str, Any],
+        all_files: set[str],
+        target_path: str = ".",
+        project_context: Optional[ProjectContext] = None,
+    ) -> Optional[str]:
+        """Resolve a self-referencing package entrypoint or subpath to a repo source file."""
+        pkg_dir = pkg_info.get("dir", ".")
+        pkg_data = pkg_info.get("data", {})
+        exports = pkg_info.get("exports") or pkg_data.get("exports")
+
+        candidates: list[str] = []
+
+        if subpath is None:
+            # 1. Check exports for root entry "."
+            if exports:
+                if isinstance(exports, str):
+                    candidates.append(exports)
+                elif isinstance(exports, dict):
+                    entry = exports.get(".")
+                    if isinstance(entry, str):
+                        candidates.append(entry)
+                    elif isinstance(entry, dict):
+                        for cond in ("types", "import", "module", "default"):
+                            if cond in entry and isinstance(entry[cond], str):
+                                candidates.append(entry[cond])
+                        for v in entry.values():
+                            if isinstance(v, str) and v not in candidates:
+                                candidates.append(v)
+                    elif "." not in exports:
+                        for cond in ("types", "import", "module", "default"):
+                            if cond in exports and isinstance(exports[cond], str):
+                                candidates.append(exports[cond])
+                        for v in exports.values():
+                            if isinstance(v, str) and v not in candidates:
+                                candidates.append(v)
+            # 2. Check module, main, types in package.json
+            for k in ("module", "main", "types"):
+                v = pkg_info.get(k) or pkg_data.get(k)
+                if v and isinstance(v, str) and v not in candidates:
+                    candidates.append(v)
+        else:
+            # Subpath import (e.g. ky/foo)
+            exp_key = f"./{subpath}"
+            if exports and isinstance(exports, dict):
+                if exp_key in exports:
+                    v = exports[exp_key]
+                    if isinstance(v, str):
+                        candidates.append(v)
+                    elif isinstance(v, dict):
+                        for cond in ("types", "import", "module", "default"):
+                            if cond in v and isinstance(v[cond], str):
+                                candidates.append(v[cond])
+                        for val in v.values():
+                            if isinstance(val, str) and val not in candidates:
+                                candidates.append(val)
+                else:
+                    for pat, val in exports.items():
+                        if pat.startswith("./") and "*" in pat:
+                            prefix, suffix = pat.split("*", 1)
+                            if exp_key.startswith(prefix) and (not suffix or exp_key.endswith(suffix)):
+                                wildcard = exp_key[len(prefix) : len(exp_key) - len(suffix) if suffix else None]
+                                if isinstance(val, str):
+                                    candidates.append(val.replace("*", wildcard))
+                                elif isinstance(val, dict):
+                                    for cond in ("types", "import", "module", "default"):
+                                        if cond in val and isinstance(val[cond], str):
+                                            candidates.append(val[cond].replace("*", wildcard))
+                                    for v_item in val.values():
+                                        if isinstance(v_item, str):
+                                            repl = v_item.replace("*", wildcard)
+                                            if repl not in candidates:
+                                                candidates.append(repl)
+            candidates.append(subpath)
+            candidates.append(f"./{subpath}")
+
+        def _make_repo_path(path_str: str) -> Path:
+            clean = path_str.strip()
+            if clean.startswith("./"):
+                clean = clean[2:]
+            if pkg_dir != ".":
+                return Path(pkg_dir) / clean
+            return Path(clean)
+
+        # Step 1: Probe direct candidates
+        for cand in candidates:
+            target_p = _make_repo_path(cand)
+            res = self._probe_candidate(target_p, all_files)
+            if res:
+                return res
+
+        # Step 2: Built output mapping using tsconfig outDir and rootDir
+        build_dirs = self._get_tsconfig_build_dirs(
+            pkg_dir, target_path=target_path, project_context=project_context
+        )
+        for cand in candidates:
+            clean_cand = cand.strip()
+            if clean_cand.startswith("./"):
+                clean_cand = clean_cand[2:]
+
+            for out_dir, root_dir in build_dirs:
+                if clean_cand.startswith(out_dir + "/") or clean_cand == out_dir:
+                    sub_in_out = clean_cand[len(out_dir) :].lstrip("/")
+                    src_cand = f"{root_dir}/{sub_in_out}" if root_dir else sub_in_out
+                    target_p = _make_repo_path(src_cand)
+                    res = self._probe_candidate(target_p, all_files)
+                    if res:
+                        return res
+                    if sub_in_out.endswith(".d.ts"):
+                        base_no_ext = sub_in_out[:-5]
+                        target_p2 = _make_repo_path(f"{root_dir}/{base_no_ext}.ts" if root_dir else f"{base_no_ext}.ts")
+                        res2 = self._probe_candidate(target_p2, all_files)
+                        if res2:
+                            return res2
+
+        # Step 3: Fallback source directories (source, src, lib)
+        for cand in candidates:
+            clean_cand = cand.strip()
+            if clean_cand.startswith("./"):
+                clean_cand = clean_cand[2:]
+            parts = clean_cand.split("/", 1)
+            rest = parts[1] if len(parts) > 1 else parts[0]
+            for src_folder in ("source", "src", "lib"):
+                target_p = _make_repo_path(f"{src_folder}/{rest}")
+                res = self._probe_candidate(target_p, all_files)
+                if res:
+                    return res
+
+        # Step 4: Fallback standard entry points for root package
+        if subpath is None:
+            for fb in ("source/index.ts", "src/index.ts", "index.ts", "source/index.js", "src/index.js", "index.js"):
+                target_p = _make_repo_path(fb)
+                res = self._probe_candidate(target_p, all_files)
+                if res:
+                    return res
+
+        return None
 
     def _resolve_relative(
         self, specifier: str, from_file: str, all_files: set[str]
@@ -623,7 +818,7 @@ class JsAdapter(LanguageAdapter):
         enc_root = get_enclosing_root(from_file, roots)
         search_roots = [enc_root] + [r for r in roots if r != enc_root]
         for r in search_roots:
-            cfg = self._get_tsconfig(r, target_path=target_path)
+            cfg = self._get_tsconfig(r, target_path=target_path, project_context=project_context)
             if not cfg or not isinstance(cfg, dict):
                 continue
             compiler_opts = cfg.get("compilerOptions", {})
@@ -661,25 +856,30 @@ class JsAdapter(LanguageAdapter):
                         if cand_res:
                             return cand_res
 
-        # 3. Monorepo workspace package resolution
+        # 3. Monorepo workspace package and root package resolution
         ws_pkgs = self._discover_workspace_packages(project_context)
-        for pkg_name, pkg_info in ws_pkgs.items():
+        for pkg_name, pkg_info in sorted(ws_pkgs.items(), key=lambda x: len(x[0]), reverse=True):
             if specifier == pkg_name:
-                pkg_dir = pkg_info["dir"]
-                main_file = pkg_info.get("main", "src/index.ts")
-                target = Path(pkg_dir) / main_file
-                res = self._probe_candidate(target, all_files)
+                res = self._resolve_package_entry(
+                    pkg_name,
+                    None,
+                    pkg_info,
+                    all_files,
+                    target_path=target_path,
+                    project_context=project_context,
+                )
                 if res:
                     return res
-                # Fallback to standard index files in pkg_dir or pkg_dir/src
-                for sub in ("src/index.ts", "src/index.js", "index.ts", "index.js"):
-                    fb = Path(pkg_dir) / sub
-                    if fb.as_posix() in all_files:
-                        return fb.as_posix()
             elif specifier.startswith(pkg_name + "/"):
                 sub_path = specifier[len(pkg_name) + 1 :]
-                target = Path(pkg_info["dir"]) / sub_path
-                res = self._probe_candidate(target, all_files)
+                res = self._resolve_package_entry(
+                    pkg_name,
+                    sub_path,
+                    pkg_info,
+                    all_files,
+                    target_path=target_path,
+                    project_context=project_context,
+                )
                 if res:
                     return res
 
@@ -704,6 +904,28 @@ class JsAdapter(LanguageAdapter):
 
         if norm in all_files:
             return norm
+
+        # If .d.ts, probe .ts, .tsx, .d.ts
+        if norm.endswith(".d.ts"):
+            prefix = norm[:-5]
+            for ext in (".ts", ".tsx", ".d.ts"):
+                cand = prefix + ext
+                if cand in all_files:
+                    return cand
+
+        # Check .js -> .ts / .tsx replacement rule
+        for js_ext, ts_replacements in [
+            (".js", [".ts", ".tsx", ".js", ".mjs"]),
+            (".jsx", [".tsx", ".jsx"]),
+            (".mjs", [".mts", ".mjs"]),
+            (".cjs", [".cts", ".cjs"]),
+        ]:
+            if norm.endswith(js_ext):
+                prefix = norm[: -len(js_ext)]
+                for repl in ts_replacements:
+                    cand = prefix + repl
+                    if cand in all_files:
+                        return cand
 
         # Probing extensions
         for ext in CANDIDATE_EXTENSIONS:

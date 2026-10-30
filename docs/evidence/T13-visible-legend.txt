@@ -1,0 +1,155 @@
+=== T13 Evidence: Visible Legend and Summary in Mermaid ===
+
+Initial test count: 146 passed, 1 warning
+Final test count: 148 passed, 1 warning (0 decreased, +2 passed)
+
+1. RED TEST RUN
+Command: venv\Scripts\python.exe -m pytest tests/test_mermaid.py -k "test_mermaid_emits_visible_legend_subgraph or test_legend_styling_matches_emitted_link_styles"
+Real Output:
+============================= test session starts =============================
+platform win32 -- Python 3.13.1, pytest-9.1.1, pluggy-1.7.0
+rootdir: C:\Users\rishi\OneDrive\Desktop\Dev\cartog
+configfile: pyproject.toml
+collected 13 items / 11 deselected / 2 selected
+
+tests\test_mermaid.py FF                                                 [100%]
+
+================================== FAILURES ===================================
+_________________ test_mermaid_emits_visible_legend_subgraph __________________
+
+    def test_mermaid_emits_visible_legend_subgraph():
+        """Verify that Mermaid exporters emit a visible subgraph legend and visible summary node instead of %% comments."""
+        graph = Graph()
+        f1 = Node.create(kind="file", name="a.py", qualified_name="pkg.a", path="src/pkg/a.py")
+        f2 = Node.create(kind="file", name="b.py", qualified_name="pkg.b", path="src/pkg/b.py")
+        graph.add_node(f1)
+        graph.add_node(f2)
+        graph.add_edge(Edge(source=f1.id, target=f2.id, kind="calls", confidence="resolved", count=2))
+    
+        # 1. File-level overview
+        mmd_file = generate_overview_mermaid(graph, level="file")
+>       assert "subgraph legend" in mmd_file or "subgraph Legend" in mmd_file
+E       assert ('subgraph legend' in 'flowchart TD\\n  subgraph subgraph_src_pkg ["\U0001f4c1 src/pkg"]\\n    file_9334117f99["a.py"]\\n    file_fb679643c6["b.py"]\\n  ...dashed)\\n  %%   -.->|overrides|     Method overrides (dashed)\\n  %%   ==>|serves/starts|  Route / Entrypoint binding\\n' or 'subgraph Legend' in 'flowchart TD\\n  subgraph subgraph_src_pkg ["\U0001f4c1 src/pkg"]\\n    file_9334117f99["a.py"]\\n    file_fb679643c6["b.py"]\\n  ...dashed)\\n  %%   -.->|overrides|     Method overrides (dashed)\\n  %%   ==>|serves/starts|  Route / Entrypoint binding\\n')
+
+tests\test_mermaid.py:285: AssertionError
+_______________ test_legend_styling_matches_emitted_link_styles _______________
+
+    def test_legend_styling_matches_emitted_link_styles():
+        """Verify that legend elements accurately reflect link colors and dash patterns for reconciled calls."""
+        graph = Graph()
+        f1 = Node.create(kind="file", name="a.py", qualified_name="pkg.a", path="src/pkg/a.py")
+        f2 = Node.create(kind="file", name="b.py", qualified_name="pkg.b", path="src/pkg/b.py")
+        graph.add_node(f1)
+        graph.add_node(f2)
+        graph.add_edge(Edge(source=f1.id, target=f2.id, kind="calls", confidence="reconciled", count=3))
+    
+        mmd = generate_overview_mermaid(graph, level="file")
+    
+        # Diagram has a reconciled edge styled with stroke:#f57c00,stroke-dasharray: 4 4
+        assert "stroke:#f57c00" in mmd
+        assert "stroke-dasharray: 4 4" in mmd
+    
+        # Legend must also contain a linkStyle applying stroke:#f57c00 and stroke-dasharray: 4 4 to the legend's reconciled link
+        legend_link_styles = [
+            line.strip() for line in mmd.splitlines()
+            if line.strip().startswith("linkStyle ") and "stroke:#f57c00" in line and "stroke-dasharray: 4 4" in line
+        ]
+        # There must be at least 2 linkStyle lines with stroke:#f57c00 (one for diagram edge, one for legend edge)
+>       assert len(legend_link_styles) >= 2, f"Expected diagram edge and legend edge to both have reconciled linkStyle, found {legend_link_styles}"
+E       AssertionError: Expected diagram edge and legend edge to both have reconciled linkStyle, found ['linkStyle 0 stroke:#f57c00,stroke-dasharray: 4 4,stroke-width:1.5px;']
+E       assert 1 >= 2
+E        +  where 1 = len(['linkStyle 0 stroke:#f57c00,stroke-dasharray: 4 4,stroke-width:1.5px;'])
+
+tests\test_mermaid.py:331: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_mermaid.py::test_mermaid_emits_visible_legend_subgraph - as...
+FAILED tests/test_mermaid.py::test_legend_styling_matches_emitted_link_styles
+====================== 2 failed, 11 deselected in 0.26s =======================
+
+
+2. GREEN TEST RUN
+Command: venv\Scripts\python.exe -m pytest tests/test_mermaid.py -k "test_mermaid_emits_visible_legend_subgraph or test_legend_styling_matches_emitted_link_styles"
+Real Output:
+============================= test session starts =============================
+platform win32 -- Python 3.13.1, pytest-9.1.1, pluggy-1.7.0
+rootdir: C:\Users\rishi\OneDrive\Desktop\Dev\cartog
+configfile: pyproject.toml
+collected 13 items / 11 deselected / 2 selected
+
+tests\test_mermaid.py ..                                                 [100%]
+
+====================== 2 passed, 11 deselected in 0.13s =======================
+
+
+3. CLI TEST SUITE
+Command: venv\Scripts\python.exe -m pytest tests/test_cli.py
+Real Output:
+============================= test session starts =============================
+platform win32 -- Python 3.13.1, pytest-9.1.1, pluggy-1.7.0
+rootdir: C:\Users\rishi\OneDrive\Desktop\Dev\cartog
+configfile: pyproject.toml
+collected 16 items
+
+tests\test_cli.py ................                                       [100%]
+
+============================= 16 passed in 14.24s =============================
+
+
+4. FULL TEST SUITE RUN
+Command: venv\Scripts\python.exe -m pytest tests/
+Real Output:
+============================= test session starts =============================
+platform win32 -- Python 3.13.1, pytest-9.1.1, pluggy-1.7.0
+rootdir: C:\Users\rishi\OneDrive\Desktop\Dev\cartog
+configfile: pyproject.toml
+collected 148 items
+
+tests\test_cli.py ................                                       [ 10%]
+tests\test_flow_selector.py ..........                                   [ 17%]
+tests\test_ignore.py .......                                             [ 22%]
+tests\test_import_resolution.py ..                                       [ 23%]
+tests\test_js_adapter.py ..........                                      [ 30%]
+tests\test_jsonc.py .....                                                [ 33%]
+tests\test_manifests.py .......                                          [ 38%]
+tests\test_merge.py .....                                                [ 41%]
+tests\test_merge_validate.py .............                               [ 50%]
+tests\test_mermaid.py .............                                      [ 59%]
+tests\test_model.py ...                                                  [ 61%]
+tests\test_noise.py ......                                               [ 65%]
+tests\test_parse_cache.py ..                                             [ 66%]
+tests\test_patterns.py ....                                              [ 69%]
+tests\test_python_adapter.py ......                                      [ 73%]
+tests\test_scan.py .....                                                 [ 77%]
+tests\test_scip_pass.py ................                                 [ 87%]
+tests\test_views_mermaid.py ..................                           [100%]
+
+======================= 148 passed, 1 warning in 31.01s =======================
+
+
+5. DEMO TRACE EXECUTION & VISIBLE DIAGRAM CHECK
+Command: venv\Scripts\python.exe -m cartog.cli flow samples/flask "GET /" --include-examples --pick blog.index --out cartog-out/test_flow_legend
+Terminal Output Excerpt:
+Cartog Call Flow Trace: 'GET /' (max depth: 3)
+  Reached 10 symbols via 7 call relationships.
+  Summary: Candidates found: 130, Selected: 1, Nodes drawn: 10, Nodes collapsed: 0
+  Mermaid flow trace written: cartog-out/test_flow_legend/flow_GET.mmd
+
+Mermaid Source Excerpt (cartog-out/test_flow_legend/flow_GET.mmd):
+flowchart LR
+  summary_node["📝 Summary: Candidates found: 130, Selected: 1, Nodes drawn: 10, Nodes collapsed: 0"]:::summaryNote
+  %% Call flow trace for: GET /
+  ...
+  subgraph legend ["Legend"]
+    leg_dir["Direct call"]:::legendNode -->|calls| leg_dir_t["Target"]:::legendNode
+    leg_no_imp["Call without import"]:::legendNode -.->|calls| leg_no_imp_t["Target"]:::legendNode
+    leg_rec["Reconciled call"]:::legendNode -.->|"calls (reconciled)"| leg_rec_t["Target"]:::legendNode
+    leg_serv["Route / Command"]:::legendNode ==>|serves/starts| leg_serv_t["Target"]:::legendNode
+    leg_over["Method override"]:::legendNode -.->|overrides| leg_over_t["Target"]:::legendNode
+  end
+
+  classDef entryStart fill:#ff6b6b,stroke:#c0392b,stroke-width:3px,color:#fff;
+  ...
+  classDef summaryNote fill:#eef2f7,stroke:#4a5568,stroke-width:1px,stroke-dasharray: 2 2,color:#2d3748;
+  classDef legendNode fill:#f8f9fa,stroke:#adb5bd,stroke-width:1px,color:#212529;
+  linkStyle 9 stroke:#f57c00,stroke-dasharray: 4 4,stroke-width:1.5px;
+

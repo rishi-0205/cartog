@@ -83,6 +83,7 @@ def parse_source_file(
                         line=i.get("line", 0),
                         level=i.get("level", 0),
                         raw_text=i.get("raw_text", ""),
+                        is_type_only=i.get("is_type_only", False),
                     )
                 )
             return ParseFileResult(

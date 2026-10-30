@@ -305,7 +305,7 @@ class PythonAdapter(LanguageAdapter):
             if "import" in match:
                 node = match["import"][0]
                 raw_text = _get_node_text(node).strip()
-                line = node.start_point.row
+                line = node.start_point.row + 1
 
                 for child in node.children:
                     if child.type == "dotted_name":
@@ -342,7 +342,7 @@ class PythonAdapter(LanguageAdapter):
             elif "import_from" in match:
                 node = match["import_from"][0]
                 raw_text = _get_node_text(node).strip()
-                line = node.start_point.row
+                line = node.start_point.row + 1
 
                 module_name = ""
                 level = 0
@@ -411,8 +411,31 @@ class PythonAdapter(LanguageAdapter):
             if "decorator" in match and "func_name" in match:
                 dec_node = match["decorator"][0]
                 func_node = match["func_name"][0]
+                func_def_node = match.get("func", [func_node])[0]
                 dec_text = source_bytes[dec_node.start_byte:dec_node.end_byte].decode("utf-8", errors="ignore").strip()
                 func_name = source_bytes[func_node.start_byte:func_node.end_byte].decode("utf-8", errors="ignore").strip()
+                dec_line = dec_node.start_point.row + 1
+                handler_def_line = func_def_node.start_point.row + 1
+
+                # Enclosing scope calculation
+                module_name = path_to_module_name(path)
+                ancestors: list[str] = []
+                curr = func_def_node.parent
+                while curr:
+                    if curr.type in ("function_definition", "class_definition"):
+                        for child in curr.children:
+                            if child.type == "identifier":
+                                ancestors.append(source_bytes[child.start_byte:child.end_byte].decode("utf-8", errors="ignore"))
+                                break
+                    curr = curr.parent
+                ancestors.reverse()
+
+                if ancestors:
+                    enclosing_scope = ".".join([module_name] + ancestors) if module_name else ".".join(ancestors)
+                else:
+                    enclosing_scope = module_name or Path(path).stem
+
+                handler_qname = f"{enclosing_scope}.{func_name}" if enclosing_scope else func_name
 
                 route_info = parse_route_decorator(dec_text)
                 if route_info:
@@ -423,6 +446,10 @@ class PythonAdapter(LanguageAdapter):
                             "url_path": route_info["url_path"],
                             "methods": route_info["methods"],
                             "handler": func_name,
+                            "handler_qname": handler_qname,
+                            "handler_line": handler_def_line,
+                            "enclosing_scope": enclosing_scope,
+                            "dec_line": dec_line,
                             "range": [
                                 dec_node.start_point.row + 1,
                                 dec_node.start_point.column,
@@ -441,6 +468,10 @@ class PythonAdapter(LanguageAdapter):
                             "name": cmd_info["command_name"],
                             "is_group": cmd_info["is_group"],
                             "handler": func_name,
+                            "handler_qname": handler_qname,
+                            "handler_line": handler_def_line,
+                            "enclosing_scope": enclosing_scope,
+                            "dec_line": dec_line,
                             "range": [
                                 dec_node.start_point.row + 1,
                                 dec_node.start_point.column,

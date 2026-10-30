@@ -1,0 +1,137 @@
+T15: Milestone 9 Noise Filtering Completion
+Evidence File
+
+1. Starting Test Count
+----------------------
+Baseline test suite count: 150 passed, 1 warning
+
+2. Red-Green Tests
+------------------
+Tests added to tests/test_noise.py:
+- test_noise_filtering_typing_module
+- test_noise_filtering_meta_preservation
+
+RED Failure Output:
+$ venv\Scripts\python.exe -m pytest tests/test_noise.py -k "test_noise_filtering_typing_module or test_noise_filtering_meta_preservation"
+============================= test session starts =============================
+platform win32 -- Python 3.13.1, pytest-9.1.1, pluggy-1.7.0
+rootdir: C:\Users\rishi\OneDrive\Desktop\Dev\cartog
+configfile: pyproject.toml
+collected 8 items / 6 deselected / 2 selected
+
+tests\test_noise.py FF                                                   [100%]
+
+================================== FAILURES ===================================
+_____________________ test_noise_filtering_typing_module ______________________
+
+tmp_path = WindowsPath('C:/Users/rishi/AppData/Local/Temp/pytest-of-rishi/pytest-190/test_noise_filtering_typing_mo0')
+
+    def test_noise_filtering_typing_module(tmp_path: Path):
+...
+>       assert "src/app/typing.py" in filtered_meta, f"typing.py should be filtered in default view, meta={filtered_meta}"
+E       AssertionError: typing.py should be filtered in default view, meta={}
+E       assert 'src/app/typing.py' in {}
+
+tests\test_noise.py:168: AssertionError
+----------------------------- Captured stdout call -----------------------------
+[DEBUG] src\app\typing.py: is_reexport=False is_types=False Contains non-constant statement 'If'
+____________________ test_noise_filtering_meta_preservation ___________________
+
+tmp_path = WindowsPath('C:/Users/rishi/AppData/Local/Temp/pytest-of-rishi/pytest-190/test_noise_filtering_meta_pr0')
+
+    def test_noise_filtering_meta_preservation(tmp_path: Path):
+...
+>       assert "view_noise_filtered" in graph_default.meta
+E       AssertionError: assert 'view_noise_filtered' in {'cartog_version': '0.1.0', 'generator': 'cartog', 'schema_version': 1}
+
+tests\test_noise.py:204: AssertionError
+=========================== 2 failed, 6 deselected in 3.05s ===========================
+
+GREEN Passing Output:
+$ venv\Scripts\python.exe -m pytest tests/test_noise.py -k "test_noise_filtering_typing_module or test_noise_filtering_meta_preservation"
+============================= test session starts =============================
+platform win32 -- Python 3.13.1, pytest-9.1.1, pluggy-1.7.0
+rootdir: C:\Users\rishi\OneDrive\Desktop\Dev\cartog
+configfile: pyproject.toml
+collected 8 items / 6 deselected / 2 selected
+
+tests\test_noise.py ..                                                   [100%]
+
+=========================== 2 passed, 6 deselected in 3.06s ===========================
+
+3. Full Test Suite Run
+----------------------
+$ venv\Scripts\python.exe -m pytest tests/
+============================= test session starts =============================
+platform win32 -- Python 3.13.1, pytest-9.1.1, pluggy-1.7.0
+rootdir: C:\Users\rishi\OneDrive\Desktop\Dev\cartog
+configfile: pyproject.toml
+collected 152 items
+
+tests\test_cli.py ................                                       [ 10%]
+tests\test_flow_selector.py ..........                                   [ 17%]
+tests\test_ignore.py .......                                             [ 21%]
+tests\test_import_resolution.py ..                                       [ 23%]
+tests\test_js_adapter.py ..........                                      [ 29%]
+tests\test_jsonc.py .....                                                [ 32%]
+tests\test_manifests.py .......                                          [ 37%]
+tests\test_merge.py .....                                                [ 40%]
+tests\test_merge_validate.py .............                               [ 49%]
+tests\test_mermaid.py .............                                      [ 57%]
+tests\test_model.py ...                                                  [ 59%]
+tests\test_noise.py ........                                             [ 65%]
+tests\test_parse_cache.py ..                                             [ 66%]
+tests\test_patterns.py ....                                              [ 69%]
+tests\test_python_adapter.py ......                                      [ 73%]
+tests\test_scan.py .....                                                 [ 76%]
+tests\test_scip_pass.py ................                                 [ 86%]
+tests\test_views_mermaid.py ....................                         [100%]
+
+============================== warnings summary ===============================
+tests/test_jsonc.py::test_jsonc_unterminated_block_comment
+  C:\Users\rishi\OneDrive\Desktop\Dev\cartog\cartog\jsonc.py:82: UserWarning: Unterminated block comment in 'C:/Users/rishi/AppData/Local/Temp/pytest-of-rishi/pytest-191/test_jsonc_unterminated_block_0/tsconfig.json' starting at line 3
+    warnings.warn(msg, UserWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================= 152 passed, 1 warning in 28.81s =======================
+
+4. Real-world Verification on samples/flask
+-------------------------------------------
+Command (default noise filtering):
+$ venv\Scripts\python.exe -m cartog.cli map samples/flask --level function --max-nodes 300 --out cartog-out/flask-noise-default
+Output:
+Filtered 14 noise module(s) from view (use --show-noise to display)
+Wrote graph to cartog-out/flask-noise-default/graph.json
+Wrote overview diagram to cartog-out/flask-noise-default/overview.mmd
+
+Command (noise shown):
+$ venv\Scripts\python.exe -m cartog.cli map samples/flask --level function --max-nodes 300 --show-noise --out cartog-out/flask-noise-shown
+Output:
+Wrote graph to cartog-out/flask-noise-shown/graph.json
+Wrote overview diagram to cartog-out/flask-noise-shown/overview.mmd
+
+Evaluation of Flask Modules:
+1. src/flask/typing.py:
+   - Contains pure type aliases, TypeVars, and protocol stubs guarded by `if t.TYPE_CHECKING:`.
+   - Identified as category "constants_or_types" (Reason: "Constants-only or type-only module").
+   - Filtered from default overview.mmd (False).
+   - Restored with --show-noise in overview.mmd (True).
+   - Preserved in graph.json nodes (True).
+2. src/flask/globals.py:
+   - Contains runtime context proxies (current_app, request, session, g) and runtime __getattr__ deprecation logic.
+   - Identified as active domain logic.
+   - Kept visible in default overview.mmd (True).
+3. src/flask/__main__.py:
+   - Contains CLI invocation entrypoint (main()).
+   - Kept visible in default overview.mmd (True).
+
+Verification Check Output:
+Default view_noise_filtered count: 14
+typing.py in view_noise_filtered: True
+typing.py noise details: {'path': 'src/flask/typing.py', 'category': 'constants_or_types', 'reason': 'Constants-only or type-only module'}
+typing.py in graph.json nodes: True
+typing.py in default overview.mmd: False
+globals.py in default overview.mmd: True
+__main__.py in default overview.mmd: True
+typing.py in shown overview.mmd: True
+

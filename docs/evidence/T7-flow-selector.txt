@@ -1,0 +1,158 @@
+================================================================================
+T7 EVIDENCE: Flow Selector Candidate Handling
+================================================================================
+
+1. PROBLEM & DIAGNOSIS
+--------------------------------------------------------------------------------
+find_flow_candidates() in cartog/views.py matched route candidates only when the
+target string was an exact string match for node.name (e.g. 'GET, POST /users' !=
+'GET /users'). When querying a specific HTTP method on a multi-method route,
+find_flow_candidates() returned 0 candidates.
+Additionally, candidate partitioning between active scopes (source/internal) and
+excluded scopes (tests, examples, docs) was verified, alongside the CLI candidate
+picker output and exit codes.
+
+
+2. RED STEP: FAILING UNIT TEST
+--------------------------------------------------------------------------------
+Command:
+venv\Scripts\python.exe -m pytest tests/test_flow_selector.py -k "test_flow_selector_method_path_scoping"
+
+Output:
+============================= test session starts =============================
+platform win32 -- Python 3.13.1, pytest-9.1.1, pluggy-1.7.0
+rootdir: C:\Users\rishi\OneDrive\Desktop\Dev\cartog
+configfile: pyproject.toml
+collected 10 items / 9 deselected / 1 selected
+
+tests\test_flow_selector.py F                                            [100%]
+
+================================== FAILURES ===================================
+___________________ test_flow_selector_method_path_scoping ____________________
+
+    def test_flow_selector_method_path_scoping():
+        """Verify METHOD /path resolution on multi-method routes and category scoping."""
+        g = Graph()
+        src_route = Node.create(
+            kind="route",
+            name="GET, POST /users",
+            qualified_name="src.api:10:GET, POST /users",
+            path="src/api.py",
+            range=SourceRange(10, 0, 10, 30),
+            attrs={"methods": ["GET", "POST"], "url_path": "/users", "handler": "users_handler"},
+        )
+...
+>       assert len(scoped_get) == 1, f"Expected 1 scoped candidate for GET /users, got {len(scoped_get)}"
+E       AssertionError: Expected 1 scoped candidate for GET /users, got 0
+E       assert 0 == 1
+E        +  where 0 = len([])
+
+tests\test_flow_selector.py:204: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_flow_selector.py::test_flow_selector_method_path_scoping - ...
+======================= 1 failed, 9 deselected in 0.49s =======================
+
+
+3. GREEN STEP: PASSING UNIT TESTS
+--------------------------------------------------------------------------------
+Command:
+venv\Scripts\python.exe -m pytest tests/test_flow_selector.py
+
+Output:
+============================= test session starts =============================
+platform win32 -- Python 3.13.1, pytest-9.1.1, pluggy-1.7.0
+rootdir: C:\Users\rishi\OneDrive\Desktop\Dev\cartog
+configfile: pyproject.toml
+collected 10 items
+
+tests\test_flow_selector.py ..........                                   [100%]
+
+============================= 10 passed in 2.25s ==============================
+
+
+4. FULL TEST SUITE RUN
+--------------------------------------------------------------------------------
+Command:
+venv\Scripts\python.exe -m pytest tests/
+
+Output:
+============================= test session starts =============================
+platform win32 -- Python 3.13.1, pytest-9.1.1, pluggy-1.7.0
+rootdir: C:\Users\rishi\OneDrive\Desktop\Dev\cartog
+configfile: pyproject.toml
+collected 132 items
+
+tests\test_cli.py ............                                           [  9%]
+tests\test_flow_selector.py ..........                                   [ 16%]
+tests\test_ignore.py .......                                             [ 21%]
+tests\test_import_resolution.py ..                                       [ 23%]
+tests\test_js_adapter.py ..........                                      [ 31%]
+tests\test_jsonc.py .....                                                [ 34%]
+tests\test_manifests.py .......                                          [ 40%]
+tests\test_merge.py ...                                                  [ 42%]
+tests\test_merge_validate.py .............                               [ 52%]
+tests\test_mermaid.py ...........                                        [ 60%]
+tests\test_model.py ...                                                  [ 62%]
+tests\test_noise.py ......                                               [ 67%]
+tests\test_parse_cache.py ..                                             [ 68%]
+tests\test_patterns.py ....                                              [ 71%]
+tests\test_python_adapter.py ......                                      [ 76%]
+tests\test_scan.py .....                                                 [ 80%]
+tests\test_scip_pass.py ................                                 [ 92%]
+tests\test_views_mermaid.py ..........                                   [100%]
+
+============================== warnings summary ===============================
+tests/test_jsonc.py::test_jsonc_unterminated_block_comment
+  C:\Users\rishi\OneDrive\Desktop\Dev\cartog\cartog\jsonc.py:82: UserWarning: Unterminated block comment in 'C:/Users/rishi/AppData/Local/Temp/pytest-of-rishi/pytest-159/test_jsonc_unterminated_block_0/tsconfig.json' starting at line 3
+    warnings.warn(msg, UserWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================= 132 passed, 1 warning in 26.79s =======================
+
+Test counts: 126 at start of T7, 132 at end of T7 (+6 new tests, 0 decreased).
+
+
+5. USER CHECK: REAL OUTPUT
+--------------------------------------------------------------------------------
+Command:
+venv\Scripts\python.exe -m cartog.cli flow samples/flask "GET /"
+
+Output:
+Notice: Found 130 candidate(s) for 'GET /', but all are in excluded categories 
+(tests/examples/docs). Use --include-tests or --include-examples to include 
+them:
+  1. tests/test_basic.py:427 | index | tests
+  2. tests/test_appctx.py:181 | index | tests
+  3. tests/test_templating.py:34 | index | tests
+  4. tests/test_basic.py:474 | dump_session_contents | tests
+  5. tests/test_testing.py:309 | view | tests
+...
+Exit code: 1 (stopped cleanly without generating diagram)
+
+
+Command with --include-examples:
+venv\Scripts\python.exe -m cartog.cli flow samples/flask "GET /" --include-examples
+
+Output:
+Multiple candidates matched 'GET /' (3 nodes). Use --pick N or --all to select:
+  1. examples/javascript/js_example/views.py:8 | index | examples
+  2. examples/tutorial/flaskr/blog.py:16 | index | examples
+  3. examples/celery/src/task_app/__init__.py:19 | index | examples
+Hint: use --pick N to select one, or --all to include all.
+Exit code: 1 (stopped cleanly without generating diagram)
+
+
+6. VERIFICATION SUMMARY OF ALL 4 SELECTOR TYPES
+--------------------------------------------------------------------------------
+- METHOD /path: Verified in test_flow_selector_method_path_scoping (multi-method
+  matching "GET /users" and "POST /users" against "GET, POST /users" with category scoping).
+- file:line: Verified in test_flow_selector_file_line (full repo-relative path:line
+  and short basename:line resolving to enclosing function range).
+- qualified name: Verified in test_flow_selector_qualified_name (exact qualified name
+  and suffix Class.method matching).
+- command name: Verified in test_flow_selector_command_name (CLI command name and
+  wildcard all-commands matching).
+- CLI multi-match formatting and exit code: Verified in
+  test_flow_selector_multiple_candidates_exit_code (file:line | handler | category).
+- Excluded category notice: Verified in test_flow_selector_excluded_category_notice.
+

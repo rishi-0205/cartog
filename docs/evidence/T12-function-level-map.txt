@@ -1,0 +1,117 @@
+=== T12 Evidence: Function-Level Map Overview & Node Budgeting ===
+
+Initial test count: 140 passed, 1 warning
+Final test count: 146 passed, 1 warning (0 decreased, +6 passed)
+
+1. RED TEST EXECUTION
+Command: venv\Scripts\python.exe -m pytest tests/test_views_mermaid.py -k "test_map_"
+Real Output:
+============================= test session starts =============================
+platform win32 -- Python 3.13.1, pytest-9.1.1, pluggy-1.7.0
+rootdir: C:\Users\rishi\OneDrive\Desktop\Dev\cartog
+configfile: pyproject.toml
+collected 18 items / 13 deselected / 5 selected
+
+tests\test_views_mermaid.py FFFFF                                        [100%]
+
+=================================== FAILURES ===================================
+_________________ test_map_function_level_boundary_symbols_and_helpers _________________
+
+    def test_map_function_level_boundary_symbols_and_helpers():
+        g = _make_sample_graph()
+>       mmd = generate_overview_mermaid(g, level="function")
+E       TypeError: generate_overview_mermaid() got an unexpected keyword argument 'level'
+
+tests\test_views_mermaid.py:728: TypeError
+...
+=========================== 5 failed, 13 deselected in 0.95s ===========================
+
+
+2. GREEN TEST EXECUTION
+Command: venv\Scripts\python.exe -m pytest tests/test_views_mermaid.py -k "test_map_"
+Real Output:
+============================= test session starts =============================
+platform win32 -- Python 3.13.1, pytest-9.1.1, pluggy-1.7.0
+rootdir: C:\Users\rishi\OneDrive\Desktop\Dev\cartog
+configfile: pyproject.toml
+collected 18 items / 13 deselected / 5 selected
+
+tests\test_views_mermaid.py .....                                        [100%]
+
+====================== 5 passed, 13 deselected in 0.57s =======================
+
+
+3. CLI UNIT TEST EXECUTION
+Command: venv\Scripts\python.exe -m pytest tests/test_cli.py -k "test_map_cli_level_options"
+Real Output:
+============================= test session starts =============================
+platform win32 -- Python 3.13.1, pytest-9.1.1, pluggy-1.7.0
+rootdir: C:\Users\rishi\OneDrive\Desktop\Dev\cartog
+configfile: pyproject.toml
+collected 17 items / 16 deselected / 1 selected
+
+tests\test_cli.py .                                                      [100%]
+
+====================== 1 passed, 16 deselected in 0.81s =======================
+
+
+4. FULL SUITE TEST EXECUTION
+Command: venv\Scripts\python.exe -m pytest tests/
+Real Output:
+============================= test session starts =============================
+platform win32 -- Python 3.13.1, pytest-9.1.1, pluggy-1.7.0
+rootdir: C:\Users\rishi\OneDrive\Desktop\Dev\cartog
+configfile: pyproject.toml
+collected 146 items
+
+tests\test_cli.py ................                                       [ 10%]
+tests\test_flow_selector.py ..........                                   [ 17%]
+tests\test_ignore.py .......                                             [ 22%]
+tests\test_import_resolution.py ..                                       [ 23%]
+tests\test_js_adapter.py ..........                                      [ 30%]
+tests\test_jsonc.py .....                                                [ 34%]
+tests\test_manifests.py .......                                          [ 39%]
+tests\test_merge.py .....                                                [ 42%]
+tests\test_merge_validate.py .............                               [ 51%]
+tests\test_mermaid.py ...........                                        [ 58%]
+tests\test_model.py ...                                                  [ 60%]
+tests\test_noise.py ......                                               [ 65%]
+tests\test_parse_cache.py ..                                             [ 66%]
+tests\test_patterns.py ....                                              [ 69%]
+tests\test_python_adapter.py ......                                      [ 73%]
+tests\test_scan.py .....                                                 [ 76%]
+tests\test_scip_pass.py ................                                 [ 87%]
+tests\test_views_mermaid.py ..................                           [100%]
+
+======================= 146 passed, 1 warning in 34.40s =======================
+
+
+5. DEMO EXECUTION ON SAMPLES/FLASK
+Command: venv\Scripts\python.exe -m cartog.cli map samples/flask --level function --max-nodes 300 --out cartog-out/flask-function-map
+Real Output:
+Cartog Stage 1 (Parse): Scanning C:/Users/rishi/OneDrive/Desktop/Dev/cartog/samples/flask...
+Discovered 83 source files (154 skipped).
+Cartog Stage 3 (Build): Merging structural graph for C:/Users/rishi/OneDrive/Desktop/Dev/cartog/samples/flask...
+Cartog Stage 4 (Map): Generating Mermaid diagrams for C:/Users/rishi/OneDrive/Desktop/Dev/cartog/samples/flask...
+  Notice: Filtered 13 noise module(s) from view (use --show-noise to display).
+  Mermaid source written: C:/Users/rishi/OneDrive/Desktop/Dev/cartog/cartog-out/flask-function-map/overview.mmd
+  Generated 15 folder-level diagram(s) under C:/Users/rishi/OneDrive/Desktop/Dev/cartog/cartog-out/flask-function-map
+Success: Architecture map complete in C:/Users/rishi/OneDrive/Desktop/Dev/cartog/cartog-out/flask-function-map
+
+
+6. DEMO EXECUTION ON SAMPLES/CLICK (BUDGET FALLBACK & HIGH BUDGET)
+Command: venv\Scripts\python.exe -m cartog.cli map samples/click --level function --max-nodes 300 --out cartog-out/click-function-map
+Real Output:
+Cartog Stage 4 (Map): Generating Mermaid diagrams for C:/Users/rishi/OneDrive/Desktop/Dev/cartog/samples/click...
+  Notice: Filtered 7 noise module(s) from view (use --show-noise to display).
+Notice: Function-level map exceeds node budget (382 > 300); falling back to file level.
+  Mermaid source written: C:/Users/rishi/OneDrive/Desktop/Dev/cartog/cartog-out/click-function-map/overview.mmd
+Success: Architecture map complete in C:/Users/rishi/OneDrive/Desktop/Dev/cartog/cartog-out/click-function-map
+
+Command: venv\Scripts\python.exe -m cartog.cli map samples/click --level function --max-nodes 450 --out cartog-out/click-function-map-450
+Real Output:
+Cartog Stage 4 (Map): Generating Mermaid diagrams for C:/Users/rishi/OneDrive/Desktop/Dev/cartog/samples/click...
+  Notice: Filtered 7 noise module(s) from view (use --show-noise to display).
+  Mermaid source written: C:/Users/rishi/OneDrive/Desktop/Dev/cartog/cartog-out/click-function-map-450/overview.mmd
+Success: Architecture map complete in C:/Users/rishi/OneDrive/Desktop/Dev/cartog/cartog-out/click-function-map-450
+

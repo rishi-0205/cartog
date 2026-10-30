@@ -1,0 +1,141 @@
+=== T11: Flow Demos and Mermaid Validation Evidence ===
+Date: 2026-10-30
+Task: T11
+
+1. Demo (a): Listing Candidate Routes and Exiting Non-Zero
+Command: venv\Scripts\python.exe -m cartog.cli flow samples/flask "GET /"
+Exit Code: 1
+Real Output:
+Notice: Found 130 candidate(s) for 'GET /', but all are in excluded categories 
+(tests/examples/docs). Use --include-tests or --include-examples to include 
+them:
+  1. tests/test_basic.py:427 | index | tests
+  2. tests/test_appctx.py:181 | index | tests
+  3. tests/test_templating.py:34 | index | tests
+  4. tests/test_basic.py:474 | dump_session_contents | tests
+  5. tests/test_testing.py:309 | view | tests
+  ...
+  119. examples/tutorial/flaskr/blog.py:16 | index | examples
+  ...
+  130. tests/test_subclassing.py:14 | index | tests
+
+
+2. Demo (b): Tracing from blog.index into src/flask Templating Functions
+Command: venv\Scripts\python.exe -m cartog.cli flow samples/flask "GET /" --include-examples --pick blog.index
+Exit Code: 0
+Real Output:
+
+Cartog Call Flow Trace: 'GET /' (max depth: 3)
+  Reached 11 symbols via 7 call relationships.
+  Mermaid flow trace written: cartog-out/flow_GET.mmd
+  Rendered image written: cartog-out/flow_GET.png
+
+                            Flow Trace Steps: GET /                            
++-----------------------------------------------------------------------------+
+| Caller          | Relationship | Callee          | Location         | Count |
+|-----------------+--------------+-----------------+------------------+-------|
+| GET /           | serves       | index           | examples/tutori |     1 |
+| index           | calls        | get_db          | examples/tutori |     1 |
+| index           | calls        | render_template | examples/tutori |     1 |
+| render_template | calls        | _render         | src/flask/templ |     1 |
+| render_template | calls        | jinja_env       | src/flask/templ |     1 |
+| render_template | calls        | __init__        | src/flask/templ |     1 |
+| render_template | calls        | _get_current_o | src/flask/templ |     1 |
++-----------------------------------------------------------------------------+
+
+Note: Also tested with numeric selector '--pick 2' with identical result.
+Saved to: docs/evidence/T11-flow-flask-get.mmd
+
+
+3. Demo (c): Tracing Flask CLI run Command
+Command: venv\Scripts\python.exe -m cartog.cli flow samples/flask run
+Exit Code: 0
+Real Output:
+
+Cartog Call Flow Trace: 'run' (max depth: 3)
+  Reached 10 symbols via 9 call relationships.
+  Mermaid flow trace written: cartog-out/flow_run.mmd
+  Rendered image written: cartog-out/flow_run.png
+
+                             Flow Trace Steps: run                             
++-----------------------------------------------------------------------------+
+| Caller      | Relationship | Callee             | Location          | Count |
+|-------------+--------------+--------------------+-------------------+-------|
+| run         | serves       | run_command        | src/flask/cli.py |     1 |
+| run_command | calls        | get_debug_flag     | src/flask/cli.py |     1 |
+| run_command | calls        | show_server_banner | src/flask/cli.py |     1 |
+| run_command | calls        | load_app           | src/flask/cli.py |     1 |
+| load_app    | calls        | __init__           | src/flask/cli.py |     1 |
+| load_app    | calls        | NoAppException     | src/flask/cli.py |     1 |
+| load_app    | calls        | get_debug_flag     | src/flask/cli.py |     1 |
+| load_app    | calls        | prepare_import     | src/flask/cli.py |     2 |
+| load_app    | calls        | locate_app         | src/flask/cli.py |     2 |
++-----------------------------------------------------------------------------+
+
+Saved to: docs/evidence/T11-flow-flask-run.mmd
+
+
+4. Mermaid Validation via mmdc
+Command: mmdc -i docs/evidence/T11-flow-flask-get.mmd -o docs/evidence/T11-flow-flask-get.svg
+Exit Code: 0
+Output:
+Generating single mermaid chart
+
+Command: mmdc -i docs/evidence/T11-flow-flask-run.mmd -o docs/evidence/T11-flow-flask-run.svg
+Exit Code: 0
+Output:
+Generating single mermaid chart
+
+
+5. Automated Test Suite Verification
+Command: venv\Scripts\python.exe -m pytest tests/test_cli.py -k test_flow_demos_end_to_end
+Output:
+============================= test session starts =============================
+platform win32 -- Python 3.13.1, pytest-9.1.1, pluggy-1.7.0
+rootdir: C:\Users\rishi\OneDrive\Desktop\Dev\cartog
+configfile: pyproject.toml
+collected 15 items / 14 deselected / 1 selected
+
+tests\test_cli.py .                                                      [100%]
+
+====================== 1 passed, 14 deselected in 6.21s =======================
+
+Command: venv\Scripts\python.exe -m pytest tests/
+Output:
+============================= test session starts =============================
+platform win32 -- Python 3.13.1, pytest-9.1.1, pluggy-1.7.0
+rootdir: C:\Users\rishi\OneDrive\Desktop\Dev\cartog
+configfile: pyproject.toml
+collected 140 items
+
+tests\test_cli.py ...............                                        [ 10%]
+tests\test_flow_selector.py ..........                                   [ 17%]
+tests\test_ignore.py .......                                             [ 22%]
+tests\test_import_resolution.py ..                                       [ 24%]
+tests\test_js_adapter.py ..........                                      [ 31%]
+tests\test_jsonc.py .....                                                [ 35%]
+tests\test_manifests.py .......                                          [ 40%]
+tests\test_merge.py .....                                                [ 43%]
+tests\test_merge_validate.py .............                               [ 52%]
+tests\test_mermaid.py ...........                                        [ 60%]
+tests\test_model.py ...                                                  [ 62%]
+tests\test_noise.py ......                                               [ 67%]
+tests\test_parse_cache.py ..                                             [ 68%]
+tests\test_patterns.py ....                                              [ 71%]
+tests\test_python_adapter.py ......                                      [ 75%]
+tests\test_scan.py .....                                                 [ 79%]
+tests\test_scip_pass.py ................                                 [ 90%]
+tests\test_views_mermaid.py .............                                [100%]
+
+============================== warnings summary ===============================
+tests/test_jsonc.py::test_jsonc_unterminated_block_comment
+  C:\Users\rishi\OneDrive\Desktop\Dev\cartog\cartog\jsonc.py:82: UserWarning: Unterminated block comment in 'C:/Users/rishi/AppData/Local/Temp/pytest-of-rishi/pytest-179/test_jsonc_unterminated_block_0/tsconfig.json' starting at line 3
+    warnings.warn(msg, UserWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================= 140 passed, 1 warning in 34.58s =======================
+
+Start count: 139 passed
+End count: 140 passed
+Delta: +1 passed, 0 decreased
+

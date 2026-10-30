@@ -15,11 +15,14 @@ import json
 import os
 from pathlib import Path
 import re
+import sys
 import tomllib
 from typing import Any, Optional
 
+from cartog.jsonc import load_strict_json_file
 from cartog.model import ManifestFacts
-from cartog.scan import _load_gitignore
+from cartog.scan import _load_cartogignore, _load_gitignore
+import pathspec
 
 IGNORED_DIRS = {
     ".git",
@@ -58,8 +61,11 @@ def _clean_dep_name_and_spec(raw: str) -> tuple[str, str]:
 def parse_pyproject_toml(file_path: Path, rel_path: str, facts: ManifestFacts) -> None:
     """Extract entrypoints and dependencies from pyproject.toml."""
     try:
-        data = tomllib.loads(file_path.read_text(encoding="utf-8", errors="ignore"))
-    except Exception:
+        data = tomllib.loads(file_path.read_text(encoding="utf-8-sig"))
+    except Exception as exc:
+        msg = f"Failed to parse '{file_path.as_posix()}': {exc}"
+        print(f"Warning: {msg}", file=sys.stderr)
+        facts.warnings.append({"file": rel_path, "error": str(exc)})
         return
 
     # 1. Entrypoints / Scripts
@@ -159,8 +165,11 @@ def parse_pyproject_toml(file_path: Path, rel_path: str, facts: ManifestFacts) -
 def parse_requirements_file(file_path: Path, rel_path: str, facts: ManifestFacts) -> None:
     """Extract dependencies from requirements*.txt file."""
     try:
-        content = file_path.read_text(encoding="utf-8", errors="ignore")
-    except Exception:
+        content = file_path.read_text(encoding="utf-8-sig")
+    except Exception as exc:
+        msg = f"Failed to read '{file_path.as_posix()}': {exc}"
+        print(f"Warning: {msg}", file=sys.stderr)
+        facts.warnings.append({"file": rel_path, "error": str(exc)})
         return
 
     for line in content.splitlines():
@@ -186,8 +195,12 @@ def parse_requirements_file(file_path: Path, rel_path: str, facts: ManifestFacts
 def parse_package_json(file_path: Path, rel_path: str, facts: ManifestFacts) -> None:
     """Extract entrypoints and dependencies from package.json."""
     try:
-        data = json.loads(file_path.read_text(encoding="utf-8", errors="ignore"))
-    except Exception:
+        raw = file_path.read_text(encoding="utf-8-sig")
+        data = json.loads(raw)
+    except Exception as exc:
+        msg = f"Failed to parse '{file_path.as_posix()}': {exc}"
+        print(f"Warning: {msg}", file=sys.stderr)
+        facts.warnings.append({"file": rel_path, "error": str(exc)})
         return
 
     scripts = data.get("scripts", {})
@@ -215,8 +228,11 @@ def parse_package_json(file_path: Path, rel_path: str, facts: ManifestFacts) -> 
 def parse_dockerfile(file_path: Path, rel_path: str, facts: ManifestFacts) -> None:
     """Extract container service information from a Dockerfile."""
     try:
-        content = file_path.read_text(encoding="utf-8", errors="ignore")
-    except Exception:
+        content = file_path.read_text(encoding="utf-8-sig")
+    except Exception as exc:
+        msg = f"Failed to read '{file_path.as_posix()}': {exc}"
+        print(f"Warning: {msg}", file=sys.stderr)
+        facts.warnings.append({"file": rel_path, "error": str(exc)})
         return
 
     base_images = []
@@ -255,8 +271,11 @@ def parse_dockerfile(file_path: Path, rel_path: str, facts: ManifestFacts) -> No
 def parse_docker_compose(file_path: Path, rel_path: str, facts: ManifestFacts) -> None:
     """Extract container services from docker-compose.yml or compose.yml."""
     try:
-        content = file_path.read_text(encoding="utf-8", errors="ignore")
-    except Exception:
+        content = file_path.read_text(encoding="utf-8-sig")
+    except Exception as exc:
+        msg = f"Failed to read '{file_path.as_posix()}': {exc}"
+        print(f"Warning: {msg}", file=sys.stderr)
+        facts.warnings.append({"file": rel_path, "error": str(exc)})
         return
 
     lines = content.splitlines()
@@ -319,8 +338,11 @@ def parse_docker_compose(file_path: Path, rel_path: str, facts: ManifestFacts) -
 def parse_github_workflow(file_path: Path, rel_path: str, facts: ManifestFacts) -> None:
     """Extract CI workflow and job definitions from GitHub Actions workflow files."""
     try:
-        content = file_path.read_text(encoding="utf-8", errors="ignore")
-    except Exception:
+        content = file_path.read_text(encoding="utf-8-sig")
+    except Exception as exc:
+        msg = f"Failed to read '{file_path.as_posix()}': {exc}"
+        print(f"Warning: {msg}", file=sys.stderr)
+        facts.warnings.append({"file": rel_path, "error": str(exc)})
         return
 
     lines = content.splitlines()
@@ -387,7 +409,11 @@ def parse_github_workflow(file_path: Path, rel_path: str, facts: ManifestFacts) 
         })
 
 
-def parse_manifests(target_dir: str | Path) -> ManifestFacts:
+def parse_manifests(
+    target_dir: str | Path,
+    cli_ignores: Optional[list[str]] = None,
+    ignored_paths: Optional[set[str]] = None,
+) -> ManifestFacts:
     """Discover and parse all manifest files in the target directory."""
     root_path = Path(target_dir).resolve()
     if not root_path.exists() or not root_path.is_dir():
@@ -395,6 +421,9 @@ def parse_manifests(target_dir: str | Path) -> ManifestFacts:
 
     facts = ManifestFacts()
     gitignore_spec = _load_gitignore(root_path)
+    cartogignore_spec = _load_cartogignore(root_path)
+    cli_spec = pathspec.PathSpec.from_lines("gitignore", cli_ignores) if cli_ignores else None
+    ignored = ignored_paths or set()
 
     for dirpath, dirnames, filenames in os.walk(root_path, topdown=True):
         current_dir = Path(dirpath)
@@ -406,6 +435,12 @@ def parse_manifests(target_dir: str | Path) -> ManifestFacts:
                 continue
             child_rel = (current_dir / d).relative_to(root_path).as_posix()
             if gitignore_spec and (gitignore_spec.match_file(child_rel) or gitignore_spec.match_file(child_rel + "/")):
+                continue
+            if cartogignore_spec and (cartogignore_spec.match_file(child_rel) or cartogignore_spec.match_file(child_rel + "/")):
+                continue
+            if cli_spec and (cli_spec.match_file(child_rel) or cli_spec.match_file(child_rel + "/")):
+                continue
+            if child_rel in ignored or f"{child_rel}/" in ignored:
                 continue
             pruned_dirs.append(d)
         dirnames[:] = pruned_dirs
@@ -425,6 +460,12 @@ def parse_manifests(target_dir: str | Path) -> ManifestFacts:
             )
 
             if gitignore_spec and gitignore_spec.match_file(rel_file):
+                continue
+            if cartogignore_spec and cartogignore_spec.match_file(rel_file):
+                continue
+            if cli_spec and cli_spec.match_file(rel_file):
+                continue
+            if rel_file in ignored:
                 continue
 
             # 1. pyproject.toml

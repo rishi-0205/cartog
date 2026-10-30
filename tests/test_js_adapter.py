@@ -287,3 +287,121 @@ def test_parse_ky_sample():
     ky_imp = [i for i in imports if i.specifier == "./core/Ky.js"]
     assert len(ky_imp) == 1
     assert "Ky" in ky_imp[0].names
+
+
+def test_self_reference_package_resolution(tmp_path):
+    """Verify package self-reference resolution, outDir mapping, subpaths, and external package preservation."""
+    adapter = JsAdapter()
+
+    # 1. Verification on samples/ky (if present)
+    ky_pkg = Path("samples/ky/package.json")
+    if ky_pkg.is_file():
+        context_ky = ProjectContext(
+            target_path="samples/ky",
+            roots=["."],
+            all_files={"source/index.ts", "source/core/Ky.ts", "test-d/error-names.ts"},
+        )
+        # Root self-reference: 'ky' -> 'source/index.ts'
+        rec_ky = ImportRecord(specifier="ky", kind="from")
+        res_ky = adapter.resolve_import(rec_ky, "test-d/error-names.ts", context_ky)
+        assert res_ky == "source/index.ts"
+
+        # Negative case: genuinely external package must stay external
+        rec_ext = ImportRecord(specifier="expect-type", kind="from")
+        assert adapter.resolve_import(rec_ext, "test-d/error-names.ts", context_ky) == "external:expect-type"
+
+        rec_scoped = ImportRecord(specifier="@sindresorhus/is", kind="from")
+        assert adapter.resolve_import(rec_scoped, "test-d/error-names.ts", context_ky) == "external:@sindresorhus/is"
+
+    # 2. Synthetic fixture verifying tsconfig outDir-to-rootDir mapping & subpaths
+    fixture_repo = tmp_path / "custom_repo"
+    fixture_repo.mkdir()
+    (fixture_repo / "package.json").write_text(
+        """{
+            "name": "custom-lib",
+            "main": "./build/index.js",
+            "exports": {
+                ".": "./build/index.js",
+                "./helpers": "./build/helpers.js"
+            }
+        }""",
+        encoding="utf-8",
+    )
+    (fixture_repo / "tsconfig.dist.json").write_text(
+        """{
+            "compilerOptions": {
+                "outDir": "./build",
+                "rootDir": "./src"
+            }
+        }""",
+        encoding="utf-8",
+    )
+
+    context_custom = ProjectContext(
+        target_path=str(fixture_repo),
+        roots=["."],
+        all_files={"src/index.ts", "src/helpers.ts", "test/client.test.ts"},
+    )
+
+    # Root self-reference maps ./build/index.js -> src/index.ts
+    res_root = adapter.resolve_import(
+        ImportRecord(specifier="custom-lib", kind="from"), "test/client.test.ts", context_custom
+    )
+    assert res_root == "src/index.ts"
+
+    # Subpath self-reference maps ./build/helpers.js -> src/helpers.ts
+    res_sub = adapter.resolve_import(
+        ImportRecord(specifier="custom-lib/helpers", kind="from"), "test/client.test.ts", context_custom
+    )
+    assert res_sub == "src/helpers.ts"
+
+    # Negative case: genuinely external package stays external
+    res_ext = adapter.resolve_import(
+        ImportRecord(specifier="lodash", kind="from"), "test/client.test.ts", context_custom
+    )
+    assert res_ext == "external:lodash"
+
+
+def test_import_type_and_export_type():
+    """Verify extraction and resolution of TypeScript import type and export type declarations."""
+    adapter = JsAdapter()
+    code = b"""
+import type { UserProfile, UserID } from "./types.js";
+import type DefaultConfig from "./config.js";
+import { type InnerType, createClient } from "./client.js";
+export type { UserProfile } from "./types.js";
+export type { UserID as ID } from "./types.js";
+export { type InnerExport, createClient as clientFactory } from "./client.js";
+"""
+    tree = adapter.parse(code, Path("src/index.ts"))
+    imports = adapter.extract_imports(tree, code, "src/index.ts")
+
+    # Map specifiers to extracted records
+    by_specifier = {}
+    for imp in imports:
+        by_specifier.setdefault(imp.specifier, []).append(imp)
+
+    assert "./types.js" in by_specifier
+    assert "./config.js" in by_specifier
+    assert "./client.js" in by_specifier
+
+    # Verify import type { UserProfile, UserID }
+    import_types = [i for i in by_specifier["./types.js"] if i.names and "UserProfile" in i.names]
+    assert len(import_types) >= 1
+    assert "UserID" in import_types[0].names
+    assert import_types[0].is_type_only is True
+
+    # Verify export type with alias
+    export_types_alias = [i for i in by_specifier["./types.js"] if "UserID" in i.names and i.aliases.get("UserID") == "ID"]
+    assert len(export_types_alias) == 1
+    assert export_types_alias[0].is_type_only is True
+
+    # Verify resolution to target files
+    context = ProjectContext(
+        roots=["."],
+        all_files={"src/index.ts", "src/types.ts", "src/config.ts", "src/client.ts"},
+    )
+    for imp in imports:
+        resolved = adapter.resolve_import(imp, "src/index.ts", context)
+        assert resolved in ("src/types.ts", "src/config.ts", "src/client.ts")
+

@@ -1,0 +1,1223 @@
+flowchart TD
+  cat_examples["📁 examples (12 files)"]:::folder
+  cat_tests["📁 tests (56 files)"]:::folder
+  subgraph folder_src_click ["📁 src/click"]
+    subgraph file_85699e562a ["📄 _compat.py"]
+      subgraph class_a7222da0d1 ["🏛️ _AtomicFile"]
+        helpers_a7222da0d1["+7 helpers"]:::helper
+      end
+      subgraph class_c28af0c2f7 ["🏛️ _FixupStream"]
+        fn_1cacc5e990["_FixupStream.writable() :128"]:::function
+        fn_638056a2bd["_FixupStream.read1() :108"]:::function
+        fn_db0deb412c["_FixupStream.readable() :116"]:::function
+        fn_6a4492aae0["_FixupStream.seekable() :143"]:::function
+        helpers_c28af0c2f7["+2 helpers"]:::helper
+      end
+      subgraph class_ed061ffa13 ["🏛️ _NonClosingTextIOWrapper"]
+        fn_5e204a37c0["_NonClosingTextIOWrapper.__init__() :60"]:::function
+        helpers_ed061ffa13["+2 helpers"]:::helper
+      end
+      fn_4c8bd80108["term_len() :536"]:::function
+      fn_cfe0fc2e92["open_stream() :374"]:::function
+      fn_aacb3ccb5e["isatty() :540"]:::function
+      fn_120fa2ae41["strip_ansi() :491"]:::function
+      fn_3935a1ca24["_find_binary_reader() :176"]:::function
+      fn_8905fb19b6["_find_binary_writer() :194"]:::function
+      fn_029eb6a643["get_text_stderr() :354"]:::function
+      fn_3cd9953e22["_force_correct_text_stream() :241"]:::function
+      fn_d85bd5eede["_make_cached_stream_func() :547"]:::function
+      fn_a2fa31e52a["get_best_encoding() :51"]:::function
+      fn_1f20676c47["should_strip_ansi() :502"]:::function
+      fn_d9ca59168c["_get_argv_encoding() :520"]:::function
+      fn_773c14b645["get_text_stdin() :340"]:::function
+      fn_b23e2b4dfc["get_text_stdout() :347"]:::function
+      helpers_85699e562a["+16 helpers"]:::helper
+    end
+    subgraph file_84f3b9ad30 ["📄 _termui_impl.py"]
+      subgraph class_812f7ce524 ["🏛️ Editor"]
+        fn_b1091e5339["Editor.edit() :744"]:::function
+        fn_b769bfde18["Editor.edit_files() :713"]:::function
+        helpers_812f7ce524["+2 helpers"]:::helper
+      end
+      subgraph class_b265baff5d ["🏛️ ProgressBar"]
+        fn_bb790162b1["ProgressBar.format_progress_line() :223"]:::function
+        fn_51982f35b3["ProgressBar.render_progress() :250"]:::function
+        fn_5004ea6480["ProgressBar.format_bar() :204"]:::function
+        fn_e506f675bc["ProgressBar.__init__() :44"]:::function
+        helpers_b265baff5d["+15 helpers"]:::helper
+      end
+      subgraph class_f72148de0a ["🏛️ _PagerWriter"]
+        fn_3c499f92e8["_PagerWriter.write() :401"]:::function
+        helpers_f72148de0a["+5 helpers"]:::helper
+      end
+      fn_ebe445d6e5["_pipepager() :549"]:::function
+      fn_5b72f417be["_tempfilepager() :636"]:::function
+      fn_2340b5ecbd["open_url() :799"]:::function
+      fn_95b2bda7eb["getchar() :887"]:::function
+      fn_0d89db7259["raw_terminal() :884"]:::function
+      fn_0a2e0399f8["_less_uses_raw_mode() :520"]:::function
+      fn_c7817c991d["_pager_contextmanager() :451"]:::function
+      fn_10a5ab37dc["get_pager_file() :497"]:::function
+      helpers_84f3b9ad30["+4 helpers"]:::helper
+    end
+    subgraph file_d39afe225b ["📄 _textwrap.py"]
+      subgraph class_881fd645c0 ["🏛️ TextWrapper"]
+        fn_f185908dea["TextWrapper._wrap_chunks() :66"]:::function
+        fn_ee08226996["TextWrapper.indent_only() :177"]:::function
+        fn_bfb4616685["TextWrapper.extra_indent() :165"]:::function
+        helpers_881fd645c0["+1 helpers"]:::helper
+      end
+      helpers_d39afe225b["+1 helpers"]:::helper
+    end
+    subgraph file_bb577e0911 ["📄 _utils.py"]
+      subgraph class_5cecf33923 ["🏛️ Sentinel"]
+        helpers_5cecf33923["+4 helpers"]:::helper
+      end
+    end
+    subgraph file_cd0e87cb39 ["📄 _winconsole.py"]
+      subgraph class_5a05af57a2 ["🏛️ ConsoleStream"]
+        helpers_5a05af57a2["+7 helpers"]:::helper
+      end
+      subgraph class_514d5575be ["🏛️ Py_buffer"]
+      end
+      subgraph class_f42690fd8c ["🏛️ _WindowsConsoleRawIOBase"]
+        helpers_f42690fd8c["+2 helpers"]:::helper
+      end
+      subgraph class_580e84f48c ["🏛️ _WindowsConsoleReader"]
+        fn_18e2f67421["_WindowsConsoleReader.readinto() :127"]:::function
+        helpers_580e84f48c["+1 helpers"]:::helper
+      end
+      subgraph class_fca9315990 ["🏛️ _WindowsConsoleWriter"]
+        helpers_fca9315990["+3 helpers"]:::helper
+      end
+      fn_2efde2a244["_get_windows_console_stream() :272"]:::function
+      fn_07f3dc7e02["_get_text_stderr() :242"]:::function
+      fn_5fe5e7143d["_get_text_stdin() :222"]:::function
+      fn_3c59e3dd78["_get_text_stdout() :232"]:::function
+      helpers_cd0e87cb39["+2 helpers"]:::helper
+    end
+    subgraph file_e2bdf9828d ["📄 core.py"]
+      subgraph class_c8d641f641 ["🏛️ Argument"]
+        fn_1480da09ff["Argument.add_to_parser() :4013"]:::function
+        fn_2c4358409b["Argument.make_metavar() :3944"]:::function
+        helpers_c8d641f641["+7 helpers"]:::helper
+      end
+      subgraph class_4d5c0495b2 ["🏛️ Command"]
+        fn_cc53cf6abd["Command.main() :1496"]:::function
+        fn_38a54a4bad["Command.format_options() :1325"]:::function
+        fn_49c9e00162["Command.get_params() :1132"]:::function
+        fn_789d369aa8["Command.shell_complete() :1448"]:::function
+        fn_726753c3db["Command.format_epilog() :1350"]:::function
+        fn_3cb8c65e99["Command.invoke() :1432"]:::function
+        fn_46cfebc040["Command.format_help_text() :1307"]:::function
+        fn_6f08225344["Command.make_context() :1359"]:::function
+        fn_b43d004cc7["Command.parse_args() :1396"]:::function
+        fn_14e135e2a1["Command._main_shell_completion() :1651"]:::function
+        fn_0fd58fc401["Command.format_arguments() :1337"]:::function
+        fn_b20e88b8a9["Command.get_help_option() :1222"]:::function
+        fn_c9b8e9acc1["Command.get_help_option_names() :1207"]:::function
+        fn_264ed29574["Command.format_usage() :1188"]:::function
+        fn_f5d0a8078e["Command.get_help() :1263"]:::function
+        fn_d2fe8cc937["Command.get_short_help_str() :1272"]:::function
+        fn_c4367b4260["Command.get_usage() :1123"]:::function
+        fn_4462235250["Command.make_parser() :1256"]:::function
+        helpers_4d5c0495b2["+6 helpers"]:::helper
+      end
+      subgraph class_af72d03ff7 ["🏛️ CommandCollection"]
+        fn_0ad76c82c3["CommandCollection.get_command() :2205"]:::function
+        fn_3573571051["CommandCollection.list_commands() :2222"]:::function
+        helpers_af72d03ff7["+2 helpers"]:::helper
+      end
+      subgraph class_d537ef7b69 ["🏛️ Context"]
+        fn_1ba44f07a8["Context.invoke() :880"]:::function
+        fn_72bb70e214["Context.exit() :849"]:::function
+        fn_4f5f60ec64["Context.call_on_close() :707"]:::function
+        fn_1ad2e75add["Context.abort() :845"]:::function
+        fn_a44a756031["Context.get_help() :865"]:::function
+        fn_3f10b4163e["Context.__enter__() :579"]:::function
+        fn_db5abe1dd9["Context.__exit__() :584"]:::function
+        fn_2442dcaa7e["Context.command_path() :745"]:::function
+        fn_6d4a1425b5["Context.ensure_object() :782"]:::function
+        fn_af68793392["Context.fail() :837"]:::function
+        fn_7c1d12b52a["Context.find_object() :770"]:::function
+        fn_a3e8087ac1["Context.find_root() :763"]:::function
+        fn_3d7491254d["Context.get_parameter_source() :970"]:::function
+        fn_fb907427fe["Context.get_usage() :859"]:::function
+        fn_061dd18b6b["Context.lookup_default() :806"]:::function
+        helpers_d537ef7b69["+13 helpers"]:::helper
+      end
+      subgraph class_993006545f ["🏛️ Group"]
+        fn_dbf2fc3dc7["Group.resolve_command() :2120"]:::function
+        fn_badfa244cf["Group.format_commands() :2010"]:::function
+        fn_d23a11b9e3["Group.invoke() :2052"]:::function
+        fn_f2548b6a58["Group.parse_args() :2038"]:::function
+        fn_591da09740["Group.shell_complete() :2146"]:::function
+        fn_802bae2ac0["Group.to_info_dict() :1817"]:::function
+        helpers_993006545f["+9 helpers"]:::helper
+      end
+      subgraph class_5bc380f123 ["🏛️ Option"]
+        fn_0995a50394["Option.add_to_parser() :3516"]:::function
+        fn_897f421fb9["Option._pick_type() :3282"]:::function
+        fn_e21235dff2["Option.value_from_envvar() :3772"]:::function
+        fn_6e6037e1a0["Option._parse_decls() :3449"]:::function
+        fn_9480a5bda2["Option.get_help_extra() :3614"]:::function
+        fn_4dee916ef4["Option.prompt_for_value() :3698"]:::function
+        fn_8e4eaecfa9["Option.consume_value() :3820"]:::function
+        helpers_5bc380f123["+14 helpers"]:::helper
+      end
+      subgraph class_65a111824b ["🏛️ Parameter"]
+        fn_9f2aeaf145["Parameter.shell_complete() :3033"]:::function
+        fn_7a57463218["Parameter.get_error_hint() :3023"]:::function
+        fn_d0ce15ee83["Parameter.handle_parse_result() :2929"]:::function
+        fn_d8483a6295["Parameter.make_metavar() :2620"]:::function
+        fn_e5de5f5138["Parameter.__init__() :2406"]:::function
+        fn_99e973bb1b["Parameter.consume_value() :2680"]:::function
+        fn_2955608f55["Parameter.process_value() :2802"]:::function
+        fn_c7d494ff4f["Parameter.spec() :2570"]:::function
+        fn_fb93f45e53["Parameter.to_info_dict() :2498"]:::function
+        fn_38047167ed["Parameter.value_from_envvar() :2913"]:::function
+        helpers_65a111824b["+14 helpers"]:::helper
+      end
+      subgraph class_281b07f88e ["🏛️ ParameterSource"]
+      end
+      subgraph class_cc704f61bf ["🏛️ _BaseCommand"]
+      end
+      subgraph class_2db3670647 ["🏛️ _FakeSubclassCheck"]
+        helpers_2db3670647["+2 helpers"]:::helper
+      end
+      subgraph class_2735844657 ["🏛️ _MultiCommand"]
+      end
+      fn_b45fb9120f["_complete_visible_commands() :64"]:::function
+      fn_0c14cf6c65["decorator() :1936"]:::function
+      fn_c261111e7b["_echo_aborted() :103"]:::function
+      fn_82a5103528["_outside_click_stacklevel() :108"]:::function
+      fn_c88fb02220["_write_opts() :3569"]:::function
+      fn_49380847fd["check_iter() :2738"]:::function
+      fn_d951ff4a35["convert() :2753"]:::function
+      fn_221a9abf01["decorator() :1884"]:::function
+      fn_07a6370d2e["decorator() :1975"]:::function
+      helpers_e2bdf9828d["+11 helpers"]:::helper
+    end
+    subgraph file_4cdaf9e0f7 ["📄 decorators.py"]
+      fn_83674cd8e2["new_func() :77"]:::function
+      fn_82ca1d6d6f["callback() :501"]:::function
+      fn_a40e496677["show_help() :612"]:::function
+      fn_8ab85fd000["decorator() :217"]:::function
+      fn_2176aaeb19["new_func() :116"]:::function
+      fn_a53b497558["show_version() :585"]:::function
+      fn_81ade020c4["_param_memo() :314"]:::function
+      fn_cee955187d["callback() :389"]:::function
+      fn_4ac46ceeb4["command() :138"]:::function
+      fn_5eeca36da6["group() :263"]:::function
+      fn_7817caf28a["help_option() :603"]:::function
+      fn_da6cdd5d01["new_func() :33"]:::function
+      fn_1aee0cf933["new_func() :45"]:::function
+      fn_91c85c743d["version_option() :421"]:::function
+      helpers_4cdaf9e0f7["+13 helpers"]:::helper
+    end
+    subgraph file_737add236a ["📄 exceptions.py"]
+      subgraph class_1442622d16 ["🏛️ Abort"]
+      end
+      subgraph class_6b049d2f40 ["🏛️ BadArgumentUsage"]
+      end
+      subgraph class_cc277abf99 ["🏛️ BadOptionUsage"]
+        helpers_cc277abf99["+1 helpers"]:::helper
+      end
+      subgraph class_91619549c3 ["🏛️ BadParameter"]
+        fn_35ce4bfe72["BadParameter.format_message() :146"]:::function
+        helpers_91619549c3["+1 helpers"]:::helper
+      end
+      subgraph class_28511926c9 ["🏛️ ClickException"]
+        fn_fbd5218a1c["ClickException.show() :57"]:::function
+        fn_cc4e34723f["ClickException.__init__() :44"]:::function
+        helpers_28511926c9["+2 helpers"]:::helper
+      end
+      subgraph class_77f1288fb4 ["🏛️ Exit"]
+        helpers_77f1288fb4["+1 helpers"]:::helper
+      end
+      subgraph class_25121a995b ["🏛️ FileError"]
+        fn_935d140f2e["FileError.__init__() :348"]:::function
+        helpers_25121a995b["+1 helpers"]:::helper
+      end
+      subgraph class_bc7fe460a7 ["🏛️ MissingParameter"]
+        fn_478b3912ad["MissingParameter.format_message() :184"]:::function
+        helpers_bc7fe460a7["+2 helpers"]:::helper
+      end
+      subgraph class_02efee98fa ["🏛️ NoArgsIsHelpError"]
+        fn_16ef57fd46["NoArgsIsHelpError.__init__() :335"]:::function
+        fn_6fd5060e76["NoArgsIsHelpError.show() :338"]:::function
+      end
+      subgraph class_2708d1dae4 ["🏛️ NoSuchCommand"]
+        helpers_2708d1dae4["+2 helpers"]:::helper
+      end
+      subgraph class_26d7b29bfe ["🏛️ NoSuchOption"]
+        helpers_26d7b29bfe["+2 helpers"]:::helper
+      end
+      subgraph class_938a184a2b ["🏛️ UsageError"]
+        fn_7e644ea63c["UsageError.show() :87"]:::function
+        helpers_938a184a2b["+1 helpers"]:::helper
+      end
+      helpers_737add236a["+2 helpers"]:::helper
+    end
+    subgraph file_a4e7e6ed4b ["📄 formatting.py"]
+      subgraph class_b6f07fe9c7 ["🏛️ HelpFormatter"]
+        fn_576afcb3a0["HelpFormatter.write_dl() :229"]:::function
+        fn_4eb3ccbb53["HelpFormatter.write_usage() :158"]:::function
+        fn_c6d64c5dd6["HelpFormatter.section() :274"]:::function
+        fn_39287d4b92["HelpFormatter.getvalue() :297"]:::function
+        fn_bf2dad96af["HelpFormatter.indentation() :289"]:::function
+        fn_bccaa50ab7["HelpFormatter.write_paragraph() :208"]:::function
+        fn_68f2a8ed55["HelpFormatter.write_text() :213"]:::function
+        helpers_b6f07fe9c7["+5 helpers"]:::helper
+      end
+      fn_2440d6d63f["wrap_text() :31"]:::function
+      fn_00f0a8284e["join_options() :302"]:::function
+      fn_b1fb1de8e7["_flush_par() :78"]:::function
+      fn_93a9bafe6f["measure_table() :14"]:::function
+      helpers_a4e7e6ed4b["+1 helpers"]:::helper
+    end
+    subgraph file_adcf3e43eb ["📄 globals.py"]
+      fn_bf42c337cf["resolve_color_default() :54"]:::function
+      fn_a52a54437a["get_current_context() :13"]:::function
+      fn_10d11a3c03["pop_context() :49"]:::function
+      fn_5717899a1d["push_context() :44"]:::function
+    end
+    subgraph file_4d3f2fbfca ["📄 parser.py"]
+      subgraph class_cf84660253 ["🏛️ _Argument"]
+        fn_c57309bd7f["_Argument.process() :191"]:::function
+        helpers_cf84660253["+1 helpers"]:::helper
+      end
+      subgraph class_596621a0b6 ["🏛️ _Option"]
+        helpers_596621a0b6["+3 helpers"]:::helper
+      end
+      subgraph class_150546d7a7 ["🏛️ _OptionParser"]
+        fn_e9e2cc7a5d["_OptionParser.add_option() :265"]:::function
+        fn_904a407af6["_OptionParser._match_short_opt() :390"]:::function
+        fn_13e311a0ca["_OptionParser._match_long_opt() :363"]:::function
+        fn_340e17026f["_OptionParser._get_value_from_state() :430"]:::function
+        fn_2a86d4c166["_OptionParser.add_argument() :290"]:::function
+        fn_722576022b["_OptionParser.parse_args() :298"]:::function
+        helpers_150546d7a7["+4 helpers"]:::helper
+      end
+      subgraph class_860d88a672 ["🏛️ _ParsingState"]
+        helpers_860d88a672["+1 helpers"]:::helper
+      end
+      fn_caa2e7b90a["_split_opt() :111"]:::function
+      fn_df155ce6f4["_unpack_args() :51"]:::function
+      fn_c1677fa04b["_normalize_opt() :120"]:::function
+      helpers_4d3f2fbfca["+2 helpers"]:::helper
+    end
+    subgraph file_65a752aa64 ["📄 shell_completion.py"]
+      subgraph class_1910cd2450 ["🏛️ BashComplete"]
+        fn_14cddcf427["BashComplete._check_version() :396"]:::function
+        helpers_1910cd2450["+3 helpers"]:::helper
+      end
+      subgraph class_bcac28e28d ["🏛️ CompletionItem"]
+        helpers_bcac28e28d["+2 helpers"]:::helper
+      end
+      subgraph class_43fe231da2 ["🏛️ FishComplete"]
+        helpers_43fe231da2["+2 helpers"]:::helper
+      end
+      subgraph class_8f4636308c ["🏛️ PowerShellComplete"]
+        helpers_8f4636308c["+2 helpers"]:::helper
+      end
+      subgraph class_6e85ed8256 ["🏛️ ShellComplete"]
+        fn_c4efd62c99["ShellComplete.get_completions() :354"]:::function
+        helpers_6e85ed8256["+7 helpers"]:::helper
+      end
+      subgraph class_fc2ac1cebe ["🏛️ ZshComplete"]
+        helpers_fc2ac1cebe["+2 helpers"]:::helper
+      end
+      subgraph class_d4559ffa28 ["🏛️ _SourceVarsDict"]
+      end
+      fn_c9ad71ef1e["_resolve_context() :696"]:::function
+      fn_6cb73cef8c["shell_complete() :19"]:::function
+      fn_83e23053df["_is_incomplete_argument() :639"]:::function
+      fn_7f4b4743d4["_resolve_incomplete() :757"]:::function
+      fn_5cd3edbe8e["split_arg_string() :603"]:::function
+      helpers_65a752aa64["+4 helpers"]:::helper
+    end
+    subgraph file_95f4d0b6bc ["📄 termui.py"]
+      fn_6d9715477c["prompt() :139"]:::function
+      fn_b536d1e31c["confirm() :289"]:::function
+      fn_67fe6297ae["edit() :815"]:::function
+      fn_38c562609f["pause() :993"]:::function
+      fn_fffc917659["_readline_prompt() :85"]:::function
+      fn_bb4d96ddb3["echo_via_pager() :367"]:::function
+      fn_a5da1aee9c["clear() :602"]:::function
+      fn_1263ba185d["get_pager_file() :348"]:::function
+      fn_cc00d69b9a["progressbar() :403"]:::function
+      fn_88569ade45["prompt_func() :235"]:::function
+      fn_1eaa5e04f1["style() :641"]:::function
+      fn_39128f3cd5["launch() :923"]:::function
+      fn_7ff5f9f803["raw_terminal() :987"]:::function
+      fn_6aeb05e7ab["secho() :780"]:::function
+      fn_80bac82882["unstyle() :768"]:::function
+      helpers_95f4d0b6bc["+6 helpers"]:::helper
+    end
+    subgraph file_9bc215edfb ["📄 testing.py"]
+      subgraph class_74188e7f3a ["🏛️ BytesIOCopy"]
+        helpers_74188e7f3a["+3 helpers"]:::helper
+      end
+      subgraph class_26ce17ec0c ["🏛️ CliRunner"]
+        fn_6c03fcef63["CliRunner.invoke() :596"]:::function
+        fn_b29f6d176f["CliRunner.isolation() :399"]:::function
+        helpers_26ce17ec0c["+4 helpers"]:::helper
+      end
+      subgraph class_e36c3b17a4 ["🏛️ EchoingStdin"]
+        helpers_e36c3b17a4["+9 helpers"]:::helper
+      end
+      subgraph class_1fbf50a758 ["🏛️ Result"]
+        helpers_1fbf50a758["+5 helpers"]:::helper
+      end
+      subgraph class_93f79d32ac ["🏛️ StreamMixer"]
+        helpers_93f79d32ac["+1 helpers"]:::helper
+      end
+      subgraph class_5638757462 ["🏛️ _FDCapture"]
+        helpers_5638757462["+3 helpers"]:::helper
+      end
+      subgraph class_d54216c827 ["🏛️ _NamedTextIOWrapper"]
+        helpers_d54216c827["+5 helpers"]:::helper
+      end
+      fn_c1bed4191c["make_input_stream() :211"]:::function
+      fn_74747f5736["_patched_pdb_init() :525"]:::function
+      helpers_9bc215edfb["+5 helpers"]:::helper
+    end
+    subgraph file_0d9c027647 ["📄 types.py"]
+      subgraph class_cfcd2d8fb5 ["🏛️ BoolParamType"]
+        fn_0f8a7e6f98["BoolParamType.str_to_bool() :856"]:::function
+        helpers_cfcd2d8fb5["+2 helpers"]:::helper
+      end
+      subgraph class_010f20075c ["🏛️ Choice"]
+        fn_4dfdb4fd6e["Choice.normalize_choice() :406"]:::function
+        fn_231381892a["Choice.shell_complete() :495"]:::function
+        helpers_010f20075c["+8 helpers"]:::helper
+      end
+      subgraph class_8ce823e216 ["🏛️ ChoiceInfoDict"]
+      end
+      subgraph class_aad3b39460 ["🏛️ CompositeParamType"]
+        helpers_aad3b39460["+1 helpers"]:::helper
+      end
+      subgraph class_1737de0ca7 ["🏛️ DateTime"]
+        helpers_1737de0ca7["+6 helpers"]:::helper
+      end
+      subgraph class_cffc108c25 ["🏛️ DateTimeInfoDict"]
+      end
+      subgraph class_c2ed893fd2 ["🏛️ File"]
+        fn_8137bec2d8["File.convert() :984"]:::function
+        fn_722bfee965["File.shell_complete() :1029"]:::function
+        helpers_c2ed893fd2["+3 helpers"]:::helper
+      end
+      subgraph class_353754ff8a ["🏛️ FileInfoDict"]
+      end
+      subgraph class_6036235311 ["🏛️ FloatParamType"]
+        helpers_6036235311["+1 helpers"]:::helper
+      end
+      subgraph class_d12773ba94 ["🏛️ FloatRange"]
+        helpers_d12773ba94["+2 helpers"]:::helper
+      end
+      subgraph class_67d5f78ac5 ["🏛️ FuncParamType"]
+        fn_9b18bcc20d["FuncParamType.convert() :275"]:::function
+        helpers_67d5f78ac5["+2 helpers"]:::helper
+      end
+      subgraph class_33d7aa959d ["🏛️ FuncParamTypeInfoDict"]
+      end
+      subgraph class_c8c9cb0fbc ["🏛️ IntParamType"]
+        helpers_c8c9cb0fbc["+1 helpers"]:::helper
+      end
+      subgraph class_4de3df2e25 ["🏛️ IntRange"]
+        helpers_4de3df2e25["+1 helpers"]:::helper
+      end
+      subgraph class_ed66ba8207 ["🏛️ NumberRangeInfoDict"]
+      end
+      subgraph class_10a99d0231 ["🏛️ OptionHelpExtra"]
+      end
+      subgraph class_2edcda406a ["🏛️ ParamType"]
+        fn_1e33544b27["ParamType.split_envvar_value() :205"]:::function
+        fn_3975e77bc5["ParamType.get_metavar() :169"]:::function
+        fn_be557de9e3["ParamType.convert() :179"]:::function
+        fn_53682191d0["ParamType.fail() :215"]:::function
+        fn_330a3a49b5["ParamType.get_missing_message() :172"]:::function
+        fn_17cfd19dd0["ParamType.shell_complete() :224"]:::function
+        fn_463896097d["ParamType.to_info_dict() :122"]:::function
+        helpers_2edcda406a["+2 helpers"]:::helper
+      end
+      subgraph class_b904b293cc ["🏛️ ParamTypeInfoDict"]
+      end
+      subgraph class_53df478912 ["🏛️ Path"]
+        fn_97cd165161["Path.convert() :1161"]:::function
+        fn_d649e5be0b["Path.coerce_path_result() :1147"]:::function
+        fn_c8ec485dd6["Path.shell_complete() :1235"]:::function
+        helpers_53df478912["+2 helpers"]:::helper
+      end
+      subgraph class_c855bf76e9 ["🏛️ PathInfoDict"]
+      end
+      subgraph class_73f822160a ["🏛️ StringParamType"]
+        fn_165b80d8fa["StringParamType.convert() :307"]:::function
+        helpers_73f822160a["+1 helpers"]:::helper
+      end
+      subgraph class_eccd46cdb7 ["🏛️ Tuple"]
+        helpers_eccd46cdb7["+5 helpers"]:::helper
+      end
+      subgraph class_d0dba4270f ["🏛️ TupleInfoDict"]
+      end
+      subgraph class_c705505f71 ["🏛️ UUIDParameterType"]
+        helpers_c705505f71["+2 helpers"]:::helper
+      end
+      subgraph class_c0ffd34a15 ["🏛️ UnprocessedParamType"]
+        helpers_c0ffd34a15["+2 helpers"]:::helper
+      end
+      subgraph class_f0a939dc9c ["🏛️ _NumberParamTypeBase"]
+        helpers_f0a939dc9c["+1 helpers"]:::helper
+      end
+      subgraph class_ee7ffffe95 ["🏛️ _NumberRangeBase"]
+        fn_8b21e1452a["_NumberRangeBase._describe_range() :717"]:::function
+        helpers_ee7ffffe95["+5 helpers"]:::helper
+      end
+      fn_38baa9a835["convert_type() :1347"]:::function
+      helpers_0d9c027647["+2 helpers"]:::helper
+    end
+    subgraph file_107cca13e3 ["📄 utils.py"]
+      subgraph class_97fcec7a26 ["🏛️ _KeepOpenFile"]
+        helpers_97fcec7a26["+6 helpers"]:::helper
+      end
+      subgraph class_779b6b0f82 ["🏛️ _LazyFile"]
+        fn_2a8e3abe4b["_LazyFile.open() :153"]:::function
+        fn_d4502db35e["_LazyFile.__init__() :120"]:::function
+        helpers_779b6b0f82["+7 helpers"]:::helper
+      end
+      subgraph class_1dd18d97bb ["🏛️ _PacifyFlushWrapper"]
+        helpers_1dd18d97bb["+3 helpers"]:::helper
+      end
+      fn_a4e3f5c879["echo() :240"]:::function
+      fn_5e83f49c68["format_filename() :430"]:::function
+      fn_ec9e986bb6["open_file() :381"]:::function
+      fn_92f3b1a19e["_expand_args() :605"]:::function
+      fn_7ea53ae0db["_make_default_short_help() :62"]:::function
+      fn_b6c8df3f5f["_safecall() :36"]:::function
+      fn_1dcff5e61a["_detect_program_name() :550"]:::function
+      fn_d3a3fad4a0["make_str() :52"]:::function
+      helpers_107cca13e3["+6 helpers"]:::helper
+    end
+  end
+  cat_tests -->|424 calls| cat_examples
+  cat_tests -->|1 call| fn_0a2e0399f8
+  cat_tests -->|2 calls| fn_0ad76c82c3
+  cat_tests -->|2 calls| fn_0c14cf6c65
+  cat_tests -->|1 call| fn_0d89db7259
+  cat_tests -->|1 call| fn_14e135e2a1
+  cat_tests -->|1 call| fn_1ba44f07a8
+  cat_tests -->|8 calls| fn_1cacc5e990
+  cat_tests -->|3 calls| fn_2340b5ecbd
+  cat_tests -->|2 calls| fn_3573571051
+  cat_tests -->|6 calls| fn_38a54a4bad
+  cat_tests -->|3 calls| fn_3cb8c65e99
+  cat_tests -->|1 call| fn_49c9e00162
+  cat_tests -->|1 call| fn_5004ea6480
+  cat_tests -->|5 calls| fn_51982f35b3
+  cat_tests -->|3 calls| fn_5b72f417be
+  cat_tests -->|8 calls| fn_6c03fcef63
+  cat_tests -->|2 calls| fn_726753c3db
+  cat_tests -->|3 calls| fn_789d369aa8
+  cat_tests -->|1 call| fn_802bae2ac0
+  cat_tests -->|1 call| fn_8e4eaecfa9
+  cat_tests -->|3 calls| fn_97cd165161
+  cat_tests -->|7 calls| fn_b1091e5339
+  cat_tests -->|1 call| fn_b43d004cc7
+  cat_tests -->|2 calls| fn_b769bfde18
+  cat_tests -->|2 calls| fn_badfa244cf
+  cat_tests -->|7 calls| fn_bb790162b1
+  cat_tests -->|1 call| fn_cc53cf6abd
+  cat_tests -->|9 calls| fn_cfe0fc2e92
+  cat_tests -->|2 calls| fn_d23a11b9e3
+  cat_tests -->|2 calls| fn_d649e5be0b
+  cat_tests -->|5 calls| fn_ebe445d6e5
+  class_010f20075c -.->|overrides| class_2edcda406a
+  class_010f20075c -.->|overrides| fn_330a3a49b5
+  class_010f20075c -->|1 call| fn_38baa9a835
+  class_010f20075c -.->|overrides| fn_3975e77bc5
+  class_010f20075c -.->|overrides| fn_463896097d
+  class_010f20075c -->|2 calls| fn_4dfdb4fd6e
+  class_010f20075c -->|1 call| fn_53682191d0
+  class_010f20075c -.->|overrides| fn_be557de9e3
+  class_02efee98fa -.->|overrides| class_938a184a2b
+  class_150546d7a7 -->|4 calls| class_860d88a672
+  class_150546d7a7 -->|1 call| fn_13e311a0ca
+  class_150546d7a7 -->|1 call| fn_904a407af6
+  class_150546d7a7 -->|1 call| fn_c1677fa04b
+  class_150546d7a7 -->|1 call| fn_c57309bd7f
+  class_150546d7a7 -->|1 call| fn_df155ce6f4
+  class_1737de0ca7 -.->|overrides| class_2edcda406a
+  class_1737de0ca7 -.->|overrides| fn_3975e77bc5
+  class_1737de0ca7 -.->|overrides| fn_463896097d
+  class_1737de0ca7 -->|1 call| fn_53682191d0
+  class_1737de0ca7 -.->|overrides| fn_be557de9e3
+  class_1910cd2450 -.->|overrides| class_6e85ed8256
+  class_1910cd2450 -->|1 call| fn_14cddcf427
+  class_1910cd2450 -->|1 call| fn_5cd3edbe8e
+  class_25121a995b -.->|overrides| class_28511926c9
+  class_26d7b29bfe -.->|overrides| class_28511926c9
+  class_26d7b29bfe -.->|overrides| class_938a184a2b
+  class_26d7b29bfe -->|1 call| file_737add236a
+  class_2708d1dae4 -.->|overrides| class_28511926c9
+  class_2708d1dae4 -.->|overrides| class_938a184a2b
+  class_2708d1dae4 -->|1 call| file_737add236a
+  class_2735844657 -.->|overrides| class_993006545f
+  class_2edcda406a -->|1 call| fn_be557de9e3
+  class_33d7aa959d -.->|overrides| class_b904b293cc
+  class_353754ff8a -.->|overrides| class_b904b293cc
+  class_43fe231da2 -.->|overrides| class_6e85ed8256
+  class_43fe231da2 -->|1 call| class_bcac28e28d
+  class_43fe231da2 -->|2 calls| fn_5cd3edbe8e
+  class_4d5c0495b2 -->|1 call| class_65a111824b
+  class_4d5c0495b2 -->|1 call| fn_0fd58fc401
+  class_4d5c0495b2 -->|1 call| fn_264ed29574
+  class_4d5c0495b2 -->|1 call| fn_38a54a4bad
+  class_4d5c0495b2 -->|1 call| fn_46cfebc040
+  class_4d5c0495b2 -->|2 calls| fn_49c9e00162
+  class_4d5c0495b2 -->|1 call| fn_726753c3db
+  class_4d5c0495b2 -->|1 call| fn_cc53cf6abd
+  class_4d5c0495b2 -->|1 call| fn_fb93f45e53
+  class_4de3df2e25 -.->|overrides| class_c8c9cb0fbc
+  class_4de3df2e25 -.->|overrides| class_ee7ffffe95
+  class_53df478912 -.->|overrides| class_2edcda406a
+  class_53df478912 -.->|overrides| fn_463896097d
+  class_580e84f48c -.->|overrides| class_f42690fd8c
+  class_596621a0b6 -->|4 calls| class_860d88a672
+  class_596621a0b6 -->|1 call| fn_caa2e7b90a
+  class_5bc380f123 -.->|overrides| class_65a111824b
+  class_5bc380f123 -.->|overrides| fn_2955608f55
+  class_5bc380f123 -.->|overrides| fn_7a57463218
+  class_5bc380f123 -->|1 call| fn_82a5103528
+  class_5bc380f123 -->|1 call| fn_897f421fb9
+  class_5bc380f123 -->|1 call| fn_9480a5bda2
+  class_5bc380f123 -->|2 calls| fn_c88fb02220
+  class_5bc380f123 -->|1 call| fn_e5de5f5138
+  class_5bc380f123 -.->|overrides| fn_fb93f45e53
+  class_6036235311 -.->|overrides| class_f0a939dc9c
+  class_65a111824b -->|1 call| class_d537ef7b69
+  class_65a111824b -->|1 call| fn_061dd18b6b
+  class_65a111824b -->|1 call| fn_49380847fd
+  class_65a111824b -->|2 calls| fn_82a5103528
+  class_65a111824b -->|2 calls| fn_d951ff4a35
+  class_67d5f78ac5 -.->|overrides| class_2edcda406a
+  class_67d5f78ac5 -.->|overrides| fn_463896097d
+  class_6b049d2f40 -.->|overrides| class_938a184a2b
+  class_6e85ed8256 -->|1 call| fn_c4efd62c99
+  class_73f822160a -.->|overrides| class_2edcda406a
+  class_779b6b0f82 -->|2 calls| fn_2a8e3abe4b
+  class_779b6b0f82 -->|1 call| fn_5e83f49c68
+  class_881fd645c0 -->|1 call| file_d39afe225b
+  class_8ce823e216 -.->|overrides| class_b904b293cc
+  class_8f4636308c -.->|overrides| class_6e85ed8256
+  class_8f4636308c -->|1 call| class_bcac28e28d
+  class_8f4636308c -->|1 call| fn_5cd3edbe8e
+  class_91619549c3 -.->|overrides| class_938a184a2b
+  class_938a184a2b -.->|overrides| class_28511926c9
+  class_938a184a2b -->|1 call| fn_cc4e34723f
+  class_93f79d32ac -->|2 calls| class_74188e7f3a
+  class_993006545f -.->|overrides| class_4d5c0495b2
+  class_993006545f -->|1 call| file_e2bdf9828d
+  class_993006545f -->|2 calls| fn_221a9abf01
+  class_993006545f -.->|overrides| fn_38a54a4bad
+  class_993006545f -->|1 call| fn_badfa244cf
+  class_aad3b39460 -.->|overrides| class_2edcda406a
+  class_af72d03ff7 -.->|overrides| class_993006545f
+  class_b265baff5d -->|6 calls| fn_51982f35b3
+  class_b265baff5d -->|2 calls| fn_e506f675bc
+  class_bc7fe460a7 -.->|overrides| class_91619549c3
+  class_c0ffd34a15 -.->|overrides| class_2edcda406a
+  class_c0ffd34a15 -.->|overrides| fn_be557de9e3
+  class_c2ed893fd2 -.->|overrides| class_2edcda406a
+  class_c2ed893fd2 -.->|overrides| fn_463896097d
+  class_c705505f71 -.->|overrides| class_2edcda406a
+  class_c705505f71 -->|1 call| fn_53682191d0
+  class_c705505f71 -.->|overrides| fn_be557de9e3
+  class_c855bf76e9 -.->|overrides| class_b904b293cc
+  class_c8c9cb0fbc -.->|overrides| class_f0a939dc9c
+  class_c8d641f641 -.->|overrides| class_65a111824b
+  class_c8d641f641 -->|2 calls| fn_2c4358409b
+  class_c8d641f641 -.->|overrides| fn_7a57463218
+  class_c8d641f641 -.->|overrides| fn_c7d494ff4f
+  class_c8d641f641 -->|1 call| fn_e5de5f5138
+  class_cc277abf99 -.->|overrides| class_938a184a2b
+  class_cc704f61bf -.->|overrides| class_4d5c0495b2
+  class_cfcd2d8fb5 -.->|overrides| class_2edcda406a
+  class_cfcd2d8fb5 -->|1 call| fn_0f8a7e6f98
+  class_cfcd2d8fb5 -->|1 call| fn_53682191d0
+  class_cfcd2d8fb5 -.->|overrides| fn_be557de9e3
+  class_cffc108c25 -.->|overrides| class_b904b293cc
+  class_d0dba4270f -.->|overrides| class_b904b293cc
+  class_d12773ba94 -.->|overrides| class_6036235311
+  class_d12773ba94 -.->|overrides| class_ee7ffffe95
+  class_d537ef7b69 -->|1 call| class_4d5c0495b2
+  class_d537ef7b69 -->|1 call| fn_1ba44f07a8
+  class_eccd46cdb7 -.->|overrides| class_aad3b39460
+  class_eccd46cdb7 -->|1 call| fn_38baa9a835
+  class_eccd46cdb7 -.->|overrides| fn_463896097d
+  class_eccd46cdb7 -->|1 call| fn_53682191d0
+  class_eccd46cdb7 -.->|overrides| fn_be557de9e3
+  class_ed061ffa13 -->|1 call| fn_5e204a37c0
+  class_ed66ba8207 -.->|overrides| class_b904b293cc
+  class_ee7ffffe95 -.->|overrides| class_f0a939dc9c
+  class_ee7ffffe95 -.->|overrides| fn_463896097d
+  class_ee7ffffe95 -->|1 call| fn_53682191d0
+  class_ee7ffffe95 -->|2 calls| fn_8b21e1452a
+  class_f0a939dc9c -.->|overrides| class_2edcda406a
+  class_f0a939dc9c -->|1 call| fn_53682191d0
+  class_f0a939dc9c -.->|overrides| fn_be557de9e3
+  class_f72148de0a -->|1 call| fn_3c499f92e8
+  class_fc2ac1cebe -.->|overrides| class_6e85ed8256
+  class_fc2ac1cebe -->|1 call| class_bcac28e28d
+  class_fc2ac1cebe -->|1 call| fn_5cd3edbe8e
+  class_fca9315990 -.->|overrides| class_f42690fd8c
+  class_fca9315990 -->|1 call| file_cd0e87cb39
+  file_0d9c027647 -->|7 calls| cat_examples
+  file_0d9c027647 -->|1 call| class_6036235311
+  file_0d9c027647 -->|1 call| class_73f822160a
+  file_0d9c027647 -->|1 call| class_c0ffd34a15
+  file_0d9c027647 -->|1 call| class_c705505f71
+  file_0d9c027647 -->|1 call| class_c8c9cb0fbc
+  file_0d9c027647 -->|1 call| class_cfcd2d8fb5
+  file_107cca13e3 -->|1 call| cat_examples
+  file_107cca13e3 -->|1 call| fn_b6c8df3f5f
+  file_4cdaf9e0f7 -->|1 call| cat_examples
+  file_4cdaf9e0f7 -->|2 calls| fn_81ade020c4
+  file_4d3f2fbfca -->|1 call| cat_examples
+  file_65a752aa64 -->|1 call| cat_examples
+  file_84f3b9ad30 -->|1 call| cat_examples
+  file_85699e562a -->|1 call| class_ed061ffa13
+  file_85699e562a -->|1 call| fn_3935a1ca24
+  file_85699e562a -->|2 calls| fn_3cd9953e22
+  file_85699e562a -->|2 calls| fn_8905fb19b6
+  file_85699e562a -->|1 call| fn_a2fa31e52a
+  file_85699e562a -->|5 calls| fn_d85bd5eede
+  file_95f4d0b6bc -->|1 call| cat_examples
+  file_cd0e87cb39 -->|1 call| class_514d5575be
+  file_e2bdf9828d -->|2 calls| cat_examples
+  file_e2bdf9828d -->|1 call| fn_1ba44f07a8
+  file_e2bdf9828d -->|1 call| fn_221a9abf01
+  file_e2bdf9828d -->|1 call| fn_d23a11b9e3
+  fn_00f0a8284e -->|2 calls| cat_examples
+  fn_00f0a8284e -->|1 call| fn_caa2e7b90a
+  fn_029eb6a643 -->|1 call| file_85699e562a
+  fn_029eb6a643 -->|1 call| fn_2efde2a244
+  fn_061dd18b6b -->|1 call| cat_examples
+  fn_061dd18b6b -->|1 call| class_d537ef7b69
+  fn_07a6370d2e -->|1 call| cat_examples
+  fn_07f3dc7e02 -->|1 call| cat_examples
+  fn_07f3dc7e02 -->|1 call| class_5a05af57a2
+  fn_07f3dc7e02 -->|1 call| class_ed061ffa13
+  fn_07f3dc7e02 -->|1 call| class_fca9315990
+  fn_0995a50394 -.->|overrides| class_65a111824b
+  fn_0995a50394 -->|4 calls| fn_e9e2cc7a5d
+  fn_0ad76c82c3 -.->|overrides| class_993006545f
+  fn_0ad76c82c3 -->|1 call| file_e2bdf9828d
+  fn_0c14cf6c65 -->|2 calls| class_993006545f
+  fn_0c14cf6c65 -->|1 call| fn_5eeca36da6
+  fn_0d89db7259 -->|1 call| fn_aacb3ccb5e
+  fn_0f8a7e6f98 -->|2 calls| class_cfcd2d8fb5
+  fn_0fd58fc401 -->|1 call| class_c8d641f641
+  fn_0fd58fc401 -->|1 call| fn_49c9e00162
+  fn_0fd58fc401 -->|1 call| fn_576afcb3a0
+  fn_0fd58fc401 -->|1 call| fn_c6d64c5dd6
+  fn_10a5ab37dc -->|1 call| cat_examples
+  fn_10a5ab37dc -->|2 calls| class_f72148de0a
+  fn_10a5ab37dc -->|1 call| fn_c7817c991d
+  fn_1263ba185d -->|1 call| fn_10a5ab37dc
+  fn_1263ba185d -->|1 call| fn_bf42c337cf
+  fn_13e311a0ca -->|1 call| class_26d7b29bfe
+  fn_13e311a0ca -->|1 call| class_596621a0b6
+  fn_13e311a0ca -->|1 call| class_860d88a672
+  fn_13e311a0ca -->|1 call| class_cc277abf99
+  fn_13e311a0ca -->|1 call| fn_340e17026f
+  fn_1480da09ff -.->|overrides| class_65a111824b
+  fn_1480da09ff -->|1 call| fn_2a86d4c166
+  fn_14cddcf427 -->|2 calls| fn_a4e3f5c879
+  fn_14e135e2a1 -->|1 call| fn_6cb73cef8c
+  fn_165b80d8fa -.->|overrides| fn_be557de9e3
+  fn_165b80d8fa -->|1 call| fn_d9ca59168c
+  fn_16ef57fd46 -->|1 call| class_938a184a2b
+  fn_16ef57fd46 -->|1 call| fn_a44a756031
+  fn_18e2f67421 -->|1 call| cat_examples
+  fn_18e2f67421 -->|1 call| file_cd0e87cb39
+  fn_1ad2e75add -->|1 call| class_1442622d16
+  fn_1aee0cf933 -->|1 call| file_4cdaf9e0f7
+  fn_1aee0cf933 -->|1 call| fn_a52a54437a
+  fn_1ba44f07a8 -->|1 call| cat_examples
+  fn_1ba44f07a8 -->|2 calls| class_65a111824b
+  fn_1ba44f07a8 -->|2 calls| class_d537ef7b69
+  fn_1ba44f07a8 -->|1 call| file_e2bdf9828d
+  fn_1ba44f07a8 -->|1 call| fn_0a2e0399f8
+  fn_1cacc5e990 -->|1 call| cat_examples
+  fn_1cacc5e990 -->|2 calls| class_c28af0c2f7
+  fn_1eaa5e04f1 -->|2 calls| file_95f4d0b6bc
+  fn_1f20676c47 -->|1 call| file_85699e562a
+  fn_1f20676c47 -->|1 call| fn_aacb3ccb5e
+  fn_2176aaeb19 -->|1 call| fn_1ba44f07a8
+  fn_2176aaeb19 -->|1 call| fn_a52a54437a
+  fn_221a9abf01 -->|2 calls| class_993006545f
+  fn_221a9abf01 -->|1 call| fn_4ac46ceeb4
+  fn_231381892a -->|1 call| class_bcac28e28d
+  fn_231381892a -.->|overrides| fn_17cfd19dd0
+  fn_231381892a -->|1 call| fn_4dfdb4fd6e
+  fn_2340b5ecbd -->|5 calls| file_84f3b9ad30
+  fn_2440d6d63f -->|4 calls| cat_examples
+  fn_2440d6d63f -->|1 call| class_881fd645c0
+  fn_2440d6d63f -->|2 calls| fn_4c8bd80108
+  fn_2440d6d63f -->|2 calls| fn_5004ea6480
+  fn_2440d6d63f -->|2 calls| fn_b1fb1de8e7
+  fn_2440d6d63f -->|1 call| fn_bfb4616685
+  fn_2440d6d63f -->|1 call| fn_ee08226996
+  fn_2442dcaa7e -->|1 call| class_65a111824b
+  fn_2442dcaa7e -->|2 calls| class_d537ef7b69
+  fn_2442dcaa7e -->|1 call| fn_49c9e00162
+  fn_2442dcaa7e -->|1 call| fn_51982f35b3
+  fn_264ed29574 -->|1 call| class_4d5c0495b2
+  fn_264ed29574 -->|1 call| fn_4eb3ccbb53
+  fn_2955608f55 -->|4 calls| class_65a111824b
+  fn_2955608f55 -->|1 call| class_bc7fe460a7
+  fn_2955608f55 -->|3 calls| class_d537ef7b69
+  fn_2a86d4c166 -->|1 call| class_150546d7a7
+  fn_2a86d4c166 -->|1 call| class_cf84660253
+  fn_2a8e3abe4b -->|1 call| class_25121a995b
+  fn_2a8e3abe4b -->|1 call| fn_cfe0fc2e92
+  fn_2c4358409b -->|1 call| class_65a111824b
+  fn_2c4358409b -->|1 call| fn_3975e77bc5
+  fn_2c4358409b -.->|overrides| fn_d8483a6295
+  fn_2efde2a244 -->|1 call| file_cd0e87cb39
+  fn_340e17026f -->|1 call| class_860d88a672
+  fn_340e17026f -->|1 call| class_cc277abf99
+  fn_3573571051 -.->|overrides| class_993006545f
+  fn_35ce4bfe72 -.->|overrides| class_28511926c9
+  fn_35ce4bfe72 -->|1 call| class_91619549c3
+  fn_35ce4bfe72 -->|1 call| file_737add236a
+  fn_35ce4bfe72 -->|1 call| fn_7a57463218
+  fn_38047167ed -->|1 call| class_65a111824b
+  fn_38047167ed -->|1 call| fn_1e33544b27
+  fn_38a54a4bad -->|1 call| class_65a111824b
+  fn_38a54a4bad -->|1 call| fn_2340b5ecbd
+  fn_38a54a4bad -->|1 call| fn_49c9e00162
+  fn_38a54a4bad -->|1 call| fn_576afcb3a0
+  fn_38a54a4bad -->|1 call| fn_c6d64c5dd6
+  fn_38baa9a835 -->|1 call| class_67d5f78ac5
+  fn_38baa9a835 -->|1 call| class_eccd46cdb7
+  fn_38baa9a835 -->|1 call| file_0d9c027647
+  fn_38c562609f -->|1 call| file_95f4d0b6bc
+  fn_38c562609f -->|2 calls| fn_a4e3f5c879
+  fn_38c562609f -->|2 calls| fn_aacb3ccb5e
+  fn_39128f3cd5 -->|1 call| fn_2340b5ecbd
+  fn_3935a1ca24 -->|2 calls| cat_examples
+  fn_3935a1ca24 -->|2 calls| file_85699e562a
+  fn_3c499f92e8 -->|1 call| class_f72148de0a
+  fn_3c499f92e8 -->|1 call| fn_120fa2ae41
+  fn_3c59e3dd78 -->|1 call| cat_examples
+  fn_3c59e3dd78 -->|1 call| class_5a05af57a2
+  fn_3c59e3dd78 -->|1 call| class_ed061ffa13
+  fn_3c59e3dd78 -->|1 call| class_fca9315990
+  fn_3cb8c65e99 -->|1 call| file_e2bdf9828d
+  fn_3cb8c65e99 -->|1 call| fn_1ba44f07a8
+  fn_3cb8c65e99 -->|1 call| fn_1eaa5e04f1
+  fn_3cb8c65e99 -->|1 call| fn_a4e3f5c879
+  fn_3cd9953e22 -->|2 calls| cat_examples
+  fn_3cd9953e22 -->|3 calls| file_85699e562a
+  fn_3d7491254d -->|1 call| class_d537ef7b69
+  fn_3f10b4163e -->|1 call| fn_5717899a1d
+  fn_4462235250 -->|1 call| class_150546d7a7
+  fn_4462235250 -->|1 call| class_65a111824b
+  fn_4462235250 -->|1 call| fn_49c9e00162
+  fn_46cfebc040 -->|1 call| file_e2bdf9828d
+  fn_46cfebc040 -->|1 call| fn_68f2a8ed55
+  fn_46cfebc040 -->|1 call| fn_bccaa50ab7
+  fn_46cfebc040 -->|1 call| fn_bf2dad96af
+  fn_478b3912ad -->|2 calls| class_91619549c3
+  fn_478b3912ad -->|1 call| file_737add236a
+  fn_478b3912ad -->|1 call| fn_330a3a49b5
+  fn_478b3912ad -.->|overrides| fn_35ce4bfe72
+  fn_478b3912ad -->|1 call| fn_7a57463218
+  fn_49380847fd -->|1 call| class_91619549c3
+  fn_49380847fd -->|1 call| file_e2bdf9828d
+  fn_49c9e00162 -->|1 call| fn_b20e88b8a9
+  fn_4ac46ceeb4 -->|1 call| fn_8ab85fd000
+  fn_4c8bd80108 -->|1 call| fn_120fa2ae41
+  fn_4dee916ef4 -->|2 calls| class_5bc380f123
+  fn_4dee916ef4 -->|1 call| class_65a111824b
+  fn_4dee916ef4 -->|1 call| fn_6d9715477c
+  fn_4dee916ef4 -->|1 call| fn_b536d1e31c
+  fn_4dfdb4fd6e -->|1 call| class_d537ef7b69
+  fn_4eb3ccbb53 -->|7 calls| class_b6f07fe9c7
+  fn_4eb3ccbb53 -->|2 calls| fn_2440d6d63f
+  fn_4eb3ccbb53 -->|3 calls| fn_4c8bd80108
+  fn_4eb3ccbb53 -->|1 call| fn_bb790162b1
+  fn_4f5f60ec64 -->|1 call| class_d537ef7b69
+  fn_51982f35b3 -->|2 calls| fn_4c8bd80108
+  fn_51982f35b3 -->|2 calls| fn_a4e3f5c879
+  fn_51982f35b3 -->|2 calls| fn_bb790162b1
+  fn_51982f35b3 -->|1 call| fn_e506f675bc
+  fn_53682191d0 -->|1 call| class_91619549c3
+  fn_576afcb3a0 -->|8 calls| class_b6f07fe9c7
+  fn_576afcb3a0 -->|1 call| file_a4e7e6ed4b
+  fn_576afcb3a0 -->|1 call| fn_2440d6d63f
+  fn_576afcb3a0 -->|2 calls| fn_4c8bd80108
+  fn_576afcb3a0 -->|1 call| fn_93a9bafe6f
+  fn_591da09740 -->|1 call| class_bcac28e28d
+  fn_591da09740 -.->|overrides| fn_789d369aa8
+  fn_591da09740 -->|1 call| fn_b45fb9120f
+  fn_591da09740 -->|1 call| fn_d2fe8cc937
+  fn_5b72f417be -->|1 call| cat_examples
+  fn_5b72f417be -->|1 call| fn_a2fa31e52a
+  fn_5cd3edbe8e -->|1 call| fn_904a407af6
+  fn_5e204a37c0 -->|1 call| cat_examples
+  fn_5e204a37c0 -->|1 call| class_c28af0c2f7
+  fn_5eeca36da6 -->|2 calls| fn_4ac46ceeb4
+  fn_5fe5e7143d -->|1 call| cat_examples
+  fn_5fe5e7143d -->|1 call| class_580e84f48c
+  fn_5fe5e7143d -->|1 call| class_5a05af57a2
+  fn_5fe5e7143d -->|1 call| class_ed061ffa13
+  fn_638056a2bd -->|1 call| cat_examples
+  fn_638056a2bd -->|1 call| class_c28af0c2f7
+  fn_67fe6297ae -->|1 call| cat_examples
+  fn_67fe6297ae -->|1 call| class_812f7ce524
+  fn_67fe6297ae -->|1 call| fn_b1091e5339
+  fn_67fe6297ae -->|1 call| fn_b769bfde18
+  fn_68f2a8ed55 -->|2 calls| class_b6f07fe9c7
+  fn_68f2a8ed55 -->|1 call| fn_2440d6d63f
+  fn_6a4492aae0 -->|1 call| cat_examples
+  fn_6a4492aae0 -->|2 calls| class_c28af0c2f7
+  fn_6aeb05e7ab -->|1 call| fn_1eaa5e04f1
+  fn_6aeb05e7ab -->|1 call| fn_a4e3f5c879
+  fn_6c03fcef63 -->|1 call| cat_examples
+  fn_6c03fcef63 -->|1 call| class_1fbf50a758
+  fn_6c03fcef63 -->|1 call| class_26ce17ec0c
+  fn_6c03fcef63 -->|6 calls| class_5638757462
+  fn_6c03fcef63 -->|4 calls| fn_49c9e00162
+  fn_6c03fcef63 -->|1 call| fn_b29f6d176f
+  fn_6c03fcef63 -->|1 call| fn_cc53cf6abd
+  fn_6c03fcef63 -->|1 call| fn_ebe445d6e5
+  fn_6cb73cef8c -->|1 call| cat_examples
+  fn_6cb73cef8c -->|2 calls| class_6e85ed8256
+  fn_6cb73cef8c -->|1 call| file_65a752aa64
+  fn_6cb73cef8c -->|2 calls| fn_a4e3f5c879
+  fn_6d4a1425b5 -->|1 call| fn_7c1d12b52a
+  fn_6d9715477c -->|1 call| cat_examples
+  fn_6d9715477c -->|3 calls| file_95f4d0b6bc
+  fn_6d9715477c -->|1 call| fn_38baa9a835
+  fn_6d9715477c -->|2 calls| fn_88569ade45
+  fn_6d9715477c -->|2 calls| fn_a4e3f5c879
+  fn_6e6037e1a0 -->|1 call| class_5bc380f123
+  fn_6e6037e1a0 -.->|overrides| class_65a111824b
+  fn_6e6037e1a0 -->|2 calls| fn_caa2e7b90a
+  fn_6f08225344 -->|2 calls| class_4d5c0495b2
+  fn_6f08225344 -->|1 call| class_d537ef7b69
+  fn_6f08225344 -->|1 call| fn_b43d004cc7
+  fn_6fd5060e76 -->|1 call| class_28511926c9
+  fn_6fd5060e76 -.->|overrides| fn_7e644ea63c
+  fn_6fd5060e76 -->|1 call| fn_a4e3f5c879
+  fn_722576022b -->|2 calls| class_150546d7a7
+  fn_722576022b -->|1 call| class_860d88a672
+  fn_722bfee965 -->|1 call| class_bcac28e28d
+  fn_722bfee965 -.->|overrides| fn_17cfd19dd0
+  fn_726753c3db -->|1 call| fn_68f2a8ed55
+  fn_726753c3db -->|1 call| fn_bccaa50ab7
+  fn_726753c3db -->|1 call| fn_bf2dad96af
+  fn_72bb70e214 -->|1 call| class_77f1288fb4
+  fn_72bb70e214 -->|1 call| class_d537ef7b69
+  fn_74747f5736 -->|1 call| cat_examples
+  fn_773c14b645 -->|1 call| file_85699e562a
+  fn_773c14b645 -->|1 call| fn_2efde2a244
+  fn_7817caf28a -->|1 call| file_4cdaf9e0f7
+  fn_789d369aa8 -->|2 calls| class_bcac28e28d
+  fn_789d369aa8 -->|1 call| fn_3d7491254d
+  fn_789d369aa8 -->|1 call| fn_49c9e00162
+  fn_789d369aa8 -->|1 call| fn_b45fb9120f
+  fn_789d369aa8 -->|1 call| fn_d2fe8cc937
+  fn_7e644ea63c -->|1 call| class_28511926c9
+  fn_7e644ea63c -->|3 calls| class_938a184a2b
+  fn_7e644ea63c -->|2 calls| class_d537ef7b69
+  fn_7e644ea63c -->|1 call| fn_029eb6a643
+  fn_7e644ea63c -->|2 calls| fn_a4e3f5c879
+  fn_7e644ea63c -->|1 call| fn_b20e88b8a9
+  fn_7e644ea63c -->|1 call| fn_c9b8e9acc1
+  fn_7e644ea63c -->|1 call| fn_fb907427fe
+  fn_7e644ea63c -.->|overrides| fn_fbd5218a1c
+  fn_7ea53ae0db -->|1 call| cat_examples
+  fn_7f4b4743d4 -->|1 call| class_d537ef7b69
+  fn_7f4b4743d4 -->|3 calls| file_65a752aa64
+  fn_7f4b4743d4 -->|1 call| fn_49c9e00162
+  fn_7f4b4743d4 -->|1 call| fn_83e23053df
+  fn_7ff5f9f803 -->|1 call| fn_0d89db7259
+  fn_802bae2ac0 -.->|overrides| class_4d5c0495b2
+  fn_802bae2ac0 -->|2 calls| class_993006545f
+  fn_802bae2ac0 -->|2 calls| class_d537ef7b69
+  fn_80bac82882 -->|1 call| fn_120fa2ae41
+  fn_8137bec2d8 -->|1 call| cat_examples
+  fn_8137bec2d8 -->|1 call| class_779b6b0f82
+  fn_8137bec2d8 -->|1 call| class_c2ed893fd2
+  fn_8137bec2d8 -->|1 call| file_0d9c027647
+  fn_8137bec2d8 -->|3 calls| fn_4f5f60ec64
+  fn_8137bec2d8 -->|1 call| fn_53682191d0
+  fn_8137bec2d8 -->|1 call| fn_5e83f49c68
+  fn_8137bec2d8 -->|2 calls| fn_b6c8df3f5f
+  fn_8137bec2d8 -.->|overrides| fn_be557de9e3
+  fn_8137bec2d8 -->|1 call| fn_cfe0fc2e92
+  fn_81ade020c4 -->|1 call| class_4d5c0495b2
+  fn_82a5103528 -->|1 call| cat_examples
+  fn_82ca1d6d6f -->|1 call| fn_72bb70e214
+  fn_82ca1d6d6f -->|1 call| fn_a3e8087ac1
+  fn_82ca1d6d6f -->|1 call| fn_a4e3f5c879
+  fn_82ca1d6d6f -->|1 call| fn_d85bd5eede
+  fn_83674cd8e2 -->|2 calls| cat_examples
+  fn_83674cd8e2 -->|1 call| fn_1ba44f07a8
+  fn_83674cd8e2 -->|1 call| fn_6d4a1425b5
+  fn_83674cd8e2 -->|1 call| fn_7c1d12b52a
+  fn_83674cd8e2 -->|1 call| fn_a52a54437a
+  fn_83e23053df -->|1 call| class_d537ef7b69
+  fn_83e23053df -->|1 call| fn_3d7491254d
+  fn_88569ade45 -->|1 call| class_1442622d16
+  fn_88569ade45 -->|1 call| fn_a4e3f5c879
+  fn_88569ade45 -->|1 call| fn_fffc917659
+  fn_8905fb19b6 -->|2 calls| cat_examples
+  fn_8905fb19b6 -->|2 calls| file_85699e562a
+  fn_897f421fb9 -->|1 call| class_4de3df2e25
+  fn_897f421fb9 -->|1 call| class_cfcd2d8fb5
+  fn_897f421fb9 -->|1 call| fn_38baa9a835
+  fn_8ab85fd000 -->|1 call| cat_examples
+  fn_8ab85fd000 -->|3 calls| fn_4ac46ceeb4
+  fn_8ab85fd000 -->|1 call| fn_bb790162b1
+  fn_8e4eaecfa9 -->|2 calls| fn_4dee916ef4
+  fn_8e4eaecfa9 -.->|overrides| fn_99e973bb1b
+  fn_904a407af6 -->|1 call| class_150546d7a7
+  fn_904a407af6 -->|1 call| class_26d7b29bfe
+  fn_904a407af6 -->|1 call| class_596621a0b6
+  fn_904a407af6 -->|2 calls| class_860d88a672
+  fn_904a407af6 -->|1 call| fn_1ba44f07a8
+  fn_904a407af6 -->|1 call| fn_340e17026f
+  fn_904a407af6 -->|1 call| fn_c1677fa04b
+  fn_91c85c743d -->|1 call| cat_examples
+  fn_91c85c743d -->|1 call| file_4cdaf9e0f7
+  fn_92f3b1a19e -->|1 call| fn_d85bd5eede
+  fn_935d140f2e -->|1 call| fn_5e83f49c68
+  fn_935d140f2e -->|1 call| fn_cc4e34723f
+  fn_93a9bafe6f -->|1 call| cat_examples
+  fn_93a9bafe6f -->|1 call| fn_4c8bd80108
+  fn_9480a5bda2 -->|1 call| class_5bc380f123
+  fn_9480a5bda2 -->|1 call| class_65a111824b
+  fn_9480a5bda2 -->|1 call| fn_8b21e1452a
+  fn_9480a5bda2 -->|1 call| fn_caa2e7b90a
+  fn_95b2bda7eb -->|2 calls| cat_examples
+  fn_95b2bda7eb -->|2 calls| file_84f3b9ad30
+  fn_95b2bda7eb -->|1 call| fn_0d89db7259
+  fn_95b2bda7eb -->|1 call| fn_a2fa31e52a
+  fn_95b2bda7eb -->|1 call| fn_aacb3ccb5e
+  fn_97cd165161 -->|6 calls| class_53df478912
+  fn_97cd165161 -->|6 calls| fn_53682191d0
+  fn_97cd165161 -->|6 calls| fn_5e83f49c68
+  fn_97cd165161 -.->|overrides| fn_be557de9e3
+  fn_97cd165161 -->|2 calls| fn_d649e5be0b
+  fn_99e973bb1b -->|1 call| class_65a111824b
+  fn_99e973bb1b -->|1 call| class_d537ef7b69
+  fn_99e973bb1b -->|1 call| fn_061dd18b6b
+  fn_99e973bb1b -->|1 call| fn_1e33544b27
+  fn_99e973bb1b -->|1 call| fn_38047167ed
+  fn_9b18bcc20d -->|1 call| cat_examples
+  fn_9b18bcc20d -->|1 call| class_67d5f78ac5
+  fn_9b18bcc20d -->|1 call| fn_53682191d0
+  fn_9b18bcc20d -.->|overrides| fn_be557de9e3
+  fn_9f2aeaf145 -->|1 call| cat_examples
+  fn_9f2aeaf145 -->|1 call| class_65a111824b
+  fn_9f2aeaf145 -->|1 call| class_bcac28e28d
+  fn_9f2aeaf145 -->|1 call| fn_17cfd19dd0
+  fn_a2fa31e52a -->|1 call| file_85699e562a
+  fn_a40e496677 -->|1 call| fn_72bb70e214
+  fn_a40e496677 -->|1 call| fn_a44a756031
+  fn_a40e496677 -->|1 call| fn_a4e3f5c879
+  fn_a44a756031 -->|1 call| class_d537ef7b69
+  fn_a44a756031 -->|1 call| fn_f5d0a8078e
+  fn_a4e3f5c879 -->|1 call| fn_120fa2ae41
+  fn_a4e3f5c879 -->|1 call| fn_1f20676c47
+  fn_a4e3f5c879 -->|1 call| fn_8905fb19b6
+  fn_a4e3f5c879 -->|1 call| fn_bb790162b1
+  fn_a4e3f5c879 -->|1 call| fn_bf42c337cf
+  fn_a53b497558 -->|1 call| file_4cdaf9e0f7
+  fn_a53b497558 -->|1 call| fn_72bb70e214
+  fn_a53b497558 -->|1 call| fn_a4e3f5c879
+  fn_a5da1aee9c -->|1 call| fn_a4e3f5c879
+  fn_a5da1aee9c -->|1 call| fn_aacb3ccb5e
+  fn_af68793392 -->|1 call| class_938a184a2b
+  fn_b1091e5339 -->|1 call| fn_b769bfde18
+  fn_b1fb1de8e7 -->|3 calls| cat_examples
+  fn_b20e88b8a9 -->|1 call| class_4d5c0495b2
+  fn_b20e88b8a9 -->|1 call| fn_7817caf28a
+  fn_b20e88b8a9 -->|1 call| fn_c9b8e9acc1
+  fn_b23e2b4dfc -->|1 call| file_85699e562a
+  fn_b23e2b4dfc -->|1 call| fn_2efde2a244
+  fn_b29f6d176f -->|1 call| cat_examples
+  fn_b29f6d176f -->|1 call| class_26ce17ec0c
+  fn_b29f6d176f -->|1 call| class_93f79d32ac
+  fn_b29f6d176f -->|3 calls| class_d54216c827
+  fn_b29f6d176f -->|1 call| class_e36c3b17a4
+  fn_b29f6d176f -->|3 calls| file_9bc215edfb
+  fn_b29f6d176f -->|1 call| fn_c1bed4191c
+  fn_b43d004cc7 -->|1 call| class_02efee98fa
+  fn_b43d004cc7 -->|2 calls| class_d537ef7b69
+  fn_b43d004cc7 -->|1 call| file_e2bdf9828d
+  fn_b43d004cc7 -->|1 call| fn_4462235250
+  fn_b43d004cc7 -->|1 call| fn_49c9e00162
+  fn_b43d004cc7 -->|1 call| fn_722576022b
+  fn_b43d004cc7 -->|1 call| fn_af68793392
+  fn_b43d004cc7 -->|1 call| fn_d0ce15ee83
+  fn_b45fb9120f -->|3 calls| cat_examples
+  fn_b45fb9120f -->|2 calls| class_993006545f
+  fn_b536d1e31c -->|2 calls| class_1442622d16
+  fn_b536d1e31c -->|1 call| file_95f4d0b6bc
+  fn_b536d1e31c -->|1 call| fn_a4e3f5c879
+  fn_b536d1e31c -->|1 call| fn_fffc917659
+  fn_b769bfde18 -->|2 calls| class_28511926c9
+  fn_b769bfde18 -->|1 call| class_812f7ce524
+  fn_badfa244cf -->|2 calls| class_993006545f
+  fn_badfa244cf -->|1 call| fn_576afcb3a0
+  fn_badfa244cf -->|1 call| fn_c6d64c5dd6
+  fn_bb4d96ddb3 -->|3 calls| cat_examples
+  fn_bb4d96ddb3 -->|1 call| fn_1263ba185d
+  fn_bb790162b1 -->|3 calls| class_b265baff5d
+  fn_bb790162b1 -->|1 call| fn_5004ea6480
+  fn_bb790162b1 -->|4 calls| fn_e506f675bc
+  fn_bccaa50ab7 -->|1 call| class_b6f07fe9c7
+  fn_be557de9e3 -->|1 call| cat_examples
+  fn_bf2dad96af -->|2 calls| class_b6f07fe9c7
+  fn_bf42c337cf -->|1 call| fn_a52a54437a
+  fn_c1677fa04b -->|1 call| class_d537ef7b69
+  fn_c1677fa04b -->|1 call| fn_caa2e7b90a
+  fn_c1bed4191c -->|1 call| cat_examples
+  fn_c1bed4191c -->|1 call| fn_3935a1ca24
+  fn_c261111e7b -->|1 call| fn_a4e3f5c879
+  fn_c4367b4260 -->|1 call| class_d537ef7b69
+  fn_c4367b4260 -->|1 call| fn_264ed29574
+  fn_c4367b4260 -->|1 call| fn_39287d4b92
+  fn_c4efd62c99 -->|1 call| fn_789d369aa8
+  fn_c4efd62c99 -->|1 call| fn_7f4b4743d4
+  fn_c4efd62c99 -->|1 call| fn_c9ad71ef1e
+  fn_c57309bd7f -->|1 call| class_6b049d2f40
+  fn_c57309bd7f -->|1 call| class_860d88a672
+  fn_c6d64c5dd6 -->|3 calls| class_b6f07fe9c7
+  fn_c6d64c5dd6 -->|1 call| fn_bccaa50ab7
+  fn_c7817c991d -->|4 calls| file_84f3b9ad30
+  fn_c7817c991d -->|1 call| fn_5b72f417be
+  fn_c7817c991d -->|2 calls| fn_aacb3ccb5e
+  fn_c7817c991d -->|1 call| fn_ebe445d6e5
+  fn_c7d494ff4f -->|1 call| fn_caa2e7b90a
+  fn_c88fb02220 -->|1 call| class_5bc380f123
+  fn_c88fb02220 -->|1 call| fn_00f0a8284e
+  fn_c88fb02220 -->|1 call| fn_d8483a6295
+  fn_c8ec485dd6 -->|1 call| class_bcac28e28d
+  fn_c8ec485dd6 -.->|overrides| fn_17cfd19dd0
+  fn_c9ad71ef1e -->|1 call| cat_examples
+  fn_c9ad71ef1e -->|3 calls| fn_6f08225344
+  fn_c9ad71ef1e -->|1 call| fn_b769bfde18
+  fn_c9ad71ef1e -->|2 calls| fn_dbf2fc3dc7
+  fn_c9b8e9acc1 -->|1 call| cat_examples
+  fn_caa2e7b90a -->|1 call| cat_examples
+  fn_cc00d69b9a -->|1 call| class_b265baff5d
+  fn_cc00d69b9a -->|1 call| fn_bf42c337cf
+  fn_cc4e34723f -->|1 call| fn_bf42c337cf
+  fn_cc53cf6abd -->|2 calls| cat_examples
+  fn_cc53cf6abd -->|1 call| class_1442622d16
+  fn_cc53cf6abd -->|2 calls| class_1dd18d97bb
+  fn_cc53cf6abd -->|1 call| fn_14e135e2a1
+  fn_cc53cf6abd -->|1 call| fn_1dcff5e61a
+  fn_cc53cf6abd -->|1 call| fn_3cb8c65e99
+  fn_cc53cf6abd -->|1 call| fn_6f08225344
+  fn_cc53cf6abd -->|1 call| fn_72bb70e214
+  fn_cc53cf6abd -->|1 call| fn_92f3b1a19e
+  fn_cc53cf6abd -->|1 call| fn_a4e3f5c879
+  fn_cee955187d -->|1 call| fn_1ad2e75add
+  fn_cfe0fc2e92 -->|1 call| cat_examples
+  fn_cfe0fc2e92 -->|1 call| class_a7222da0d1
+  fn_cfe0fc2e92 -->|4 calls| file_85699e562a
+  fn_cfe0fc2e92 -->|1 call| fn_773c14b645
+  fn_cfe0fc2e92 -->|1 call| fn_b23e2b4dfc
+  fn_d0ce15ee83 -->|4 calls| class_d537ef7b69
+  fn_d0ce15ee83 -->|2 calls| file_e2bdf9828d
+  fn_d0ce15ee83 -->|1 call| fn_1eaa5e04f1
+  fn_d0ce15ee83 -->|1 call| fn_2955608f55
+  fn_d0ce15ee83 -->|1 call| fn_3d7491254d
+  fn_d0ce15ee83 -->|1 call| fn_99e973bb1b
+  fn_d0ce15ee83 -->|1 call| fn_a4e3f5c879
+  fn_d23a11b9e3 -->|1 call| class_d537ef7b69
+  fn_d23a11b9e3 -->|3 calls| file_e2bdf9828d
+  fn_d23a11b9e3 -.->|overrides| fn_3cb8c65e99
+  fn_d23a11b9e3 -->|2 calls| fn_6f08225344
+  fn_d23a11b9e3 -->|1 call| fn_af68793392
+  fn_d23a11b9e3 -->|2 calls| fn_dbf2fc3dc7
+  fn_d2fe8cc937 -->|1 call| file_e2bdf9828d
+  fn_d2fe8cc937 -->|1 call| fn_7ea53ae0db
+  fn_d4502db35e -->|1 call| fn_cfe0fc2e92
+  fn_d649e5be0b -->|1 call| cat_examples
+  fn_d8483a6295 -->|1 call| class_2edcda406a
+  fn_d8483a6295 -->|1 call| fn_3975e77bc5
+  fn_d951ff4a35 -->|3 calls| class_65a111824b
+  fn_d951ff4a35 -->|1 call| class_91619549c3
+  fn_d951ff4a35 -->|2 calls| fn_49380847fd
+  fn_da6cdd5d01 -->|1 call| file_4cdaf9e0f7
+  fn_da6cdd5d01 -->|1 call| fn_a52a54437a
+  fn_db0deb412c -->|1 call| cat_examples
+  fn_db0deb412c -->|1 call| class_c28af0c2f7
+  fn_db5abe1dd9 -->|1 call| class_d537ef7b69
+  fn_db5abe1dd9 -->|1 call| fn_10d11a3c03
+  fn_dbf2fc3dc7 -->|1 call| class_2708d1dae4
+  fn_dbf2fc3dc7 -->|2 calls| class_993006545f
+  fn_dbf2fc3dc7 -->|1 call| class_d537ef7b69
+  fn_dbf2fc3dc7 -->|1 call| fn_caa2e7b90a
+  fn_dbf2fc3dc7 -->|1 call| fn_d3a3fad4a0
+  fn_dbf2fc3dc7 -->|1 call| fn_f2548b6a58
+  fn_df155ce6f4 -->|4 calls| cat_examples
+  fn_df155ce6f4 -->|2 calls| file_4d3f2fbfca
+  fn_e21235dff2 -->|1 call| class_5bc380f123
+  fn_e21235dff2 -->|1 call| class_cfcd2d8fb5
+  fn_e21235dff2 -->|1 call| file_e2bdf9828d
+  fn_e21235dff2 -->|1 call| fn_0f8a7e6f98
+  fn_e21235dff2 -->|1 call| fn_1e33544b27
+  fn_e21235dff2 -.->|overrides| fn_38047167ed
+  fn_e506f675bc -->|1 call| cat_examples
+  fn_e506f675bc -->|1 call| fn_aacb3ccb5e
+  fn_e5de5f5138 -->|1 call| class_65a111824b
+  fn_e5de5f5138 -->|1 call| file_e2bdf9828d
+  fn_e5de5f5138 -->|1 call| fn_38baa9a835
+  fn_e9e2cc7a5d -->|1 call| class_150546d7a7
+  fn_e9e2cc7a5d -->|1 call| class_596621a0b6
+  fn_e9e2cc7a5d -->|1 call| fn_c1677fa04b
+  fn_ebe445d6e5 -->|2 calls| cat_examples
+  fn_ebe445d6e5 -->|1 call| fn_0a2e0399f8
+  fn_ec9e986bb6 -->|2 calls| cat_examples
+  fn_ec9e986bb6 -->|1 call| class_779b6b0f82
+  fn_ec9e986bb6 -->|1 call| class_97fcec7a26
+  fn_ec9e986bb6 -->|1 call| fn_cfe0fc2e92
+  fn_ee08226996 -->|1 call| fn_cfe0fc2e92
+  fn_f185908dea -->|7 calls| cat_examples
+  fn_f185908dea -->|1 call| class_881fd645c0
+  fn_f185908dea -->|10 calls| fn_4c8bd80108
+  fn_f2548b6a58 -->|1 call| class_02efee98fa
+  fn_f2548b6a58 -.->|overrides| fn_b43d004cc7
+  fn_f5d0a8078e -->|1 call| class_4d5c0495b2
+  fn_f5d0a8078e -->|1 call| class_d537ef7b69
+  fn_f5d0a8078e -->|1 call| fn_39287d4b92
+  fn_fb907427fe -->|1 call| class_d537ef7b69
+  fn_fb907427fe -->|1 call| fn_c4367b4260
+  fn_fb93f45e53 -->|1 call| class_65a111824b
+  fn_fb93f45e53 -->|1 call| fn_463896097d
+  fn_fbd5218a1c -->|1 call| class_28511926c9
+  fn_fbd5218a1c -->|1 call| fn_029eb6a643
+  fn_fbd5218a1c -->|1 call| fn_a4e3f5c879
+  fn_fffc917659 -->|1 call| fn_120fa2ae41
+  fn_fffc917659 -->|1 call| fn_1f20676c47
+  fn_fffc917659 -->|1 call| fn_bf42c337cf
+
+  classDef folder fill:#e1f5fe,stroke:#0288d1,stroke-width:2px,color:#01579b;
+  classDef file fill:#f3e5f5,stroke:#7b1fa2,stroke-width:1.5px,color:#4a148c;
+  classDef classNode fill:#e8f5e9,stroke:#388e3c,stroke-width:1.5px,color:#1b5e20;
+  classDef function fill:#fff9c4,stroke:#fbc02d,stroke-width:1.5px,color:#f57f17;
+  classDef route fill:#fff3e0,stroke:#f57c00,stroke-width:2px,color:#e65100;
+  classDef command fill:#e0f7fa,stroke:#0097a7,stroke-width:2px,color:#006064;
+  classDef entrypoint fill:#fce4ec,stroke:#c2185b,stroke-width:2px,color:#880e4f;
+  classDef helper fill:#f5f5f5,stroke:#9e9e9e,stroke-width:1px,stroke-dasharray: 3 3,color:#616161;
+  classDef default fill:#f8f9fa,stroke:#343a40,stroke-width:1px,color:#212529;

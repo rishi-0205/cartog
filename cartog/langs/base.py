@@ -38,9 +38,10 @@ class ImportRecord:
     names: list[str] = field(default_factory=list) # e.g. ["Command"], ["*"]
     aliases: dict[str, str] = field(default_factory=dict) # e.g. {"Command": "Cmd"}
     kind: str = "standard"       # "standard", "from", "relative"
-    line: int = 0                # 0-indexed line in file
+    line: int = 1                # 1-indexed line in file
     level: int = 0               # 0 for absolute, 1 for '.', 2 for '..'
     raw_text: str = ""
+    is_type_only: bool = False
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -51,6 +52,7 @@ class ImportRecord:
             "line": self.line,
             "level": self.level,
             "raw_text": self.raw_text,
+            "is_type_only": self.is_type_only,
         }
 
 
@@ -85,6 +87,8 @@ class ProjectContext:
     all_files: set[str] = field(default_factory=set)
     module_to_file: dict[str, str] = field(default_factory=dict)
     root_to_modules: dict[str, dict[str, str]] = field(default_factory=dict)
+    config_warnings: list[dict[str, str]] = field(default_factory=list)
+
 
 
 class LanguageAdapter(ABC):

@@ -1,0 +1,155 @@
+=== T10: Flow Traversal BFS Rules & Class Instantiations Evidence ===
+Date: 2026-10-30
+Task: T10
+
+1. Baseline Test Suite Verification
+Command: venv\Scripts\python.exe -m pytest tests/
+Output:
+============================= test session starts =============================
+platform win32 -- Python 3.13.1, pytest-9.1.1, pluggy-1.7.0
+rootdir: C:\Users\rishi\OneDrive\Desktop\Dev\cartog
+configfile: pyproject.toml
+collected 136 items
+
+tests\test_cli.py ..............                                         [ 10%]
+tests\test_flow_selector.py ..........                                   [ 17%]
+tests\test_ignore.py .......                                             [ 22%]
+tests\test_import_resolution.py ..                                       [ 24%]
+tests\test_js_adapter.py ..........                                      [ 31%]
+tests\test_jsonc.py .....                                                [ 35%]
+tests\test_manifests.py .......                                          [ 40%]
+tests\test_merge.py .....                                                [ 44%]
+tests\test_merge_validate.py .............                               [ 53%]
+tests\test_mermaid.py ...........                                        [ 61%]
+tests\test_model.py ...                                                  [ 63%]
+tests\test_noise.py ......                                               [ 68%]
+tests\test_parse_cache.py ..                                             [ 69%]
+tests\test_patterns.py ....                                              [ 72%]
+tests\test_python_adapter.py ......                                      [ 77%]
+tests\test_scan.py .....                                                 [ 80%]
+tests\test_scip_pass.py ................                                 [ 92%]
+tests\test_views_mermaid.py ..........                                   [100%]
+
+============================== warnings summary ===============================
+tests/test_jsonc.py::test_jsonc_unterminated_block_comment
+  C:\Users\rishi\OneDrive\Desktop\Dev\cartog\cartog\jsonc.py:82: UserWarning: Unterminated block comment in 'C:/Users/rishi/AppData/Local/Temp/pytest-of-rishi/pytest-167/test_jsonc_unterminated_block_0/tsconfig.json' starting at line 3
+    warnings.warn(msg, UserWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================= 136 passed, 1 warning in 28.80s =======================
+
+Baseline count: 136 passed.
+
+
+2. Red Step: New Unit Tests in tests/test_views_mermaid.py
+Tests added:
+- test_flow_bfs_depth_limit
+- test_flow_class_instantiation_traversal
+- test_flow_overrides_edge_styling
+
+Command: venv\Scripts\python.exe -m pytest tests/test_views_mermaid.py
+Output:
+============================= test session starts =============================
+platform win32 -- Python 3.13.1, pytest-9.1.1, pluggy-1.7.0
+rootdir: C:\Users\rishi\OneDrive\Desktop\Dev\cartog
+configfile: pyproject.toml
+collected 13 items
+
+tests\test_views_mermaid.py ..........FF.                                [100%]
+
+================================== FAILURES ===================================
+__________________________ test_flow_bfs_depth_limit __________________________
+
+    def test_flow_bfs_depth_limit():
+...
+        visited_d3, edges_d3 = trace_call_flow(g, starts=[node_a], max_depth=3)
+        visited_names_d3 = {n.name for n in visited_d3}
+        assert "step_d" in visited_names_d3
+        assert "step_e" not in visited_names_d3
+>       assert "get" not in visited_names_d3, "External symbol expansion must remain stopped at higher depth"
+E       AssertionError: External symbol expansion must remain stopped at higher depth
+E       assert 'get' not in {'get', 'requests', 'step_a', 'step_b', 'step_c', 'step_d'}
+
+tests\test_views_mermaid.py:567: AssertionError
+___________________ test_flow_class_instantiation_traversal ___________________
+
+    def test_flow_class_instantiation_traversal():
+...
+        visited, edges = trace_call_flow(g, starts=[fn_client], max_depth=3)
+        visited_names = {n.name for n in visited}
+    
+        assert "create_app" in visited_names
+        assert "__init__" in visited_names
+        assert "_configure_routes" in visited_names
+        assert "_connect_db" in visited_names
+>       assert "AppService" in visited_names, "Enclosing class container must be included when class methods are traversed"
+E       AssertionError: Enclosing class container must be included when class methods are traversed
+E       assert 'AppService' in {'__init__', '_configure_routes', '_connect_db', 'create_app'}
+
+tests\test_views_mermaid.py:645: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_views_mermaid.py::test_flow_bfs_depth_limit - AssertionErro...
+FAILED tests/test_views_mermaid.py::test_flow_class_instantiation_traversal
+======================== 2 failed, 11 passed in 2.60s =========================
+
+
+3. Green Step: Implemented in cartog/views.py
+- Ensured trace_call_flow stops traversal at external symbols (does not queue them for outgoing BFS).
+- Added enclosing class container resolution to visited_nodes when methods are traversed.
+- Discovered and queued constructor (__init__/constructor) when a class node is called directly.
+- Overrides edges traversed and rendered with dashed styling (-.->|overrides|) in cartog/export_mermaid.py.
+- Documented Decision 26 in docs/ISSUES_AND_DECISIONS.md.
+
+Command: venv\Scripts\python.exe -m pytest tests/test_views_mermaid.py
+Output:
+============================= test session starts =============================
+platform win32 -- Python 3.13.1, pytest-9.1.1, pluggy-1.7.0
+rootdir: C:\Users\rishi\OneDrive\Desktop\Dev\cartog
+configfile: pyproject.toml
+collected 13 items
+
+tests\test_views_mermaid.py .............                                [100%]
+
+============================= 13 passed in 2.32s ==============================
+
+
+4. Full Test Suite Verification
+Command: venv\Scripts\python.exe -m pytest tests/
+Output:
+============================= test session starts =============================
+platform win32 -- Python 3.13.1, pytest-9.1.1, pluggy-1.7.0
+rootdir: C:\Users\rishi\OneDrive\Desktop\Dev\cartog
+configfile: pyproject.toml
+collected 139 items
+
+tests\test_cli.py ..............                                         [ 10%]
+tests\test_flow_selector.py ..........                                   [ 17%]
+tests\test_ignore.py .......                                             [ 22%]
+tests\test_import_resolution.py ..                                       [ 23%]
+tests\test_js_adapter.py ..........                                      [ 30%]
+tests\test_jsonc.py .....                                                [ 34%]
+tests\test_manifests.py .......                                          [ 39%]
+tests\test_merge.py .....                                                [ 43%]
+tests\test_merge_validate.py .............                               [ 52%]
+tests\test_mermaid.py ...........                                        [ 60%]
+tests\test_model.py ...                                                  [ 62%]
+tests\test_noise.py ......                                               [ 66%]
+tests\test_parse_cache.py ..                                             [ 68%]
+tests\test_patterns.py ....                                              [ 71%]
+tests\test_python_adapter.py ......                                      [ 75%]
+tests\test_scan.py .....                                                 [ 79%]
+tests\test_scip_pass.py ................                                 [ 90%]
+tests\test_views_mermaid.py .............                                [100%]
+
+============================== warnings summary ===============================
+tests/test_jsonc.py::test_jsonc_unterminated_block_comment
+  C:\Users\rishi\OneDrive\Desktop\Dev\cartog\cartog\jsonc.py:82: UserWarning: Unterminated block comment in 'C:/Users/rishi/AppData/Local/Temp/pytest-of-rishi/pytest-171/test_jsonc_unterminated_block_0/tsconfig.json' starting at line 3
+    warnings.warn(msg, UserWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================= 139 passed, 1 warning in 28.37s =======================
+
+Start test count: 136 passed
+End test count: 139 passed
+Delta: +3 passed, 0 decreased
+

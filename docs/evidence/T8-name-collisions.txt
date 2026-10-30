@@ -1,0 +1,158 @@
+================================================================================
+T8 EVIDENCE: Name Collisions in Flat Dictionaries
+================================================================================
+
+1. PROBLEM & DIAGNOSIS
+--------------------------------------------------------------------------------
+Three flat dictionary collision issues were identified:
+1. In cartog/merge.py:_pick_handler(), candidate matching strictly checked
+   `start_line >= dec_end_line`. When functions are defined before routes (e.g.
+   Express handlers or module functions defined above route declarations),
+   _pick_handler() skipped preceding candidates and incorrectly picked distant
+   subsequent functions, or fell back to flat last-seen names.
+2. In cartog/merge.py parent containment, child symbols were linked to parents
+   using `symbols_by_name[s.parent]`. When multiple classes shared a name (e.g.
+   `Config` in different functions or namespaces), children were cross-pollinated
+   to whichever class was parsed last.
+3. In cartog/merge.py:627-650, SCIP candidate resolution populated
+   `sym_node_map[(f.path, s.name)]` only once per file, causing all calls from or
+   to same-named symbols in the same file to be misattributed to the first symbol.
+
+
+2. RED STEP: FAILING UNIT TESTS
+--------------------------------------------------------------------------------
+Command:
+venv\Scripts\python.exe -m pytest tests/test_merge.py -k "test_route_handler_resolution_same_named_functions_different_scopes or test_symbol_mapping_no_flat_name_collisions"
+
+Output:
+============================= test session starts =============================
+platform win32 -- Python 3.13.1, pytest-9.1.1, pluggy-1.7.0
+rootdir: C:\Users\rishi\OneDrive\Desktop\Dev\cartog
+configfile: pyproject.toml
+collected 5 items / 3 deselected / 2 selected
+
+tests\test_merge.py FF                                                   [100%]
+
+================================== FAILURES ===================================
+_____ test_route_handler_resolution_same_named_functions_different_scopes _____
+...
+>       assert r1_target == h1_node_id, f"Route 1 should link to admin handler {h1_node_id}, got {r1_target}"
+E       AssertionError: Route 1 should link to admin handler 5cfa11c90f, got 7c9a226085
+E       assert '7c9a226085' == '5cfa11c90f'
+E         
+E         - 5cfa11c90f
+E         + 7c9a226085
+
+tests\test_merge.py:279: AssertionError
+_________________ test_symbol_mapping_no_flat_name_collisions _________________
+...
+>       assert call_edges[0].source == expected_caller_id, (
+            f"Expected caller to be Checker.validate ({expected_caller_id}) by line 35, "
+            f"got {call_edges[0].source}"
+        )
+E       AssertionError: Expected caller to be Checker.validate (f6aff4a544) by line 35, got 51af5d050a
+E       assert '51af5d050a' == 'f6aff4a544'
+E         
+E         - f6aff4a544
+E         + 51af5d050a
+
+tests\test_merge.py:373: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_merge.py::test_route_handler_resolution_same_named_functions_different_scopes
+FAILED tests/test_merge.py::test_symbol_mapping_no_flat_name_collisions
+======================= 2 failed, 3 deselected in 0.27s =======================
+
+
+3. GREEN STEP: PASSING UNIT TESTS
+--------------------------------------------------------------------------------
+Command:
+venv\Scripts\python.exe -m pytest tests/test_merge.py -k "test_route_handler_resolution_same_named_functions_different_scopes or test_symbol_mapping_no_flat_name_collisions"
+
+Output:
+============================= test session starts =============================
+platform win32 -- Python 3.13.1, pytest-9.1.1, pluggy-1.7.0
+rootdir: C:\Users\rishi\OneDrive\Desktop\Dev\cartog
+configfile: pyproject.toml
+collected 5 items / 3 deselected / 2 selected
+
+tests\test_merge.py ..                                                   [100%]
+
+======================= 2 passed, 3 deselected in 0.18s =======================
+
+
+4. FULL TEST SUITE RUN
+--------------------------------------------------------------------------------
+Command:
+venv\Scripts\python.exe -m pytest tests/
+
+Output:
+============================= test session starts =============================
+platform win32 -- Python 3.13.1, pytest-9.1.1, pluggy-1.7.0
+rootdir: C:\Users\rishi\OneDrive\Desktop\Dev\cartog
+configfile: pyproject.toml
+collected 134 items
+
+tests\test_cli.py ............                                           [  8%]
+tests\test_flow_selector.py ..........                                   [ 16%]
+tests\test_ignore.py .......                                             [ 21%]
+tests\test_import_resolution.py ..                                       [ 23%]
+tests\test_js_adapter.py ..........                                      [ 30%]
+tests\test_jsonc.py .....                                                [ 34%]
+tests\test_manifests.py .......                                          [ 39%]
+tests\test_merge.py .....                                                [ 43%]
+tests\test_merge_validate.py .............                               [ 52%]
+tests\test_mermaid.py ...........                                        [ 61%]
+tests\test_model.py ...                                                  [ 63%]
+tests\test_noise.py ......                                               [ 67%]
+tests\test_parse_cache.py ..                                             [ 69%]
+tests\test_patterns.py ....                                              [ 72%]
+tests\test_python_adapter.py ......                                      [ 76%]
+tests\test_scan.py .....                                                 [ 80%]
+tests\test_scip_pass.py ................                                 [ 92%]
+tests\test_views_mermaid.py ..........                                   [100%]
+
+============================== warnings summary ===============================
+tests/test_jsonc.py::test_jsonc_unterminated_block_comment
+  C:\Users\rishi\OneDrive\Desktop\Dev\cartog\cartog\jsonc.py:82: UserWarning: Unterminated block comment in 'C:/Users/rishi/AppData/Local/Temp/pytest-of-rishi/pytest-160/test_jsonc_unterminated_block_0/tsconfig.json' starting at line 3
+    warnings.warn(msg, UserWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================= 134 passed, 1 warning in 27.21s =======================
+
+Test counts: 132 at start of T8, 134 at end of T8 (+2 new tests, 0 decreased).
+
+
+5. USER CHECK: REAL OUTPUT
+--------------------------------------------------------------------------------
+Command:
+venv\Scripts\python.exe -m pytest tests/test_merge.py -k "test_route_handler_resolution_same_named_functions_different_scopes"
+
+Output:
+============================= test session starts =============================
+platform win32 -- Python 3.13.1, pytest-9.1.1, pluggy-1.7.0
+rootdir: C:\Users\rishi\OneDrive\Desktop\Dev\cartog
+configfile: pyproject.toml
+collected 5 items / 4 deselected / 1 selected
+
+tests\test_merge.py .                                                    [100%]
+
+======================= 1 passed, 4 deselected in 0.14s =======================
+
+
+6. IMPLEMENTATION DETAILS
+--------------------------------------------------------------------------------
+1. _pick_handler():
+   - Prefers immediately following candidate (0 <= start_line - dec_end_line <= 5)
+     for Python decorators.
+   - Otherwise computes minimum absolute line distance to pick the closest candidate
+     (supporting functions defined before routes as in Express/JS).
+2. Parent containment:
+   - Scopes parent lookup by prefix in qualified_name (s.qualified_name.rsplit(".", 1)[0]).
+   - Filters candidates in symbols_by_name_list to those whose range encloses
+     the child symbol (parent.range.start_line <= s.start_line <= parent.range.end_line).
+3. SCIP candidate linking:
+   - Keys sym_node_map by both (path, qualified_name) and (path, qualified_name, line).
+   - Groups candidates by name in sym_nodes_by_name[(path, name)].
+   - Resolves caller using evidence line range to identify the enclosing symbol.
+   - When resolving ambiguous callee names, matches exact suffix on qualified_name.
+

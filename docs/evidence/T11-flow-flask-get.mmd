@@ -1,0 +1,58 @@
+%% Candidates found: 130, Selected: 1, Nodes drawn: 11, Nodes collapsed: 0
+flowchart LR
+  %% Call flow trace for: GET /
+  subgraph folder_examples_tutorial_flaskr ["📁 examples/tutorial/flaskr"]
+    subgraph file_examples_tutorial_flaskr_blog_py ["📄 blog.py"]
+      flow_e4ae90a247["GET /"]:::entryStart
+      flow_7d95355b68["index() :17"]:::function
+    end
+    subgraph file_examples_tutorial_flaskr_db_py ["📄 db.py"]
+      flow_7a000bd998["get_db() :9"]:::function
+    end
+  end
+  subgraph folder_src_flask ["📁 src/flask"]
+    subgraph file_src_flask_ctx_py ["📄 ctx.py"]
+      subgraph class_ad753d5b20 ["🏛️ AppContext"]
+        flow_a06656c00b["__init__() :300"]:::function
+      end
+    end
+    subgraph file_src_flask_globals_py ["📄 globals.py"]
+      subgraph class_7298838183 ["🏛️ ProxyMixin"]
+        flow_c5f201ce74["_get_current_object() :18"]:::function
+      end
+    end
+    subgraph file_src_flask_templating_py ["📄 templating.py"]
+      flow_56f51e1bca["_render() :123"]:::function
+      flow_926135e1be["render_template() :136"]:::function
+    end
+  end
+  subgraph folder_src_flask_sansio ["📁 src/flask/sansio"]
+    subgraph file_src_flask_sansio_app_py ["📄 app.py"]
+      subgraph class_26fbf6edd3 ["🏛️ App"]
+        flow_79ce7dd0b0["jinja_env() :468"]:::function
+      end
+    end
+  end
+  flow_7d95355b68 -->|1 call| flow_7a000bd998
+  flow_7d95355b68 -.->|"1 call (reconciled)"| flow_926135e1be
+  flow_926135e1be -->|1 call| flow_56f51e1bca
+  flow_926135e1be -->|1 call| flow_79ce7dd0b0
+  flow_926135e1be -->|1 call| flow_a06656c00b
+  flow_926135e1be -->|1 call| flow_c5f201ce74
+  flow_e4ae90a247 ==>|serves| flow_7d95355b68
+
+  classDef entryStart fill:#ff6b6b,stroke:#c0392b,stroke-width:3px,color:#fff;
+  classDef route fill:#fff3e0,stroke:#f57c00,stroke-width:2px,color:#e65100;
+  classDef command fill:#e0f7fa,stroke:#0097a7,stroke-width:2px,color:#006064;
+  classDef entrypoint fill:#fce4ec,stroke:#c2185b,stroke-width:2px,color:#880e4f;
+  classDef function fill:#fff9c4,stroke:#fbc02d,stroke-width:1.5px,color:#f57f17;
+  classDef classNode fill:#e8f5e9,stroke:#388e3c,stroke-width:1.5px,color:#1b5e20;
+  classDef default fill:#f8f9fa,stroke:#343a40,stroke-width:1px,color:#212529;
+
+  %% Legend:
+  %%   ==>|serves/starts|  Route / Entrypoint binding
+  %%   -->|N calls|        Direct call (solid)
+  %%   -.->|reconciled|    Reconciled call (dashed)
+  %%   -.->|overrides|     Method override (dashed)
+  %%   :::entryStart       Starting symbol
+

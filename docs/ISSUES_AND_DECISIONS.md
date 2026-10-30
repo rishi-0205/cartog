@@ -2,7 +2,42 @@
 
 This document records technical issues, edge-case failures, and architectural challenges encountered during development, along with root-cause analysis, evaluated alternative solutions, tradeoffs, and rationale for the chosen solution.
 
+## Quick Index
+
+| # | Title | Milestone |
+|---|---|---|
+| Issue 1 | Tree-sitter Access Violation (c0000005) During Deep AST Traversal | M1 |
+| Issue 2 | Access Violation in `_extract_decorators` via `node.parent` and `node.text` | M1 |
+| Decision 1 | Adoption of Native Tree-Sitter Queries (Approach A) | M1 |
+| Issue 3 & Decision 2 | Upstream py-tree-sitter 0.26.0 Point Refcount Bug and Version Pinning | M1 |
+| Issue 4 | `TypeError: Object of type SkippedFile is not JSON serializable` | M2 |
+| Issue 5 | Monorepo Multi-Root Detection and Root-Relative Path Normalization | M4 |
+| Issue 6 | JSONC String-Aware Tokenizer (tsconfig.json comment stripping) | M4/M6.5 |
+| Issue 7 | TypeScript `import type` / `export type` Extraction | M4/M6.5 |
+| Issue 8 | JS/TS `self-reference` Resolution in Ky Monorepo | M6 |
+| Issue 9 | scip-python SCIP Index Encoding & Protobuf Bindings | M5 |
+| Issue 10 | Occurrence Splitting: Definitions vs References | M5 |
+| Issue 11 | Enclosing Symbol Mapping for Call Attribution | M5 |
+| Issue 12 | Windows `scip-python` RegExp Bug and `scip_windows_shim.js` | M5/M6.5 |
+| Issue 13 | 1-Based Line Numbers Standardization | M5/M6 |
+| Issue 14 (first) | Cache Key Schema Versioning for Automatic Invalidation | M5/M6 |
+| Issue 14 (second) | Cross-Root Definition Reconciliation Rule | M6.5 |
+| Issue 15 (first) | Architectural Realignment: Interactive Viewer, LLM Token Budgeting | M6 planning |
+| Issue 15 (second) | Recall Round Two Verification and Inherent Limits of Static Call Graph | M6.5 |
+| Issue 16 | Typer Dependency Clarification | M6.5 |
+| Issue 17 | Multi-Declaration and Overload Source Range Unioning | M7 |
+| Issue 18 | 1-Based Line Numbers Standardization Across AST Imports and Cache Invalidation | M7 |
+| Issue 19 | Cross-Check Call-to-Import Mismatch Categorization and Strict Enforcement | M7 |
+| Issue 20 | `.cartogignore` Additive Precedence, Manifest Isolation, and Crossing Edge Accounting | M8 |
+| Issue 21 | Forced Cache Rerun Flag (`--force` / `--no-cache`) for Development and Debugging | M8/M9 |
+| Issue 22 | Deterministic Noise File Filtering and View Import Rewiring | M9 |
+| Issue 23 | Universal View Model Hierarchy, Boundary Function Rollup, Schema 2.0.0 Compact Serialization, and Flow Tracing | M10 |
+| Issue 24 | Mermaid Reserved Keyword Syntax Error (`classDef class`), Flow Arrow Formatting, and CLI Rendering Diagnostics | M10 |
+| Issue 25 | Flow Command: Route Serves-Edge Mis-attribution, Selector Category Filtering, Re-export Recall, and Basename Disambiguation | M10/M11 |
+| Issue 26 & Decision 26 | Flow Traversal BFS Semantics, External Boundary Termination, Class Instantiation, and Override Styling | M10 |
+
 ---
+
 
 ## Issue 1: Tree-Sitter Access Violation (c0000005) During Deep AST Traversal
 
@@ -380,25 +415,57 @@ In `tests/test_js_adapter.py`, `test_resolve_tsconfig_paths_and_workspaces` fail
 - **Phase / Milestone:** Phase 1 / Milestone 5 (SCIP on Python & Call Graph Resolution)
 - **Environment:** Windows 11 AMD64, Node.js v22.13.0, `@sourcegraph/scip-python` v0.1.7
 
-### 1. Symptom
+### 1. Symptom & Original Stack Trace
 Invoking `@sourcegraph/scip-python` on Windows immediately crashes with exit code 1:
-`SyntaxError: Invalid regular expression: /\/: \ at end of pattern` in `dist/scip-python/src/virtualFile.js`.
+```text
+SyntaxError: Invalid regular expression: /\/: \ at end of pattern
+    at new RegExp (<anonymous>)
+    at Object.<anonymous> (C:\Users\...\AppData\Roaming\npm\node_modules\@sourcegraph\scip-python\dist\scip-python\src\virtualFile.js:15:23)
+    at Module._compile (node:internal/modules/cjs/loader:1546:14)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1691:10)
+    at Module.load (node:internal/modules/cjs/loader:1317:32)
+    at Module._load (node:internal/modules/cjs/loader:1127:12)
+    at cjsLoader (node:internal/modules/esm/translators:365:17)
+    at ModuleJob._link (node:internal/modules/esm/module_job:107:21)
+```
 
 ### 2. Root Cause Analysis
-- In `@sourcegraph/scip-python`, the upstream JavaScript implementation contains `const pathSepRegex = new RegExp(path.sep, 'g');`.
-- On POSIX platforms, `path.sep` is `/`.
-- On Windows, `path.sep` is `\`. Passing `\` to `new RegExp('\\')` without escaping produces a trailing unescaped backslash, triggering a V8 syntax error before the CLI can even parse arguments or print `--version`.
-- Modifying local files in npm global packages would be brittle, non-portable, and would break on other developers' machines or CI environments.
+- In `@sourcegraph/scip-python`, the upstream JavaScript implementation in `dist/scip-python/src/virtualFile.js` contains:
+  ```javascript
+  const pathSepRegex = new RegExp(path.sep, 'g');
+  ```
+- On POSIX platforms, `path.sep` is `'/'`.
+- On Windows, `path.sep` is `'\\'`. Passing `'\\'` to `new RegExp('\\')` without escaping produces a trailing unescaped backslash in the V8 regex parser, triggering a fatal syntax error before CLI argument parsing can even run.
+- Modifying local files in npm global directories is brittle, non-portable, and breaks across developer machines or CI runners.
 
 ### 3. Solution & Decision
 - **In-Repo Node Preload Shim (`cartog/scip_windows_shim.js`):**
-  - Rather than modifying global npm packages or dependency files (which breaks across machines), Cartog includes a lightweight JavaScript shim that monkey-patches `RegExp` to safely escape `\\` when passed as an unescaped single backslash string on Windows.
-  - Cartog automatically injects this shim via `NODE_OPTIONS="-r <path_to_shim>"` in subprocess `env` when invoking `scip-python` on Windows platforms.
-  - This allows `scip-python` to execute cleanly, successfully index Python repositories, and generate call graphs on any Windows system with zero external file modifications.
+  - Cartog ships a lightweight preload script injected via `NODE_OPTIONS="-r <path_to_shim>"` in subprocess `env` when invoking `scip-python` on Windows platforms.
+  - The shim safely intercepts and normalizes unescaped single backslashes in `RegExp`:
+  ```javascript
+  // Pre-load hook for Node on Windows to safely escape single backslash in RegExp
+  if (process.platform === 'win32') {
+    const origRegExp = RegExp;
+
+    function SafeRegExp(pattern, flags) {
+      if (pattern === '\\') {
+        pattern = '[\\\\/]';
+      }
+      if (new.target) {
+        return new origRegExp(pattern, flags);
+      }
+      return origRegExp(pattern, flags);
+    }
+
+    SafeRegExp.prototype = origRegExp.prototype;
+    Object.setPrototypeOf(SafeRegExp, origRegExp);
+    global.RegExp = SafeRegExp;
+  }
+  ```
 - **Loud Failure & Strict CLI Semantics:**
   - If SCIP indexing fails for any reason, the full untruncated error is preserved in `meta.scip.error` and dumped to `scip_error.log` in the output directory.
   - A prominent failure line is printed in terminal output: `SCIP: FAILED (<reason>). No call edges in this graph.`
-  - `cartog check` detects SCIP failure and marks integrity as `FAIL`, exiting non-zero (code 1) when `--strict` is passed.
+  - `cartog check` detects SCIP failure and marks integrity as `FAIL`, exiting non-zero (code 1) by default (opt-out with `--no-scip`).
 
 ---
 
@@ -432,6 +499,490 @@ In `cartog/cache.py`, the parse cache key was originally formed as `{file_sha1}:
   `{schema_version}:{file_sha1}:{adapter_version}`, where `schema_version` defaults to `cartog-v{cartog.__version__}`.
 - Any upgrade to Cartog or bump to the extractor schema automatically changes the cache key, triggering a cache miss and forcing automatic re-parsing of source files without requiring manual cache wiping.
 - Added regression test `test_cache_invalidation_on_schema_version_change()` in `tests/test_python_adapter.py`.
+
+---
+
+## Issue 15: Architectural Realignment: Interactive Viewer, LLM Token Budgeting, Strict Ignore Hierarchies, and the Universal View Model
+
+- **Phase / Milestone:** Phase 4 Planning / Milestones 8–13
+- **Component:** `cartog/views.py`, `cartog/view_assets/`, `cartog/scan.py`, `cartog/export_mermaid.py`
+
+### 1. Why the Interactive Viewer Replaces Mermaid as the Primary Architecture View
+- **Problem with Mermaid:**
+  - Mermaid is static and linear. In medium-to-large codebases (e.g. Click with 60+ files and thousands of symbols), generating full-fidelity nested graphs (subsystems $\rightarrow$ folders $\rightarrow$ files $\rightarrow$ classes $\rightarrow$ boundary functions) creates massive `.mmd` files that choke browser renderers, produce unreadable sprawling image exports, or require severe node collapsing that discards critical function-level topology.
+  - Mermaid diagrams cannot be interactively expanded, collapsed, panned, zoomed, or filtered on-demand by the developer.
+- **Decision:**
+  - Introduce `cartog view <path>` which generates a single self-contained, offline `map.html` using **Cytoscape.js** (v3.34.4, MIT), `cytoscape-expand-collapse` (v4.1.1, MIT), and `cytoscape-fcose` (v2.2.0, MIT).
+  - Cytoscape supports dynamic compound nodes: diagrams start cleanly collapsed at the high-level subsystem or folder level, and developers can click to drill down into files, classes, and individual functions.
+  - An interactive sidebar displays node details (file, 1-based line, callers, callees, routes) and includes direct `vscode://file/<path>:<line>` links to open code in editors.
+  - Mermaid is retained exclusively as a secondary, static export format for repository READMEs and CI build artifacts.
+
+### 2. Why `graph.json` Must Never Be Fed Directly to an LLM
+- **Problem:**
+  - On a modest library like Click, the full `graph.json` exceeds 92,000 lines of indented JSON (~1.8 MB), containing exhaustive AST node definitions, character coordinates, and thousands of internal references.
+  - Passing `graph.json` directly into an LLM context window exhausts token budgets, costs immense API overhead, degrades reasoning performance due to extreme low-level noise, and frequently exceeds standard context limits.
+- **Decision:**
+  - Define a strict architectural boundary: **The LLM layer must NEVER ingest raw `graph.json` directly.**
+  - Introduce `cartog digest <path>`: a compact, curated architectural summary (directory hierarchy, top boundary functions ranked by cross-file connectivity, entry points and routes, and aggregated folder-to-folder dependency edges).
+  - The digest targets ~2,000 to 4,000 tokens for Click, fitting comfortably into small local LLM context windows while providing rich structural signal. Single targeted questions are supported via `cartog query callers-of` and `cartog query callees-of`.
+
+### 3. Why `.cartogignore` Only Adds Exclusions on Top of `.gitignore`
+- **Problem:**
+  - If a tool allows secondary ignore files to override or un-ignore patterns from `.gitignore` (e.g. via `!pattern`), it risks indexing, displaying, or leaking sensitive vendor packages, credentials, local virtual environments, or compiled binaries that repo maintainers intentionally barred from version control.
+- **Decision:**
+  - **`.gitignore` is ALWAYS followed first and is inviolable.**
+  - `.cartogignore` is an optional root-level file that can **only add additional exclusions** on top of `.gitignore` (for example, excluding architectural noise like benchmarks, generated client stubs, or fixtures that are committed to git but irrelevant to architectural cartography).
+  - Negation rules (`!pattern`) in `.cartogignore` apply strictly to patterns declared inside `.cartogignore` itself and can never un-ignore any path excluded by `.gitignore`.
+  - All exclusions are auditable: `graph.json` metadata records file exclusion counts per ignore source and counts of dropped cross-file edges.
+
+### 4. Why Original Milestone 8 Was Merged with the Universal View Model
+- **Problem:**
+  - Original Milestone 8 treated Mermaid generation and view filtering as an ad-hoc rendering concern directly inside `export_mermaid.py`. With the introduction of the interactive Cytoscape viewer, compact LLM digest, and subsystem grouping, having separate projection logic would lead to drift, inconsistent node collapsing, and contradictory boundary function attribution across exporters.
+- **Decision:**
+  - Expand Milestone 8 into **Milestone 10**, establishing a unified **View Model** in `cartog/views.py`:
+    `Subsystem -> Folder -> File -> Class -> Function`.
+  - View model logic deterministically selects entry points, routes, and cross-file boundary functions while collapsing purely internal helper functions (`+N internal helpers`) and rolling up call-site counts to parent containers.
+  - Both the Mermaid exporter and the Cytoscape viewer become pure, passive projections of this single view model.
+
+---
+
+## Issue 15: Recall Round Two Verification and Inherent Limits of Static Call Graph Extraction (Callbacks, Decorators, and Dynamic Dispatch)
+
+- **Component:** `cartog.scip_pass`, `cartog.merge`
+- **Phase / Milestone:** Milestone 6.5 (Hardening)
+- **Target Analysis:** `samples/click/src/click/core.py` (`Command.main`, `Group.invoke`, `Command.format_help`)
+
+### 1. Verification Audit: `Command.main` and `Group.invoke`
+A rigorous symbol-by-symbol comparison between source code calls and generated `calls` edges in `graph.json` was conducted on Click 8.2+:
+
+#### A. `Command.main` (`src/click/core.py:1515-1650`)
+- **Source Code Calls to Repo Functions:**
+  - `_expand_args(args)` (line 1570) $\rightarrow$ calls `click.utils._expand_args` [RESOLVED: edge present, count 1]
+  - `_detect_program_name()` (line 1575) $\rightarrow$ calls `click.utils._detect_program_name` [RESOLVED: edge present, count 1]
+  - `self._main_shell_completion(...)` (line 1578) $\rightarrow$ calls `click.core.Command._main_shell_completion` [RESOLVED: edge present, count 1]
+  - `self.make_context(...)` (line 1591) $\rightarrow$ calls `click.core.Command.make_context` [RESOLVED: edge present, count 1]
+  - `self.invoke(ctx)` (line 1592) $\rightarrow$ calls `click.core.Command.invoke` [RESOLVED: edge present, count 1]
+  - `ctx.exit()` (line 1602) $\rightarrow$ calls `click.core.Context.exit` [RESOLVED: edge present, count 1]
+  - `Exit` exception references (lines 1603, 1613, 1615) $\rightarrow$ `click.exceptions.Exit` [RESOLVED: edge present, count 3]
+  - `Abort` exception instantiation (lines 1616, 1626) $\rightarrow$ `click.exceptions.Abort` [RESOLVED: edge present, count 2]
+  - `_echo_aborted` reference (lines 1620, 1628) $\rightarrow$ `click.core._echo_aborted` [RESOLVED: edge present, count 2]
+  - `echo(file=sys.stderr)` (line 1623) $\rightarrow$ `click.utils.echo` [RESOLVED: edge present, count 2]
+  - `ClickException` reference (lines 1629, 1633) $\rightarrow$ `click.exceptions.ClickException` [RESOLVED: edge present, count 2]
+  - `e.show` method reference (line 1633) $\rightarrow$ `click.exceptions.ClickException.show` [RESOLVED: edge present, count 1]
+  - `_PacifyFlushWrapper(...)` (lines 1638, 1639) $\rightarrow$ `click.utils._PacifyFlushWrapper` [RESOLVED: edge present, count 2]
+- **Dynamic Call (`report()` at line 1642):**
+  - At line 1642, `report()` invokes either `_echo_aborted` (line 1620) or `e.show` (line 1633).
+  - Both targets are fully captured as referenced call targets at their assignment sites (lines 1620 and 1633), while the local variable invocation `report()` itself has no static target in AST.
+
+#### B. `Group.invoke` (`src/click/core.py:2052-2118`)
+- **Source Code Calls to Repo Functions:**
+  - `_process_result(...)` (lines 2065, 2086, 2118) $\rightarrow$ calls local nested function `click.core.Group.invoke._process_result` [RESOLVED: edge present, count 3]
+  - `super().invoke(ctx)` (lines 2064, 2083, 2095) $\rightarrow$ calls base method `click.core.Command.invoke` [RESOLVED: edge present, count 4]
+  - `ctx.fail(...)` (line 2066) $\rightarrow$ calls `click.core.Context.fail` [RESOLVED: edge present, count 1]
+  - `self.resolve_command(ctx, args)` (lines 2080, 2102) $\rightarrow$ calls `click.core.Group.resolve_command` [RESOLVED: edge present, count 2]
+  - `cmd.make_context(...)` (lines 2084, 2104) $\rightarrow$ calls `click.core.Command.make_context` [RESOLVED: edge present, count 4]
+  - `sub_ctx.command.invoke(...)` (lines 2086, 2117) $\rightarrow$ calls `click.core.Command.invoke` [RESOLVED: edge present, count 4]
+- **Callback Invocations:**
+  - In `_process_result` (line 2055), `ctx.invoke(self._result_callback, value, **ctx.params)` invokes a dynamic callback stored in `self._result_callback`. The call to `Context.invoke` is resolved, but the runtime target of `_result_callback` is dynamic.
+
+### 2. Method Overriding and Polymorphic Dispatch: `self.format_options`
+- **Call site:** `Command.format_help` at `src/click/core.py:1304`:
+  ```python
+  self.format_options(ctx, formatter)
+  ```
+- **Target Node in `graph.json`:**
+  - The call resolves strictly to node `38a54a4bad` (`click.core.Command.format_options`).
+- **Presence of Override Edges:**
+  - **Zero override edges exist.** There is NO edge from `Command.format_help` to `Group.format_options` (node `d50a1e47c9`) or `CommandCollection.format_options`.
+  - Conversely, `Group.format_options` calls `super().format_options(ctx, formatter)`, which generates an edge from `Group.format_options` to `Command.format_options`.
+
+### 3. Structural Limits of Static Analysis
+Cartog relies on static semantic indexing via SCIP (`scip-python` / Pyright and `scip-typescript` / TypeScript compiler). By definition, static analysis has well-defined boundaries:
+
+1. **Dynamic Callbacks:**
+   - Functions stored in instance variables (e.g., `self._result_callback`, `self.callback`), passed as higher-order arguments, or stored in dictionaries cannot be resolved to concrete target implementations without dynamic execution traces or whole-program points-to analysis.
+   - Cartog records the call to the dispatch mechanism (e.g. `Context.invoke`), but does not invent speculative edges to arbitrary possible callbacks.
+2. **Decorators & Wrappers:**
+   - Functions wrapped by decorators (e.g. `@click.command`, `@click.pass_context`, `@functools.wraps`) alter symbol bindings at module import time. Static analysis resolves references to the decorator function or wrapper signature.
+3. **Polymorphic Dynamic Dispatch (Virtual Method Calls):**
+   - In class hierarchies where a base class method calls `self.method()`, static analysis binds the invocation to the declaring class's definition (`Command.format_options`).
+   - At runtime, if an instance of a subclass (`Group`) executes the base method, Python's method resolution order (MRO) dynamically dispatches to the subclass override (`Group.format_options`).
+   - SCIP and Cartog deliberately avoid generating fan-out edges to all subclass overrides because doing so in large class hierarchies causes catastrophic false-positive edge explosion. Static edges reflect verified syntactic call bindings.
+
+---
+
+## Issue 13: SCIP Python Indexer Environment, `--environment` Schema, and `--python` Option
+
+### 1. Full Help Output: `scip-python index --help`
+```text
+Usage: scip-python index [options]
+
+Options:
+  --cwd <path>                      The working directory to run the indexer in (default: ".")
+  --output <path>                   The path to write the SCIP index file to (default: "index.scip")
+  --environment <path>              Path to a JSON file containing package environment descriptions
+  --project-name <name>             The name of the project being indexed
+  --project-version <version>       The version of the project being indexed
+  --entrypoint <path>               Optional entrypoint file to begin indexing
+  --target-only                     Only index files belonging to the target project
+  --pyproject-toml <path>           Path to pyproject.toml
+  --help                            display help for command
+```
+
+### 2. The Real Schema and Purpose of `--environment`
+In `scip-python` (Sourcegraph's Pyright-based SCIP indexer), `--environment` is NOT a mechanism for passing Pyright workspace settings such as `pythonPath` or `extraPaths`. Instead, it accepts a JSON array of pre-computed package distribution manifests adhering to the schema:
+```json
+[
+  {
+    "name": "string",
+    "version": "string",
+    "files": [
+      "string"
+    ]
+  }
+]
+```
+- **True Purpose:** Used in CI and Sourcegraph batch-indexing pipelines to provide pre-computed manifest information for external third-party distributions when `pip` or virtualenv introspection is unavailable in containerized sandboxes.
+- **Rule:** Cartog NEVER passes `pythonPath`, `extraPaths`, or general configuration objects into `--environment`. Any such usage causes `scip-python` to fail JSON schema validation with code 1.
+
+### 3. Empirical Proof of the PATH / VIRTUAL_ENV Hypothesis
+`scip-python` is a Node CLI wrapper around Pyright. At startup, Pyright executes Python to detect the standard library and site-packages environment by inspecting the active Python on `PATH` and `VIRTUAL_ENV`.
+
+#### Command Diagnostics
+- `where.exe python`:
+  1. `C:\Python313\python.exe` (`python -m pip show click` -> Version: 8.5.0 in User site-packages)
+  2. `C:\Users\rishi\AppData\Local\Programs\Python\Python310\python.exe` (`pip show click` -> WARNING: package(s) not found: click)
+  3. `C:\Users\rishi\AppData\Local\Microsoft\WindowsApps\python.exe` (Python 3.11 Windows Store; `pip show click` -> Version: 8.1.7)
+  4. `C:\msys64\mingw64\bin\python.exe` (`pip show click` -> WARNING: package(s) not found: click)
+  5. `C:\Users\rishi\OneDrive\Desktop\Dev\cartog\venv\Scripts\python.exe` (`pip show click` -> WARNING: package(s) not found: click)
+- `where.exe scip-python`:
+  1. `C:\Users\rishi\AppData\Roaming\npm\scip-python`
+  2. `C:\Users\rishi\AppData\Roaming\npm\scip-python.cmd`
+
+#### Empirical Behavior: Reference Symbols Across Environments
+1. **When indexed with Windows Store Python 3.11 (Click 8.1.7 installed):**
+   - Pyright discovers Click 8.1.7 in `site-packages` and emits references attributed to third-party package `click 8.1.7`:
+     - `scip-python python click 8.1.7 click/__init__:`
+     - `scip-python python click 8.1.7 `click.decorators`/command().`
+     - `scip-python python click 8.1.7 `click.utils`/echo().`
+2. **When indexed with clean venv (`VIRTUAL_ENV` set, no Click installed):**
+   - Pyright cannot resolve Click in `site-packages`. Because Click's `pyproject.toml` contains modern TOML table syntax that Pyright fails to parse, Pyright does not know `src/` is in `PYTHONPATH`. Unresolved imports emit local symbols or no symbols, while references in tests fallback to repo git commit:
+     - `scip-python python click 2247b35ea1c47c727d7a06e51fa280e12a863ff6 `click._utils`/__init__:`
+
+### 4. Implementation of `--python <path>`
+- Cartog CLI supports `--python <path>` on `cartog scip`, `cartog build`, and `cartog map`.
+- When supplied, `get_indexer_env()` sets `VIRTUAL_ENV` to the parent environment directory and prepends the directory containing `python.exe` directly to `PATH` in the subprocess environment.
+- No files are created or modified in the target repository.
+- The detected interpreter path and `python --version` are persisted in `graph.json` under `meta.scip.interpreter_path` and `meta.scip.python_version`.
+- `cartog check` surfaces this information as an `INFO` row in the graph integrity report.
+
+### 5. Capturing and Surfacing Indexer Warnings
+- Indexer stderr is monitored for non-fatal warnings (e.g. Pyright's TOML parser errors on Click's `pyproject.toml`).
+- Captured stderr lines are recorded in `meta.scip.warnings`.
+- `cartog check` surfaces all captured indexer warnings under `Validation Warnings:` in the check report.
+
+---
+
+## Issue 14: Cross-Root Definition Reconciliation Rule
+
+### 1. The Anchored Prefix Rule
+In repositories with a `src/` layout or nested package structures, definition symbols emitted by Pyright are prefixed with the file-tree path (e.g. `scip-python python click <ver> `src.click.decorators`/command().`), while client imports from test suites or consumers reference the package name directly (e.g. `scip-python python click <ver> `click.decorators`/command().`).
+
+Cartog implements a strict, anchored prefix reconciliation rule in `link_calls`:
+1. **Candidate Prefix Derivation:** Anchored prefixes are derived exclusively from detected project roots (`resolved_roots`). For any root `r`, `r` itself generates prefix `r.`, and standard source subdirectories `r/src` and `r/lib` generate prefixes `r.src.` and `r.lib.`.
+2. **Strict Anchored Matching:** Normalization uses strictly anchored prefix matching (`desc.startswith(f"`{prefix}")` or `desc.startswith(prefix)`). An unanchored `replace()` anywhere in the descriptor string is strictly forbidden.
+3. **Package Matching:** The SCIP package name must match identically (`ref_pkg == def_pkg`).
+4. **Target File Verification:** The target defining file must exist on disk within the analyzed repository.
+5. **Full Descriptor Equality:** The normalized definition descriptor must match the reference descriptor exactly.
+
+### 2. Confidence Levels and Schema Handling
+- Direct intra-package calls resolved by SCIP have `confidence: "resolved"`.
+- Reconciled cross-root calls resolved via the anchored prefix fallback have `confidence: "reconciled"`.
+- Both `"resolved"` and `"reconciled"` are valid schema values validated by `cartog/validate.py`.
+- In Mermaid diagrams (`export_mermaid.py`), reconciled call edges are displayed with distinct lower-confidence styling:
+  - Link label annotation: `"N calls (reconciled)"` or `"N calls (M reconciled)"`.
+  - Distinct Mermaid styling: `linkStyle <idx> stroke:#f57c00,stroke-dasharray: 4 4,stroke-width:1.5px;` (amber/orange dashed line with distinct stroke width).
+
+### 3. Empirical Verification on Click
+Running `cartog map samples/click` with `--python C:\Python313\python.exe`:
+- **Total `calls` edges:** 2,691
+  - **Resolved (direct):** 878
+  - **Reconciled:** 1,813
+- **Test-to-library calls:** 1,807 total (0 direct, 1,807 reconciled).
+- **Verified Sample Calls:**
+  1. `tests/test_termui.py:38`: `_create_progress` $\rightarrow$ `progressbar` in `src/click/termui.py` (`reconciled`)
+  2. `tests/test_commands.py:560`: `test_deprecated_in_help_messages` $\rightarrow$ `command` in `src/click/decorators.py` (`reconciled`)
+  3. `tests/test_basic.py:256`: `cli` $\rightarrow$ `echo` in `src/click/utils.py` (`reconciled`)
+  4. `tests/test_options.py:1090`: `cmd` $\rightarrow$ `echo` in `src/click/utils.py` (`reconciled`)
+  5. `tests/test_testing.py:469`: `test_tempdir_replacement_pattern` $\rightarrow$ `argument` in `src/click/decorators.py` (`reconciled`)
+
+---
+
+## Issue 15: Guarantee Analyzed Target Repository is Untouched
+
+### 1. Snapshot Verification Proof
+Before and after running `cartog map samples/click --out cartog-out/click-map-scip`, recursive SHA-256 and metadata snapshots were captured across the entire `samples/click` directory:
+- Files before: 208
+- Files after: 208
+- Added: 0
+- Deleted: 0
+- Modified: 0
+`samples/click` is 100% untouched.
+
+### 2. Zero-Target-Writing Guarantee
+- Every indexer invocation specifies `--output <path>` pointing into Cartog's output directory (`cartog-out/`).
+- Indexer runs with `--cwd <target_path>` and native backslash paths on Windows to avoid path translation issues.
+- `index.scip` is never generated in or written into the target directory.
+- Added regression test `test_pipeline_leaves_analyzed_repo_untouched` in `tests/test_cli.py`.
+
+---
+
+## Issue 16: Clarification on Typer Dependency
+- Cartog's `pyproject.toml` declares dependency `typer>=0.12.0`.
+- In the active virtualenv on Python 3.13, Typer version `0.27.3` is installed and does not bundle Click.
+
+---
+
+## Issue 17: Multi-Declaration and Overload Source Range Unioning
+
+- **Component:** `cartog.merge.build_graph`
+- **Milestone:** Milestone 7 (Cross-Check & Validation)
+- **Problem:** In Python (`@t.overload`) and TypeScript (overload signatures or multiple class declarations sharing a name across closures), multiple AST symbols produce identical deterministic node IDs (`sha1(kind:path:qualified_name)`). When `graph.add_node(sym_node)` was called sequentially, each subsequent definition replaced the previous one in `graph.nodes`. As a result, the node retained only the range of the last declaration (the implementation), dropping earlier overload ranges. Call and reference occurrences occurring inside overload signatures (e.g. `Parameter.get_default` at line 2636 and 2641, or `convert_type` at line 1351) were then flagged by `validate_ranges_and_containment` as falling outside the caller's range.
+- **Solution:** When a symbol node ID already exists in `graph.nodes`, `build_graph` computes the union of the ranges (`min(start_line)`, `max(end_line)`). This ensures the node span encloses all overload signatures and implementations, eliminating all 32 outside-caller warnings in Click and parent containment warnings in Ky.
+
+---
+
+## Issue 18: 1-Based Line Numbers Standardization Across AST Imports and Cache Invalidation
+
+- **Component:** `cartog.langs.base`, `cartog.langs.python_adapter`, `cartog.langs.js_adapter`, `cartog.cache`
+- **Milestone:** Milestone 7 (Cross-Check & Validation)
+- **Problem:** Tree-sitter's AST coordinates (`node.start_point.row`) are 0-indexed. While symbol extraction added `+ 1` to lines, `ImportRecord` assigned `line = node.start_point.row` directly, causing imports on line 1 to be stored as line 0. In `merge.py`, `evidence` strings on import edges became `file:0`, violating the 1-based coordinate invariant. Furthermore, stale AST caches from earlier runs persisted 0-based lines.
+- **Solution:**
+  1. Standardized `ImportRecord.line` to 1-based (`node.start_point.row + 1`) across Python and JS/TS adapters.
+  2. Changed pattern fallback evidence in `merge.py` from `:0` to `:1`.
+  3. Bumped `DEFAULT_EXTRACTOR_SCHEMA_VERSION` in `cartog/cache.py` to `f"cartog-v{CARTOG_VERSION}-m7"` so stale 0-based cache entries are automatically invalidated across all cached runs.
+
+---
+
+## Issue 19: Cross-Check Call-to-Import Mismatch Categorization and Strict Enforcement
+
+- **Component:** `cartog.validate.cross_check_imports_and_calls`, `cartog.cli.check`
+- **Milestone:** Milestone 7 (Cross-Check & Validation)
+- **Problem:** Cross-referencing SCIP call edges against tree-sitter imports revealed that 1,401 calls in Click do not have a direct file-to-file import edge. Naively treating every missing import as a graph error would produce false alarms on legitimate idioms (e.g. test suites importing package barrels, runtime parameter passing like `click.exceptions` calling `click.types.ParamType.get_missing_message` via `self.param.type`, and re-export chains).
+- **Solution:**
+  1. Implemented transitive reachability BFS over `imports` edges to identify barrel and re-export chains ($A \to B \to C$).
+  2. Categorized mismatches as:
+     - `explained`: transitive / barrel re-exports, same-package runtime parameter passing, and test-suite-to-library dispatch.
+     - `unexplained`: calls between unrelated modules lacking any direct or indirect import path.
+  3. Extended `cartog check` `--strict` mode to exit non-zero (code 1) if any unexplained mismatches or validation warnings exist, while passing cleanly on explained mismatches (both Click and Ky pass with 0 unexplained mismatches).
+
+---
+
+## Issue 20: `.cartogignore` Additive Precedence, Manifest Isolation, and Crossing Edge Accounting
+
+- **Component:** `cartog.scan`, `cartog.cache`, `cartog.manifests`, `cartog.scip_pass`, `cartog.merge`, `cartog.cli`
+- **Milestone:** Milestone 8 (`.cartogignore` Support)
+- **Problem:**
+  1. Base exclusion immutability: `.gitignore` must form the immutable baseline exclusion set. If `.cartogignore` contains a negation pattern (`!pattern`), it must not be able to un-ignore or re-include files excluded by `.gitignore`.
+  2. Manifest file leakage: Initially, `parse_manifests` only checked `.gitignore`, ignoring `.cartogignore` and CLI `--ignore`. When a folder like `examples/` was ignored via `--ignore "examples/**"`, `parse_manifests` traversed `examples/`, parsed nested `pyproject.toml` files, and `merge.py` inserted manifest file and entrypoint nodes into `graph.json`, violating the strict requirement that ignored files have 0 nodes or edges in outputs.
+  3. Dropped crossing edges accounting: When an active source file references or imports a symbol defined in an ignored file, the call edge cannot be resolved to a valid graph node and must be dropped before graph insertion and accounted for in `meta.ignores["dropped_edges_count"]`.
+- **Solution:**
+  1. Evaluated rules in strict linear precedence: `.gitignore` (root & nested) $\to$ `.cartogignore` (root) $\to$ repeatable CLI `--ignore` $\to$ defaults. Because `.gitignore` is evaluated first, files matching `.gitignore` are immediately excluded, ensuring `.cartogignore` negations can only apply within `.cartogignore`.
+  2. Updated `parse_manifests` to accept and evaluate `.cartogignore`, CLI `--ignore`, and `ignored_paths`. In `merge.py`, guarded `_ensure_manifest_file` and all manifest fact loops against `ignored_paths`.
+  3. In `scip_pass.py` `link_calls()`, skipped caller documents that were ignored and dropped calls/overrides whose `callee_path` is in `ignored_paths`, incrementing `dropped_edges_count`. In `merge.py`, accounted for dropped cross-file import edges.
+  4. Added `compute_ignore_hash()` to compute a deterministic SHA-1 hash over combined ignore rules and embedded it in `ParseCache` keys, guaranteeing automatic AST cache invalidation whenever ignore rules change.
+
+---
+
+## Issue 21: Forced Cache Rerun Flag (`--force` / `--no-cache`) for Development and Debugging
+
+- **Component:** `cartog.cache.ParseCache`, `cartog.cli._execute_parse`, `cartog.cli` (`parse`, `build`, `map`)
+- **Milestone:** Pre-Milestone 9 Hardening
+- **Problem:**
+  During development and debugging (e.g. iterating on AST pattern queries, grammar adapters, or heuristic extractors without modifying file contents or bumping versions), Cartog's content-hash AST cache automatically returned existing cached parse results (`Cache Hits / Misses: N / 0`). Developers needed an explicit command-line option to force a full re-parse from source disk files even when valid cache entries exist.
+- **Solution:**
+  1. Added `force: bool = False` parameter to `ParseCache.__init__`. When `force=True`, `ParseCache.get()` unconditionally returns `None` and records a cache miss, prompting tree-sitter language adapters to freshly parse every source file.
+  2. Maintained cache write-back on `cache.set()` and `cache.save()` so that forced runs refresh the cache entries on disk with the newly extracted AST representations.
+  3. Added `clear()` method to `ParseCache` to allow programmatic cache purging.
+  4. Added `--force` (`-f`) and `--no-cache` CLI options across `cartog parse`, `cartog build`, and `cartog map`.
+  5. Updated CLI logging: prints `Notice: Forcing rerun; cache bypassed.` and annotates the summary table with `Cache Hits / Misses: 0 / N (forced rerun)`.
+  6. Added unit and CLI test coverage in `tests/test_python_adapter.py` and `tests/test_cli.py`.
+
+---
+
+## Issue 22: Deterministic Noise File Filtering and View Import Rewiring
+
+- **Component:** `cartog.views`, `cartog.export_mermaid`, `cartog.cli`, `cartog.validate`
+- **Milestone:** Milestone 9 (Deterministic Noise Filtering for Views)
+- **Problem:**
+  High-level architecture diagrams and call flows often get cluttered by infrastructural boilerplate modules:
+  1. Re-export barrel files (e.g. `src/click/__init__.py`, `index.ts`), which import and re-export symbols from sibling modules. In Mermaid diagrams, barrels act as giant hub nodes with dozens of incoming and outgoing arrows, obscuring direct module-to-module relationships.
+  2. Constants-only and type-only modules (e.g. `docs/conf.py`, `types.ts`, `types/*.ts`), which contain definitions without executable business logic or control flow.
+  Simply dropping these files from diagrams would break architectural connectivity (e.g. a caller importing a function via a barrel would appear completely disconnected).
+- **Solution:**
+  1. **Deterministic AST Heuristics (`cartog/views.py`)**:
+     - *Re-export Barrels*: Files containing exclusively imports, re-exports, `__all__` lists, and optional PEP 562 deprecation/lazy access shims (`__getattr__`, `__dir__`), with 0 domain functions, 0 classes, and 0 framework routes/commands/entrypoints.
+     - *Constants/Type-Only*: Files containing exclusively literal assignments or type definitions (`TypedDict`, `TypeAlias`, `Enum`, `NamedTuple`, TS `type`/`interface`/`enum`), with 0 executable logic functions or domain classes with logic methods. Modules with executable functions or logic classes (such as Click's `src/click/types.py` with `class ParamType` and `globals.py` with `push_context()`) are strictly preserved as non-noise domain modules.
+  2. **Import Edge Rewiring (`rewire_view_edges`)**:
+     - When a barrel $B$ is hidden, any import edge $A \xrightarrow{imports} B$ is rewired directly to the non-noise defining files $C$ that $B$ re-exports ($A \xrightarrow{imports} C$). Chains of barrels are resolved transitively.
+     - Direct SCIP `calls` edges are preserved without modification because SCIP already resolves callers directly to callee symbols in defining files.
+  3. **Full Structural Graph Preservation**:
+     - Noise files are NEVER deleted from `graph.json`. Both node sets and edge sets remain 100% intact.
+     - Filtered paths and classification reasons are recorded in `graph.meta["view_noise_filtered"]`.
+  4. **CLI Toggle (`--show-noise`)**:
+     - By default (`show_noise=False`), diagrams omit noise files and rewire imports, emitting `Notice: Filtered N noise module(s) from view (use --show-noise to display)`.
+     - Specifying `--show-noise` includes all files in `overview.mmd`.
+
+---
+
+## Issue 23: Universal View Model Hierarchy, Boundary Function Rollup, Schema 2.0.0 Compact Serialization, and Flow Tracing
+
+- **Component:** `cartog.model`, `cartog.views`, `cartog.export_mermaid`, `cartog.cli`, `cartog.validate`
+- **Milestone:** Milestone 10 (Views, View Model, Node Budgeting, Flow Tracing, Compact Output & Digest)
+- **Problems & Challenges:**
+  1. *Graph bloat & Redundancy*: `graph.json` reached ~100,000 lines on Click due to 2-space indentation and explicit `contains` edges duplicating hierarchy between parent folders, files, classes, and methods.
+  2. *View detail overload*: Visualizing every internal helper method in an architectural overview creates overwhelming visual noise, obscuring system boundaries.
+  3. *Static call flow visibility*: Users need to trace call execution from web API routes or CLI entry points across functions without opening entire codebases.
+  4. *LLM Prompt Budgets*: Feeding entire `graph.json` files to LLMs exhausts context windows with raw AST syntax.
+- **Architectural Decisions & Implementation:**
+  1. **Schema 2.0.0 & Compact Serialization (`cartog/model.py`, `cartog/config.py`)**:
+     - Added `parent: Optional[str] = None` on `Node` dataclass, expressing containment natively and losslessly.
+     - Bumped `SCHEMA_VERSION` to `"2.0.0"`. `cartog/validate.py` verifies `node.parent` integrity (no dangling parents, no self-parenting, child-in-parent range containment).
+     - Default unindented serialization (`separators=(",", ":")`), eliminating ~99.99% of line breaks and reducing file size by 41.0% on Click (from 2.47 MB to 1.46 MB) and 48.4% on Ky (from 643 KB to 331 KB).
+     - Added `--pretty` flag in `cartog build` and `cartog map` for formatted output when needed.
+     - Redundant `contains` edges are omitted by default in CLI output (`--emit-contains` flag available for legacy compatibility).
+  2. **Universal View Model Tree & Boundary Function Rollup (`cartog/views.py`)**:
+     - Implemented `build_universal_view_tree()` constructing `Subsystem -> Folder -> File -> Class -> Function`.
+     - `classify_boundary_functions()` deterministically identifies boundary symbols (routes, CLI commands, entrypoints, and cross-file callers/callees). Purely internal helper functions/methods are collapsed into composite nodes: `+N internal helpers`.
+  3. **Call-Flow BFS Tracing (`cartog flow`)**:
+     - `cartog flow <path> <target> [--depth N] [--out <dir>]` traverses outgoing `serves`, `starts`, and `calls` relationships up to $N$ hops.
+     - Generates focused call trace diagrams (`flow_<slug>.mmd`) and terminal execution steps table. Verified on Flask route `GET /` (reached 62 symbols via 41 calls).
+  4. **Architecture Digest for LLMs (`cartog digest`)**:
+     - `cartog digest <path> [--out <dir>]` produces a structured Markdown brief containing folder breakdown, key entrypoints/routes, top boundary classes/methods, and cross-folder call matrices.
+     - Formatted output occupies ~1,200 tokens for Click and ~1,032 tokens for Ky, fitting comfortably within the 2,000–4,000 token LLM budget.
+  5. **Fast CLI Lookups (`cartog query`)**:
+     - Implemented `cartog query callers-of <symbol>` and `callees-of <symbol>` operating directly on `graph.json` in milliseconds without re-parsing.
+
+---
+
+## Issue 24: Mermaid Reserved Keyword Syntax Error (`classDef class`), Flow Arrow Formatting, and CLI Rendering Diagnostics
+
+- **Component:** `cartog.export_mermaid`, `cartog.cli`, `tests.test_mermaid`, `tests.test_views_mermaid`
+- **Milestone:** Milestone 10 (Post-delivery hardening)
+- **Environment:** Node v22.13.0, `@mermaid-js/mermaid-cli@12.0.0`, Windows 11 AMD64
+- **What Happened:**
+  1. *Mermaid Parse Crash*: When running `cartog map` or `cartog flow`, `mmdc` returned a syntax parse error:
+     `Expecting 'AMP', 'COLON', 'DOWN', 'DEFAULT', 'NUM', 'COMMA', 'NODE_STRING', 'BRKT', 'MINUS', 'MULT', 'UNICODE_TEXT', got 'CLASS'`
+  2. *False Success Message*: The CLI printed `Notice: mmdc failed: Error: Parse error on line 103...` at the top, yet ended with `Success: Architecture map complete in cartog-out/...`, giving the impression that diagram generation had succeeded while rendering had actually failed.
+  3. *Invalid Flow Arrow Markup*: `generate_flow_mermaid` emitted `s_id == "serves" ==> t_id` and `s_id == "starts" ==> t_id`, which is non-standard syntax in Mermaid and causes syntax errors in strict parsers.
+  4. *Silently Swallowed Errors in `flow`*: In `cartog flow`, the return value of `render_mermaid` was checked only with `if rendered: ...`, silently omitting the error message if `render_mermaid` failed.
+  5. *Test Suite Blind Spot*: Tests only checked for substring existence (e.g. `assert "flowchart TD" in mmd`), never verifying that generated Mermaid diagrams were syntactically valid or compiling them with `mmdc`.
+- **Root Cause Analysis:**
+  1. In Mermaid grammar, `class` is a reserved declaration keyword used to assign classes (`class node1,node2 className;`). Defining a class named `class` via `classDef class fill:...` triggers an immediate lexer/parser conflict where the parser expects an identifier (`NODE_STRING`), but receives the reserved `CLASS` token.
+  2. Mermaid's standard syntax for labeled thick links is `==>|label|` and standard arrows is `-->|label|`. Quoting words inside `== "label" ==>` is invalid Mermaid syntax.
+- **Solution & Implementation:**
+  1. **Renamed Class Style (`classDef classNode`)**:
+     - Updated `generate_overview_mermaid`, `generate_folder_mermaid`, and `generate_flow_mermaid` in `cartog/export_mermaid.py` to use `classDef classNode ...`.
+     - In `generate_flow_mermaid`, symbols of kind `"class"` are styled with `:::classNode`.
+  2. **Standardized Link Syntax**:
+     - In `generate_flow_mermaid`, replaced invalid syntax with standard Mermaid arrows:
+       - `serves`: `s_id ==>|serves| t_id`
+       - `starts`: `s_id ==>|starts| t_id`
+       - `calls`: `s_id -->|{lbl}| t_id`
+  3. **Transparent CLI Reporting (`cartog/cli.py`)**:
+     - Differentiated between syntax errors and environment/headless-browser launch limits in both `cartog map` and `cartog flow`.
+     - If `mmdc` emits a `Parse error` or `Syntax error`, CLI prints an explicit `[bold red]Mermaid syntax error in diagram:[/bold red] {msg}`.
+     - If `mmdc` fails due to headless browser launch restrictions (e.g. sandbox permissions), CLI prints `[yellow]Notice:[/yellow] Image rendering skipped ({msg}). Mermaid markup is saved in overview.mmd.`
+     - In `cartog flow`, added the previously missing notice/error reporting block.
+     - Removed duplicate/dead dummy `flow` command in `cartog/cli.py`.
+  4. **Strict Test Assertions & Multi-Diagram Verification**:
+     - Added strict assertions in `tests/test_mermaid.py` and `tests/test_views_mermaid.py` guaranteeing that `classDef class ` never appears and `classDef classNode` is emitted.
+     - Tested all 25 folder diagrams in Click and Ky with `mmdc` — 100% compiled to SVG with 0 errors.
+
+
+---
+
+
+## Issue 25: Flow Command — Route Serves-Edge Mis-attribution, Selector Category Filtering, Re-export Recall, and Basename Disambiguation
+
+- **Component:** `cartog/merge.py`, `cartog/views.py`, `cartog/cli.py`, `cartog/export_mermaid.py`
+- **Phase / Milestone:** M10 / M11 preparation
+- **Discovered:** 2026-10-28 (Gemini session)
+
+### What Happened
+
+Running `cartog flow samples/flask "GET /"` exhibited four compound bugs:
+
+1. **H1 CONFIRMED — serves edge mis-attribution:** The `build_graph()` function in `merge.py` maintained `symbols_by_name: dict[str, Node]` keyed by **simple name** (line 220: `symbols_by_name[s.name] = sym_node`). This overwrites earlier entries when a file defines multiple functions with the same name (common in test files where dozens of `def index()` are defined inside different test functions). The pattern-to-handler lookup at line 279 (`symbols_by_name[handler_name]`) then resolves to whichever `def index()` was last in the file, not the one directly under the decorator. Evidence: 17 route nodes had >1 serves edge (e.g., `GET /` in `tests/test_reqctx.py` → `['sub', 'index']`; `GET /json/dict` in `tests/type_check/typing_route.py` → `['hello_json_list', 'hello_json_dict']`).
+
+2. **H2 CONFIRMED — selector matches all categories:** `trace_call_flow()` in `views.py:666-680` does substring matching across ALL nodes regardless of file category. For `"GET /"`: 21 exact matches (all in tests/examples), 148 substring matches (141 tests, 7 examples, 0 source). No filtering by category existed.
+
+3. **H3 CONFIRMED — re-export calls missing:** Only 2 calls edges to flask stdlib functions exist in flask graph (redirect, url_for), 0 from `flaskr/`. Flask routes call `render_template`, `abort`, `flash` etc. which are re-exported via `flask/__init__.py`. The SCIP reconciliation didn't resolve these through the re-export chain. This is a known limit of static call graph reconciliation without explicit re-export tracking.
+
+4. **H4 REFUTED as double-membership:** Files have unique parents (0 invalid parents). The "repeated boxes" in diagrams are colliding basenames (`__init__.py`, `conftest.py`, `app.py`) across different directories — each is in exactly one container. Visual confusion only.
+
+### Root Cause
+
+- **H1:** Flat `symbols_by_name` dict with last-write-wins semantics; no proximity matching.
+- **H2:** `trace_call_flow()` had no `include_tests`/`include_examples` parameters; selector operated on all nodes globally.
+- **H3:** Re-export chain resolution is not implemented in `scip_pass.py`. The reconciliation matches callee qualified names to node qualified names but doesn't follow `__init__.py` re-export edges.
+- **H4:** Not a bug — cosmetic issue from basename collisions.
+
+### Fix Applied
+
+1. **H1 fix (merge.py):** Added `symbols_by_name_list: dict[str, list[Node]]` collecting all nodes per name. Added `_pick_handler()` helper that finds the handler whose `range.start_line` is closest to and ≥ the decorator's end line, falling back to `symbols_by_name` if no proximity match. See `cartog/merge.py`.
+
+2. **H2 fix (views.py + cli.py):** Added dedicated `find_flow_candidates()` in `cartog/views.py` accepting `include_tests: bool = False`, `include_examples: bool = False`. `trace_call_flow()` performs BFS traversal returning `tuple[list[Node], list[Edge]]`. Added inline `_flow_category()` helper replicating `classify_path` logic. CLI `flow` command updated with `--include-tests`, `--include-examples`, `--pick N`, `--all` flags. Multi-match prints numbered list and exits non-zero with hint.
+
+3. **H3 (documented as KNOWN_ISSUE):** Re-export reconciliation requires tracking which names are re-exported from `__init__.py` and resolving them as additional call targets. Documented as Rank 1 in `docs/KNOWN_ISSUES.md`.
+
+4. **H4 fix (export_mermaid.py):** `generate_flow_mermaid()` uses shortest disambiguating path suffix for colliding basenames. Function/method labels include line number: `index() :23`.
+
+### Decision
+
+- **D25a:** Dedicated `find_flow_candidates()` handles candidate resolution; `trace_call_flow()` strictly handles traversal graph generation.
+- **D25b:** Default scope excludes tests, examples, docs, scripts. `--include-tests` and `--include-examples` re-include them.
+- **D25c:** When >1 candidate after filtering: print numbered list + exit 1. `--pick N` selects Nth. `--all` selects all. When 0 in scope but >0 excluded: inform user.
+- **D25d:** H3 (re-export reconciliation) is KNOWN_ISSUE Rank 1. Proper fix requires M11 work to track re-export edges explicitly.
+- **D25e:** Class instantiation draws edge to `__init__` when SCIP resolves it, to the class node otherwise (SCIP resolves constructor calls as `ClassName.__init__` in its symbol table).
+
+
+---
+
+
+## Issue 26 & Decision 26: Call-Flow BFS Traversal Semantics, External Boundary Termination, and Class Instantiation Resolution
+
+- **Component:** `cartog/views.py` (`trace_call_flow`), `cartog/export_mermaid.py` (`generate_flow_mermaid`)
+- **Phase / Milestone:** Phase C / Milestone 10 (T10)
+- **Discovered:** 2026-10-30
+
+### Context and Problem
+During BFS call-flow tracing (`cartog flow <target>`), the engine explores execution paths starting from routes, entrypoints, or functions across `serves`, `starts`, `calls`, and `overrides` edges up to `--depth` hops (default 3). Several architectural rules needed formal definition, implementation, and test verification:
+1. **Depth cutoff semantics:** Whether the depth counter measures edge hops from starting nodes, and ensuring edges and nodes beyond `--depth` are strictly pruned.
+2. **External symbol boundaries:** When an internal library or application function calls an external package or dependency (e.g., standard library, third-party package with `path=None` or `attrs={"external": True}`), whether the BFS continues into or terminates at that boundary.
+3. **Class instantiation call targets:** When a caller instantiates a class (e.g., `client = Client()`), whether the call edge connects to the `Class` node or to `Class.__init__`, and how constructor call chains continue into initialization helpers.
+4. **Method override rendering:** How `overrides` edges between derived and base classes are traversed and styled in Mermaid diagrams.
+
+### Architectural Decision
+
+1. **Depth Limit Semantics (D26a):**
+   - The BFS queue tracks `(node_id, current_depth)` where start nodes are depth 0.
+   - For any node at `current_depth >= max_depth`, outgoing edges are not followed. This guarantees that only nodes reachable within `max_depth` call hops are visited.
+
+2. **External Symbol Boundary Termination (D26b):**
+   - External dependencies (`tgt_node.kind == "dependency"`, `tgt_node.attrs.get("external") is True`, or `tgt_node.path is None`) represent the boundary of the analyzed repository.
+   - The edge from caller to the external symbol is traversed and included in the view (showing the boundary interaction), but the external symbol is **not** enqueued for further BFS expansion. Flow traversal strictly stops at external symbols.
+
+3. **Class Instantiation and Constructor Traversal (D26c):**
+   - **Resolution Rule:** Class instantiation draws an edge directly to `__init__` (or `constructor`) when explicitly resolved by SCIP/indexers. If SCIP did not run or only AST resolution was performed, the edge connects to the `Class` node.
+   - **Traversal Rule:** When `__init__` is visited, `trace_call_flow` continues traversal through any internal setup or configuration helpers invoked by `__init__`. When a `Class` node is visited, BFS automatically discovers and queues its `__init__` / `constructor` method to trace instance setup.
+   - **Container Inclusion Rule:** Whenever a class method (such as `__init__`) is traversed, its enclosing `Class` node is automatically included in `visited_nodes` (as a structural container, without consuming a BFS call hop). This guarantees `generate_flow_mermaid()` correctly wraps methods inside their `🏛️ ClassName` subgraph.
+   - **High-Level View Rollup:** In high-level architecture maps and folder overviews, calls to `__init__` and class methods roll up to the class or file container.
+
+4. **Override Edge Styling (D26d):**
+   - `overrides` edges are traversed during BFS flow tracing (from overriding method to base method).
+   - In Mermaid diagrams, `overrides` edges are rendered using dashed arrows (`-.->|overrides|`) to visually distinguish polymorphism/inheritance edges from direct solid invocation arrows (`-->|N calls|`).
+
 
 
 

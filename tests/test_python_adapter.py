@@ -147,10 +147,18 @@ def test_cache_and_export_json(tmp_path: Path):
         out_file=out_json,
     )
 
-    assert data["schema_version"] == "1.0.0"
+    assert data["schema_version"] == "2.0.0"
     assert len(data["files"]) == 1
     assert data["files"][0]["symbols"][0]["name"] == "hello"
     assert out_json.exists()
+
+    # 4. Test forced cache bypass
+    cache_forced = ParseCache(tmp_path / ".cartog", force=True)
+    res_forced = parse_source_file(file_info, cache=cache_forced)
+    assert len(res_forced.symbols) == 1
+    assert res_forced.symbols[0].name == "hello"
+    assert cache_forced.hits == 0
+    assert cache_forced.misses == 1
 
 
 def test_parse_click_sample():

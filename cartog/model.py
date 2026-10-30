@@ -11,6 +11,8 @@ import json
 from pathlib import Path
 from typing import Any, Optional
 
+from cartog.config import SCHEMA_VERSION
+
 
 @dataclass(frozen=True)
 class SourceRange:
@@ -55,6 +57,7 @@ class ManifestFacts:
     entrypoints: list[dict[str, Any]] = field(default_factory=list)
     services: list[dict[str, Any]] = field(default_factory=list)
     ci_jobs: list[dict[str, Any]] = field(default_factory=list)
+    warnings: list[dict[str, str]] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -62,6 +65,7 @@ class ManifestFacts:
             "entrypoints": self.entrypoints,
             "services": self.services,
             "ci_jobs": self.ci_jobs,
+            "warnings": self.warnings,
         }
 
     @classmethod
@@ -71,6 +75,7 @@ class ManifestFacts:
             entrypoints=data.get("entrypoints", []),
             services=data.get("services", []),
             ci_jobs=data.get("ci_jobs", []),
+            warnings=data.get("warnings", []),
         )
 
 
@@ -98,6 +103,7 @@ class Node:
     language: Optional[str] = None
     root: str = "."
     attrs: dict[str, Any] = field(default_factory=dict)
+    parent: Optional[str] = None
 
     @classmethod
     def create(
@@ -110,6 +116,7 @@ class Node:
         language: Optional[str] = None,
         root: str = ".",
         attrs: Optional[dict[str, Any]] = None,
+        parent: Optional[str] = None,
     ) -> Node:
         nid = make_node_id(kind, path, qualified_name)
         return cls(
@@ -122,10 +129,11 @@ class Node:
             language=language,
             root=root,
             attrs=attrs or {},
+            parent=parent,
         )
 
     def to_dict(self) -> dict[str, Any]:
-        return {
+        d: dict[str, Any] = {
             "id": self.id,
             "kind": self.kind,
             "name": self.name,
@@ -136,6 +144,9 @@ class Node:
             "root": self.root,
             "attrs": self.attrs,
         }
+        if self.parent is not None:
+            d["parent"] = self.parent
+        return d
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Node:
@@ -150,6 +161,7 @@ class Node:
             language=data.get("language"),
             root=data.get("root", "."),
             attrs=data.get("attrs", {}),
+            parent=data.get("parent"),
         )
 
 
@@ -162,13 +174,15 @@ class Edge:
     confidence: str
     count: int = 1
     evidence: list[str] = field(default_factory=list)
+    ref_kind: Optional[str] = None
+    attrs: dict[str, Any] = field(default_factory=dict)
 
     @property
     def id(self) -> str:
         return make_edge_id(self.source, self.target, self.kind)
 
     def to_dict(self) -> dict[str, Any]:
-        return {
+        d: dict[str, Any] = {
             "source": self.source,
             "target": self.target,
             "kind": self.kind,
@@ -176,6 +190,11 @@ class Edge:
             "count": self.count,
             "evidence": self.evidence[:3],  # Up to 3 evidence references per spec
         }
+        if self.ref_kind:
+            d["ref_kind"] = self.ref_kind
+        if self.attrs:
+            d["attrs"] = self.attrs
+        return d
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Edge:
@@ -186,22 +205,28 @@ class Edge:
             confidence=data.get("confidence", "heuristic"),
             count=data.get("count", 1),
             evidence=data.get("evidence", []),
+            ref_kind=data.get("ref_kind"),
+            attrs=data.get("attrs", {}),
         )
 
 
 @dataclass
 class Graph:
     """Complete code architecture graph with nodes, edges, and metadata."""
-    schema_version: str = "1.0.0"
+    schema_version: str = SCHEMA_VERSION
     meta: dict[str, Any] = field(default_factory=dict)
     nodes: dict[str, Node] = field(default_factory=dict)
     edges: list[Edge] = field(default_factory=list)
     stats: dict[str, int] = field(default_factory=dict)
     skipped: list[dict[str, Any]] = field(default_factory=list)
+
     unresolved: list[dict[str, Any]] = field(default_factory=list)
     mismatches: list[dict[str, Any]] = field(default_factory=list)
+    duplicate_node_ids: list[str] = field(default_factory=list)
 
     def add_node(self, node: Node) -> None:
+        if node.id in self.nodes:
+            self.duplicate_node_ids.append(node.id)
         self.nodes[node.id] = node
 
     def get_node(self, node_id: str) -> Optional[Node]:
@@ -219,6 +244,11 @@ class Graph:
                 for ev in edge.evidence:
                     if ev not in existing.evidence and len(existing.evidence) < 3:
                         existing.evidence.append(ev)
+                if "imported_names" in edge.attrs:
+                    existing_names = existing.attrs.setdefault("imported_names", [])
+                    for name in edge.attrs["imported_names"]:
+                        if name not in existing_names:
+                            existing_names.append(name)
                 return
         self.edges.append(edge)
 
@@ -232,6 +262,8 @@ class Graph:
         for e in self.edges:
             key = f"edges_{e.kind}"
             stats[key] = stats.get(key, 0) + 1
+        if "edges_contains" not in stats:
+            stats["edges_contains"] = 0
         stats["total_edges"] = len(self.edges)
         self.stats = stats
         return stats
@@ -255,28 +287,36 @@ class Graph:
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Graph:
         g = cls(
-            schema_version=data.get("schema_version", "1.0.0"),
+            schema_version=data.get("schema_version", SCHEMA_VERSION),
             meta=data.get("meta", {}),
             stats=data.get("stats", {}),
             skipped=data.get("skipped", []),
             unresolved=data.get("unresolved", []),
             mismatches=data.get("mismatches", []),
         )
+        seen_node_ids: set[str] = set()
         for nd in data.get("nodes", []):
             node = Node.from_dict(nd)
+            if node.id in seen_node_ids and node.id not in g.duplicate_node_ids:
+                g.duplicate_node_ids.append(node.id)
+            seen_node_ids.add(node.id)
             g.add_node(node)
         for ed in data.get("edges", []):
             edge = Edge.from_dict(ed)
             g.edges.append(edge)
         return g
 
-    def to_json(self, indent: int = 2) -> str:
-        return json.dumps(self.to_dict(), indent=indent)
+    def to_json(self, indent: Optional[int] = None) -> str:
+        d = self.to_dict()
+        if indent is not None:
+            return json.dumps(d, indent=indent)
+        return json.dumps(d, separators=(",", ":"))
 
-    def save(self, path: Path | str) -> None:
+    def save(self, path: Path | str, pretty: bool = False) -> None:
         p = Path(path)
         p.parent.mkdir(parents=True, exist_ok=True)
-        p.write_text(self.to_json(indent=2), encoding="utf-8")
+        indent = 2 if pretty else None
+        p.write_text(self.to_json(indent=indent), encoding="utf-8")
 
     @classmethod
     def load(cls, path: Path | str) -> Graph:

@@ -7,16 +7,24 @@ from typing import Any, Optional
 
 from cartog import __version__ as CARTOG_VERSION
 
-DEFAULT_EXTRACTOR_SCHEMA_VERSION = f"cartog-v{CARTOG_VERSION}"
+DEFAULT_EXTRACTOR_SCHEMA_VERSION = f"cartog-v{CARTOG_VERSION}-m10"
 
 
 class ParseCache:
     """Manages disk caching of per-file tree-sitter AST parse results."""
 
-    def __init__(self, cache_dir: str | Path, schema_version: Optional[str] = None):
+    def __init__(
+        self,
+        cache_dir: str | Path,
+        schema_version: Optional[str] = None,
+        ignore_hash: Optional[str] = None,
+        force: bool = False,
+    ):
         self.cache_dir = Path(cache_dir)
         self.cache_file = self.cache_dir / "cache.json"
         self.schema_version = schema_version or DEFAULT_EXTRACTOR_SCHEMA_VERSION
+        self.ignore_hash = ignore_hash or "none"
+        self.force = force
         self._entries: dict[str, Any] = {}
         self._dirty = False
         self.hits = 0
@@ -24,7 +32,7 @@ class ParseCache:
         self.load()
 
     def _make_key(self, file_sha1: str, adapter_version: str) -> str:
-        return f"{self.schema_version}:{file_sha1}:{adapter_version}"
+        return f"{self.schema_version}:{self.ignore_hash}:{file_sha1}:{adapter_version}"
 
     def load(self) -> None:
         """Load cache entries from disk."""
@@ -34,12 +42,27 @@ class ParseCache:
                     data = json.load(f)
                     if isinstance(data, dict):
                         self._entries = data
-            except Exception:
+            except Exception as e:
+                import sys
+                print(f"Warning: Failed to load cache at '{self.cache_file}': {e}", file=sys.stderr)
                 # If cache is corrupted, start fresh
                 self._entries = {}
 
+    def clear(self) -> None:
+        """Clear all in-memory and on-disk cache entries."""
+        self._entries = {}
+        self._dirty = False
+        if self.cache_file.exists():
+            try:
+                self.cache_file.unlink()
+            except Exception:
+                pass
+
     def get(self, file_sha1: str, adapter_version: str) -> Optional[dict[str, Any]]:
         """Retrieve cached parse result for a file hash and adapter version."""
+        if self.force:
+            self.misses += 1
+            return None
         key = self._make_key(file_sha1, adapter_version)
         entry = self._entries.get(key)
         if entry is not None:

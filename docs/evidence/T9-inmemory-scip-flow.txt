@@ -1,0 +1,177 @@
+================================================================================
+T9 EVIDENCE: Missing in-memory SCIP data in flow
+================================================================================
+
+1. PROBLEM & DIAGNOSIS
+--------------------------------------------------------------------------------
+1. In cartog/cli.py:_resolve_graph(), when searching for existing graph.json,
+   the candidate path `Path(out) / p.name / "graph.json"` was omitted. As a
+   result, invoking `cartog flow samples/flask ...` with default out="cartog-out"
+   failed to find `cartog-out/flask/graph.json` and fell through to directory
+   re-parsing.
+2. When falling through to in-memory building `if p.is_dir():`, `_resolve_graph`
+   called `_execute_parse()` followed by `build_graph()` with `scip_result=None`.
+   Without SCIP resolution, 0 `calls` edges were populated in the in-memory graph,
+   causing flow traces to terminate prematurely at depth 1.
+
+
+2. RED STEP: FAILING UNIT TESTS
+--------------------------------------------------------------------------------
+Command:
+venv\Scripts\python.exe -m pytest tests/test_cli.py -k "test_flow_resolves_graph_from_subfolder_output or test_flow_works_from_graph_json_without_cache"
+
+Output:
+============================= test session starts =============================
+platform win32 -- Python 3.13.1, pytest-9.1.1, pluggy-1.7.0
+rootdir: C:\Users\rishi\OneDrive\Desktop\Dev\cartog
+configfile: pyproject.toml
+collected 14 items / 12 deselected / 2 selected
+
+tests\test_cli.py FF                                                     [100%]
+
+================================== FAILURES ===================================
+_______________ test_flow_resolves_graph_from_subfolder_output ________________
+
+tmp_path = WindowsPath('C:/Users/rishi/AppData/Local/Temp/pytest-of-rishi/pytest-162/test_flow_resolves_graph_from_0')
+
+    def test_flow_resolves_graph_from_subfolder_output(tmp_path):
+...
+        # Run flow targeting repo_dir with --out out_dir
+        res = runner.invoke(app, ["flow", str(repo_dir), "GET /status", "--out", str(out_dir)])
+>       assert res.exit_code == 0
+E       assert 1 == 0
+E        +  where 1 = <Result SystemExit(1)>.exit_code
+
+tests\test_cli.py:349: AssertionError
+________________ test_flow_works_from_graph_json_without_cache ________________
+
+tmp_path = WindowsPath('C:/Users/rishi/AppData/Local/Temp/pytest-of-rishi/pytest-162/test_flow_works_from_graph_jso0')
+
+    def test_flow_works_from_graph_json_without_cache(tmp_path):
+...
+        import cartog.cli as cli_mod
+        orig_resolve_scip = cli_mod._resolve_scip
+        try:
+            cli_mod._resolve_scip = fake_resolve_scip
+            g = _resolve_graph(str(fresh_repo), out=str(tmp_path / "unused_out"))
+>           assert len(scip_called) == 1, "In-memory graph resolution must call _resolve_scip"
+E           AssertionError: In-memory graph resolution must call _resolve_scip
+E           assert 0 == 1
+E            +  where 0 = len([])
+
+tests\test_cli.py:418: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_cli.py::test_flow_resolves_graph_from_subfolder_output
+FAILED tests/test_cli.py::test_flow_works_from_graph_json_without_cache
+====================== 2 failed, 12 deselected in 2.51s =======================
+
+
+3. GREEN STEP: PASSING UNIT TESTS
+--------------------------------------------------------------------------------
+Command:
+venv\Scripts\python.exe -m pytest tests/test_cli.py -k "test_flow_resolves_graph_from_subfolder_output or test_flow_works_from_graph_json_without_cache"
+
+Output:
+============================= test session starts =============================
+platform win32 -- Python 3.13.1, pytest-9.1.1, pluggy-1.7.0
+rootdir: C:\Users\rishi\OneDrive\Desktop\Dev\cartog
+configfile: pyproject.toml
+collected 14 items / 12 deselected / 2 selected
+
+tests\test_cli.py ..                                                     [100%]
+
+====================== 2 passed, 12 deselected in 3.66s =======================
+
+
+4. FULL TEST SUITE RUN
+--------------------------------------------------------------------------------
+Command:
+venv\Scripts\python.exe -m pytest tests/
+
+Output:
+============================= test session starts =============================
+platform win32 -- Python 3.13.1, pytest-9.1.1, pluggy-1.7.0
+rootdir: C:\Users\rishi\OneDrive\Desktop\Dev\cartog
+configfile: pyproject.toml
+collected 136 items
+
+tests\test_cli.py ..............                                         [ 10%]
+tests\test_flow_selector.py ..........                                   [ 17%]
+tests\test_ignore.py .......                                             [ 22%]
+tests\test_import_resolution.py ..                                       [ 24%]
+tests\test_js_adapter.py ..........                                      [ 31%]
+tests\test_jsonc.py .....                                                [ 35%]
+tests\test_manifests.py .......                                          [ 40%]
+tests\test_merge.py .....                                                [ 44%]
+tests\test_merge_validate.py .............                               [ 53%]
+tests\test_mermaid.py ...........                                        [ 61%]
+tests\test_model.py ...                                                  [ 63%]
+tests\test_noise.py ......                                               [ 68%]
+tests\test_parse_cache.py ..                                             [ 69%]
+tests\test_patterns.py ....                                              [ 72%]
+tests\test_python_adapter.py ......                                      [ 77%]
+tests\test_scan.py .....                                                 [ 80%]
+tests\test_scip_pass.py ................                                 [ 92%]
+tests\test_views_mermaid.py ..........                                   [100%]
+
+============================== warnings summary ===============================
+tests/test_jsonc.py::test_jsonc_unterminated_block_comment
+  C:\Users\rishi\OneDrive\Desktop\Dev\cartog\cartog\jsonc.py:82: UserWarning: Unterminated block comment in 'C:/Users/rishi/AppData/Local/Temp/pytest-of-rishi/pytest-165/test_jsonc_unterminated_block_0/tsconfig.json' starting at line 3
+    warnings.warn(msg, UserWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================= 136 passed, 1 warning in 28.61s =======================
+
+Test counts: 134 at start of T9, 136 at end of T9 (+2 new tests, 0 decreased).
+
+
+5. USER CHECK: REAL OUTPUT
+--------------------------------------------------------------------------------
+Command 1:
+venv\Scripts\python.exe -m cartog.cli flow cartog-out/flask "GET /" --include-examples --pick 1
+
+Output:
+Cartog Call Flow Trace: 'GET /' (max depth: 3)
+  Reached 2 symbols via 1 call relationships.
+  Mermaid flow trace written: cartog-out/flow_GET.mmd
+  Rendered image written: cartog-out/flow_GET.png
+
+                            Flow Trace Steps: GET /                            
++-----------------------------------------------------------------------------+
+| Caller | Relationship | Callee | Location                           | Count |
+|--------+--------------+--------+------------------------------------+-------|
+| GET /  | serves       | index  | examples/javascript/js_example/vi |     1 |
++-----------------------------------------------------------------------------+
+
+
+Command 2 (auto-resolves subfolder output from repository path `samples/flask`):
+venv\Scripts\python.exe -m cartog.cli flow samples/flask "GET /" --include-examples --pick 2
+
+Output:
+Cartog Call Flow Trace: 'GET /' (max depth: 3)
+  Reached 8 symbols via 7 call relationships.
+  Mermaid flow trace written: cartog-out/flow_GET.mmd
+  Rendered image written: cartog-out/flow_GET.png
+
+                            Flow Trace Steps: GET /                            
++-----------------------------------------------------------------------------+
+| Caller          | Relationship | Callee          | Location         | Count |
+|-----------------+--------------+-----------------+------------------+-------|
+| GET /           | serves       | index           | examples/tutori |     1 |
+| index           | calls        | get_db          | examples/tutori |     1 |
+| index           | calls        | render_template | examples/tutori |     1 |
+| render_template | calls        | _render         | src/flask/templ |     1 |
+| render_template | calls        | jinja_env       | src/flask/templ |     1 |
+| render_template | calls        | __init__        | src/flask/templ |     1 |
+| render_template | calls        | _get_current_o | src/flask/templ |     1 |
++-----------------------------------------------------------------------------+
+
+
+6. IMPLEMENTATION DETAILS
+--------------------------------------------------------------------------------
+In cartog/cli.py:
+- Added `elif (Path(out) / p.name / "graph.json").is_file(): graph_file = Path(out) / p.name / "graph.json"`
+  to `_resolve_graph()` to support standard output directory layouts (e.g. `cartog-out/flask/graph.json`).
+- Updated in-memory building in `_resolve_graph()` to invoke `_resolve_scip(target_path=target_path, out_dir=out_dir, roots=scan_result.roots, verbose=False)`
+  and pass `scip_result=scip_res` to `build_graph()`.
+

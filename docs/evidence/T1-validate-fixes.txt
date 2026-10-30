@@ -1,0 +1,135 @@
+================================================================================
+T1 Evidence: Validation Hardening, Negative Tests, and Strict Check Verification
+Generated: 2026-10-29
+================================================================================
+
+1. RED-GREEN TEST CYCLE
+--------------------------------------------------------------------------------
+A. FAILING OUTPUT (Red Step):
+Command:
+  venv\Scripts\python.exe -m pytest tests/test_merge_validate.py
+Excerpt of output:
+FAILED tests/test_merge_validate.py::test_validation_rejects_duplicate_node_id
+  assert not True (where True = ValidationResult(is_valid=True, errors=[], warnings=[]).is_valid)
+FAILED tests/test_merge_validate.py::test_validation_rejects_file_with_two_parents
+  assert not True (where True = ValidationResult(is_valid=True, errors=[], warnings=[]).is_valid)
+FAILED tests/test_merge_validate.py::test_validation_rejects_aggregated_edge_count_mismatch
+  assert False (no aggregated count mismatch error emitted)
+FAILED tests/test_merge_validate.py::test_validation_no_hardcoded_paths
+  AssertionError: 'src/click/exceptions.py' is contained in cartog/validate.py:420
+Results: 4 failed, 9 passed
+
+B. PASSING OUTPUT (Green Step):
+Command:
+  venv\Scripts\python.exe -m pytest tests/test_merge_validate.py
+Output:
+collected 13 items
+tests\test_merge_validate.py ............. [100%]
+============================= 13 passed in 0.25s ==============================
+
+C. NEGATIVE TESTS EXECUTED BY NAME:
+Command:
+  venv\Scripts\python.exe -m pytest -k "test_validation_"
+Output:
+collected 119 items / 110 deselected / 9 selected
+tests\test_merge.py .                                                    [ 11%]
+tests\test_merge_validate.py ........                                    [100%]
+====================== 9 passed, 110 deselected in 0.61s ======================
+
+
+2. ZERO HARDCODED PATHS IN VALIDATE.PY
+--------------------------------------------------------------------------------
+Command:
+  powershell -Command "Select-String -Path cartog/validate.py -Pattern 'click|flask|ky|samples|tests/test' -List"
+Output:
+(empty - 0 matches found)
+
+
+3. FULL TEST SUITE RUN (COUNT RECORDING)
+--------------------------------------------------------------------------------
+Command:
+  venv\Scripts\python.exe -m pytest tests/
+Output:
+collected 119 items
+tests\test_cli.py ............                                           [ 10%]
+tests\test_flow_selector.py ....                                         [ 13%]
+tests\test_ignore.py .......                                             [ 19%]
+tests\test_import_resolution.py ..                                       [ 21%]
+tests\test_js_adapter.py ..........                                      [ 29%]
+tests\test_jsonc.py .....                                                [ 33%]
+tests\test_manifests.py .......                                          [ 39%]
+tests\test_merge.py ...                                                  [ 42%]
+tests\test_merge_validate.py .............                               [ 52%]
+tests\test_mermaid.py ...........                                        [ 62%]
+tests\test_model.py ...                                                  [ 64%]
+tests\test_noise.py ......                                               [ 69%]
+tests\test_patterns.py ....                                              [ 73%]
+tests\test_python_adapter.py ......                                      [ 78%]
+tests\test_scan.py .....                                                 [ 82%]
+tests\test_scip_pass.py ..............                                   [ 94%]
+tests\test_views_mermaid.py .......                                      [100%]
+======================= 119 passed, 1 warning in 21.69s =======================
+Start Count: 111 passed.
+End Count: 119 passed (+8 tests added, 0 decreased).
+
+
+4. REAL OUTPUT: CARTOG CHECK --STRICT ON SAMPLES
+--------------------------------------------------------------------------------
+A. CLICK:
+Command:
+  venv\Scripts\python.exe -m cartog check samples/click --out cartog-out/click --strict
+Output:
+Exit Code: 0
+                            Graph Integrity Report                             
++-----------------------------------------------------------------------------+
+| Check                  | Status |                                   Details |
+|------------------------+--------+-------------------------------------------|
+| Overall Integrity      | PASS   |                                  0 errors |
+| Range & Containment    | PASS   |                                  0 errors |
+| Call Cross-Check       | CLEAN  |         303/525 matched, 222 explained, 0 |
+|                        |        |                               unexplained |
+| Validation Warnings    | CLEAN  |                                         0 |
+| SCIP Indexer Notices   | INFO   |                                 8 notices |
+| SCIP Python            | INFO   |   Python 3.13.1 (C:\Python313\python.exe) |
+| Ignored Exclusions     | INFO   |        0 files excluded (0 edges dropped) |
+| Noise Modules Filtered | INFO   |                                 7 modules |
++-----------------------------------------------------------------------------+
+
+B. FLASK:
+Command:
+  venv\Scripts\python.exe -m cartog check samples/flask --out cartog-out/flask --strict
+Output:
+Exit Code: 0
+                            Graph Integrity Report                             
++-----------------------------------------------------------------------------+
+| Check                  | Status |                                   Details |
+|------------------------+--------+-------------------------------------------|
+| Overall Integrity      | PASS   |                                  0 errors |
+| Range & Containment    | PASS   |                                  0 errors |
+| Call Cross-Check       | CLEAN  |         147/312 matched, 165 explained, 0 |
+|                        |        |                               unexplained |
+| Validation Warnings    | CLEAN  |                                         0 |
+| SCIP Indexer Notices   | INFO   |                                 8 notices |
+| SCIP Python            | INFO   |   Python 3.13.1 (C:\Python313\python.exe) |
+| Ignored Exclusions     | INFO   |        0 files excluded (0 edges dropped) |
+| Noise Modules Filtered | INFO   |                                13 modules |
++-----------------------------------------------------------------------------+
+
+C. KY:
+Command:
+  venv\Scripts\python.exe -m cartog check samples/ky --out cartog-out/ky --strict
+Output:
+Exit Code: 0
+                            Graph Integrity Report                             
++-----------------------------------------------------------------------------+
+| Check                  | Status |                                   Details |
+|------------------------+--------+-------------------------------------------|
+| Overall Integrity      | PASS   |                                  0 errors |
+| Range & Containment    | PASS   |                                  0 errors |
+| Call Cross-Check       | CLEAN  | 80/80 matched, 0 explained, 0 unexplained |
+| Validation Warnings    | CLEAN  |                                         0 |
+| Ignored Exclusions     | INFO   |        0 files excluded (0 edges dropped) |
+| Noise Modules Filtered | INFO   |                                23 modules |
++-----------------------------------------------------------------------------+
+================================================================================
+

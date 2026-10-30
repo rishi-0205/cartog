@@ -1,6 +1,6 @@
 """Global constants and configuration for Cartog."""
 
-SCHEMA_VERSION = "1.0.0"
+SCHEMA_VERSION = "2.0.0"
 
 DEFAULT_OUT_DIR = "cartog-out"
 DEFAULT_CACHE_DIR = ".cartog"

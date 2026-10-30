@@ -1,0 +1,842 @@
+flowchart TD
+  cat_docs["📁 docs (1 files)"]:::folder
+  cat_examples["📁 examples (15 files)"]:::folder
+  cat_tests["📁 tests (32 files)"]:::folder
+  subgraph folder_src_flask ["📁 src/flask"]
+    subgraph file_15dbb4cbe9 ["📄 __main__.py"]
+    end
+    subgraph file_fa7ec905af ["📄 flask/app.py"]
+      subgraph class_3a5b8e04d8 ["🏛️ Flask"]
+        fn_f87129c934["Flask.url_for() :1102"]:::function
+        fn_4902070b76["Flask.make_response() :1224"]:::function
+        fn_b558416721["Flask.run() :630"]:::function
+        fn_0ec37938d5["Flask.update_template_context() :588"]:::function
+        fn_15d220ee41["Flask.create_url_adapter() :507"]:::function
+        fn_c2edab370c["Flask.__init_subclass__() :252"]:::function
+        fn_fcdb60dce2["Flask.handle_http_exception() :830"]:::function
+        fn_e593bcaa2c["Flask.__init__() :308"]:::function
+        fn_1f991f479f["Flask.create_jinja_environment() :467"]:::function
+        fn_231edb478d["Flask.do_teardown_request() :1420"]:::function
+        fn_a8680f909c["Flask.ensure_sync() :1065"]:::function
+        fn_f7ade00c0a["Flask.get_send_file_max_age() :363"]:::function
+        fn_a5e3b55d2d["Flask.process_response() :1394"]:::function
+        fn_8a65ad39bb["Flask.wsgi_app() :1566"]:::function
+        fn_be51a9ffa2["Flask.do_teardown_appcontext() :1453"]:::function
+        fn_6dd6e1ead5["Flask.handle_exception() :897"]:::function
+        fn_9ad3203b63["Flask.open_resource() :412"]:::function
+        fn_af25deb443["Flask.dispatch_request() :966"]:::function
+        fn_02e6faf4f2["Flask.finalize_request() :1021"]:::function
+        fn_2e456c9c7e["Flask.handle_user_exception() :865"]:::function
+        fn_1f8a6b27a5["Flask.preprocess_request() :1366"]:::function
+        fn_0409ff1433["Flask.request_context() :1501"]:::function
+        fn_a0d7bb3a46["Flask.send_static_file() :390"]:::function
+        fn_09c0adb6b4["Flask.test_request_context() :1517"]:::function
+        fn_9b58294866["Flask.app_context() :1481"]:::function
+        fn_deee155a52["Flask.full_dispatch_request() :992"]:::function
+        fn_426fa6b2d5["Flask.log_exception() :950"]:::function
+        fn_6168d4c9db["Flask.make_default_options_response() :1053"]:::function
+        fn_a7eea57ff4["Flask.make_shell_context() :618"]:::function
+        fn_edecb35ee9["Flask.raise_routing_exception() :560"]:::function
+        helpers_3a5b8e04d8["+5 helpers"]:::helper
+      end
+      fn_4795f50e1e["wrapper() :98"]:::function
+      helpers_fa7ec905af["+4 helpers"]:::helper
+    end
+    subgraph file_b2a411be70 ["📄 flask/blueprints.py"]
+      subgraph class_af4cfea426 ["🏛️ Blueprint"]
+        fn_faf6420d28["Blueprint.__init__() :19"]:::function
+        fn_514927da20["Blueprint.send_static_file() :82"]:::function
+        helpers_af4cfea426["+2 helpers"]:::helper
+      end
+    end
+    subgraph file_73d44057ee ["📄 cli.py"]
+      subgraph class_7326eb2764 ["🏛️ AppGroup"]
+        helpers_7326eb2764["+2 helpers"]:::helper
+      end
+      subgraph class_49fbf75696 ["🏛️ CertParamType"]
+        fn_3ea0da8a54["CertParamType.convert() :791"]:::function
+        fn_51ac2f997a["CertParamType.__init__() :788"]:::function
+      end
+      subgraph class_e67e8a1781 ["🏛️ FlaskGroup"]
+        fn_57f0ec9902["FlaskGroup.get_command() :609"]:::function
+        fn_23f2e6f4c4["FlaskGroup.list_commands() :636"]:::function
+        helpers_e67e8a1781["+4 helpers"]:::helper
+      end
+      subgraph class_2fc154f79a ["🏛️ NoAppException"]
+      end
+      subgraph class_f0f3eb562c ["🏛️ ScriptInfo"]
+        fn_d54890493c["ScriptInfo.load_app() :333"]:::function
+        fn_27ab54b24f["ScriptInfo.__init__() :305"]:::function
+      end
+      subgraph class_55540a79b3 ["🏛️ SeparatedPathType"]
+        fn_ba4a2d42fc["SeparatedPathType.convert() :873"]:::function
+      end
+      fn_c41af4dcc4["find_best_app() :41"]:::function
+      fn_63be161566["find_app_by_string() :120"]:::function
+      fn_13c99ce7c4["load_dotenv() :698"]:::function
+      fn_bcdfad31a9["prepare_import() :200"]:::function
+      fn_1233d0c09c["_validate_key() :828"]:::function
+      fn_c57bad16f1["show_server_banner() :766"]:::function
+      fn_64015079a1["routes_command() :1060"]:::function
+      fn_cd05fdc22b["run_command() :934"]:::function
+      fn_1160dbf81c["_called_with_wrong_args() :94"]:::function
+      fn_ac2e73c497["get_version() :267"]:::function
+      fn_a9a6c1b56f["_env_file_callback() :493"]:::function
+      fn_2522a41fa0["main() :1121"]:::function
+      fn_0a4fa71bb0["shell_command() :1000"]:::function
+      fn_842a441882["__main__"]:::entrypoint
+      fn_32e58b726d["routes"]:::command
+      fn_eab923a15d["run"]:::command
+      fn_078b09957f["shell"]:::command
+      helpers_73d44057ee["+8 helpers"]:::helper
+    end
+    subgraph file_708cb59af1 ["📄 config.py"]
+      subgraph class_41bc79f017 ["🏛️ Config"]
+        fn_4a162fae88["Config.from_pyfile() :187"]:::function
+        fn_b61d30510e["Config.from_file() :256"]:::function
+        fn_dab231a36f["Config.from_prefixed_env() :126"]:::function
+        fn_a75fed5179["Config.from_mapping() :304"]:::function
+        fn_da4a057d6f["Config.from_object() :218"]:::function
+        fn_b66e37d758["Config.get_namespace() :323"]:::function
+        helpers_41bc79f017["+3 helpers"]:::helper
+      end
+      subgraph class_8200457b01 ["🏛️ ConfigAttribute"]
+        helpers_8200457b01["+3 helpers"]:::helper
+      end
+    end
+    subgraph file_07d4bf52ad ["📄 ctx.py"]
+      subgraph class_ad753d5b20 ["🏛️ AppContext"]
+        fn_a06656c00b["AppContext.__init__() :300"]:::function
+        fn_630ec200cb["AppContext._get_session() :381"]:::function
+        fn_32dcf6a66f["AppContext.pop() :446"]:::function
+        fn_1c956b4886["AppContext.from_environ() :340"]:::function
+        fn_6ad412e424["AppContext.push() :416"]:::function
+        helpers_ad753d5b20["+8 helpers"]:::helper
+      end
+      subgraph class_0fac74b45a ["🏛️ _AppCtxGlobals"]
+        helpers_0fac74b45a["+9 helpers"]:::helper
+      end
+      fn_bc39e94efd["wrapper() :201"]:::function
+      helpers_07d4bf52ad["+5 helpers"]:::helper
+    end
+    subgraph file_2754e2547a ["📄 debughelpers.py"]
+      subgraph class_35b9868152 ["🏛️ DebugFilesKeyError"]
+        fn_b87ba6cdb1["DebugFilesKeyError.__init__() :28"]:::function
+        helpers_35b9868152["+1 helpers"]:::helper
+      end
+      subgraph class_a13c463247 ["🏛️ FormDataRoutingRedirect"]
+        fn_904c1c664e["FormDataRoutingRedirect.__init__() :57"]:::function
+      end
+      subgraph class_5e7e94f87b ["🏛️ UnexpectedUnicodeError"]
+      end
+      subgraph class_0e2227d4ed ["🏛️ newcls"]
+        helpers_0e2227d4ed["+1 helpers"]:::helper
+      end
+      fn_bce9782c95["explain_template_loading_attempts() :124"]:::function
+      fn_3c728c6aa2["attach_enctype_error_multidict() :81"]:::function
+      helpers_2754e2547a["+1 helpers"]:::helper
+    end
+    subgraph file_df628b7c13 ["📄 globals.py"]
+      subgraph class_079ce01442 ["🏛️ AppContextProxy"]
+      end
+      subgraph class_165bd608b0 ["🏛️ FlaskProxy"]
+      end
+      subgraph class_7298838183 ["🏛️ ProxyMixin"]
+        fn_c5f201ce74["ProxyMixin._get_current_object() :18"]:::function
+      end
+      subgraph class_931b0e6fed ["🏛️ RequestProxy"]
+      end
+      subgraph class_b12394f18d ["🏛️ SessionMixinProxy"]
+      end
+      subgraph class_7f06e165a2 ["🏛️ _AppCtxGlobalsProxy"]
+      end
+      helpers_df628b7c13["+1 helpers"]:::helper
+    end
+    subgraph file_caec9fb755 ["📄 helpers.py"]
+      subgraph class_af6c64a592 ["🏛️ _CollectErrors"]
+        fn_5a9dcd4523["_CollectErrors.raise_any() :676"]:::function
+        helpers_af6c64a592["+3 helpers"]:::helper
+      end
+      fn_89554c0d20["flash() :326"]:::function
+      fn_afab5646f9["redirect() :254"]:::function
+      fn_37963c3335["get_debug_flag() :28"]:::function
+      fn_f7567d99b9["_split_blueprint_path() :645"]:::function
+      fn_8c82b6e1f0["abort() :281"]:::function
+      fn_b4f48c7ab2["get_load_dotenv() :36"]:::function
+      fn_a1e948a0b8["make_response() :151"]:::function
+      fn_3836d33a49["send_from_directory() :543"]:::function
+      fn_3694aeeb84["_prepare_send_file_kwargs() :402"]:::function
+      fn_6e335a2cc9["get_root_path() :587"]:::function
+      fn_037f381a92["get_template_attribute() :304"]:::function
+      fn_57a1e55cd5["stream_with_context() :52"]:::function
+      fn_f4789b29cf["url_for() :200"]:::function
+      helpers_caec9fb755["+4 helpers"]:::helper
+    end
+    subgraph file_8dde7770a1 ["📄 logging.py"]
+      fn_3c34228909["has_level_handler() :31"]:::function
+      fn_35608cc2ff["create_logger() :58"]:::function
+      helpers_8dde7770a1["+1 helpers"]:::helper
+    end
+    subgraph file_0db667779e ["📄 sessions.py"]
+      subgraph class_72dce7a06c ["🏛️ NullSession"]
+        helpers_72dce7a06c["+1 helpers"]:::helper
+      end
+      subgraph class_2f69f76b72 ["🏛️ SecureCookieSession"]
+        helpers_2f69f76b72["+1 helpers"]:::helper
+      end
+      subgraph class_f261f998d9 ["🏛️ SecureCookieSessionInterface"]
+        fn_07f326f4b3["SecureCookieSessionInterface.get_signing_serializer() :303"]:::function
+        fn_3737843fcf["SecureCookieSessionInterface.open_session() :323"]:::function
+        helpers_f261f998d9["+1 helpers"]:::helper
+      end
+      subgraph class_58e01e98a5 ["🏛️ SessionInterface"]
+        fn_a4a1545955["SessionInterface.is_null_session() :162"]:::function
+        fn_d79d2269fa["SessionInterface.open_session() :249"]:::function
+        fn_e02986826a["SessionInterface.save_session() :263"]:::function
+        fn_81f15376d8["SessionInterface.make_null_session() :150"]:::function
+        helpers_58e01e98a5["+9 helpers"]:::helper
+      end
+      subgraph class_b9a543c0f7 ["🏛️ SessionMixin"]
+        helpers_b9a543c0f7["+1 helpers"]:::helper
+      end
+      helpers_0db667779e["+2 helpers"]:::helper
+    end
+    subgraph file_7625d06685 ["📄 templating.py"]
+      subgraph class_58ceeff663 ["🏛️ DispatchingJinjaLoader"]
+        fn_569fab9fba["DispatchingJinjaLoader.list_templates() :108"]:::function
+        fn_64388e655f["DispatchingJinjaLoader._get_source_explained() :64"]:::function
+        fn_03cd27ee20["DispatchingJinjaLoader._iter_loaders() :98"]:::function
+        helpers_58ceeff663["+3 helpers"]:::helper
+      end
+      subgraph class_200c52243d ["🏛️ Environment"]
+        fn_bb3b96afaa["Environment.__init__() :42"]:::function
+      end
+      fn_065ba65ae1["render_template_string() :151"]:::function
+      fn_926135e1be["render_template() :136"]:::function
+      fn_503a9d474f["stream_template() :181"]:::function
+      fn_bac5baaa11["stream_template_string() :200"]:::function
+      fn_56f51e1bca["_render() :123"]:::function
+      fn_319613022d["_stream() :163"]:::function
+      fn_ba3cb5a558["_default_template_ctx_processor() :21"]:::function
+      helpers_7625d06685["+1 helpers"]:::helper
+    end
+    subgraph file_e2d9c73065 ["📄 testing.py"]
+      subgraph class_402ab01b41 ["🏛️ EnvironBuilder"]
+        fn_c4bf0c136f["EnvironBuilder.__init__() :49"]:::function
+        fn_5b71cadcf8["EnvironBuilder.json_dumps() :88"]:::function
+      end
+      subgraph class_89037d9349 ["🏛️ FlaskCliRunner"]
+        fn_3e7a003487["FlaskCliRunner.invoke() :275"]:::function
+        helpers_89037d9349["+1 helpers"]:::helper
+      end
+      subgraph class_a4e9496b83 ["🏛️ FlaskClient"]
+        fn_ded681c106["FlaskClient.session_transaction() :136"]:::function
+        fn_9bc0507d66["FlaskClient.open() :204"]:::function
+        helpers_a4e9496b83["+5 helpers"]:::helper
+      end
+      helpers_e2d9c73065["+1 helpers"]:::helper
+    end
+    subgraph file_8234ba159b ["📄 typing.py"]
+    end
+    subgraph file_d92bff67bf ["📄 views.py"]
+      subgraph class_e0374b9ea1 ["🏛️ MethodView"]
+        fn_00d7ef2cf2["MethodView.__init_subclass__() :165"]:::function
+        fn_6d5d1f9e2e["MethodView.dispatch_request() :182"]:::function
+      end
+      subgraph class_12f7dd6307 ["🏛️ View"]
+        helpers_12f7dd6307["+2 helpers"]:::helper
+      end
+      fn_6b7f16e1ac["view() :106"]:::function
+    end
+    subgraph file_d6b023750f ["📄 wrappers.py"]
+      subgraph class_a3928e2c2f ["🏛️ Request"]
+        fn_4ecf9e073e["Request._load_form_data() :197"]:::function
+        fn_d1e2d442f8["Request.blueprints() :181"]:::function
+        fn_b5254b9232["Request.on_json_loading_failed() :212"]:::function
+        helpers_a3928e2c2f["+5 helpers"]:::helper
+      end
+      subgraph class_b83b07577f ["🏛️ Response"]
+        helpers_b83b07577f["+1 helpers"]:::helper
+      end
+    end
+  end
+  subgraph folder_src_flask_json ["📁 src/flask/json"]
+    subgraph file_033e01f60c ["📄 __init__.py"]
+      fn_43b8e7f3ee["dumps() :13"]:::function
+      fn_46c08f086d["loads() :77"]:::function
+      fn_61aa80eaf9["dump() :47"]:::function
+      fn_51957542ad["jsonify() :138"]:::function
+      fn_a62b574bc3["load() :108"]:::function
+    end
+    subgraph file_6bea09f6dd ["📄 provider.py"]
+      subgraph class_5c56eadc97 ["🏛️ DefaultJSONProvider"]
+        fn_e52304f3ac["DefaultJSONProvider.response() :189"]:::function
+        helpers_5c56eadc97["+2 helpers"]:::helper
+      end
+      subgraph class_fbd99bef12 ["🏛️ JSONProvider"]
+        fn_c7d30c20f4["JSONProvider.response() :89"]:::function
+        fn_8a53c59d2f["JSONProvider.dumps() :41"]:::function
+        fn_747f708013["JSONProvider.dump() :49"]:::function
+        fn_6945216f23["JSONProvider.load() :67"]:::function
+        fn_a7dbcfd057["JSONProvider.loads() :59"]:::function
+        helpers_fbd99bef12["+2 helpers"]:::helper
+      end
+      helpers_6bea09f6dd["+1 helpers"]:::helper
+    end
+    subgraph file_363a3dcd0f ["📄 tag.py"]
+      subgraph class_2dd83bd32d ["🏛️ JSONTag"]
+        helpers_2dd83bd32d["+5 helpers"]:::helper
+      end
+      subgraph class_f8c4bca859 ["🏛️ PassDict"]
+        helpers_f8c4bca859["+2 helpers"]:::helper
+      end
+      subgraph class_fa4fbc7194 ["🏛️ PassList"]
+        helpers_fa4fbc7194["+2 helpers"]:::helper
+      end
+      subgraph class_c5b7e661bb ["🏛️ TagBytes"]
+        helpers_c5b7e661bb["+3 helpers"]:::helper
+      end
+      subgraph class_ea74690924 ["🏛️ TagDateTime"]
+        helpers_ea74690924["+3 helpers"]:::helper
+      end
+      subgraph class_51e801be71 ["🏛️ TagDict"]
+        helpers_51e801be71["+3 helpers"]:::helper
+      end
+      subgraph class_79e1163387 ["🏛️ TagMarkup"]
+        helpers_79e1163387["+3 helpers"]:::helper
+      end
+      subgraph class_6e169e46eb ["🏛️ TagTuple"]
+        helpers_6e169e46eb["+3 helpers"]:::helper
+      end
+      subgraph class_42112afdb0 ["🏛️ TagUUID"]
+        helpers_42112afdb0["+3 helpers"]:::helper
+      end
+      subgraph class_bb4b20ba49 ["🏛️ TaggedJSONSerializer"]
+        fn_404a2ab3fb["TaggedJSONSerializer.dumps() :321"]:::function
+        fn_f17e01dceb["TaggedJSONSerializer.loads() :325"]:::function
+        fn_5a5519c7db["TaggedJSONSerializer.tag() :289"]:::function
+        helpers_bb4b20ba49["+4 helpers"]:::helper
+      end
+    end
+  end
+  subgraph folder_src_flask_sansio ["📁 src/flask/sansio"]
+    subgraph file_3cd71096d9 ["📄 sansio/app.py"]
+      subgraph class_26fbf6edd3 ["🏛️ App"]
+        fn_5e384464df["App.__init__() :280"]:::function
+        fn_79ce7dd0b0["App.jinja_env() :468"]:::function
+        fn_6a88c4ce89["App._find_error_handler() :869"]:::function
+        fn_94e035c31c["App.add_url_rule() :606"]:::function
+        fn_e20513802b["App.logger() :441"]:::function
+        fn_562698d66c["App.create_global_jinja_loader() :521"]:::function
+        fn_5260f0b5cc["App.inject_url_defaults() :961"]:::function
+        fn_9ffdf446dd["App.iter_blueprints() :598"]:::function
+        fn_209a4016fe["App.add_template_filter() :700"]:::function
+        fn_7288464c14["App.add_template_global() :811"]:::function
+        fn_d00a4e41ac["App.add_template_test() :757"]:::function
+        fn_965aaf5f7e["App.auto_find_instance_path() :508"]:::function
+        fn_e2c78c96c4["App.handle_url_build_error() :982"]:::function
+        fn_2b78bca9fe["App.make_config() :480"]:::function
+        fn_58b6e2412e["App.redirect() :940"]:::function
+        fn_6a92547acc["App.register_blueprint() :571"]:::function
+        fn_8413d04087["App.trap_http_exception() :894"]:::function
+        helpers_26fbf6edd3["+11 helpers"]:::helper
+      end
+      helpers_3cd71096d9["+4 helpers"]:::helper
+    end
+    subgraph file_4758bc5b2b ["📄 sansio/blueprints.py"]
+      subgraph class_8029481e73 ["🏛️ Blueprint"]
+        fn_0593c858bf["Blueprint.register() :273"]:::function
+        fn_7130fe9037["Blueprint._merge_blueprint_funcs() :379"]:::function
+        fn_d8a58a4e4c["Blueprint.__init__() :174"]:::function
+        fn_800d5f6332["Blueprint.after_app_request() :624"]:::function
+        fn_b0813412c9["Blueprint.app_context_processor() :644"]:::function
+        fn_abcabba522["Blueprint.app_url_defaults() :685"]:::function
+        fn_88ceb52ce9["Blueprint.app_url_value_preprocessor() :673"]:::function
+        fn_6d3102da59["Blueprint.before_app_request() :614"]:::function
+        fn_9ee7aa3759["Blueprint.teardown_app_request() :634"]:::function
+        helpers_8029481e73["+13 helpers"]:::helper
+      end
+      subgraph class_a5ec635910 ["🏛️ BlueprintSetupState"]
+        fn_3dd17ecb4c["BlueprintSetupState.add_url_rule() :87"]:::function
+        helpers_a5ec635910["+1 helpers"]:::helper
+      end
+      fn_d12e64e6c0["from_blueprint() :664"]:::function
+      fn_5d0ff575b5["register_template_filter() :492"]:::function
+      fn_1c1eb1bc2e["register_template_global() :608"]:::function
+      fn_743253c754["register_template_test() :550"]:::function
+      helpers_4758bc5b2b["+6 helpers"]:::helper
+    end
+    subgraph file_b5b8eac5c8 ["📄 scaffold.py"]
+      subgraph class_a23b18cb93 ["🏛️ Scaffold"]
+        fn_19206bbba3["Scaffold.__init__() :75"]:::function
+        fn_79b0c77da9["Scaffold._get_exc_class_and_code() :665"]:::function
+        fn_8d5295731e["Scaffold.errorhandler() :606"]:::function
+        helpers_a23b18cb93["+23 helpers"]:::helper
+      end
+      fn_d7cd24f9b0["_endpoint_from_view_func() :709"]:::function
+      fn_ae0d5896c1["_find_package_path() :717"]:::function
+      fn_92f43d3a48["find_package() :762"]:::function
+      fn_fd61c69614["setupmethod() :42"]:::function
+      helpers_b5b8eac5c8["+4 helpers"]:::helper
+    end
+  end
+  cat_docs -->|6 calls| cat_examples
+  cat_examples -->|22 calls| cat_docs
+  cat_examples -->|4 calls| fn_3c34228909
+  cat_examples -->|4 calls| fn_bc39e94efd
+  cat_examples -->|2 calls| fn_c41af4dcc4
+  cat_examples -->|1 call| fn_dab231a36f
+  cat_tests -->|95 calls| cat_docs
+  cat_tests -->|411 calls| cat_examples
+  cat_tests -->|1 call| fn_065ba65ae1
+  cat_tests -->|5 calls| fn_0ec37938d5
+  cat_tests -->|2 calls| fn_13c99ce7c4
+  cat_tests -->|3 calls| fn_15d220ee41
+  cat_tests -->|2 calls| fn_1f8a6b27a5
+  cat_tests -->|3 calls| fn_1f991f479f
+  cat_tests -->|1 call| fn_231edb478d
+  cat_tests -->|25 calls| fn_3c34228909
+  cat_tests -->|5 calls| fn_4902070b76
+  cat_tests -->|21 calls| fn_4a162fae88
+  cat_tests -->|5 calls| fn_63be161566
+  cat_tests -->|2 calls| fn_6dd6e1ead5
+  cat_tests -->|5 calls| fn_89554c0d20
+  cat_tests -->|1 call| fn_8a65ad39bb
+  cat_tests -->|3 calls| fn_9ad3203b63
+  cat_tests -->|1 call| fn_a75fed5179
+  cat_tests -->|1 call| fn_af25deb443
+  cat_tests -->|2 calls| fn_afab5646f9
+  cat_tests -->|3 calls| fn_b61d30510e
+  cat_tests -->|4 calls| fn_ba4a2d42fc
+  cat_tests -->|5 calls| fn_bc39e94efd
+  cat_tests -->|3 calls| fn_bcdfad31a9
+  cat_tests -->|2 calls| fn_c2edab370c
+  cat_tests -->|9 calls| fn_c41af4dcc4
+  cat_tests -->|2 calls| fn_d54890493c
+  cat_tests -->|6 calls| fn_dab231a36f
+  cat_tests -->|1 call| fn_deee155a52
+  cat_tests -->|1 call| fn_f7567d99b9
+  cat_tests -->|4 calls| fn_f7ade00c0a
+  cat_tests -->|5 calls| fn_f87129c934
+  cat_tests -->|4 calls| fn_fcdb60dce2
+  class_079ce01442 -.->|overrides| class_7298838183
+  class_079ce01442 -.->|overrides| class_ad753d5b20
+  class_0e2227d4ed -->|1 call| class_35b9868152
+  class_165bd608b0 -.->|overrides| class_3a5b8e04d8
+  class_165bd608b0 -.->|overrides| class_7298838183
+  class_26fbf6edd3 -->|3 calls| class_8200457b01
+  class_26fbf6edd3 -.->|overrides| class_a23b18cb93
+  class_26fbf6edd3 -->|1 call| fn_209a4016fe
+  class_26fbf6edd3 -->|2 calls| fn_5e384464df
+  class_26fbf6edd3 -->|1 call| fn_7288464c14
+  class_26fbf6edd3 -->|1 call| fn_d00a4e41ac
+  class_2f69f76b72 -.->|overrides| class_b9a543c0f7
+  class_3a5b8e04d8 -->|1 call| class_f261f998d9
+  class_3a5b8e04d8 -->|1 call| fn_8a65ad39bb
+  class_41bc79f017 -->|1 call| fn_4a162fae88
+  class_42112afdb0 -.->|overrides| class_2dd83bd32d
+  class_51e801be71 -.->|overrides| class_2dd83bd32d
+  class_51e801be71 -->|1 call| fn_5a5519c7db
+  class_58ceeff663 -->|1 call| fn_03cd27ee20
+  class_58ceeff663 -->|1 call| fn_64388e655f
+  class_5c56eadc97 -.->|overrides| class_fbd99bef12
+  class_5c56eadc97 -.->|overrides| fn_8a53c59d2f
+  class_5c56eadc97 -.->|overrides| fn_a7dbcfd057
+  class_6e169e46eb -.->|overrides| class_2dd83bd32d
+  class_6e169e46eb -->|1 call| fn_5a5519c7db
+  class_72dce7a06c -.->|overrides| class_2f69f76b72
+  class_79e1163387 -.->|overrides| class_2dd83bd32d
+  class_7f06e165a2 -.->|overrides| class_0fac74b45a
+  class_7f06e165a2 -.->|overrides| class_7298838183
+  class_8029481e73 -.->|overrides| class_a23b18cb93
+  class_8029481e73 -->|1 call| class_a5ec635910
+  class_8029481e73 -->|1 call| fn_3dd17ecb4c
+  class_8029481e73 -->|2 calls| fn_d8a58a4e4c
+  class_931b0e6fed -.->|overrides| class_7298838183
+  class_931b0e6fed -.->|overrides| class_a3928e2c2f
+  class_a23b18cb93 -->|6 calls| fn_19206bbba3
+  class_a23b18cb93 -->|1 call| fn_79b0c77da9
+  class_a4e9496b83 -->|1 call| class_402ab01b41
+  class_a4e9496b83 -->|1 call| file_e2d9c73065
+  class_ad753d5b20 -->|1 call| fn_32dcf6a66f
+  class_ad753d5b20 -->|1 call| fn_630ec200cb
+  class_ad753d5b20 -->|1 call| fn_6ad412e424
+  class_ad753d5b20 -->|1 call| fn_a06656c00b
+  class_af4cfea426 -.->|overrides| class_8029481e73
+  class_b12394f18d -.->|overrides| class_7298838183
+  class_b12394f18d -.->|overrides| class_b9a543c0f7
+  class_bb4b20ba49 -->|1 call| class_2dd83bd32d
+  class_c5b7e661bb -.->|overrides| class_2dd83bd32d
+  class_e0374b9ea1 -.->|overrides| class_12f7dd6307
+  class_e67e8a1781 -.->|overrides| class_7326eb2764
+  class_e67e8a1781 -->|1 call| class_f0f3eb562c
+  class_ea74690924 -.->|overrides| class_2dd83bd32d
+  class_f261f998d9 -.->|overrides| class_58e01e98a5
+  class_f261f998d9 -->|1 call| fn_07f326f4b3
+  class_f261f998d9 -.->|overrides| fn_e02986826a
+  class_f8c4bca859 -.->|overrides| class_2dd83bd32d
+  class_f8c4bca859 -->|1 call| fn_5a5519c7db
+  class_fa4fbc7194 -.->|overrides| class_2dd83bd32d
+  class_fa4fbc7194 -->|1 call| fn_5a5519c7db
+  file_07d4bf52ad -->|1 call| cat_examples
+  file_07d4bf52ad -->|1 call| fn_a06656c00b
+  file_0db667779e -->|1 call| class_bb4b20ba49
+  file_15dbb4cbe9 -->|1 call| fn_2522a41fa0
+  file_3cd71096d9 -->|5 calls| cat_examples
+  file_3cd71096d9 -->|3 calls| class_26fbf6edd3
+  file_3cd71096d9 -->|1 call| fn_209a4016fe
+  file_3cd71096d9 -->|1 call| fn_7288464c14
+  file_3cd71096d9 -->|1 call| fn_d00a4e41ac
+  file_4758bc5b2b -->|10 calls| cat_examples
+  file_4758bc5b2b -->|9 calls| class_8029481e73
+  file_708cb59af1 -->|1 call| cat_examples
+  file_73d44057ee -->|1 call| cat_examples
+  file_73d44057ee -->|2 calls| class_2fc154f79a
+  file_73d44057ee -->|1 call| class_49fbf75696
+  file_73d44057ee -->|2 calls| class_55540a79b3
+  file_73d44057ee -->|1 call| class_e67e8a1781
+  file_73d44057ee -->|1 call| fn_2522a41fa0
+  file_73d44057ee -->|22 calls| fn_3c34228909
+  file_73d44057ee -->|1 call| fn_63be161566
+  file_73d44057ee -->|1 call| fn_c41af4dcc4
+  file_73d44057ee -->|1 call| fn_cd05fdc22b
+  file_7625d06685 -->|1 call| fn_319613022d
+  file_8234ba159b -->|1 call| cat_examples
+  file_b5b8eac5c8 -->|9 calls| cat_examples
+  file_b5b8eac5c8 -->|5 calls| class_a23b18cb93
+  file_b5b8eac5c8 -->|1 call| fn_8d5295731e
+  file_b5b8eac5c8 -->|1 call| fn_fd61c69614
+  file_caec9fb755 -->|1 call| fn_3694aeeb84
+  file_caec9fb755 -->|2 calls| fn_57a1e55cd5
+  file_d92bff67bf -->|1 call| cat_examples
+  file_df628b7c13 -->|5 calls| cat_examples
+  file_fa7ec905af -->|6 calls| cat_examples
+  fn_00d7ef2cf2 -->|2 calls| cat_docs
+  fn_02e6faf4f2 -->|1 call| fn_4902070b76
+  fn_02e6faf4f2 -->|1 call| fn_a5e3b55d2d
+  fn_02e6faf4f2 -->|1 call| fn_e20513802b
+  fn_037f381a92 -->|1 call| fn_79ce7dd0b0
+  fn_03cd27ee20 -->|1 call| class_58ceeff663
+  fn_03cd27ee20 -->|1 call| fn_9ffdf446dd
+  fn_0409ff1433 -->|1 call| class_ad753d5b20
+  fn_0409ff1433 -->|1 call| fn_1c956b4886
+  fn_0593c858bf -->|1 call| class_8029481e73
+  fn_0593c858bf -->|3 calls| class_a23b18cb93
+  fn_0593c858bf -->|1 call| class_a5ec635910
+  fn_0593c858bf -->|1 call| fn_3dd17ecb4c
+  fn_0593c858bf -->|1 call| fn_5e384464df
+  fn_0593c858bf -->|1 call| fn_7130fe9037
+  fn_0593c858bf -->|3 calls| fn_89554c0d20
+  fn_0593c858bf -->|2 calls| fn_afab5646f9
+  fn_065ba65ae1 -->|1 call| fn_56f51e1bca
+  fn_065ba65ae1 -->|1 call| fn_79ce7dd0b0
+  fn_065ba65ae1 -->|1 call| fn_a06656c00b
+  fn_065ba65ae1 -->|1 call| fn_c2edab370c
+  fn_065ba65ae1 -->|1 call| fn_c5f201ce74
+  fn_07f326f4b3 -->|1 call| cat_docs
+  fn_07f326f4b3 -->|1 call| cat_examples
+  fn_09c0adb6b4 -->|1 call| class_402ab01b41
+  fn_09c0adb6b4 -->|1 call| fn_0409ff1433
+  fn_0a4fa71bb0 -->|1 call| fn_a7eea57ff4
+  fn_0ec37938d5 -->|1 call| fn_a8680f909c
+  fn_1233d0c09c -->|4 calls| fn_3c34228909
+  fn_13c99ce7c4 -->|1 call| fn_3c34228909
+  fn_13c99ce7c4 -->|2 calls| fn_f87129c934
+  fn_15d220ee41 -->|2 calls| fn_5e384464df
+  fn_19206bbba3 -->|1 call| fn_6e335a2cc9
+  fn_1c1eb1bc2e -->|1 call| class_a5ec635910
+  fn_1c1eb1bc2e -->|1 call| fn_7288464c14
+  fn_1c956b4886 -->|1 call| class_3a5b8e04d8
+  fn_1f8a6b27a5 -->|1 call| fn_a8680f909c
+  fn_1f991f479f -.->|overrides| class_26fbf6edd3
+  fn_231edb478d -->|1 call| class_af6c64a592
+  fn_231edb478d -->|1 call| fn_5a9dcd4523
+  fn_231edb478d -->|1 call| fn_a8680f909c
+  fn_23f2e6f4c4 -->|1 call| class_e67e8a1781
+  fn_23f2e6f4c4 -->|1 call| fn_02e6faf4f2
+  fn_23f2e6f4c4 -->|2 calls| fn_3c34228909
+  fn_27ab54b24f -->|1 call| fn_b4f48c7ab2
+  fn_2b78bca9fe -->|1 call| class_26fbf6edd3
+  fn_2b78bca9fe -->|1 call| fn_37963c3335
+  fn_2e456c9c7e -->|1 call| fn_6a88c4ce89
+  fn_2e456c9c7e -->|1 call| fn_8413d04087
+  fn_2e456c9c7e -->|1 call| fn_a8680f909c
+  fn_2e456c9c7e -->|1 call| fn_fcdb60dce2
+  fn_319613022d -->|1 call| file_7625d06685
+  fn_319613022d -->|1 call| fn_0ec37938d5
+  fn_319613022d -->|1 call| fn_57a1e55cd5
+  fn_32dcf6a66f -->|1 call| class_af6c64a592
+  fn_32dcf6a66f -->|1 call| fn_231edb478d
+  fn_32dcf6a66f -->|1 call| fn_5a9dcd4523
+  fn_32dcf6a66f -->|3 calls| fn_a06656c00b
+  fn_32dcf6a66f -->|1 call| fn_be51a9ffa2
+  fn_35608cc2ff -->|1 call| cat_docs
+  fn_35608cc2ff -->|1 call| fn_3c34228909
+  fn_3694aeeb84 -->|1 call| fn_c5f201ce74
+  fn_3737843fcf -->|1 call| class_26fbf6edd3
+  fn_3737843fcf -->|1 call| class_58e01e98a5
+  fn_3737843fcf -->|3 calls| class_f261f998d9
+  fn_3737843fcf -->|1 call| fn_07f326f4b3
+  fn_3737843fcf -.->|overrides| fn_d79d2269fa
+  fn_3836d33a49 -->|1 call| fn_3694aeeb84
+  fn_3dd17ecb4c -->|4 calls| class_a5ec635910
+  fn_3dd17ecb4c -->|1 call| fn_94e035c31c
+  fn_3dd17ecb4c -->|1 call| fn_d7cd24f9b0
+  fn_3e7a003487 -->|1 call| class_f0f3eb562c
+  fn_3ea0da8a54 -->|3 calls| fn_3c34228909
+  fn_3ea0da8a54 -->|1 call| fn_51ac2f997a
+  fn_404a2ab3fb -->|1 call| fn_43b8e7f3ee
+  fn_404a2ab3fb -->|1 call| fn_5a5519c7db
+  fn_426fa6b2d5 -->|1 call| fn_e20513802b
+  fn_43b8e7f3ee -->|1 call| cat_examples
+  fn_43b8e7f3ee -->|1 call| fn_5e384464df
+  fn_43b8e7f3ee -->|1 call| fn_8a53c59d2f
+  fn_46c08f086d -->|1 call| cat_examples
+  fn_46c08f086d -->|1 call| fn_5e384464df
+  fn_46c08f086d -->|1 call| fn_a7dbcfd057
+  fn_4795f50e1e -->|1 call| file_fa7ec905af
+  fn_4795f50e1e -->|2 calls| fn_c5f201ce74
+  fn_4902070b76 -->|1 call| cat_examples
+  fn_4902070b76 -->|2 calls| class_3a5b8e04d8
+  fn_4902070b76 -->|1 call| fn_5e384464df
+  fn_4902070b76 -->|1 call| fn_c7d30c20f4
+  fn_4a162fae88 -->|1 call| fn_da4a057d6f
+  fn_4ecf9e073e -->|1 call| fn_3c728c6aa2
+  fn_503a9d474f -->|1 call| fn_319613022d
+  fn_503a9d474f -->|1 call| fn_79ce7dd0b0
+  fn_503a9d474f -->|1 call| fn_a06656c00b
+  fn_503a9d474f -->|1 call| fn_bcdfad31a9
+  fn_503a9d474f -->|1 call| fn_c5f201ce74
+  fn_514927da20 -->|1 call| cat_examples
+  fn_514927da20 -->|1 call| class_af4cfea426
+  fn_514927da20 -->|1 call| fn_3836d33a49
+  fn_51957542ad -->|1 call| fn_5e384464df
+  fn_51957542ad -->|1 call| fn_c7d30c20f4
+  fn_51ac2f997a -->|1 call| fn_3c34228909
+  fn_5260f0b5cc -->|1 call| fn_f7567d99b9
+  fn_562698d66c -->|1 call| class_58ceeff663
+  fn_569fab9fba -->|1 call| class_58ceeff663
+  fn_569fab9fba -->|2 calls| fn_4a162fae88
+  fn_569fab9fba -->|1 call| fn_9ffdf446dd
+  fn_569fab9fba -->|2 calls| fn_afab5646f9
+  fn_56f51e1bca -->|1 call| fn_0ec37938d5
+  fn_56f51e1bca -->|1 call| fn_89554c0d20
+  fn_57a1e55cd5 -->|1 call| file_caec9fb755
+  fn_57f0ec9902 -->|1 call| class_e67e8a1781
+  fn_57f0ec9902 -->|1 call| fn_3c34228909
+  fn_57f0ec9902 -->|1 call| fn_af25deb443
+  fn_57f0ec9902 -->|1 call| fn_c5f201ce74
+  fn_5a5519c7db -->|2 calls| class_2dd83bd32d
+  fn_5a5519c7db -->|1 call| fn_1160dbf81c
+  fn_5b71cadcf8 -->|1 call| fn_5e384464df
+  fn_5b71cadcf8 -->|1 call| fn_8a53c59d2f
+  fn_5b71cadcf8 -->|1 call| fn_c4bf0c136f
+  fn_5d0ff575b5 -->|1 call| class_a5ec635910
+  fn_5d0ff575b5 -->|1 call| fn_209a4016fe
+  fn_5e384464df -->|3 calls| class_26fbf6edd3
+  fn_5e384464df -->|1 call| fn_19206bbba3
+  fn_5e384464df -->|1 call| fn_2b78bca9fe
+  fn_5e384464df -->|1 call| fn_965aaf5f7e
+  fn_6168d4c9db -->|1 call| class_3a5b8e04d8
+  fn_6168d4c9db -->|1 call| fn_a06656c00b
+  fn_61aa80eaf9 -->|1 call| cat_examples
+  fn_61aa80eaf9 -->|1 call| fn_5e384464df
+  fn_61aa80eaf9 -->|1 call| fn_747f708013
+  fn_630ec200cb -->|1 call| fn_4a162fae88
+  fn_630ec200cb -->|1 call| fn_81f15376d8
+  fn_630ec200cb -->|1 call| fn_d79d2269fa
+  fn_63be161566 -->|7 calls| class_2fc154f79a
+  fn_63be161566 -->|1 call| fn_1160dbf81c
+  fn_63be161566 -->|1 call| fn_e593bcaa2c
+  fn_64015079a1 -->|2 calls| fn_3c34228909
+  fn_64015079a1 -->|1 call| fn_5e384464df
+  fn_64388e655f -->|1 call| cat_docs
+  fn_64388e655f -->|2 calls| cat_examples
+  fn_64388e655f -->|1 call| fn_03cd27ee20
+  fn_64388e655f -->|1 call| fn_bce9782c95
+  fn_6945216f23 -->|1 call| fn_a7dbcfd057
+  fn_6a88c4ce89 -->|1 call| fn_79b0c77da9
+  fn_6a92547acc -->|1 call| fn_0593c858bf
+  fn_6ad412e424 -->|1 call| class_ad753d5b20
+  fn_6ad412e424 -->|1 call| fn_630ec200cb
+  fn_6b7f16e1ac -->|2 calls| fn_a8680f909c
+  fn_6d3102da59 -->|1 call| class_8029481e73
+  fn_6d3102da59 -->|1 call| class_a5ec635910
+  fn_6d3102da59 -->|1 call| fn_19206bbba3
+  fn_6d5d1f9e2e -.->|overrides| class_12f7dd6307
+  fn_6d5d1f9e2e -->|1 call| fn_a8680f909c
+  fn_6dd6e1ead5 -->|1 call| fn_02e6faf4f2
+  fn_6dd6e1ead5 -->|1 call| fn_426fa6b2d5
+  fn_6dd6e1ead5 -->|1 call| fn_6a88c4ce89
+  fn_6dd6e1ead5 -->|1 call| fn_a8680f909c
+  fn_7130fe9037 -->|6 calls| file_4758bc5b2b
+  fn_7130fe9037 -->|2 calls| fn_19206bbba3
+  fn_7130fe9037 -->|1 call| fn_63be161566
+  fn_743253c754 -->|1 call| class_a5ec635910
+  fn_743253c754 -->|1 call| fn_d00a4e41ac
+  fn_747f708013 -->|1 call| fn_8a53c59d2f
+  fn_79ce7dd0b0 -->|1 call| class_26fbf6edd3
+  fn_800d5f6332 -->|1 call| class_8029481e73
+  fn_800d5f6332 -->|1 call| class_a5ec635910
+  fn_800d5f6332 -->|1 call| fn_19206bbba3
+  fn_81f15376d8 -->|1 call| class_58e01e98a5
+  fn_88ceb52ce9 -->|1 call| class_8029481e73
+  fn_88ceb52ce9 -->|1 call| class_a5ec635910
+  fn_88ceb52ce9 -->|1 call| fn_19206bbba3
+  fn_89554c0d20 -->|1 call| fn_c5f201ce74
+  fn_8a65ad39bb -->|1 call| class_26fbf6edd3
+  fn_8a65ad39bb -->|1 call| fn_0409ff1433
+  fn_8a65ad39bb -->|1 call| fn_32dcf6a66f
+  fn_8a65ad39bb -->|1 call| fn_6ad412e424
+  fn_8a65ad39bb -->|1 call| fn_6dd6e1ead5
+  fn_8a65ad39bb -->|1 call| fn_deee155a52
+  fn_8c82b6e1f0 -->|1 call| fn_5e384464df
+  fn_8c82b6e1f0 -->|1 call| fn_a06656c00b
+  fn_904c1c664e -->|2 calls| fn_bc39e94efd
+  fn_926135e1be -->|1 call| fn_56f51e1bca
+  fn_926135e1be -->|1 call| fn_79ce7dd0b0
+  fn_926135e1be -->|1 call| fn_a06656c00b
+  fn_926135e1be -->|1 call| fn_c2edab370c
+  fn_926135e1be -->|1 call| fn_c5f201ce74
+  fn_92f43d3a48 -->|1 call| fn_ae0d5896c1
+  fn_94e035c31c -->|1 call| class_26fbf6edd3
+  fn_94e035c31c -.->|overrides| class_a23b18cb93
+  fn_94e035c31c -->|1 call| fn_19206bbba3
+  fn_94e035c31c -->|1 call| fn_5e384464df
+  fn_94e035c31c -->|1 call| fn_d7cd24f9b0
+  fn_965aaf5f7e -->|1 call| fn_92f43d3a48
+  fn_9b58294866 -->|1 call| class_ad753d5b20
+  fn_9bc0507d66 -->|1 call| class_402ab01b41
+  fn_9bc0507d66 -->|7 calls| class_a4e9496b83
+  fn_9bc0507d66 -->|1 call| fn_a75fed5179
+  fn_9ee7aa3759 -->|1 call| class_8029481e73
+  fn_9ee7aa3759 -->|1 call| class_a5ec635910
+  fn_9ee7aa3759 -->|1 call| fn_19206bbba3
+  fn_9ffdf446dd -->|1 call| fn_5e384464df
+  fn_a06656c00b -->|1 call| class_26fbf6edd3
+  fn_a06656c00b -->|1 call| fn_15d220ee41
+  fn_a0d7bb3a46 -->|1 call| cat_examples
+  fn_a0d7bb3a46 -->|1 call| fn_3836d33a49
+  fn_a0d7bb3a46 -->|1 call| fn_f7ade00c0a
+  fn_a1e948a0b8 -->|1 call| class_3a5b8e04d8
+  fn_a1e948a0b8 -->|1 call| fn_4902070b76
+  fn_a5e3b55d2d -->|2 calls| class_3a5b8e04d8
+  fn_a5e3b55d2d -->|2 calls| fn_630ec200cb
+  fn_a5e3b55d2d -->|1 call| fn_a4a1545955
+  fn_a5e3b55d2d -->|2 calls| fn_a8680f909c
+  fn_a5e3b55d2d -->|1 call| fn_e02986826a
+  fn_a62b574bc3 -->|1 call| fn_5e384464df
+  fn_a62b574bc3 -->|1 call| fn_6945216f23
+  fn_a75fed5179 -->|2 calls| cat_examples
+  fn_a8680f909c -->|1 call| class_3a5b8e04d8
+  fn_a9a6c1b56f -->|1 call| fn_13c99ce7c4
+  fn_a9a6c1b56f -->|1 call| fn_3c34228909
+  fn_abcabba522 -->|1 call| class_8029481e73
+  fn_abcabba522 -->|1 call| class_a5ec635910
+  fn_abcabba522 -->|1 call| fn_19206bbba3
+  fn_ac2e73c497 -->|1 call| cat_tests
+  fn_ac2e73c497 -->|1 call| fn_3c34228909
+  fn_ae0d5896c1 -->|1 call| fn_1160dbf81c
+  fn_af25deb443 -->|1 call| fn_6168d4c9db
+  fn_af25deb443 -->|1 call| fn_a8680f909c
+  fn_af25deb443 -->|1 call| fn_edecb35ee9
+  fn_afab5646f9 -->|1 call| fn_58b6e2412e
+  fn_afab5646f9 -->|1 call| fn_a06656c00b
+  fn_b0813412c9 -->|1 call| class_8029481e73
+  fn_b0813412c9 -->|1 call| class_a5ec635910
+  fn_b0813412c9 -->|1 call| fn_19206bbba3
+  fn_b5254b9232 -->|1 call| cat_examples
+  fn_b558416721 -->|1 call| cat_docs
+  fn_b558416721 -->|1 call| fn_13c99ce7c4
+  fn_b558416721 -->|1 call| fn_37963c3335
+  fn_b558416721 -->|1 call| fn_4a162fae88
+  fn_b558416721 -->|1 call| fn_5e384464df
+  fn_b558416721 -->|1 call| fn_b4f48c7ab2
+  fn_b558416721 -->|1 call| fn_c57bad16f1
+  fn_b61d30510e -->|1 call| fn_a75fed5179
+  fn_b66e37d758 -->|1 call| fn_c2edab370c
+  fn_b87ba6cdb1 -->|1 call| cat_docs
+  fn_ba3cb5a558 -->|1 call| fn_c5f201ce74
+  fn_bac5baaa11 -->|1 call| fn_319613022d
+  fn_bac5baaa11 -->|1 call| fn_79ce7dd0b0
+  fn_bac5baaa11 -->|1 call| fn_a06656c00b
+  fn_bac5baaa11 -->|1 call| fn_bcdfad31a9
+  fn_bac5baaa11 -->|1 call| fn_c5f201ce74
+  fn_bb3b96afaa -->|1 call| fn_3c34228909
+  fn_bb3b96afaa -->|1 call| fn_562698d66c
+  fn_bc39e94efd -->|1 call| class_ad753d5b20
+  fn_bc39e94efd -->|1 call| fn_a06656c00b
+  fn_bc39e94efd -->|1 call| fn_a8680f909c
+  fn_bce9782c95 -->|1 call| file_2754e2547a
+  fn_bce9782c95 -->|8 calls| fn_b61d30510e
+  fn_bce9782c95 -->|1 call| fn_e20513802b
+  fn_be51a9ffa2 -->|1 call| class_af6c64a592
+  fn_be51a9ffa2 -->|1 call| fn_5a9dcd4523
+  fn_be51a9ffa2 -->|1 call| fn_a8680f909c
+  fn_c2edab370c -->|2 calls| file_fa7ec905af
+  fn_c41af4dcc4 -->|3 calls| class_2fc154f79a
+  fn_c41af4dcc4 -->|1 call| fn_1160dbf81c
+  fn_c4bf0c136f -->|1 call| cat_examples
+  fn_c4bf0c136f -->|1 call| fn_5e384464df
+  fn_c57bad16f1 -->|1 call| cat_docs
+  fn_c57bad16f1 -->|2 calls| fn_3c34228909
+  fn_c7d30c20f4 -->|1 call| class_26fbf6edd3
+  fn_c7d30c20f4 -->|2 calls| class_fbd99bef12
+  fn_c7d30c20f4 -->|1 call| fn_8a53c59d2f
+  fn_cd05fdc22b -->|2 calls| cat_docs
+  fn_cd05fdc22b -->|1 call| fn_37963c3335
+  fn_cd05fdc22b -->|1 call| fn_c57bad16f1
+  fn_cd05fdc22b -->|1 call| fn_d54890493c
+  fn_d12e64e6c0 -->|1 call| class_a5ec635910
+  fn_d12e64e6c0 -->|1 call| fn_8d5295731e
+  fn_d1e2d442f8 -->|1 call| fn_f7567d99b9
+  fn_d54890493c -->|1 call| class_2fc154f79a
+  fn_d54890493c -->|2 calls| file_73d44057ee
+  fn_d54890493c -->|1 call| fn_27ab54b24f
+  fn_d54890493c -->|1 call| fn_37963c3335
+  fn_d54890493c -->|2 calls| fn_bcdfad31a9
+  fn_d8a58a4e4c -->|1 call| fn_19206bbba3
+  fn_da4a057d6f -->|1 call| fn_c41af4dcc4
+  fn_ded681c106 -->|4 calls| class_3a5b8e04d8
+  fn_ded681c106 -->|1 call| fn_09c0adb6b4
+  fn_ded681c106 -->|4 calls| fn_4a162fae88
+  fn_ded681c106 -->|1 call| fn_89554c0d20
+  fn_ded681c106 -->|1 call| fn_a4a1545955
+  fn_ded681c106 -->|1 call| fn_d79d2269fa
+  fn_ded681c106 -->|1 call| fn_e02986826a
+  fn_deee155a52 -->|1 call| fn_02e6faf4f2
+  fn_deee155a52 -->|1 call| fn_1f8a6b27a5
+  fn_deee155a52 -->|1 call| fn_2e456c9c7e
+  fn_deee155a52 -->|1 call| fn_af25deb443
+  fn_e20513802b -->|1 call| fn_35608cc2ff
+  fn_e52304f3ac -->|1 call| class_26fbf6edd3
+  fn_e52304f3ac -->|1 call| class_5c56eadc97
+  fn_e52304f3ac -->|2 calls| class_fbd99bef12
+  fn_e52304f3ac -->|2 calls| fn_bc39e94efd
+  fn_e52304f3ac -.->|overrides| fn_c7d30c20f4
+  fn_e593bcaa2c -->|1 call| class_7326eb2764
+  fn_e593bcaa2c -->|1 call| fn_5e384464df
+  fn_e593bcaa2c -->|1 call| fn_94e035c31c
+  fn_e593bcaa2c -->|1 call| fn_a0d7bb3a46
+  fn_edecb35ee9 -->|1 call| class_a13c463247
+  fn_f17e01dceb -->|1 call| class_bb4b20ba49
+  fn_f17e01dceb -->|1 call| fn_46c08f086d
+  fn_f4789b29cf -->|1 call| fn_f87129c934
+  fn_f87129c934 -->|1 call| fn_15d220ee41
+  fn_f87129c934 -->|1 call| fn_5260f0b5cc
+  fn_f87129c934 -->|1 call| fn_e2c78c96c4
+  fn_faf6420d28 -->|1 call| class_7326eb2764
+  fn_faf6420d28 -->|1 call| fn_d8a58a4e4c
+  fn_fcdb60dce2 -->|1 call| fn_6a88c4ce89
+  fn_fcdb60dce2 -->|1 call| fn_a8680f909c
+  fn_fd61c69614 -->|1 call| cat_examples
+
+  classDef folder fill:#e1f5fe,stroke:#0288d1,stroke-width:2px,color:#01579b;
+  classDef file fill:#f3e5f5,stroke:#7b1fa2,stroke-width:1.5px,color:#4a148c;
+  classDef classNode fill:#e8f5e9,stroke:#388e3c,stroke-width:1.5px,color:#1b5e20;
+  classDef function fill:#fff9c4,stroke:#fbc02d,stroke-width:1.5px,color:#f57f17;
+  classDef route fill:#fff3e0,stroke:#f57c00,stroke-width:2px,color:#e65100;
+  classDef command fill:#e0f7fa,stroke:#0097a7,stroke-width:2px,color:#006064;
+  classDef entrypoint fill:#fce4ec,stroke:#c2185b,stroke-width:2px,color:#880e4f;
+  classDef helper fill:#f5f5f5,stroke:#9e9e9e,stroke-width:1px,stroke-dasharray: 3 3,color:#616161;
+  classDef default fill:#f8f9fa,stroke:#343a40,stroke-width:1px,color:#212529;

@@ -1,0 +1,147 @@
+=== T4: One Source of Truth for Call Counts ===
+Date: 2026-10-29
+
+1. Starting Test Count
+Command: venv\Scripts\python.exe -m pytest tests/
+Output:
+============================= test session starts =============================
+platform win32 -- Python 3.13.1, pytest-9.1.1, pluggy-1.7.0
+rootdir: C:\Users\rishi\OneDrive\Desktop\Dev\cartog
+configfile: pyproject.toml
+collected 123 items
+
+tests\test_cli.py ............                                           [  9%]
+tests\test_flow_selector.py ....                                         [ 13%]
+tests\test_ignore.py .......                                             [ 18%]
+tests\test_import_resolution.py ..                                       [ 20%]
+tests\test_js_adapter.py ..........                                      [ 28%]
+tests\test_jsonc.py .....                                                [ 32%]
+tests\test_manifests.py .......                                          [ 38%]
+tests\test_merge.py ...                                                  [ 40%]
+tests\test_merge_validate.py .............                               [ 51%]
+tests\test_mermaid.py ...........                                        [ 60%]
+tests\test_model.py ...                                                  [ 62%]
+tests\test_noise.py ......                                               [ 67%]
+tests\test_parse_cache.py ..                                             [ 69%]
+tests\test_patterns.py ....                                              [ 72%]
+tests\test_python_adapter.py ......                                      [ 77%]
+tests\test_scan.py .....                                                 [ 81%]
+tests\test_scip_pass.py ..............                                   [ 92%]
+tests\test_views_mermaid.py .........                                    [100%]
+
+============================== warnings summary ===============================
+tests/test_jsonc.py::test_jsonc_unterminated_block_comment
+  C:\Users\rishi\OneDrive\Desktop\Dev\cartog\cartog\jsonc.py:82: UserWarning: Unterminated block comment in 'C:/Users/rishi/AppData/Local/Temp/pytest-of-rishi/pytest-144/test_jsonc_unterminated_block_0/tsconfig.json' starting at line 3
+    warnings.warn(msg, UserWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================= 123 passed, 1 warning in 29.12s =======================
+
+
+2. Red Step: Test Asserting get_call_counts Shared Across Map and Digest
+Command: venv\Scripts\python.exe -m pytest tests/test_views_mermaid.py -k "test_call_counts_agree_across_map_and_digest"
+Exit code: 1
+Output:
+============================= test session starts =============================
+platform win32 -- Python 3.13.1, pytest-9.1.1, pluggy-1.7.0
+rootdir: C:\Users\rishi\OneDrive\Desktop\Dev\cartog
+configfile: pyproject.toml
+collected 10 items / 1 error / 9 deselected
+
+==================================== ERRORS ====================================
+___________ ERROR collecting tests/test_views_mermaid.py ___________
+ImportError while importing test module 'C:\Users\rishi\OneDrive\Desktop\Dev\cartog\tests\test_views_mermaid.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+venv\Lib\importlib\__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name, package, level)
+tests\test_views_mermaid.py:19: in <module>
+    from cartog.views import (
+E   ImportError: cannot import name 'get_call_counts' from 'cartog.views' (C:\Users\rishi\OneDrive\Desktop\Dev\cartog\cartog\views.py)
+=========================== short test summary info ===========================
+ERROR tests/test_views_mermaid.py
+!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!
+========================= 9 deselected, 1 error in 0.53s =========================
+
+
+3. Code Fix
+- cartog/views.py:
+  * Defined CallCounts dataclass with total_calls, total_reconciled, internal_calls, cross_file_calls, cross_folder_calls, cross_category_calls, by_file_pair, by_folder_pair, by_category_pair, reconciled_by_file_pair, reconciled_by_folder_pair, reconciled_by_category_pair, by_scope_pair, reconciled_by_scope_pair, and internal_by_scope.
+  * Implemented get_call_counts(graph, excluded_categories=None, node_to_scope=None, edges=None) -> CallCounts as single source of truth using edge.count and confidence tracking.
+  * Refactored generate_digest() cross-folder call summary to read directly from get_call_counts(graph, excluded_categories=excluded_cats).by_folder_pair.
+- cartog/export_mermaid.py:
+  * Imported get_call_counts from cartog.views.
+  * Refactored cluster_internal_calls, edge_calls, and edge_calls_reconciled in generate_overview_mermaid() to use get_call_counts(graph, node_to_scope=file_to_visible, edges=edges_to_render).
+- tests/test_views_mermaid.py:
+  * Added test_call_counts_agree_across_map_and_digest verifying shared call counting across get_call_counts, generate_overview_mermaid, and generate_digest.
+
+
+4. Green Step: Passing Test
+Command: venv\Scripts\python.exe -m pytest tests/test_views_mermaid.py -k "test_call_counts_agree_across_map_and_digest"
+Exit code: 0
+Output:
+============================= test session starts =============================
+platform win32 -- Python 3.13.1, pytest-9.1.1, pluggy-1.7.0
+rootdir: C:\Users\rishi\OneDrive\Desktop\Dev\cartog
+configfile: pyproject.toml
+collected 10 items / 9 deselected / 1 selected
+
+tests\test_views_mermaid.py .                                            [100%]
+
+======================= 1 passed, 9 deselected in 0.46s =======================
+
+
+5. Ending Test Count & Full Test Suite
+Command: venv\Scripts\python.exe -m pytest tests/
+Exit code: 0
+Output:
+============================= test session starts =============================
+platform win32 -- Python 3.13.1, pytest-9.1.1, pluggy-1.7.0
+rootdir: C:\Users\rishi\OneDrive\Desktop\Dev\cartog
+configfile: pyproject.toml
+collected 124 items
+
+tests\test_cli.py ............                                           [  9%]
+tests\test_flow_selector.py ....                                         [ 12%]
+tests\test_ignore.py .......                                             [ 18%]
+tests\test_import_resolution.py ..                                       [ 20%]
+tests\test_js_adapter.py ..........                                      [ 28%]
+tests\test_jsonc.py .....                                                [ 32%]
+tests\test_manifests.py .......                                          [ 37%]
+tests\test_merge.py ...                                                  [ 40%]
+tests\test_merge_validate.py .............                               [ 50%]
+tests\test_mermaid.py ...........                                        [ 59%]
+tests\test_model.py ...                                                  [ 62%]
+tests\test_noise.py ......                                               [ 66%]
+tests\test_parse_cache.py ..                                             [ 68%]
+tests\test_patterns.py ....                                              [ 71%]
+tests\test_python_adapter.py ......                                      [ 76%]
+tests\test_scan.py .....                                                 [ 80%]
+tests\test_scip_pass.py ..............                                   [ 91%]
+tests\test_views_mermaid.py ..........                                   [100%]
+
+============================== warnings summary ===============================
+tests/test_jsonc.py::test_jsonc_unterminated_block_comment
+  C:\Users\rishi\OneDrive\Desktop\Dev\cartog\cartog\jsonc.py:82: UserWarning: Unterminated block comment in 'C:/Users/rishi/AppData/Local/Temp/pytest-of-rishi/pytest-145/test_jsonc_unterminated_block_0/tsconfig.json' starting at line 3
+    warnings.warn(msg, UserWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================= 124 passed, 1 warning in 28.17s =======================
+Test count delta: +1 (123 -> 124, 0 decreased).
+
+
+6. User Check Command
+Command: venv\Scripts\python.exe -m pytest -k test_call_counts_agree_across_map_and_digest
+Exit code: 0
+Output:
+============================= test session starts =============================
+platform win32 -- Python 3.13.1, pytest-9.1.1, pluggy-1.7.0
+rootdir: C:\Users\rishi\OneDrive\Desktop\Dev\cartog
+configfile: pyproject.toml
+testpaths: tests
+collected 124 items / 123 deselected / 1 selected
+
+tests\test_views_mermaid.py .                                            [100%]
+
+====================== 1 passed, 123 deselected in 0.45s ======================
+

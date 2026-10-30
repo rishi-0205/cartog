@@ -1,0 +1,141 @@
+=== T2: AST Parse Cache Fidelity and is_type_only Preservation ===
+Date: 2026-10-29
+
+1. Starting Test Count
+Command: pytest
+Output:
+============================= test session starts =============================
+platform win32 -- Python 3.13.1, pytest-9.1.1, pluggy-1.7.0
+rootdir: C:\Users\rishi\OneDrive\Desktop\Dev\cartog
+configfile: pyproject.toml
+collected 119 items
+...
+======================= 119 passed, 1 warning in 26.45s =======================
+
+
+2. Red Step: Failing Tests Demonstrating the Bug
+Command: pytest tests/test_parse_cache.py
+Exit code: 1
+Output:
+============================= test session starts =============================
+platform win32 -- Python 3.13.1, pytest-9.1.1, pluggy-1.7.0
+rootdir: C:\Users\rishi\OneDrive\Desktop\Dev\cartog
+configfile: pyproject.toml
+collected 2 items
+
+tests\test_parse_cache.py FF                                             [100%]
+
+================================== FAILURES ===================================
+_______________ test_cache_preserves_is_type_only_cold_vs_warm ________________
+
+tmp_path = WindowsPath('C:/Users/rishi/AppData/Local/Temp/pytest-of-rishi/pytest-135/test_cache_preserves_is_type_o0')
+
+    def test_cache_preserves_is_type_only_cold_vs_warm(tmp_path: Path):
+        """Verify that TypeScript import type retains is_type_only=True across cold and warm cache."""
+        cache_dir = tmp_path / ".cartog"
+        ts_file = tmp_path / "main.ts"
+        ts_code = 'import type { UserProfile } from "./types";\nexport const x = 1;\n'
+        ts_file.write_text(ts_code, encoding="utf-8")
+    
+        file_info = FileInfo(
+            path="main.ts",
+            abs_path=ts_file.as_posix(),
+            size_bytes=ts_file.stat().st_size,
+            sha1=hashlib.sha1(ts_code.encode("utf-8")).hexdigest(),
+            language="typescript",
+        )
+    
+        # 1. Cold cache parse
+        cache_cold = ParseCache(cache_dir)
+        res_cold = parse_source_file(file_info, cache=cache_cold)
+        assert cache_cold.misses == 1
+        assert cache_cold.hits == 0
+        assert len(res_cold.imports) == 1
+        assert res_cold.imports[0].is_type_only is True
+    
+        cache_cold.save()
+    
+        # 2. Warm cache parse (reloaded from disk)
+        cache_warm = ParseCache(cache_dir)
+        res_warm = parse_source_file(file_info, cache=cache_warm)
+        assert cache_warm.hits == 1
+        assert cache_warm.misses == 0
+        assert len(res_warm.imports) == 1
+    
+        # This assertion fails if is_type_only was omitted during deserialization
+>       assert res_warm.imports[0].is_type_only is True
+E       assert False is True
+E        +  where False = ImportRecord(specifier='./types', names=['UserProfile'], aliases={}, kind='relative', line=1, level=1, raw_text='import type { UserProfile } from "./types";', is_type_only=False).is_type_only
+
+tests\test_parse_cache.py:47: AssertionError
+___________________ test_cache_roundtrip_all_record_fields ____________________
+...
+>       assert warm_imp.is_type_only == orig_imp.is_type_only
+E       assert False == True
+
+tests\test_parse_cache.py:108: AssertionError
+=========================== 2 failed in 0.38s ===========================
+
+
+3. Code Fix
+File: cartog/langs/__init__.py:76-87
+In _dict_to_parsed_file(), passed is_type_only=i.get("is_type_only", False) to ImportRecord constructor.
+Confirmed all other fields across SymbolRecord, ImportRecord, and ParseFileResult match between to_dict and deserialization.
+
+
+4. Green Step: Passing Tests
+Command: pytest tests/test_parse_cache.py
+Exit code: 0
+Output:
+============================= test session starts =============================
+platform win32 -- Python 3.13.1, pytest-9.1.1, pluggy-1.7.0
+rootdir: C:\Users\rishi\OneDrive\Desktop\Dev\cartog
+configfile: pyproject.toml
+collected 2 items
+
+tests\test_parse_cache.py ..                                             [100%]
+
+============================== 2 passed in 0.37s ==============================
+
+
+5. User Check Verification
+Command 1: pytest -k "test_cache_preserves_is_type_only_cold_vs_warm"
+Exit code: 0
+Output:
+============================= test session starts =============================
+platform win32 -- Python 3.13.1, pytest-9.1.1, pluggy-1.7.0
+rootdir: C:\Users\rishi\OneDrive\Desktop\Dev\cartog
+configfile: pyproject.toml
+testpaths: tests
+collected 121 items / 120 deselected / 1 selected
+
+tests\test_parse_cache.py .                                              [100%]
+
+====================== 1 passed, 120 deselected in 0.88s ======================
+
+Command 2: Dual cartog map on samples/ky (cold vs warm) and SHA-256 diff
+Runs:
+  venv\Scripts\python.exe -m cartog map samples/ky --out "$env:TEMP\ky_run1" --force
+  venv\Scripts\python.exe -m cartog map samples/ky --out "$env:TEMP\ky_run2"
+Diff:
+  (Get-FileHash $env:TEMP\ky_run1\graph.json).Hash
+  (Get-FileHash $env:TEMP\ky_run2\graph.json).Hash
+  Compare-Object (Get-Content $env:TEMP\ky_run1\graph.json) (Get-Content $env:TEMP\ky_run2\graph.json)
+Output:
+9AA140C7436852377DAE3FD307F9851765E8A35DF8F1CA407C47545B5F2DBFDE
+9AA140C7436852377DAE3FD307F9851765E8A35DF8F1CA407C47545B5F2DBFDE
+(No diffs detected between cold and warm graph.json)
+
+
+6. Ending Test Count
+Command: pytest
+Output:
+============================= test session starts =============================
+platform win32 -- Python 3.13.1, pytest-9.1.1, pluggy-1.7.0
+rootdir: C:\Users\rishi\OneDrive\Desktop\Dev\cartog
+configfile: pyproject.toml
+collected 121 items
+...
+======================= 121 passed, 1 warning in 27.70s =======================
+Delta: +2 tests (119 -> 121), 0 decrease.
+

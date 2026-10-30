@@ -1,0 +1,271 @@
+================================================================================
+T5 EVIDENCE: Missing calls through re-exports
+================================================================================
+
+1. DIAGNOSIS OF MISSING CALLS IN SAMPLES/FLASK
+--------------------------------------------------------------------------------
+In examples/tutorial/flaskr/blog.py and auth.py, Pyright emitted symbol occurrences
+for imported names (roles=8) with synthetic local identifiers (e.g. 'local 4' for
+render_template). At call sites (e.g. line 25: render_template("blog/index.html")),
+occurrences referenced 'local 4'.
+decode_scip_index() was dropping all occurrences starting with 'local ', and in addition,
+link_calls() only indexed definitions by their direct defining descriptor (e.g.
+src/flask/templating:render_template) rather than re-export descriptors from
+__init__.py (flask/__init__:render_template). Furthermore, blog.py line 8 explicitly
+imports abort from werkzeug.exceptions, an external library.
+
+Source call sites inspected and confirmed:
+- examples/tutorial/flaskr/blog.py:25: render_template("blog/index.html", posts=posts)
+- examples/tutorial/flaskr/blog.py:73: flash(error)
+- examples/tutorial/flaskr/blog.py:81: redirect(url_for("blog.index"))
+- examples/tutorial/flaskr/blog.py:83: render_template("blog/create.html")
+- examples/tutorial/flaskr/blog.py:101: flash(error)
+- examples/tutorial/flaskr/blog.py:108: redirect(url_for("blog.index"))
+- examples/tutorial/flaskr/blog.py:110: render_template("blog/update.html", post=post)
+- examples/tutorial/flaskr/blog.py:125: redirect(url_for("blog.index"))
+- examples/tutorial/flaskr/auth.py:25: redirect(url_for("auth.login"))
+- examples/tutorial/flaskr/auth.py:77: redirect(url_for("auth.login"))
+- examples/tutorial/flaskr/auth.py:79: flash(error)
+- examples/tutorial/flaskr/auth.py:81: render_template("auth/register.html")
+- examples/tutorial/flaskr/auth.py:105: redirect(url_for("blog.index"))
+- examples/tutorial/flaskr/auth.py:107: flash(error)
+- examples/tutorial/flaskr/auth.py:109: render_template("auth/login.html")
+- examples/tutorial/flaskr/auth.py:116: redirect(url_for("blog.index"))
+
+
+2. RED STEP: FAILING UNIT TEST
+--------------------------------------------------------------------------------
+Command:
+venv\Scripts\python.exe -m pytest tests/test_scip_pass.py -k "test_scip_reconciled_calls_through_reexport_chain"
+
+Output:
+============================= test session starts =============================
+platform win32 -- Python 3.13.1, pytest-9.1.1, pluggy-1.7.0
+rootdir: C:\Users\rishi\OneDrive\Desktop\Dev\cartog
+configfile: pyproject.toml
+collected 16 items / 15 deselected / 1 selected
+
+tests\test_scip_pass.py F                                                [100%]
+
+================================== FAILURES ===================================
+______________ test_scip_reconciled_calls_through_reexport_chain ______________
+
+tmp_path = WindowsPath('C:/Users/rishi/AppData/Local/Temp/pytest-of-rishi/pytest-149/test_scip_reconciled_calls_th0')
+
+    def test_scip_reconciled_calls_through_reexport_chain(tmp_path: Path):
+...
+>       assert len(main_calls) == 1
+E       assert 0 == 1
+E        +  where 0 = len([])
+
+tests\test_scip_pass.py:702: AssertionError
+=========================== 1 failed, 15 deselected in 0.35s ===========================
+
+
+3. GREEN STEP: PASSING UNIT TESTS
+--------------------------------------------------------------------------------
+Command:
+venv\Scripts\python.exe -m pytest tests/test_scip_pass.py -k "test_scip_reconciled_calls_through_reexport_chain or test_reconciliation_strict_prefix_matching"
+
+Output:
+============================= test session starts =============================
+platform win32 -- Python 3.13.1, pytest-9.1.1, pluggy-1.7.0
+rootdir: C:\Users\rishi\OneDrive\Desktop\Dev\cartog
+configfile: pyproject.toml
+collected 16 items / 14 deselected / 2 selected
+
+tests\test_scip_pass.py ..                                               [100%]
+
+====================== 2 passed, 14 deselected in 0.19s =======================
+
+
+4. FULL TEST SUITE RUN
+--------------------------------------------------------------------------------
+Command:
+venv\Scripts\python.exe -m pytest tests/
+
+Output:
+============================= test session starts =============================
+platform win32 -- Python 3.13.1, pytest-9.1.1, pluggy-1.7.0
+rootdir: C:\Users\rishi\OneDrive\Desktop\Dev\cartog
+configfile: pyproject.toml
+collected 126 items
+
+tests\test_cli.py ............                                           [  9%]
+tests\test_flow_selector.py ....                                         [ 12%]
+tests\test_ignore.py .......                                             [ 18%]
+tests\test_import_resolution.py ..                                       [ 19%]
+tests\test_js_adapter.py ..........                                      [ 27%]
+tests\test_jsonc.py .....                                                [ 31%]
+tests\test_manifests.py .......                                          [ 37%]
+tests\test_merge.py ...                                                  [ 39%]
+tests\test_merge_validate.py .............                               [ 50%]
+tests\test_mermaid.py ...........                                        [ 58%]
+tests\test_model.py ...                                                  [ 61%]
+tests\test_noise.py ......                                               [ 65%]
+tests\test_parse_cache.py ..                                             [ 67%]
+tests\test_patterns.py ....                                              [ 70%]
+tests\test_python_adapter.py ......                                      [ 75%]
+tests\test_scan.py .....                                                 [ 79%]
+tests\test_scip_pass.py ................                                 [ 92%]
+tests\test_views_mermaid.py ..........                                   [100%]
+
+============================== warnings summary ===============================
+tests/test_jsonc.py::test_jsonc_unterminated_block_comment
+  C:\Users\rishi\OneDrive\Desktop\Dev\cartog\cartog\jsonc.py:82: UserWarning: Unterminated block comment in 'C:/Users/rishi/AppData/Local/Temp/pytest-of-rishi/pytest-153/test_jsonc_unterminated_block_0/tsconfig.json' starting at line 3
+    warnings.warn(msg, UserWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================= 126 passed, 1 warning in 27.94s =======================
+
+
+5. CALL COUNTS BEFORE AND AFTER
+--------------------------------------------------------------------------------
+CLICK:
+  Before:
+    Call edges: 884 (884 resolved, 0 reconciled)
+    Calls sum:  1171 (1171 resolved, 0 reconciled)
+  After:
+    Call edges: 884 (884 resolved, 0 reconciled)
+    Calls sum:  1171 (1171 resolved, 0 reconciled)
+
+FLASK:
+  Before:
+    Call edges: 531 (516 resolved, 15 reconciled)
+    Calls sum:  593 (578 resolved, 15 reconciled)
+    Edges from examples/tutorial/flaskr into src/flask/: 0
+  After:
+    Call edges: 554 (516 resolved, 38 reconciled)
+    Calls sum:  625 (586 resolved, 39 reconciled)
+    Edges from examples/tutorial/flaskr into src/flask/: 23 reconciled call edges (31 call occurrences)
+
+KY:
+  Before:
+    Call edges: 238 (238 resolved, 0 reconciled)
+    Calls sum:  327 (327 resolved, 0 reconciled)
+  After:
+    Call edges: 238 (238 resolved, 0 reconciled)
+    Calls sum:  327 (327 resolved, 0 reconciled)
+
+
+6. VERIFIED EDGES FROM EXAMPLES/TUTORIAL/FLASKR INTO SRC/FLASK
+--------------------------------------------------------------------------------
+1. examples/tutorial/flaskr/blog.py:index -> src/flask/templating.py:render_template [reconciled] (line 25)
+2. examples/tutorial/flaskr/blog.py:create -> src/flask/templating.py:render_template [reconciled] (line 83)
+3. examples/tutorial/flaskr/blog.py:create -> src/flask/helpers.py:redirect [reconciled] (line 81)
+4. examples/tutorial/flaskr/blog.py:create -> src/flask/helpers.py:url_for [reconciled] (line 81)
+5. examples/tutorial/flaskr/blog.py:create -> src/flask/helpers.py:flash [reconciled] (line 73)
+6. examples/tutorial/flaskr/blog.py:update -> src/flask/templating.py:render_template [reconciled] (line 110)
+7. examples/tutorial/flaskr/blog.py:update -> src/flask/helpers.py:redirect [reconciled] (line 108)
+8. examples/tutorial/flaskr/blog.py:update -> src/flask/helpers.py:url_for [reconciled] (line 108)
+9. examples/tutorial/flaskr/blog.py:update -> src/flask/helpers.py:flash [reconciled] (line 101)
+10. examples/tutorial/flaskr/blog.py:delete -> src/flask/helpers.py:redirect [reconciled] (line 125)
+11. examples/tutorial/flaskr/blog.py:delete -> src/flask/helpers.py:url_for [reconciled] (line 125)
+12. examples/tutorial/flaskr/auth.py:register -> src/flask/helpers.py:flash [reconciled] (line 79)
+13. examples/tutorial/flaskr/auth.py:register -> src/flask/templating.py:render_template [reconciled] (line 81)
+14. examples/tutorial/flaskr/auth.py:register -> src/flask/helpers.py:redirect [reconciled] (line 77)
+15. examples/tutorial/flaskr/auth.py:register -> src/flask/helpers.py:url_for [reconciled] (line 77)
+16. examples/tutorial/flaskr/auth.py:login -> src/flask/helpers.py:flash [reconciled] (line 107)
+17. examples/tutorial/flaskr/auth.py:login -> src/flask/templating.py:render_template [reconciled] (line 109)
+18. examples/tutorial/flaskr/auth.py:login -> src/flask/helpers.py:redirect [reconciled] (line 105)
+19. examples/tutorial/flaskr/auth.py:login -> src/flask/helpers.py:url_for [reconciled] (line 105)
+20. examples/tutorial/flaskr/auth.py:logout -> src/flask/helpers.py:redirect [reconciled] (line 116)
+21. examples/tutorial/flaskr/auth.py:logout -> src/flask/helpers.py:url_for [reconciled] (line 116)
+22. examples/tutorial/flaskr/auth.py:wrapped_view -> src/flask/helpers.py:redirect [reconciled] (line 25)
+23. examples/tutorial/flaskr/auth.py:wrapped_view -> src/flask/helpers.py:url_for [reconciled] (line 25)
+
+
+7. USER CHECK OUTPUT
+--------------------------------------------------------------------------------
+Command:
+venv\Scripts\python.exe -m cartog.cli query callees-of "blog.index" samples/flask
+
+Output:
+                          Callees of 'blog.index'                          
++-------------------------------------------------------------------------+
+| Callee          | Location                         | Calls | Confidence |
+|-----------------+----------------------------------+-------+------------|
+| get_db          | examples/tutorial/flaskr/db.py:9 |     1 | resolved   |
+| render_template | src/flask/templating.py:136      |     1 | reconciled |
++-------------------------------------------------------------------------+
+Total Callees: 2
+
+
+Command:
+venv\Scripts\python.exe -m cartog.cli query callees-of "blog.create" samples/flask
+
+Output:
+                         Callees of 'blog.create'                          
++-------------------------------------------------------------------------+
+| Callee          | Location                         | Calls | Confidence |
+|-----------------+----------------------------------+-------+------------|
+| get_db          | examples/tutorial/flaskr/db.py:9 |     1 | resolved   |
+| flash           | src/flask/helpers.py:326         |     1 | reconciled |
+| render_template | src/flask/templating.py:136      |     1 | reconciled |
+| redirect        | src/flask/helpers.py:254         |     1 | reconciled |
+| url_for         | src/flask/helpers.py:200         |     1 | reconciled |
++-------------------------------------------------------------------------+
+Total Callees: 5
+
+
+8. STRICT INTEGRITY CHECKS
+--------------------------------------------------------------------------------
+Command:
+venv\Scripts\python.exe -m cartog.cli check samples/flask --strict
+
+Output:
+                            Graph Integrity Report                             
++-----------------------------------------------------------------------------+
+| Check                  | Status |                                   Details |
+|------------------------+--------+-------------------------------------------|
+| Overall Integrity      | PASS   |                                  0 errors |
+| Range & Containment    | PASS   |                                  0 errors |
+| Call Cross-Check       | CLEAN  |          145/169 matched, 24 explained, 0 |
+|                        |        |                               unexplained |
+| Validation Warnings    | CLEAN  |                                         0 |
+| SCIP Indexer Notices   | INFO   |                                 8 notices |
+| SCIP Python            | INFO   |                             Python 3.13.1 |
+|                        |        | (C:\Users\rishi\OneDrive\Desktop\Dev\car |
+| Ignored Exclusions     | INFO   |        0 files excluded (0 edges dropped) |
+| Noise Modules Filtered | INFO   |                                13 modules |
++-----------------------------------------------------------------------------+
+Exit code: 0
+
+Command:
+venv\Scripts\python.exe -m cartog.cli check samples/click --strict
+
+Output:
+                            Graph Integrity Report                             
++-----------------------------------------------------------------------------+
+| Check                  | Status |                                   Details |
+|------------------------+--------+-------------------------------------------|
+| Overall Integrity      | PASS   |                                  0 errors |
+| Range & Containment    | PASS   |                                  0 errors |
+| Call Cross-Check       | CLEAN  |           189/190 matched, 1 explained, 0 |
+|                        |        |                               unexplained |
+| Validation Warnings    | CLEAN  |                                         0 |
+| SCIP Indexer Notices   | INFO   |                                 8 notices |
+| SCIP Python            | INFO   |                             Python 3.13.1 |
+|                        |        | (C:\Users\rishi\OneDrive\Desktop\Dev\car |
+| Ignored Exclusions     | INFO   |        0 files excluded (0 edges dropped) |
+| Noise Modules Filtered | INFO   |                                 7 modules |
++-----------------------------------------------------------------------------+
+Exit code: 0
+
+Command:
+venv\Scripts\python.exe -m cartog.cli check samples/ky --strict
+
+Output:
+                            Graph Integrity Report                             
++-----------------------------------------------------------------------------+
+| Check                  | Status |                                   Details |
+|------------------------+--------+-------------------------------------------|
+| Overall Integrity      | PASS   |                                  0 errors |
+| Range & Containment    | PASS   |                                  0 errors |
+| Call Cross-Check       | CLEAN  | 80/80 matched, 0 explained, 0 unexplained |
+| Validation Warnings    | CLEAN  |                                         0 |
+| Ignored Exclusions     | INFO   |        0 files excluded (0 edges dropped) |
+| Noise Modules Filtered | INFO   |                                23 modules |
++-----------------------------------------------------------------------------+
+Exit code: 0
+

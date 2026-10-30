@@ -1,16 +1,19 @@
 // Pre-load hook for Node on Windows to safely escape single backslash in RegExp
-const origRegExp = RegExp;
+if (process.platform === 'win32') {
+  const origRegExp = RegExp;
 
-function SafeRegExp(pattern, flags) {
-  if (pattern === '\\') {
-    pattern = '[\\\\/]';
+  function SafeRegExp(pattern, flags) {
+    if (pattern === '\\') {
+      pattern = '[\\\\/]';
+    }
+    if (new.target) {
+      return new origRegExp(pattern, flags);
+    }
+    return origRegExp(pattern, flags);
   }
-  if (new.target) {
-    return new origRegExp(pattern, flags);
-  }
-  return origRegExp(pattern, flags);
+
+  SafeRegExp.prototype = origRegExp.prototype;
+  Object.setPrototypeOf(SafeRegExp, origRegExp);
+  global.RegExp = SafeRegExp;
 }
 
-SafeRegExp.prototype = origRegExp.prototype;
-Object.setPrototypeOf(SafeRegExp, origRegExp);
-global.RegExp = SafeRegExp;

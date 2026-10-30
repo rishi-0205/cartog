@@ -1,0 +1,46 @@
+%% Candidates found: 1, Selected: 1, Nodes drawn: 10, Nodes collapsed: 0
+flowchart LR
+  %% Call flow trace for: run
+  subgraph folder_src_flask ["📁 src/flask"]
+    subgraph file_src_flask_cli_py ["📄 cli.py"]
+      subgraph class_2fc154f79a ["🏛️ NoAppException"]
+      end
+      subgraph class_f0f3eb562c ["🏛️ ScriptInfo"]
+        flow_27ab54b24f["__init__() :305"]:::function
+        flow_d54890493c["load_app() :333"]:::function
+      end
+      flow_eab923a15d["run"]:::entryStart
+      flow_c62313f535["locate_app() :230"]:::function
+      flow_bcdfad31a9["prepare_import() :200"]:::function
+      flow_cd05fdc22b["run_command() :934"]:::function
+      flow_c57bad16f1["show_server_banner() :766"]:::function
+    end
+    subgraph file_src_flask_helpers_py ["📄 helpers.py"]
+      flow_37963c3335["get_debug_flag() :28"]:::function
+    end
+  end
+  flow_cd05fdc22b -->|1 call| flow_37963c3335
+  flow_cd05fdc22b -->|1 call| flow_c57bad16f1
+  flow_cd05fdc22b -->|1 call| flow_d54890493c
+  flow_d54890493c -->|1 call| flow_27ab54b24f
+  flow_d54890493c -->|1 call| flow_2fc154f79a
+  flow_d54890493c -->|1 call| flow_37963c3335
+  flow_d54890493c -->|2 calls| flow_bcdfad31a9
+  flow_d54890493c -->|2 calls| flow_c62313f535
+  flow_eab923a15d ==>|serves| flow_cd05fdc22b
+
+  classDef entryStart fill:#ff6b6b,stroke:#c0392b,stroke-width:3px,color:#fff;
+  classDef route fill:#fff3e0,stroke:#f57c00,stroke-width:2px,color:#e65100;
+  classDef command fill:#e0f7fa,stroke:#0097a7,stroke-width:2px,color:#006064;
+  classDef entrypoint fill:#fce4ec,stroke:#c2185b,stroke-width:2px,color:#880e4f;
+  classDef function fill:#fff9c4,stroke:#fbc02d,stroke-width:1.5px,color:#f57f17;
+  classDef classNode fill:#e8f5e9,stroke:#388e3c,stroke-width:1.5px,color:#1b5e20;
+  classDef default fill:#f8f9fa,stroke:#343a40,stroke-width:1px,color:#212529;
+
+  %% Legend:
+  %%   ==>|serves/starts|  Route / Entrypoint binding
+  %%   -->|N calls|        Direct call (solid)
+  %%   -.->|reconciled|    Reconciled call (dashed)
+  %%   -.->|overrides|     Method override (dashed)
+  %%   :::entryStart       Starting symbol
+

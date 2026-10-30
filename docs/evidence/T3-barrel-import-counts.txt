@@ -1,0 +1,91 @@
+=== T3: Exact Import Counts Per Target in Barrel Rewiring ===
+Date: 2026-10-29
+
+1. Starting Test Count
+Command: pytest tests/
+Output:
+============================= test session starts =============================
+platform win32 -- Python 3.13.1, pytest-9.1.1, pluggy-1.7.0
+rootdir: C:\Users\rishi\OneDrive\Desktop\Dev\cartog
+configfile: pyproject.toml
+collected 121 items
+...
+======================= 121 passed, 1 warning in 30.27s =======================
+
+
+2. Red Step: Failing Tests Demonstrating Duplicated Barrel Counts
+Command: pytest tests/test_views_mermaid.py -k "test_barrel_rewiring"
+Exit code: 1
+Output:
+============================= test session starts =============================
+platform win32 -- Python 3.13.1, pytest-9.1.1, pluggy-1.7.0
+rootdir: C:\Users\rishi\OneDrive\Desktop\Dev\cartog
+configfile: pyproject.toml
+collected 9 items / 7 deselected / 2 selected
+
+tests\test_views_mermaid.py FF                                           [100%]
+
+================================== FAILURES ===================================
+_____________ test_barrel_rewiring_exact_import_counts_per_target _____________
+...
+>       assert consumer_imports.get(fa.id) == 2
+E       AssertionError: assert 1 == 2
+E        +  where 1 = <built-in method get of dict object at ...>('5e1e6d8b30')
+E        +    where <built-in method get of dict object at ...> = {'5e1e6d8b30': 1, 'ebaf98b233': 1, '738f01f542': 1}.get
+...
+______________ test_barrel_rewiring_integration_with_build_graph ______________
+...
+>       assert c_file_id not in consumer_imports
+E       AssertionError: assert 'ebaf98b233' not in {'5e1e6d8b30': 1, 'ebaf98b233': 1, '738f01f542': 1}
+======================= 2 failed, 7 deselected in 0.51s =======================
+
+
+3. Code Fix
+- cartog/model.py:244-249: In Graph.add_edge(), merged attrs["imported_names"] when aggregating duplicate edges.
+- cartog/merge.py:406: Passed attrs={"imported_names": list(imp.names)} when creating internal import edges.
+- cartog/views.py:345-420: Refactored rewire_view_edges() to build file_defined_symbols from symbol nodes and barrel re-exports, calculate exact symbol counts per target defining file using imported_names, and omit defining targets with count=0.
+
+
+4. Green Step: Passing Tests
+Command: pytest tests/test_views_mermaid.py -k "test_barrel_rewiring"
+Exit code: 0
+Output:
+============================= test session starts =============================
+platform win32 -- Python 3.13.1, pytest-9.1.1, pluggy-1.7.0
+rootdir: C:\Users\rishi\OneDrive\Desktop\Dev\cartog
+configfile: pyproject.toml
+collected 9 items / 7 deselected / 2 selected
+
+tests\test_views_mermaid.py ..                                           [100%]
+
+======================= 2 passed, 7 deselected in 0.35s =======================
+
+
+5. User Check Verification
+Command: venv\Scripts\python.exe -m cartog map samples/flask --out "$env:TEMP\flask_map_check" --force
+Excerpt from $env:TEMP\flask_map_check\overview.mmd:
+  cat_examples -->|4 imports| file_033e01f60c
+  cat_examples -->|9 imports| file_07d4bf52ad
+  cat_examples -->|3 imports| file_708cb59af1
+  cat_examples -->|7 imports| file_7625d06685
+  cat_examples -->|6 imports| file_b2a411be70
+  cat_examples -->|9 imports| file_caec9fb755
+  cat_examples -->|3 imports| file_d6b023750f
+  cat_examples -->|14 imports| file_df628b7c13
+  cat_examples -->|7 imports| file_fa7ec905af
+
+Edge counts from examples and tests are distinct, varied, and accurately reflect imported symbol definitions rather than replicating the aggregate barrel count (29) across all targets.
+
+
+6. Ending Test Count
+Command: pytest tests/
+Output:
+============================= test session starts =============================
+platform win32 -- Python 3.13.1, pytest-9.1.1, pluggy-1.7.0
+rootdir: C:\Users\rishi\OneDrive\Desktop\Dev\cartog
+configfile: pyproject.toml
+collected 123 items
+...
+======================= 123 passed, 1 warning in 25.61s =======================
+Delta: +2 tests (121 -> 123), 0 decrease.
+

@@ -1,0 +1,162 @@
+================================================================================
+T0 Evidence: Verification of Milestone Claims (M9, M8, M7) and Audit Scope
+Generated: 2026-10-29
+Command Baseline Test Suite Run:
+  venv\Scripts\python.exe -m pytest tests/
+  Output: 111 passed, 1 warning in 30.07s (Exit Code 0)
+================================================================================
+
+1. MILESTONE 9: NOISE FILTERING & REWIRING AUDIT
+--------------------------------------------------------------------------------
+Rating: PARTIAL
+
+A. CLI Option Verification:
+Command:
+  venv\Scripts\python.exe -m cartog map --help
+Excerpt from stdout:
+| --show-noise                          Include noise files (re-export        |
+|                                       barrels, constants/type-only modules) |
+|                                       in diagram views.                     |
+
+B. Default Hiding and Rewiring Code in Repository:
+- cartog/cli.py:632: defines show_noise: bool = typer.Option(False, "--show-noise", ...)
+- cartog/cli.py:686-688:
+    if not show_noise and noise_classifications:
+        console.print(f"  [cyan]Notice:[/cyan] Filtered {len(noise_classifications)} noise module(s) from view (use --show-noise to display).")
+- cartog/export_mermaid.py:121-129:
+    noise_files = detect_noise_files(graph, target_path=graph.meta.get("target_path")) if not show_noise else {}
+    noise_paths = set(noise_files.keys())
+    file_nodes = [
+        n for n in graph.nodes.values()
+        if n.kind == "file"
+        and (show_manifests or not is_manifest_file(n.path or ""))
+        and (show_noise or (n.path or "") not in noise_paths)
+    ]
+- cartog/export_mermaid.py:274:
+    edges_to_render = rewire_view_edges(graph, noise_paths) if not show_noise else graph.edges
+- cartog/views.py:232-348: detect_noise_files() executes AST heuristics for re-exports and constants/types.
+- cartog/views.py:350-418: rewire_view_edges() rewires imports through hidden barrel modules to defining targets.
+
+C. Investigation: Why Flask Map Still Shows typing.py, globals.py, and __main__.py:
+- typing.py (samples/flask/src/flask/typing.py:6):
+  Contains `if t.TYPE_CHECKING: ...`.
+  In cartog/views.py:129-157 (_is_python_constants_or_types), AST statements allowed are Import, ImportFrom, Expr(Constant str), ClassDef (with allowed type bases), and Assign/AnnAssign.
+  Line 156: `return False, f"Contains non-constant statement '{type(stmt).__name__}'"` triggers on ast.If!
+  Because ast.If is not handled in _is_python_constants_or_types, typing.py is rejected and not classified as noise.
+- globals.py (samples/flask/src/flask/globals.py:8, 41-60):
+  Contains `if t.TYPE_CHECKING: ...` (triggers ast.If rejection) AND runtime context proxy initialization calls (`app_ctx = LocalProxy(...)`), which are ast.Call expressions, disqualifying it from constants/types.
+- __main__.py (samples/flask/src/flask/__main__.py:3):
+  Contains executable statement `main()`, which is an ast.Expr(ast.Call), correctly disqualifying it from being considered a barrel or constants/types module (it is an entrypoint execution script).
+
+Conclusion: Milestone 9 is PARTIAL. The noise filtering infrastructure and CLI flag are implemented and functional for re-export barrels and simple constant/type files, but Python constants/types heuristics fail on files containing `if TYPE_CHECKING:` guards.
+
+
+2. MILESTONE 8: .cartogignore AND IGNORE HIERARCHY AUDIT
+--------------------------------------------------------------------------------
+Rating: DONE
+
+A. gitignore Always Evaluated First (Immutable Base):
+- Code: cartog/scan.py:248-254 (directory pruning) and cartog/scan.py:262-272 (file filtering)
+    if root_gitignore_spec and (root_gitignore_spec.match_file(rel_file) or root_gitignore_spec.match_file(fname)):
+        result.skipped.append(SkippedFile(path=rel_file, reason="matched .gitignore"))
+        ignore_metrics.gitignore_files_excluded += 1
+        continue
+- Test: tests/test_ignore.py:20-36 (test_gitignore_precedence_over_cartogignore)
+    assert skipped_map.get("secret.py") == "matched .gitignore"
+    assert res.ignore_metrics.gitignore_files_excluded == 1
+    assert res.ignore_metrics.cartogignore_files_excluded == 0
+
+B. cartogignore Only Adds Exclusions (Additive Only):
+- Code: cartog/scan.py:274-279
+    if root_cartogignore_spec and (root_cartogignore_spec.match_file(rel_file) or root_cartogignore_spec.match_file(fname)):
+        result.skipped.append(SkippedFile(path=rel_file, reason="matched .cartogignore"))
+        ignore_metrics.cartogignore_files_excluded += 1
+        continue
+- Test: tests/test_ignore.py:38-59 (test_cartogignore_additive_and_internal_negation)
+    Verifies .cartogignore adds exclusions and ! internal negation only un-ignores patterns within .cartogignore itself.
+
+C. CLI --ignore Flag:
+- Code: cartog/scan.py:280-285
+    if cli_spec and (cli_spec.match_file(rel_file) or cli_spec.match_file(fname)):
+        result.skipped.append(SkippedFile(path=rel_file, reason="matched CLI --ignore pattern"))
+        ignore_metrics.cli_ignore_files_excluded += 1
+        continue
+- Test: tests/test_ignore.py:61-77 (test_cli_repeatable_ignore_flags)
+
+D. Dropped-Edge Counts Recorded in Meta:
+- Code: cartog/scip_pass.py:621-624 and cartog/merge.py:674
+    if callee_path in ignored:
+        if ignore_metrics is not None and hasattr(ignore_metrics, "dropped_edges_count"):
+            ignore_metrics.dropped_edges_count += 1
+        continue
+- Test: tests/test_ignore.py:109-170 (test_dropped_edge_accounting_in_build_graph)
+    assert graph.meta["ignores"]["dropped_edges_count"] == 1
+
+E. Ignore Rules Hash in Cache Key:
+- Code: cartog/cache.py:34-35 and cartog/scan.py:166-188
+    def _make_key(self, file_sha1: str, adapter_version: str) -> str:
+        return f"{self.schema_version}:{self.ignore_hash}:{file_sha1}:{adapter_version}"
+- Test: tests/test_ignore.py:79-107 (test_cache_invalidation_on_ignore_change)
+    assert hash_ci != hash_base
+    assert hash_ci in k2
+
+
+3. MILESTONE 7: VALIDATION, EXPLAINED/UNEXPLAINED MISMATCHES & STRICT CHECK AUDIT
+--------------------------------------------------------------------------------
+Rating: DONE
+
+A. Mismatch Classification (Explained vs Unexplained):
+- Code: cartog/validate.py:380-455 (cross_check_imports_and_calls)
+    Lines 407-432:
+    category = "unexplained"
+    if t_path in reach.get(s_path, set()):
+        category = "explained" # transitive/barrel
+    elif (...) # package internal dynamic/param dispatch
+        category = "explained"
+    elif (...) # test dynamic dispatch into src/
+        category = "explained"
+- Test: tests/test_merge_validate.py:190-240 (test_cross_check_imports_and_calls)
+    Verifies direct imports (clean), transitive barrel imports (category="explained"), and calls without import (category="unexplained").
+
+B. --strict Fails Only on Warnings and Unexplained Mismatches:
+- Code: cartog/cli.py:878-881
+    if not res.is_valid:
+        raise typer.Exit(code=1)
+    if strict and (res.warnings or cross_check.unexplained_mismatches):
+        raise typer.Exit(code=1)
+- Test: tests/test_cli.py:53-75 and tests/test_merge_validate.py:190-240
+
+
+4. CATALOG OF ITEMS NOT READ OR UNVERIFIED DURING ONBOARDING
+--------------------------------------------------------------------------------
+A. Test Suites Not Read in Full (11 of 17 files; names and test counts verified, bodies unread):
+   - tests/test_cli.py
+   - tests/test_manifests.py
+   - tests/test_jsonc.py
+   - tests/test_scan.py
+   - tests/test_views.py
+   - tests/test_config.py
+   - tests/test_json_export.py
+   - tests/test_parse_cache.py
+   - tests/test_python_adapter.py
+   - tests/test_scip_windows_shim.py
+   - tests/test_cache_force.py
+
+B. Historical Logs & Issue Entries Not Read in Full:
+   - docs/BUILD_LOG.md: chronological entries 1 through 21 (read headers and Entry 22).
+   - docs/ISSUES_AND_DECISIONS.md: problem reports prior to Issue 15.
+
+C. Third-Party Code, Indexer Binaries, and Output Files:
+   - Tree-sitter C-parser bindings and grammars.
+   - Indexer node packages (@sourcegraph/scip-python, @sourcegraph/scip-typescript).
+   - Generated files under cartog-out/ and .cartog/ (never opened whole per rule).
+
+D. Unverified Claims:
+   - UNVERIFIED: End-to-end `mmdc` browser rendering to PNG/SVG in unsandboxed environment (Chromium headless launch is blocked in sandbox; `.mmd` source verified).
+   - UNVERIFIED: Scalability of `scip-typescript` on large multi-package workspaces with composite tsconfig projects (only tested on single-package samples/ky).
+
+E. Unknowns:
+   - UNKNOWN: AST parsing performance and memory footprint on codebases >500,000 LOC.
+   - UNKNOWN: Milestone 11 interactive Cytoscape.js runtime behavior (not yet implemented).
+================================================================================
+
