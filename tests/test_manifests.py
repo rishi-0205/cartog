@@ -94,6 +94,23 @@ pytest
     assert deps["pytest"]["version_spec"] == "*"
 
 
+def test_parse_requirements_file_utf16(tmp_path: Path):
+    """Verify requirements file with UTF-16 encoding (common on Windows) decodes cleanly."""
+    req_content = "requests>=2.30.0\nplaywright==1.50.0\n"
+    p = tmp_path / "requirements.txt"
+    p.write_bytes(req_content.encode("utf-16"))
+
+    facts = ManifestFacts()
+    parse_requirements_file(p, "requirements.txt", facts)
+
+    deps = {d["name"]: d for d in facts.dependencies}
+    assert len(deps) == 2
+    assert "requests" in deps
+    assert "playwright" in deps
+    assert len(facts.warnings) == 0
+
+
+
 def test_parse_dockerfile(tmp_path: Path):
     docker_content = """
 FROM python:3.11-slim AS builder

@@ -874,43 +874,41 @@ patterns = [
 - **Definition of Done:** View model cleanly aggregates hierarchy; before and after sizes measured and reported; `cartog digest` and `query` operate without full indexing; all 107 tests pass; Cartog remains installed.
 - **Checkpoint Pause:** `PAUSE FOR USER CONFIRMATION`
 
-### Milestone 11: Interactive Viewer (`cartog view`)
+### Milestone 11: Interactive Viewer (`cartog view`) — ✅ COMPLETE (ACCEPTED 2026-11-03)
 - **Goal:** Implement `cartog view <path>` generating a single self-contained, offline interactive HTML visualization (`map.html`) using Cytoscape.js with dynamic compound node expand/collapse, sidebar details, and `vscode://` editor links.
 - **Deliverables:**
   - `cartog/export_html.py` and `cartog view` command generating `map.html` and automatically opening it in the browser (opt-out with `--no-open`).
   - 100% offline self-contained HTML: zero external network dependencies, no local HTTP server required, sends no data anywhere.
-  - Bundled Cytoscape.js stack (pinned versions to be re-verified on npm, with licences, at the start of the milestone):
+  - Bundled Cytoscape.js stack:
     - `cytoscape` (v3.34.4, MIT License)
     - `cytoscape-expand-collapse` (v4.1.1, MIT License)
     - `cytoscape-fcose` (v2.2.0, MIT License, Fast Compound Spring Embedder)
   - All JS and CSS assets stored in `cartog/view_assets/`, packaged in package data, and inlined into `map.html`.
-  - Dynamic behavior: starts collapsed at the top level (subsystems or folders); clicking container nodes smoothly expands down to files, classes, and boundary functions.
+  - Orthogonal Manhattan edge routing (`taxi`) with client-side switcher (`Orthogonal`, `Straight`, `Curved`).
+  - Dynamic behavior: starts collapsed at top level; clicking container nodes smoothly expands down to files, classes, and boundary functions.
+  - Generous compound container clearance (35px for files/classes, 50px for folders) and tuned layout physics (85,000 repulsion, 240px edge length, 55px tiling margins).
+  - Internal helper symbol retention (`include_helpers=True`) and edge linking, with `Helpers: Shown / Hidden` toolbar toggle.
+  - Multi-call edge rollup with autorotating count badge labels (`N calls`).
+  - Reference edge filter with `References: Off / On` toolbar toggle.
   - Metadata side panel: displays node kind, qualified name, 1-based file:line coordinates, inbound callers, outbound callees, routes served, and clickable `vscode://file/<path>:<line>` links.
-  - Ingests trimmed Universal View Model, not raw `graph.json`.
+  - Ingests Universal View Model, not raw `graph.json`.
   - Supports rendering both architecture overview and `cartog flow` traces.
   - Mermaid retained as static text/PNG export for READMEs.
 - **Files Touched / Built:**
   - `cartog/export_html.py`
+  - `cartog/views.py`
   - `cartog/view_assets/` (bundled JS/CSS)
   - `cartog/cli.py`
   - `pyproject.toml` (package data `cartog = ["*.js", "view_assets/*"]`)
   - `tests/test_interactive_view.py`
   - `docs/BUILD_LOG.md`
 - **CLI Changes:**
-  - `cartog view <path> [--out <dir>] [--no-open] [--flow <target>]`
+  - `cartog view <path> [--out <dir>] [--no-open] [--flow <target>] [--include-helpers/--no-helpers]`
 - **Tests:**
-  - `tests/test_interactive_view.py`: test `map.html` generation; assert embedded JSON is valid view model; assert zero external `http://` or `https://` script/style tags.
-  - Fresh venv clean install test verifying `view_assets/` are included in installed wheel.
-- **Demo Command on a Real Repo:**
-  - `cartog view samples/click --out cartog-out/click-view --no-open`
-  - `cartog view samples/ky --out cartog-out/ky-view --no-open`
-- **What to Look At in the Demo:**
-  - Open `cartog-out/click-view/map.html` in browser.
-  - Verify compound nodes start collapsed at top-level folders.
-  - Click to expand `src/click` into files, and expand `core.py` into `Command` class and boundary functions.
-  - Click a boundary function: verify sidebar displays callers, callees, and working `vscode://` URL.
+  - `tests/test_interactive_view.py`: 9 tests passing (offline assets packaged, valid HTML payload, zero network tags, view command overview and flow modes, edge rollup, header controls, helper retention, expanded spacing).
+  - Test suite total: 162 passed, 1 warning.
 - **Definition of Done:** Offline `map.html` fully functional; interactive drill-down works; package data includes assets in clean wheel install; Cartog remains installed and all tests pass.
-- **Checkpoint Pause:** `PAUSE FOR USER CONFIRMATION`
+- **Checkpoint Pause:** `ACCEPTED BY USER (2026-11-03)`
 
 ### Milestone 12: Hand-Written Subsystem Map (`subsystems.toml`)
 - **Goal:** Implement optional root-level `subsystems.toml` defining high-level architectural subsystems; validate patterns and handle unassigned files; render the Subsystem container level in the interactive viewer and view model.

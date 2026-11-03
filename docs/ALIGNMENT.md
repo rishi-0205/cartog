@@ -245,7 +245,8 @@ Test names and counts were inventoried in `docs/CODE_MAP.md`, but line-by-line t
 - **UNVERIFIED:** End-to-end `mmdc` browser rendering to PNG/SVG in unsandboxed environments. In the execution sandbox, Chromium launch is blocked; `.mmd` source generation is verified.
 - **UNVERIFIED:** Multi-package monorepo scalability of `scip-typescript` with complex composite project references (`samples/ky` is a single-package target).
 
-### 5. Unknowns
+### 5. Unknowns & Recent Verifications
 - **UNKNOWN:** AST parsing performance and memory consumption on codebases exceeding 500,000 LOC.
-- **UNKNOWN:** Milestone 11 interactive Cytoscape.js runtime packaging and offline asset bundling.
+- **VERIFIED (2026-11-03):** Milestone 11 interactive Cytoscape.js runtime packaging, offline asset bundling (`cartog/view_assets/`), orthogonal taxi edge routing, edge rollup, compound clearances, and internal helper retention (verified in `tests/test_interactive_view.py`, 162 total tests passing).
+
 

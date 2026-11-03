@@ -164,8 +164,17 @@ def parse_pyproject_toml(file_path: Path, rel_path: str, facts: ManifestFacts) -
 
 def parse_requirements_file(file_path: Path, rel_path: str, facts: ManifestFacts) -> None:
     """Extract dependencies from requirements*.txt file."""
+    content: str
     try:
         content = file_path.read_text(encoding="utf-8-sig")
+    except UnicodeDecodeError:
+        try:
+            content = file_path.read_text(encoding="utf-16")
+        except Exception as exc:
+            msg = f"Failed to read '{file_path.as_posix()}': {exc}"
+            print(f"Warning: {msg}", file=sys.stderr)
+            facts.warnings.append({"file": rel_path, "error": str(exc)})
+            return
     except Exception as exc:
         msg = f"Failed to read '{file_path.as_posix()}': {exc}"
         print(f"Warning: {msg}", file=sys.stderr)

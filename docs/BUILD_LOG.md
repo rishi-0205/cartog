@@ -1227,6 +1227,34 @@ flowchart LR
   - `cartog check --strict` executed on Click, Ky, and Flask: 100% PASS with 0 errors, 0 warnings.
   - Follow-up items (a)–(f) audited; items (c), (d), (e), (f) implemented and verified; items (a) and (b) documented with root-cause and proposed fixes in `docs/KNOWN_ISSUES.md`.
 
+---
+
+## Entry 23: Interactive Cytoscape Viewer (`cartog view`) (Milestone 11) — Accepted 2026-11-03
+
+- **Step:** Implemented `cartog view` generating a 100% self-contained, offline interactive HTML map (`map.html`) using Cytoscape.js with dynamic compound expand/collapse, orthogonal taxi routing, edge rollup, internal helper retention, and symbol metadata inspection.
+- **What was built / done:**
+  - `cartog/export_html.py`:
+    - Generates self-contained `map.html` bundling Cytoscape.js v3.34.4, cytoscape-expand-collapse v4.1.1, and cytoscape-fcose v2.2.0.
+    - Zero external network dependencies (no unpkg/cdn links, no remote script/style tags).
+    - Edge rollup aggregating multi-calls/imports between same source and target with autorotating label badges (`N calls`).
+    - Internal helper retention (`include_helpers=True`) exposing methods/functions directly as child nodes rather than collapsing into dummy groups.
+    - Dual mode: supports overview codebase maps and call flow traces (`cartog view --flow <target>`).
+  - `cartog/view_assets/`:
+    - `viewer.js`: Interactive runtime controller with orthogonal Manhattan routing (`curve-style: 'taxi'`), edge routing switcher (`Orthogonal`, `Straight`, `Curved`), layout selector (`Blueprint`, `DAG`, `Grid`), reference filter (`References: Off / On`), helper filter (`Helpers: Shown / Hidden`), and symbol inspector sidebar with `vscode://` links.
+    - `viewer.css`: Modern dark-theme stylesheet with clear compound container padding (35px for files/classes, 50px for folders), control styling, and badge labels.
+  - `cartog/cli.py`:
+    - Added `cartog view <path> [--out <dir>] [--no-open] [--flow <target>] [--include-helpers/--no-helpers]`.
+  - `cartog/views.py`:
+    - Added `include_helpers: bool = False` to `build_universal_view_tree()` to retain internal helper methods and functions as discrete child nodes when requested.
+  - `tests/test_interactive_view.py`:
+    - Added 9 tests covering offline asset packaging, HTML generation, zero network dependencies, overview/flow CLI modes, edge rollup, header controls, helper retention, and layout physics.
+- **Verification:**
+  - Full test suite: 162 passed, 1 warning (0 regressions).
+  - Executed on real-world sample `samples/webscrapper` across overview, check, digest, flow, and interactive view modes.
+- **Problems and decisions:**
+  - Documented Issue 27 & Decision 27 (orthogonal taxi routing, reference noise suppression, edge rollup) and Issue 28 & Decision 28 (compound clearance, internal helper retention, subnode spacing) in `docs/ISSUES_AND_DECISIONS.md`.
+
+
 
 
 

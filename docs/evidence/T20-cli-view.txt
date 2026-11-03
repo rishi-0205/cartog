@@ -1,0 +1,53 @@
+=== T20: Interactive viewer CLI command & tests ===
+
+1. RED TEST EXECUTION:
+Command: venv\Scripts\python.exe -m pytest tests/test_interactive_view.py -k "test_cli_view"
+Real failure output:
+________________________ test_cli_view_command_default ________________________
+    def test_cli_view_command_default(tmp_path: Path):
+        ...
+        res = runner.invoke(app, ["view", str(graph_path), "--out", str(out_dir), "--no-open"])
+>       assert res.exit_code == 0, res.stdout
+E       AssertionError: 
+E       assert 2 == 0
+E        +  where 2 = <Result SystemExit(2)>.exit_code
+
+tests\test_interactive_view.py:149: AssertionError
+_______________________ test_cli_view_command_flow_mode _______________________
+    def test_cli_view_command_flow_mode(tmp_path: Path):
+        ...
+        res = runner.invoke(app, ["view", str(graph_path), "--flow", "main", "--out", str(out_dir), "--no-open"])
+>       assert res.exit_code == 0, res.stdout
+E       AssertionError: 
+E       assert 2 == 0
+E        +  where 2 = <Result SystemExit(2)>.exit_code
+
+tests\test_interactive_view.py:168: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_interactive_view.py::test_cli_view_command_default - Assert...
+FAILED tests/test_interactive_view.py::test_cli_view_command_flow_mode - Asse...
+======================= 2 failed, 3 deselected in 0.89s =======================
+
+2. GREEN TEST EXECUTION:
+Command: venv\Scripts\python.exe -m pytest tests/test_interactive_view.py -v
+Real passing output:
+============================= test session starts =============================
+platform win32 -- Python 3.13.1, pytest-9.1.1, pluggy-1.7.0 -- C:\Users\rishi\OneDrive\Desktop\Dev\cartog\venv\Scripts\python.exe
+cachedir: .pytest_cache
+rootdir: C:\Users\rishi\OneDrive\Desktop\Dev\cartog
+configfile: pyproject.toml
+collecting ... collected 5 items
+
+tests/test_interactive_view.py::test_view_assets_packaged_and_loadable PASSED [ 20%]
+tests/test_interactive_view.py::test_export_html_generates_valid_offline_file PASSED [ 40%]
+tests/test_interactive_view.py::test_export_html_no_external_network_tags PASSED [ 60%]
+tests/test_interactive_view.py::test_cli_view_command_default PASSED     [ 80%]
+tests/test_interactive_view.py::test_cli_view_command_flow_mode PASSED   [100%]
+
+============================== 5 passed in 0.96s ==============================
+
+3. FULL SUITE TEST RUN:
+Command: venv\Scripts\python.exe -m pytest tests/
+Output:
+======================= 157 passed, 1 warning in 32.26s =======================
+

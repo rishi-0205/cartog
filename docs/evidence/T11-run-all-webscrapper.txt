@@ -1,0 +1,43 @@
+=== Cartog Map Command ===
+Command: .\venv\Scripts\python.exe -m cartog.cli map samples/webscrapper --out cartog-out/webscrapper-map
+Output:
+Cartog Stage 1 (Parse): Scanning C:/Users/rishi/OneDrive/Desktop/Dev/cartog/samples/webscrapper...
+Discovered 22 source files (4 skipped).
+Cartog Stage 3 (Build): Merging structural graph for C:/Users/rishi/OneDrive/Desktop/Dev/cartog/samples/webscrapper...
+Cartog Stage 4 (Map): Generating Mermaid diagrams for C:/Users/rishi/OneDrive/Desktop/Dev/cartog/samples/webscrapper...
+  Notice: Filtered 7 noise module(s) from view (use --show-noise to display).
+  Mermaid source written: C:/Users/rishi/OneDrive/Desktop/Dev/cartog/cartog-out/webscrapper-map/overview.mmd
+  Generated 6 folder-level diagram(s) under C:/Users/rishi/OneDrive/Desktop/Dev/cartog/cartog-out/webscrapper-map
+Success: Architecture map complete in C:/Users/rishi/OneDrive/Desktop/Dev/cartog/cartog-out/webscrapper-map
+
+=== Cartog Check Command ===
+Command: .\venv\Scripts\python.exe -m cartog.cli check cartog-out/webscrapper-map/graph.json
+Output:
+Overall Integrity: PASS (0 errors)
+Range & Containment: PASS (0 errors)
+Call Cross-Check: CLEAN (107/107 matched, 0 explained, 0 unexplained)
+Validation Warnings: CLEAN (0)
+
+=== Cartog View Command ===
+Command: .\venv\Scripts\python.exe -m cartog.cli view samples/webscrapper --out cartog-out/webscrapper-view --no-open
+Output:
+Success: Interactive map written to cartog-out/webscrapper-view/map.html
+
+=== Cartog Digest Command ===
+Command: .\venv\Scripts\python.exe -m cartog.cli digest samples/webscrapper --out cartog-out/webscrapper-digest
+Output:
+Digest written to: cartog-out/webscrapper-digest/digest.md
+Discovered Entry Points: __main__ (main.py:185)
+
+=== Cartog Flow Command ===
+Command: .\venv\Scripts\python.exe -m cartog.cli flow samples/webscrapper "run" --out cartog-out/webscrapper-flow
+Output:
+Cartog Call Flow Trace: 'run' (max depth: 3)
+Reached 30 symbols via 28 call relationships.
+Mermaid flow trace written: cartog-out/webscrapper-flow/flow_run.mmd
+
+=== Cartog Flow View Command ===
+Command: .\venv\Scripts\python.exe -m cartog.cli view samples/webscrapper --flow run --out cartog-out/webscrapper-flow-view --no-open
+Output:
+Success: Interactive map written to cartog-out/webscrapper-flow-view/map.html
+

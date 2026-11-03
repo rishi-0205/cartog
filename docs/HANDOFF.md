@@ -1,6 +1,6 @@
 # Cartog — Handoff Document
 
-**Last updated:** 2026-10-30 (Phases A–E complete: T0 through T16 accepted, T17 handoff)  
+**Last updated:** 2026-11-03 (Milestone 11 accepted: T11 interactive Cytoscape viewer complete, 162 tests passing)  
 **Role:** Single entry point for any model or developer picking up this project.  
 **Active Working Tasks:** See [`docs/WORKING_TASKS.md`](./WORKING_TASKS.md) for the active working document and task command loop.
 
@@ -11,11 +11,12 @@
 Cartog is a **code-mapping CLI tool** that produces:
 1. A unified property graph (`graph.json`) of files, functions, classes, routes, commands, and their connections (imports, calls, references, overrides).
 2. Architecture diagrams (`overview.mmd`, `overview.png`) and call flow traces (`flow.mmd`) via Mermaid.
-3. Compact architectural digests (`digest.md`) for LLM prompts (~1,000–2,000 tokens).
-4. Validation reports (`cartog check`) with configurable strictness.
+3. Interactive self-contained codebase maps (`map.html`) via Cytoscape with orthogonal routing and symbol inspection (`cartog view`).
+4. Compact architectural digests (`digest.md`) for LLM prompts (~1,000–2,000 tokens).
+5. Validation reports (`cartog check`) with configurable strictness.
 
 Input: any Python, JS, or TS project directory.  
-Output: `cartog-out/` containing `parse.json`, `scip.json`, `graph.json`, `overview.mmd`, `overview.png`, `flow.mmd`, `digest.md`.
+Output: `cartog-out/` containing `parse.json`, `scip.json`, `graph.json`, `overview.mmd`, `overview.png`, `flow.mmd`, `digest.md`, `map.html`.
 
 ---
 
@@ -38,8 +39,8 @@ Output: `cartog-out/` containing `parse.json`, `scip.json`, `graph.json`, `overv
 | 9 | Deterministic Noise Filtering | ✅ COMPLETE |
 | 10 | Views, View Model, Compact Output & Digest | ✅ COMPLETE |
 | 10.1 | Flow Hardening: Route IDs, Scoping, Candidate Selector | ✅ COMPLETE |
-| 11 | Interactive Viewer (`cartog view`) | ⏳ NEXT |
-| 12 | Hand-Written Subsystem Map | ⏳ PENDING |
+| 11 | Interactive Viewer (`cartog view`) | ✅ COMPLETE |
+| 12 | Hand-Written Subsystem Map (`subsystems.toml`) | ⏳ NEXT |
 | 13 | Comparative Verification & Final Docs | ⏳ PENDING |
 
 ### Phases A–E Hardening & Polish Summary (T0–T16 Accepted)
@@ -51,27 +52,22 @@ Output: `cartog-out/` containing `parse.json`, `scip.json`, `graph.json`, `overv
 | **Phase C: Flow view** | T7, T8, T9, T10, T11 | Added disambiguating flow candidate selector; resolved name collisions in flat Mermaid nodes; plumbed in-memory SCIP data into flow CLI; added BFS depth limits and class instantiation tracking; verified multi-hop flow demos across Flask, Ky, and Click. |
 | **Phase D: Function names in overview** | T12 | Added function-level diagram view with boundary symbol selection and helper collapsing; implemented graceful node budget fallback to file-level. |
 | **Phase E: Polish** | T13, T14, T15, T16 | Added visible legends and summary subgraphs in Mermaid; ranked digest files by connectivity and attributed constructors to enclosing classes; completed noise filtering with `if t.TYPE_CHECKING:` guard support; benchmarked compact serialization (44–50% reduction) and token budgets (<2,000 tokens). |
+| **Milestone 11: Interactive Viewer** | T11 | Packaged offline Cytoscape stack in `cartog/view_assets/`; implemented `cartog view` generating offline `map.html`; implemented orthogonal Manhattan edge routing (`taxi`), edge rollup (`N calls`), reference filter toggle (`References: Off / On`), compound padding (35-50px) & layout physics, and internal helper expansion & linking with toggle. |
 
-**Test suite:** 152 passed, 1 warning (2026-10-30, `pytest tests/` in venv, +41 new tests added, 0 regressions from 111 baseline). Raw output preserved in [`docs/pytest_report.txt`](./pytest_report.txt).
+**Test suite:** 162 passed, 1 warning (2026-11-03, `pytest tests/` in venv, +10 new tests added in M11, 0 regressions from 152 baseline).
 
 ---
 
-## 3. Next 3 Tasks
+## 3. Next 2 Tasks
 
-1. **Milestone 11 — Interactive Viewer (`cartog view`)**  
-   See `docs/IMPLEMENTATION_PLAN.md:886-900`.  
-   - Bundled offline Cytoscape.js viewer (`map.html`) via `cartog/export_html.py`.
-   - Dynamic compound expand/collapse: top-level (folders/subsystems) expanding down to files, classes, and boundary functions.
-   - Rich interactive metadata side panel with inbound/outbound calls, routes served, and `vscode://` links.
-   - Retain Mermaid static views for READMEs.
-
-2. **Milestone 12 — Hand-Written Subsystem Map (`subsystems.toml`)**  
-   See `docs/IMPLEMENTATION_PLAN.md:901-925`.  
+1. **Milestone 12 — Hand-Written Subsystem Map (`subsystems.toml`)**  
+   See `docs/IMPLEMENTATION_PLAN.md:915-945`.  
    - Optional `subsystems.toml` specifying human architectural boundaries.
-   - Subsystem container nodes in Universal View Model and diagrams.
+   - Subsystem container nodes in Universal View Model, Mermaid diagrams, and Cytoscape interactive viewer.
+   - Pattern validation: error on overlapping file patterns, warn on dead patterns, group unmatched files into `unassigned`.
 
-3. **Milestone 13 — Comparative Verification & Final Docs**  
-   See `docs/IMPLEMENTATION_PLAN.md:926-950`.  
+2. **Milestone 13 — Comparative Verification & Final Docs**  
+   See `docs/IMPLEMENTATION_PLAN.md:946-975`.  
    - Comparative verification against Grimp and Madge.
    - Complete README, USAGE, and architecture documentation.
    - Compact `graph.json` and `cartog digest` for LLM token budgets.

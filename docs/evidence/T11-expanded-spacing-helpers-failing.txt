@@ -1,0 +1,68 @@
+Command: .\venv\Scripts\python.exe -m pytest tests/test_interactive_view.py
+Output:
+============================= test session starts =============================
+platform win32 -- Python 3.13.1, pytest-9.1.1, pluggy-1.7.0
+rootdir: C:\Users\rishi\OneDrive\Desktop\Dev\cartog
+configfile: pyproject.toml
+collected 9 items
+
+tests\test_interactive_view.py .......FF                                 [100%]
+
+================================== FAILURES ===================================
+______________ test_universal_view_tree_expand_internal_helpers _______________
+
+    def test_universal_view_tree_expand_internal_helpers():
+        """Verify that build_universal_view_tree with include_helpers=True retains individual helper symbols and their edges."""
+        from cartog.views import build_universal_view_tree
+        from cartog.export_html import convert_view_tree_to_cytoscape_elements
+    
+        g = Graph()
+        g.meta = {"target_path": "helper_test"}
+    
+        # File 1 with a boundary function and an internal helper
+        f1 = Node(id="file_core", name="core.py", qualified_name="core.py", kind="file", path="core.py")
+        fn_main = Node(id="fn_main", name="main", qualified_name="core:main", kind="function", path="core.py", parent="file_core")
+        fn_helper = Node(id="fn_helper", name="_clean", qualified_name="core:_clean", kind="function", path="core.py", parent="file_core")
+    
+        # File 2 with a target function
+        f2 = Node(id="file_util", name="util.py", qualified_name="util.py", kind="file", path="util.py")
+        fn_util = Node(id="fn_util", name="format", qualified_name="util:format", kind="function", path="util.py", parent="file_util")
+    
+        g.add_node(f1)
+        g.add_node(fn_main)
+        g.add_node(fn_helper)
+        g.add_node(f2)
+        g.add_node(fn_util)
+    
+        # fn_main calls external fn_util (boundary call) and calls internal helper fn_helper
+        g.add_edge(Edge(source="fn_main", target="fn_util", kind="calls", confidence="resolved", count=1))
+        g.add_edge(Edge(source="fn_main", target="fn_helper", kind="calls", confidence="resolved", count=2))
+    
+        # 1. Default (include_helpers=False) should collapse fn_helper into a composite helper_group
+>       tree_collapsed = build_universal_view_tree(g, include_helpers=False)
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: build_universal_view_tree() got an unexpected keyword argument 'include_helpers'
+
+tests\test_interactive_view.py:258: TypeError
+_______________ test_viewer_expanded_spacing_and_helper_toggle ________________
+
+tmp_path = WindowsPath('C:/Users/rishi/AppData/Local/Temp/pytest-of-rishi/pytest-217/test_viewer_expanded_spacing_a0')
+
+    def test_viewer_expanded_spacing_and_helper_toggle(tmp_path: Path):
+        """Verify that map.html includes generous compound padding (>=30px), helper toggle, and spacious layout physics."""
+        from cartog.export_html import generate_html_map
+    
+        graph = _build_test_graph()
+        out_file = tmp_path / "map.html"
+        html_content = generate_html_map(graph, out_file=out_file)
+    
+        # 1. Helper toggle button in header
+>       assert 'id="btn-toggle-helpers"' in html_content
+E       assert 'id="btn-toggle-helpers"' in '<!DOCTYPE html>\n<html lang="en">\n<head>\n  <meta charset="utf-8">\n  <meta name="viewport" content="width=device-wi...n      .replace(/"/g, \'&quot;\')\n      .replace(/\'/g, \'&#039;\');\n  }\n})();\n\n\n  </script>\n</body>\n</html>\n'
+
+tests\test_interactive_view.py:290: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_interactive_view.py::test_universal_view_tree_expand_internal_helpers
+FAILED tests/test_interactive_view.py::test_viewer_expanded_spacing_and_helper_toggle
+========================= 2 failed, 7 passed in 1.37s =========================
+

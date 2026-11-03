@@ -720,11 +720,13 @@ def build_universal_view_tree(
     show_noise: bool = False,
     show_manifests: bool = False,
     max_nodes: int = 60,
+    include_helpers: bool = False,
 ) -> ViewNode:
     """Build the hierarchical Universal View Model tree: Subsystem -> Folder -> File -> Class -> Function.
 
     Folders sit directly under root until subsystems are provided.
-    Boundary functions are retained; internal helpers are collapsed into composite '+N internal helpers'.
+    Boundary functions are retained; internal helpers are collapsed into composite '+N internal helpers'
+    unless include_helpers is True (in which case all helpers are expanded as individual child symbols).
     """
     noise_paths: set[str] = set()
     if not show_noise:
@@ -762,7 +764,7 @@ def build_universal_view_tree(
             kind="file",
             path=rel_path,
             parent_id=n.parent,
-            attrs={"language": n.language, "lines": n.range.end_line if n.range else None},
+            attrs={"language": n.language, "lines": n.range.end_line if hasattr(n.range, "end_line") else (n.range[2] if n.range else None)},
         )
         file_nodes[n.id] = f_node
 
@@ -796,12 +798,12 @@ def build_universal_view_tree(
                     kind="class",
                     path=s.path,
                     parent_id=fid,
-                    attrs={"range": s.range.to_list() if s.range else None},
+                    attrs={"range": s.range.to_list() if hasattr(s.range, "to_list") else (list(s.range) if s.range else None)},
                 )
                 methods = symbols_by_parent.get(s.id, [])
                 class_helpers: list[Node] = []
                 for m in methods:
-                    if m.id in boundary_ids:
+                    if m.id in boundary_ids or include_helpers:
                         c_node.children.append(
                             ViewNode(
                                 id=m.id,
@@ -809,7 +811,12 @@ def build_universal_view_tree(
                                 kind="method",
                                 path=m.path,
                                 parent_id=s.id,
-                                attrs={"boundary": True},
+                                attrs={
+                                    "boundary": (m.id in boundary_ids),
+                                    "is_helper": (m.id not in boundary_ids),
+                                    "line": m.range.start_line if hasattr(m.range, "start_line") else (m.range[0] if m.range else 1),
+                                    "qualified_name": m.qualified_name or m.name,
+                                },
                             )
                         )
                     else:
@@ -829,7 +836,7 @@ def build_universal_view_tree(
                 f_node.children.append(c_node)
 
             elif s.kind in ("function", "method"):
-                if s.id in boundary_ids:
+                if s.id in boundary_ids or include_helpers:
                     f_node.children.append(
                         ViewNode(
                             id=s.id,
@@ -837,7 +844,12 @@ def build_universal_view_tree(
                             kind=s.kind,
                             path=s.path,
                             parent_id=fid,
-                            attrs={"boundary": True},
+                            attrs={
+                                "boundary": (s.id in boundary_ids),
+                                "is_helper": (s.id not in boundary_ids),
+                                "line": s.range.start_line if hasattr(s.range, "start_line") else (s.range[0] if s.range else 1),
+                                "qualified_name": s.qualified_name or s.name,
+                            },
                         )
                     )
                 else:

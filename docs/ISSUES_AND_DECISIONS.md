@@ -35,6 +35,8 @@ This document records technical issues, edge-case failures, and architectural ch
 | Issue 24 | Mermaid Reserved Keyword Syntax Error (`classDef class`), Flow Arrow Formatting, and CLI Rendering Diagnostics | M10 |
 | Issue 25 | Flow Command: Route Serves-Edge Mis-attribution, Selector Category Filtering, Re-export Recall, and Basename Disambiguation | M10/M11 |
 | Issue 26 & Decision 26 | Flow Traversal BFS Semantics, External Boundary Termination, Class Instantiation, and Override Styling | M10 |
+| Issue 27 & Decision 27 | Interactive Map Layout: Orthogonal Taxi Edge Routing, Reference Noise Suppression, and Progressive Compound Disclosure | M11 |
+| Issue 28 & Decision 28 | Expanded Compound Node Clearance, Internal Helper Symbol Retention, and Subnode Spacing | M11 |
 
 ---
 
@@ -982,6 +984,74 @@ During BFS call-flow tracing (`cartog flow <target>`), the engine explores execu
 4. **Override Edge Styling (D26d):**
    - `overrides` edges are traversed during BFS flow tracing (from overriding method to base method).
    - In Mermaid diagrams, `overrides` edges are rendered using dashed arrows (`-.->|overrides|`) to visually distinguish polymorphism/inheritance edges from direct solid invocation arrows (`-->|N calls|`).
+
+---
+
+
+## Issue 27 & Decision 27: Interactive Map Layout: Orthogonal Taxi Edge Routing, Reference Noise Suppression, and Progressive Compound Disclosure
+
+- **Component:** `cartog/export_html.py`, `cartog/view_assets/viewer.js`, `cartog/view_assets/viewer.css`
+- **Phase / Milestone:** Phase C / Milestone 11 (T11)
+- **Discovered:** 2026-11-01
+
+### Context and Problem
+During interactive testing of `map.html` across real-world codebases (`samples/webscrapper`, `samples/flask`), users noted that the visualization resembled "atomic orbitals of an unrealistic element" with cramped spacing and edge oversaturation:
+1. **Concentric Bezier Curves:** Cytoscape's default `'curve-style': 'bezier'` expands multiple edges between nodes into widening concentric arcs, creating planetary/orbital ellipses.
+2. **Raw Edge Saturation:** Raw `references` edges (e.g., 146 references with 356 instances in `webscrapper`) created an unreadable spiderweb that drowned out key `calls` and `imports` flows.
+3. **Overly Tight Gravitational Physics:** Force-directed simulation parameters (`nodeRepulsion: 6500`, `idealEdgeLength: 75`, `gravity: 0.25`) pulled compound containers into dense spherical clumps.
+4. **Lack of Progressive Disclosure:** Fully expanding all internal symbols on initial load produced cognitive overload.
+
+### Architectural Decision
+
+1. **Orthogonal Manhattan Edge Routing (D27a):**
+   - Standardize default edge rendering on orthogonal routing (`curve-style: 'taxi'`) with `'taxi-direction': 'auto'`, `'taxi-turn': 20`, and `'taxi-radius': 4`.
+   - Provide a toolbar routing selector allowing users to switch between `Orthogonal (Taxi)`, `Straight`, and `Curved (Bezier)` edges on the fly.
+
+2. **Edge Rollup & Badge Labels (D27b):**
+   - In `convert_view_tree_to_cytoscape_elements()`, roll up parallel edges by `(source, target, kind)` and aggregate total invocation counts.
+   - For edges with `count > 1`, render autorotating label badges (`f"{count} {kind}"`). Single edges omit text labels to preserve visual clarity.
+
+3. **Reference Noise Suppression & Toolbar Filter (D27c):**
+   - In the Cytoscape stylesheet, set `edge[kind = "references"]` to `display: 'none'` by default.
+   - Provide a dedicated `References: Off / On` toolbar toggle (`#btn-toggle-references`) so users can selectively inspect symbol reference webs without cluttering structural architecture.
+
+4. **De-Clumped Blueprint Layout & Alternative Topologies (D27d):**
+   - Retune fCoSE physics for architectural blueprint rendering: increase `nodeRepulsion` to `45000`, increase `idealEdgeLength` to `160`, reduce `gravity` to `0.05`, and set `nestingFactor: 0.8`.
+   - Add a layout selector (`#select-layout`) enabling one-click switching between `Blueprint (fCoSE)`, `Hierarchical (DAG - breadthfirst)`, and `Grid`.
+
+5. **Progressive Compound Disclosure (D27e):**
+   - Collapse file and class compound nodes on initial load, displaying top-level packages and file-level interactions first.
+   - Users expand individual files or click `Expand All` as needed to drill down into internal functions.
+
+---
+
+
+## Issue 28 & Decision 28: Expanded Compound Node Clearance, Internal Helper Symbol Retention, and Subnode Spacing
+
+- **Component:** `cartog/views.py`, `cartog/export_html.py`, `cartog/view_assets/viewer.js`, `cartog/cli.py`
+- **Phase / Milestone:** Phase C / Milestone 11 (T11)
+- **Discovered:** 2026-11-02
+
+### Context and Problem
+Following the initial orthogonal routing updates, user testing identified two remaining visual and structural issues:
+1. **Compound Node Crowding Upon Expansion:** When files or classes were expanded, internal subnodes were crammed against compound borders and each other due to narrow compound padding (14px), low spring rest length (`idealEdgeLength: 160`), and missing `nodeDimensionsIncludeLabels` in the expand-collapse layout hook.
+2. **Missing Internal Helpers & Call Connections:** Internal helpers were collapsed into synthetic composite `+N internal helpers` groups (`helper_group`), preventing users from inspecting internal helper implementations and viewing caller-to-helper edge relationships.
+
+### Architectural Decision
+
+1. **Compound Clearance & Subnode Spacing (D28a):**
+   - Increase compound `:parent` padding from 14px to 35px for files/classes, and 50px for folder/subsystem containers.
+   - Boost fCoSE simulation spacing: set `nodeRepulsion: 85000` (from 45000), `idealEdgeLength: 240` (from 160), `edgeElasticity: 0.25`, and `nestingFactor: 1.4`.
+   - Set `tilingPaddingVertical: 55` and `tilingPaddingHorizontal: 55` so disconnected subnodes maintain 55px clearance.
+   - Guarantee `nodeDimensionsIncludeLabels: true` across `fcoseLayout`, `expandCollapse.layoutBy`, and `applyLayout`.
+
+2. **Internal Helper Symbol Retention & Edge Linking (D28b):**
+   - In `build_universal_view_tree(graph, include_helpers=True)`, preserve individual helper functions and methods as distinct child nodes with `attrs={"is_helper": True}`.
+   - Register helper functions directly in Cytoscape elements so that caller-to-helper edges (e.g. `run -> _print_result`, `_extract_content -> _clean_text`) are fully resolved and drawn.
+   - Style helper nodes with distinct dashed borders (`border-style: 'dashed'`).
+   - Add a `#btn-toggle-helpers` toolbar button allowing users to toggle helper visibility (`Helpers: Shown / Hidden`) on demand.
+
+
 
 
 

@@ -37,7 +37,7 @@ where = ["."]
 include = ["cartog*"]
 
 [tool.setuptools.package-data]
-cartog = ["*.js"]
+cartog = ["*.js", "view_assets/*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

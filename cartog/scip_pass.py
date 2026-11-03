@@ -236,7 +236,7 @@ def decode_scip_index(scip_path: str | Path, target_path: Optional[str | Path] =
             is_def = bool(occ.symbol_roles & 0x1)
 
             rec = ScipOccurrence(
-                symbol=occ.symbol,
+                symbol=sym,
                 range=rng,
                 is_definition=is_def,
                 roles=occ.symbol_roles,
@@ -245,8 +245,8 @@ def decode_scip_index(scip_path: str | Path, target_path: Optional[str | Path] =
 
             if is_def:
                 scip_doc.definitions.append(rec)
-                if occ.symbol not in defs_by_symbol:
-                    defs_by_symbol[occ.symbol] = (rel_path, rng)
+                if sym not in defs_by_symbol:
+                    defs_by_symbol[sym] = (rel_path, rng)
             else:
                 scip_doc.references.append(rec)
 

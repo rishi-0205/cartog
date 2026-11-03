@@ -1,0 +1,67 @@
+Command: .\venv\Scripts\python.exe -m pytest tests/test_interactive_view.py
+Output:
+============================= test session starts =============================
+platform win32 -- Python 3.13.1, pytest-9.1.1, pluggy-1.7.0
+rootdir: C:\Users\rishi\OneDrive\Desktop\Dev\cartog
+configfile: pyproject.toml
+collected 7 items
+
+tests\test_interactive_view.py .....FF                                   [100%]
+
+================================== FAILURES ===================================
+_____________________ test_convert_view_tree_edge_rollup ______________________
+
+    def test_convert_view_tree_edge_rollup():
+        """Verify that multiple edges between the same (source, target, kind) are rolled up into one edge with aggregated counts and labels."""
+        from cartog.export_html import convert_view_tree_to_cytoscape_elements
+        from cartog.views import build_universal_view_tree
+    
+        g = Graph()
+        g.meta = {"target_path": "rollup_project"}
+        n1 = Node(id="fn_a", name="fn_a", qualified_name="a:fn_a", kind="function", path="a.py")
+        n2 = Node(id="fn_b", name="fn_b", qualified_name="b:fn_b", kind="function", path="b.py")
+        g.add_node(n1)
+        g.add_node(n2)
+    
+        # 3 separate calls from fn_a to fn_b
+        g.add_edge(Edge(source="fn_a", target="fn_b", kind="calls", confidence="resolved", count=2))
+        g.add_edge(Edge(source="fn_a", target="fn_b", kind="calls", confidence="resolved", count=3))
+        # 1 reference edge from fn_a to fn_b
+        g.add_edge(Edge(source="fn_a", target="fn_b", kind="references", confidence="resolved", count=1))
+    
+        tree = build_universal_view_tree(g)
+        elements = convert_view_tree_to_cytoscape_elements(tree, g)
+    
+        edges = [el["data"] for el in elements if "source" in el["data"]]
+        # Should be exactly 2 rolled-up edges (1 calls, 1 references) instead of 3
+        assert len(edges) == 2, f"Expected 2 rolled-up edges, found {len(edges)}: {edges}"
+    
+        calls_edge = next(e for e in edges if e["kind"] == "calls")
+        assert calls_edge["count"] == 5, f"Expected aggregated count 5, got {calls_edge['count']}"
+>       assert calls_edge["label"] == "5 calls", f"Expected label '5 calls', got {calls_edge['label']}"
+               ^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'label'
+
+tests\test_interactive_view.py:205: KeyError
+____________ test_export_html_includes_routing_and_filter_controls ____________
+
+tmp_path = WindowsPath('C:/Users/rishi/AppData/Local/Temp/pytest-of-rishi/pytest-214/test_export_html_includes_rout0')
+
+    def test_export_html_includes_routing_and_filter_controls(tmp_path: Path):
+        """Verify that map.html includes orthogonal routing, layout selector, and references toggle controls."""
+        from cartog.export_html import generate_html_map
+    
+        graph = _build_test_graph()
+        out_file = tmp_path / "map.html"
+        html_content = generate_html_map(graph, out_file=out_file)
+    
+        # Controls must exist in the header
+>       assert 'id="select-layout"' in html_content
+E       assert 'id="select-layout"' in '<!DOCTYPE html>\n<html lang="en">\n<head>\n  <meta charset="utf-8">\n  <meta name="viewport" content="width=device-wi...n      .replace(/"/g, \'&quot;\')\n      .replace(/\'/g, \'&#039;\');\n  }\n})();\n\n\n  </script>\n</body>\n</html>\n'
+
+tests\test_interactive_view.py:222: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_interactive_view.py::test_convert_view_tree_edge_rollup - KeyError: 'label'
+FAILED tests/test_interactive_view.py::test_export_html_includes_routing_and_filter_controls - AssertionError
+========================= 2 failed, 5 passed in 1.31s =========================
+

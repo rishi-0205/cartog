@@ -36,6 +36,10 @@
 | T15 | Milestone 9 noise filtering completion | Phase E: Polish | T0, T3 | ACCEPTED |
 | T16 | Size and token budget report | Phase E: Polish | T1 | ACCEPTED |
 | T17 | Project handoff and final test suite run | Phase E: Polish | T0–T16 | ACCEPTED |
+| T18 | Asset vendor bundling & package data setup | Phase F: Interactive Viewer | T17 | ACCEPTED |
+| T19 | HTML export engine and view model projection | Phase F: Interactive Viewer | T18 | IN PROGRESS |
+| T20 | Interactive viewer CLI command & tests | Phase F: Interactive Viewer | T19 | READY FOR USER CHECK |
+| T21 | Real-world validation on Click, Ky, and Flask | Phase F: Interactive Viewer | T20 | NOT STARTED |
 
 ---
 
@@ -756,6 +760,127 @@
 - **Failure Log:**
 - **Change Log:**
   - 2026-10-30: Updated docs/HANDOFF.md with full M0–M10 status, complete Phase A–E hardening summaries (T0–T16), next milestones orientation (M11–M13), and updated test suite counts. Updated docs/KNOWN_ISSUES.md moving resolved issues (re-export calls, call counting consistency, barrel import fan-out) to Resolved section and cataloging remaining deferred issues. Executed full test suite: 152 passed, 1 warning (saved to docs/pytest_report.txt, +41 tests over 111 baseline, 0 decreased).
+
+---
+
+### T18: Asset Vendor Bundling & Package Data Setup
+- **ID:** T18
+- **Title:** Asset vendor bundling & package data setup
+- **Phase:** Phase F: Interactive Viewer
+- **Depends on:** T17
+- **Status:** ACCEPTED
+- **Problem:**
+  The interactive Cytoscape viewer requires offline bundling of Cytoscape.js and extensions (`cytoscape`, `cytoscape-expand-collapse`, `cytoscape-fcose`, layout base dependencies, viewer CSS/JS). These assets must be stored in `cartog/view_assets/`, licensed under MIT, packaged in `pyproject.toml` package data, and loadable at runtime.
+- **Suspected Cause (UNVERIFIED until checked):**
+  - New subsystem requiring local vendoring and package metadata configuration.
+- **Files Involved:**
+  - `cartog/view_assets/*`
+  - `pyproject.toml`
+  - `tests/test_interactive_view.py`
+- **Steps:**
+  1. Write red test `test_view_assets_packaged_and_loadable` asserting all required viewer assets exist in `cartog/view_assets/` and can be read.
+  2. Vendor pinned versions of Cytoscape.js (v3.34.4), cytoscape-expand-collapse (v4.1.1), cytoscape-fcose (v2.2.0), layout-base, cose-base, and viewer CSS/JS into `cartog/view_assets/` with MIT licenses.
+  3. Update `pyproject.toml` to include `cartog = ["*.js", "view_assets/*"]` under package-data.
+  4. Run test to verify assets load cleanly.
+- **Tests Required (named, red-green):**
+  - `test_view_assets_packaged_and_loadable` (Red-Green)
+- **Acceptance Criteria:**
+  - All vendor files present in `cartog/view_assets/`.
+  - Pkg data configured in `pyproject.toml`.
+  - Test passes.
+- **Evidence Files:**
+  - `docs/evidence/T18-view-assets.txt`
+- **Failure Log:**
+- **Change Log:**
+  - 2026-10-30: Vendored offline Cytoscape stack into cartog/view_assets/ (cytoscape.min.js v3.34.4, cytoscape-expand-collapse.js v4.1.1, cytoscape-fcose.js v2.2.0, layout-base.js v2.0.1, cose-base.js v2.2.0, viewer.css, viewer.js, and VENDOR_LICENSES.txt). Updated pyproject.toml package-data with view_assets/*. Added red-green unit test test_view_assets_packaged_and_loadable in tests/test_interactive_view.py. Full test suite passing (153 passed, 1 warning). Evidence recorded in docs/evidence/T18-view-assets.txt.
+
+---
+
+### T19: HTML Export Engine and View Model Projection
+- **ID:** T19
+- **Title:** HTML export engine and view model projection
+- **Phase:** Phase F: Interactive Viewer
+- **Depends on:** T18
+- **Status:** IN PROGRESS
+- **Problem:**
+  Implement `cartog/export_html.py` which takes a `Graph` (or `ViewNode` tree from Universal View Model), projects compound nodes (subsystems -> folders -> files -> classes -> boundary functions) and edges (calls, imports, references) into a Cytoscape JSON element format, and generates a single self-contained `map.html` with inlined JS, CSS, and data.
+- **Suspected Cause (UNVERIFIED until checked):**
+  - New module `cartog/export_html.py`.
+- **Files Involved:**
+  - `cartog/export_html.py`
+  - `cartog/views.py`
+  - `tests/test_interactive_view.py`
+- **Steps:**
+  1. Write red tests asserting `map.html` generation, offline validity (zero external network tags), and compound node structure.
+  2. Implement Cytoscape element conversion in `cartog/export_html.py` using Universal View Model.
+  3. Embed inlined JS, CSS, and graph payload into single HTML file.
+  4. Verify tests pass.
+- **Tests Required (named, red-green):**
+  - `test_export_html_generates_valid_offline_file` (Red-Green)
+  - `test_export_html_no_external_network_tags` (Red-Green)
+- **Acceptance Criteria:**
+  - `map.html` contains no `http://` or `https://` tags.
+  - Complete compound hierarchy represented.
+- **Evidence Files:**
+  - `docs/evidence/T19-export-html.txt`
+- **Failure Log:**
+- **Change Log:**
+
+---
+
+### T20: Interactive Viewer CLI Command & Tests
+- **ID:** T20
+- **Title:** Interactive viewer CLI command & tests
+- **Phase:** Phase F: Interactive Viewer
+- **Depends on:** T19
+- **Status:** NOT STARTED
+- **Problem:**
+  Expose `cartog view <path>` in Typer CLI with `--out`, `--no-open`, `--flow <target>`, `--show-noise`, and `--max-nodes`. Connects graph building / loading, HTML generation, and browser launch.
+- **Suspected Cause (UNVERIFIED until checked):**
+  - CLI command wiring in `cartog/cli.py`.
+- **Files Involved:**
+  - `cartog/cli.py`
+  - `tests/test_interactive_view.py`
+- **Steps:**
+  1. Write red tests for `cartog view` CLI command (overview and flow modes).
+  2. Implement `def view(...)` in `cartog/cli.py`.
+  3. Verify tests pass.
+- **Tests Required (named, red-green):**
+  - `test_cli_view_command_default` (Red-Green)
+  - `test_cli_view_command_flow_mode` (Red-Green)
+- **Acceptance Criteria:**
+  - CLI command functional with `--no-open` and `--flow`.
+- **Evidence Files:**
+  - `docs/evidence/T20-cli-view.txt`
+- **Failure Log:**
+- **Change Log:**
+
+---
+
+### T21: Real-World Validation on Click, Ky, and Flask
+- **ID:** T21
+- **Title:** Real-world validation on Click, Ky, and Flask
+- **Phase:** Phase F: Interactive Viewer
+- **Depends on:** T20
+- **Status:** NOT STARTED
+- **Problem:**
+  Generate interactive viewers for `samples/click`, `samples/ky`, and `samples/flask`. Verify compound collapse/expand, metadata sidebar attributes, vscode:// links, and flow view traces.
+- **Files Involved:**
+  - `samples/click`, `samples/ky`, `samples/flask`
+  - `cartog-out/*-view/`
+- **Steps:**
+  1. Run `cartog view` on Click, Ky, and Flask (with `--no-open`).
+  2. Run `cartog view` in flow mode on Flask (`--flow "run"`).
+  3. Validate HTML structure, node counts, and sidebar data.
+  4. Compile evidence report.
+- **Tests Required:**
+  - Real-repo execution and inspection.
+- **Acceptance Criteria:**
+  - Self-contained `map.html` generated for all samples.
+- **Evidence Files:**
+  - `docs/evidence/T21-view-demos.txt`
+- **Failure Log:**
+- **Change Log:**
 
 ---
 
