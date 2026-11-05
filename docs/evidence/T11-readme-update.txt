@@ -1,0 +1,18 @@
+Command: .\venv\Scripts\python.exe -m pytest tests/test_interactive_view.py
+Output:
+============================= test session starts =============================
+platform win32 -- Python 3.13.1, pytest-9.1.1, pluggy-1.7.0
+rootdir: C:\Users\rishi\OneDrive\Desktop\Dev\cartog
+configfile: pyproject.toml
+collected 9 items
+
+tests\test_interactive_view.py .........                                 [100%]
+
+============================== 9 passed in 1.11s ==============================
+
+README Verification:
+- README starts with direct 'What is Cartog?' section and architectural ASCII flow before Table of Contents.
+- System architecture detailed with Mermaid flowchart.
+- Engineering challenges table referencing Issues 1-28.
+- Real-world case study on webscrapper with live Mermaid call flow diagram.
+- 162/162 tests verified passing.
