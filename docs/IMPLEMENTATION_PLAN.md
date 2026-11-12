@@ -265,8 +265,8 @@ cartog/                               # Repository root
 │   ├── IMPLEMENTATION_PLAN.md        # This living document
 │   ├── BUILD_LOG.md                  # Append-only chronological build log
 │   ├── ISSUES_AND_DECISIONS.md        # Technical incident log, tradeoffs, and design choices
-│   ├── ARCHITECTURE.md               # Final architecture & design document (Milestone 13)
-│   └── USAGE.md                      # CLI usage guide & flag documentation (Milestone 13)
+│   ├── ARCHITECTURE.md               # Final architecture & design document (E8: D1)
+│   └── USAGE.md                      # CLI usage guide & flag documentation (E8: D1)
 ├── cartog/                           # Main Python package
 │   ├── __init__.py                   # Package metadata (__version__ = "0.1.0")
 │   ├── __main__.py                   # Support for `python -m cartog`
@@ -292,7 +292,7 @@ cartog/                               # Repository root
 │       ├── python_adapter.py         # Python tree-sitter parser, import resolver, Flask/FastAPI/click extractor
 │       └── js_adapter.py             # JS/TS/TSX tree-sitter parser, tsconfig/workspace resolver, Express/Next extractor
 ├── scripts/
-│   └── compare_imports.py            # Validation script comparing Cartog against grimp and madge (Milestone 13)
+│   └── compare_imports.py            # Validation script comparing Cartog against grimp and madge (E4: V4)
 ├── tests/
 │   ├── conftest.py                   # Pytest fixtures and helpers
 │   ├── test_cli.py                   # CLI tests (doctor, version, help, check strictness, query)
@@ -306,14 +306,13 @@ cartog/                               # Repository root
 │   ├── test_views_mermaid.py         # Universal view model, boundary function rollup, Mermaid nested subgraphs
 │   ├── test_noise.py                 # Re-export barrel detection, constants/types module filtering, rewiring
 │   ├── test_interactive_view.py      # Self-contained offline HTML generation, embedded view model validation
-│   ├── test_subsystems.py            # TOML parser, overlap errors, dead glob warnings, unassigned grouping
 │   └── fixtures/                     # Small, self-contained repositories for unit and integration testing
 ├── samples/                          # Cloned real-world repositories (gitignored)
 │   ├── click/                        # Pallets Click repo for Python testing
 │   ├── flask/                        # Pallets Flask repo for route testing
 │   └── ky/                           # Sindre Sorhus Ky repo for TS testing
 ├── .cartogignore                     # Optional secondary codebase ignore rules (Milestone 8)
-├── subsystems.toml                   # Optional high-level architectural subsystem definitions (Milestone 12)
+├── subsystems.toml                   # Optional subsystem definitions (E5: L5; absent today)
 ├── pyproject.toml                    # PEP 621 build config with `cartog` entry point and package data
 ├── README.md                         # Project documentation
 └── .gitignore                        # Git ignore rules (.cartog/, samples/, venv/, dist/, etc.)
