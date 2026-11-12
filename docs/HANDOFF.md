@@ -1,8 +1,9 @@
 # Cartog — Handoff Document
 
-**Last updated:** 2026-11-03 (Milestone 11 accepted: T11 interactive Cytoscape viewer complete, 162 tests passing)  
+**Last updated:** 2026-11-12 (plan restructured into epics E0–E8, 63 tasks; baseline unchanged at 162 tests passing)  
 **Role:** Single entry point for any model or developer picking up this project.  
-**Active Working Tasks:** See [`docs/WORKING_TASKS.md`](./WORKING_TASKS.md) for the active working document and task command loop.
+**Active Working Tasks:** See [`docs/WORKING_TASKS.md`](./WORKING_TASKS.md) for the live epic board and command loop. The historical T0–T21 board is [`docs/archive/WORKING_TASKS_T0-T21.md`](./archive/WORKING_TASKS_T0-T21.md).  
+**Git rules:** [`docs/dev/GIT_WORKFLOW.md`](./dev/GIT_WORKFLOW.md) — one branch per epic, commit per task, never push, merge only after `Accept <epic id>`.
 
 ---
 
@@ -40,8 +41,26 @@ Output: `cartog-out/` containing `parse.json`, `scip.json`, `graph.json`, `overv
 | 10 | Views, View Model, Compact Output & Digest | ✅ COMPLETE |
 | 10.1 | Flow Hardening: Route IDs, Scoping, Candidate Selector | ✅ COMPLETE |
 | 11 | Interactive Viewer (`cartog view`) | ✅ COMPLETE |
-| 12 | Hand-Written Subsystem Map (`subsystems.toml`) | ⏳ NEXT |
-| 13 | Comparative Verification & Final Docs | ⏳ PENDING |
+| 12 | Hand-Written Subsystem Map (`subsystems.toml`) | ➡️ FOLDED INTO E5 |
+| 13 | Comparative Verification & Final Docs | ➡️ SPLIT INTO E4 + E8 |
+
+### Epic Plan (E0–E8)
+
+The remaining work runs as nine epics, each on its own branch. The live board is [`docs/WORKING_TASKS.md`](./WORKING_TASKS.md).
+
+| Epic | Branch | Depends on | Tasks | Goal |
+|---|---|---|---|---|
+| **E0** | `fix/baseline-correctness` | — | H1–H5 | Make the baseline honest: hermetic tests, viewer correctness, edge index, doc drift |
+| **E1** | `refactor/package-structure` | E0 | R0–R12 | Golden baseline, hygiene, docs move, module refactor, cleanup |
+| **E2** | `feature/unified-command-and-output` | E1 | U1–U6 | One command, per-user output home, stable layout, stage commands |
+| **E3** | `feature/security-baseline` | E2 | S1–S9 | Runner, hostile canary, escaping, path confinement, limits |
+| **E4** | `feature/verification` | E2 | V1–V5 | Timings/memory, SCIP invariant and study, grimp/madge, recall |
+| **E5** | `feature/llm-layer` | E2, E3 | L0–L10 | Narrator layer: spike, schema, plumbing, subsystems, eval |
+| **E6** | `feature/gallery` | E3 | G1–G4 | Pinned public-repo gallery |
+| **E7** | `feature/analysis-service` | E3, E4 | W1–W9 | Sandboxed hosted analysis service |
+| **E8** | `docs/final` | E0–E7 | D1 | ARCHITECTURE, USAGE, README, CHANGELOG |
+
+Epic order is **E0 → E1 → E2 → E3 → E4 → E5 → E6 → E7 → E8**. An epic counts as done for dependency purposes only after the author issues `Accept <epic id>` and it is merged.
 
 ### Phases A–E Hardening & Polish Summary (T0–T16 Accepted)
 
@@ -58,19 +77,20 @@ Output: `cartog-out/` containing `parse.json`, `scip.json`, `graph.json`, `overv
 
 ---
 
-## 3. Next 2 Tasks
+## 3. Next Tasks (E0 — `fix/baseline-correctness`)
 
-1. **Milestone 12 — Hand-Written Subsystem Map (`subsystems.toml`)**  
-   See `docs/IMPLEMENTATION_PLAN.md:915-945`.  
-   - Optional `subsystems.toml` specifying human architectural boundaries.
-   - Subsystem container nodes in Universal View Model, Mermaid diagrams, and Cytoscape interactive viewer.
-   - Pattern validation: error on overlapping file patterns, warn on dead patterns, group unmatched files into `unassigned`.
+Start on branch `fix/baseline-correctness` created from a clean `main`. Work the tasks in this order; do not start E1 until E0 is accepted.
 
-2. **Milestone 13 — Comparative Verification & Final Docs**  
-   See `docs/IMPLEMENTATION_PLAN.md:946-975`.  
-   - Comparative verification against Grimp and Madge.
-   - Complete README, USAGE, and architecture documentation.
-   - Compact `graph.json` and `cartog digest` for LLM token budgets.
+1. **H1 — Hermetic tests (F1, F2)**  
+   Add the `samples` marker and `tests/conftest.py::requires_sample()` skip helper, route every sample-dependent test through it, pass `--out <tmp_path>` in the E2E flow test, and add `scripts/fetch_samples.py` with pinned SHAs. Acceptance: a tree without `samples/` skips rather than fails, and a full suite run leaves `git status --porcelain` empty.
+
+2. **H2 — Fix the raw-graph fallback (F4)**  
+   Write the failing test first. Replace `node.range[0]` with `node.range.start_line` and read the parent from `node.parent` in `cartog/export_html.py`.
+
+3. **H4 — Keyed edge index (F5)**  
+   Add `_edge_index: dict[tuple[str, str, str], Edge]` to `Graph`, populate it in `add_edge` and `from_dict`, prove byte-identical `graph.json`, and record the 5k/10k/20k benchmark.
+
+Then H3 (edge rollup) and H5 (doc drift) close E0. Full task fields, tests, acceptance criteria, and user checks are in [`docs/WORKING_TASKS.md`](./WORKING_TASKS.md).
 
 ---
 
@@ -132,7 +152,8 @@ On Windows, always use `venv\Scripts\python.exe` inside the repo venv. Cartog's 
 - **Dynamic dispatch:** SCIP resolves static call targets only. Python closures, metaclass dispatch, and `super()` to overridden methods in subclasses are not resolved.
 - **Click self-map:** Cartog maps `samples/click` with Click installed as a system package (8.5.0 on Python313). Running without `--python` picks up a different Python and produces commit-hash symbols.
 - **Receiver Attribute Member Calls:** When a method call is performed on an in-repo class attribute (e.g. `self.copy_to.flush()`), receiver attribute reference may be attributed to enclosing member class rather than external method selector (see `docs/KNOWN_ISSUES.md` Rank 1).
-- **No interactive viewer yet:** (Milestone 11 next) — Mermaid and digest are the current view outputs.
+- **Baseline test hygiene:** `samples/` is gitignored and the E2E flow test has no skip guard, so a fresh clone fails one test; the same test also writes `cartog-out/flow_*.mmd`. Tracked as F1/F2 and fixed by H1.
+- **Viewer edge rollup:** edges whose endpoint is collapsed are currently dropped rather than rolled up to the nearest visible ancestor (F3, fixed by H3).
 
 ---
 
@@ -141,13 +162,18 @@ On Windows, always use `venv\Scripts\python.exe` inside the repo venv. Cartog's 
 | Document | Purpose |
 |---|---|
 | `docs/HANDOFF.md` | **Start here** — status, next tasks, install commands |
-| `docs/ALIGNMENT.md` | M0–M10 delivery matrix verified against code |
-| `docs/IMPLEMENTATION_PLAN.md` | Full milestone checklists; pending milestones have detailed deliverable lists |
+| `docs/WORKING_TASKS.md` | Live epic board E0–E8: per-task and per-epic status tables, command loop, 63 task sections |
+| `docs/archive/WORKING_TASKS_T0-T21.md` | Archived T0–T21 session board (all accepted) |
+| `docs/dev/GIT_WORKFLOW.md` | Branch, commit, merge, and history-safety rules |
+| `docs/evidence/` | Per-task command output proving every claim |
+| `docs/ALIGNMENT.md` | M0–M6.5 delivery matrix (title stale; extends further — see F8) |
+| `docs/IMPLEMENTATION_PLAN.md` | Milestone record plus §5.1 epic plan E0–E8 |
 | `docs/BUILD_LOG.md` | Append-only chronological log (Entry index at top) |
-| `docs/ISSUES_AND_DECISIONS.md` | Technical issue archive: root cause, options, decision rationale (Issue index at top) |
-| `docs/KNOWN_ISSUES.md` | Ranked known issues and architectural limits with proposed fixes |
+| `docs/ISSUES_AND_DECISIONS.md` | Technical issue archive: root cause, options, decision rationale |
+| `docs/KNOWN_ISSUES.md` | Ranked issues, review findings F1–F9, and architectural limits |
 | `docs/AUDIT_SUMMARY.md` | Takeover audit findings, fixes made, top risks |
-| `docs/pytest_report.txt` | Last full pytest session output (152 passed, 1 warning) |
+| `docs/pytest_report.txt` | Archived pytest session (152 passed, 1 warning); current baseline is 162 passed |
 | `AGENTS.md` | Standing rules for any model/agent working on this project |
+| `opencode.jsonc` | Permission deny rules for destructive git commands |
 | `GEMINI.md` | Gemini entry point → AGENTS.md |
 | `CLAUDE.md` | Claude entry point → AGENTS.md |
