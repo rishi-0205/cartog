@@ -68,7 +68,7 @@ All nine findings below were **reproduced on branch `docs/task-plan`** before th
 - **Reproduce:** run the F3 block of the preserved script `docs/evidence/T22-repro-findings.py` (original transcript in `docs/evidence/T22-plan-restructure.txt`), or build the equivalent graph in a unit test.
 - **Proposed fix:** map each endpoint to its nearest visible ancestor, aggregate counts by `(source, target, kind)`, drop and count self-edges, surface the rollup count.
 - **Fix task:** **H3** (E0), with `H2` as a prerequisite.
-- **Status:** REPRODUCED, OPEN.
+- **Status:** FIXED in H3 (`d858c49`, 2026-11-13): hidden endpoints resolve through `Node.parent` to the nearest registered view node; counts aggregate by `(source, target, kind)`, self-edges are dropped and counted, and `map.html` shows the rollup badge plus payload counts. Tests: `test_hidden_endpoint_rolls_up_to_visible_ancestor`, `test_rollup_counts_sum_to_underlying_edges`, `test_mermaid_function_level_rollup_matches_viewer`, `test_html_payload_reports_rolled_up_edges` (`docs/evidence/H3-real-edge-rollup*.txt`).
 
 ### F4: Raw-graph fallback crashes with `TypeError`
 - **Severity:** High — `cartog view` fails on graphs without file nodes.

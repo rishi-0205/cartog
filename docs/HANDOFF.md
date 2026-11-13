@@ -1,6 +1,6 @@
 # Cartog — Handoff Document
 
-**Last updated:** 2026-11-13 (E0 in progress: H1, H2, H4 and H5 done, H3 remains; suite is 174 tests passing)  
+**Last updated:** 2026-11-13 (E0 H1–H5 all DONE, `READY FOR EPIC REVIEW`; suite is 178 tests passing)  
 **Role:** Single entry point for any model or developer picking up this project.  
 **Active Working Tasks:** See [`docs/WORKING_TASKS.md`](./WORKING_TASKS.md) for the live epic board and command loop. The historical T0–T21 board is [`docs/archive/WORKING_TASKS_T0-T21.md`](./archive/WORKING_TASKS_T0-T21.md).  
 **Git rules:** [`docs/dev/GIT_WORKFLOW.md`](./dev/GIT_WORKFLOW.md) — one branch per epic, commit per task, never push, merge only after `Accept <epic id>`.
@@ -73,18 +73,15 @@ Epic order is **E0 → E1 → E2 → E3 → E4 → E5 → E6 → E7 → E8**. An
 | **Phase E: Polish** | T13, T14, T15, T16 | Added visible legends and summary subgraphs in Mermaid; ranked digest files by connectivity and attributed constructors to enclosing classes; completed noise filtering with `if t.TYPE_CHECKING:` guard support; benchmarked compact serialization (44–50% reduction) and token budgets (<2,000 tokens). |
 | **Milestone 11: Interactive Viewer** | T11 | Packaged offline Cytoscape stack in `cartog/view_assets/`; implemented `cartog view` generating offline `map.html`; implemented orthogonal Manhattan edge routing (`taxi`), edge rollup (`N calls`), reference filter toggle (`References: Off / On`), compound padding (35-50px) & layout physics, and internal helper expansion & linking with toggle. |
 
-**Test suite:** 174 passed, 1 warning (2026-11-13, `pytest tests/` in venv; E0 raised the 162 baseline by 12 tests with 0 regressions).
+**Test suite:** 178 passed, 1 warning (2026-11-13, `pytest tests/` in venv; E0 raised the 162 baseline by 16 tests with 0 regressions).
 
 ---
 
 ## 3. Next Tasks (E0 — `fix/baseline-correctness`)
 
-Start on branch `fix/baseline-correctness`, created from `docs/task-plan` HEAD (`fcb11f2`) rather than a clean `main` because the epic board and git rules live on that branch (Decision 29 in `docs/ISSUES_AND_DECISIONS.md`). H1, H2, H4 and H5 are DONE; one task remains:
+E0 is complete on branch `fix/baseline-correctness`, built from `docs/task-plan` HEAD (`fcb11f2`) rather than a clean `main` because the epic board and git rules live on that branch (Decision 29 in `docs/ISSUES_AND_DECISIONS.md`). H1–H5 are DONE and the epic is `READY FOR EPIC REVIEW`.
 
-1. **H3 — Real edge rollup for hidden nodes (F3)**  
-   Write failing tests first. Edges whose endpoint is hidden behind a collapsed compound must roll up to the nearest visible ancestor, aggregate by `(source, target, kind)`, drop self-edges, and surface the rolled-up count. H3 depends on H2.
-
-H3 closes E0. Full task fields, tests, acceptance criteria, and user checks are in [`docs/WORKING_TASKS.md`](./WORKING_TASKS.md). Do not start E1 until E0 is accepted.
+**No task starts until the author issues `Accept E0`.** After acceptance, merge with `git merge --no-ff` and begin E1 with task R0 (golden baseline) on `refactor/package-structure`. Full task fields, tests, acceptance criteria, and user checks are in [`docs/WORKING_TASKS.md`](./WORKING_TASKS.md).
 
 ---
 
@@ -147,7 +144,7 @@ On Windows, always use `venv\Scripts\python.exe` inside the repo venv. Cartog's 
 - **Click self-map:** Cartog maps `samples/click` with Click installed as a system package (8.5.0 on Python313). Running without `--python` picks up a different Python and produces commit-hash symbols.
 - **Receiver Attribute Member Calls:** When a method call is performed on an in-repo class attribute (e.g. `self.copy_to.flush()`), receiver attribute reference may be attributed to enclosing member class rather than external method selector (see `docs/KNOWN_ISSUES.md` Rank 1).
 - **Baseline test hygiene:** fixed by H1 — `samples/` is gitignored, sample-dependent tests now skip with a fetch hint (`scripts/fetch_samples.py`), and the E2E flow test writes only to `tmp_path`.
-- **Viewer edge rollup:** edges whose endpoint is collapsed are currently dropped rather than rolled up to the nearest visible ancestor (F3, fixed by H3).
+- **Viewer edge rollup:** fixed by H3 — hidden endpoints now roll up to the nearest visible ancestor, aggregate by kind, and surface the count; self-edges are dropped and counted.
 
 ---
 
@@ -166,7 +163,7 @@ On Windows, always use `venv\Scripts\python.exe` inside the repo venv. Cartog's 
 | `docs/ISSUES_AND_DECISIONS.md` | Technical issue archive: root cause, options, decision rationale |
 | `docs/KNOWN_ISSUES.md` | Ranked issues, review findings F1–F9, and architectural limits |
 | `docs/AUDIT_SUMMARY.md` | Takeover audit findings, fixes made, top risks |
-| `docs/pytest_report.txt` | Archived pytest session (152 passed, 1 warning); current baseline is 174 passed (`docs/evidence/H5-full-suite.txt`) |
+| `docs/pytest_report.txt` | Archived pytest session (152 passed, 1 warning); current baseline is 178 passed (`docs/evidence/H3-full-suite.txt`) |
 | `AGENTS.md` | Standing rules for any model/agent working on this project |
 | `opencode.jsonc` | Permission deny rules for destructive git commands |
 | `GEMINI.md` | Gemini entry point → AGENTS.md |

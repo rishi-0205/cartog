@@ -9,7 +9,7 @@ The roadmap narrative is [`docs/IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.m
 |---|---|---|---|---|---|---|---|---|
 | H1 | Hermetic tests (F1, F2) | E0 | `fix/baseline-correctness` | — | M | E0-S1 | DONE | 822aa76 |
 | H2 | Fix the raw-graph fallback (F4) | E0 | `fix/baseline-correctness` | — | S | E0-S2 | DONE | fac4ec1 |
-| H3 | Real edge rollup for hidden nodes (F3) | E0 | `fix/baseline-correctness` | H2 | M | E0-S3 | TODO | — |
+| H3 | Real edge rollup for hidden nodes (F3) | E0 | `fix/baseline-correctness` | H2 | M | E0-S3 | DONE | d858c49 |
 | H4 | Keyed edge index (F5) | E0 | `fix/baseline-correctness` | — | S | E0-S2 | DONE | b4e63c8 |
 | H5 | Doc and code drift (F6, F7, F8, F9 version) | E0 | `fix/baseline-correctness` | — | S | E0-S2 | DONE | 6b1f634 |
 | R0 | Golden baseline after E0 | E1 | `refactor/package-structure` | H1, H3, H4, H5 | S | E1-S1 | TODO | — |
@@ -75,7 +75,7 @@ The roadmap narrative is [`docs/IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.m
 
 | epic | branch | depends on | tasks done / total | status | accepted by author |
 |---|---|---|---|---|---|
-| E0 | `fix/baseline-correctness` | — | 4 / 5 | IN PROGRESS | no |
+| E0 | `fix/baseline-correctness` | — | 5 / 5 | READY FOR EPIC REVIEW | no |
 | E1 | `refactor/package-structure` | E0 | 0 / 13 | NOT STARTED | no |
 | E2 | `feature/unified-command-and-output` | E1 | 0 / 6 | NOT STARTED | no |
 | E3 | `feature/security-baseline` | E2 | 0 / 9 | NOT STARTED | no |
@@ -202,10 +202,11 @@ At most three small tasks, or one large task, per session. Sessions marked **(ga
 - **User check (epic review):** `cartog view <fixture> --no-helpers --no-open` → `map.html` contains the rolled-up count; the rollup test passes.
 - **Evidence files:** `docs/evidence/H3-real-edge-rollup.txt`
 - **Planned commit message:** `H3: roll hidden-edge endpoints up to the nearest visible ancestor`
-- **Status:** TODO
-- **Commit hash:** —
-- **Failure log:** —
-- **Change log:** —
+- **Status:** DONE
+- **Commit hash:** `d858c49`
+- **Failure log:** Red run (`docs/evidence/H3-real-edge-rollup-red.txt`): 3 failed — the viewer emitted no edge for `fn_index → fn_internal`, the stats dict keyword did not exist, and the parity test therefore saw no rolled edge. A first green attempt failed on `rolled_up_edges == 2`; counting all edges that required a rollup (including the one that then became a self-edge) gives 3, and the assertion was corrected.
+- **Change log:**
+  - 2026-11-13: `convert_view_tree_to_cytoscape_elements()` resolves each endpoint through `Node.parent` to the nearest registered view node, aggregates by `(source, target, kind)`, drops and counts self-edges, and fills a stats dict. The CLI prints the count; `map.html` carries `rolled_up_edges`/`dropped_self_edges` in the payload and a visible badge. The Mermaid audit found the function-level exporter already rolls helpers to class/file containers, so only a parity test was added. 4 tests (3 red before the fix); full suite 178 passed.
 
 ### H4: Keyed edge index (F5)
 

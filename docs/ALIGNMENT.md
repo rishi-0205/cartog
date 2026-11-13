@@ -249,6 +249,6 @@ Test names and counts were inventoried in `docs/CODE_MAP.md`, but line-by-line t
 
 ### 5. Unknowns & Recent Verifications
 - **UNKNOWN:** AST parsing performance and memory consumption on codebases exceeding 500,000 LOC.
-- **VERIFIED (2026-11-03):** Milestone 11 interactive Cytoscape.js runtime packaging, offline asset bundling (`cartog/view_assets/`), orthogonal taxi edge routing, edge rollup, compound clearances, and internal helper retention (verified in `tests/test_interactive_view.py`, 162 total tests passing at that date; 174 after E0).
+- **VERIFIED (2026-11-03):** Milestone 11 interactive Cytoscape.js runtime packaging, offline asset bundling (`cartog/view_assets/`), orthogonal taxi edge routing, edge rollup, compound clearances, and internal helper retention (verified in `tests/test_interactive_view.py`, 162 total tests passing at that date; 178 after E0).
 
 
