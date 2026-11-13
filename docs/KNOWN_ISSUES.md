@@ -88,7 +88,7 @@ All nine findings below were **reproduced on branch `docs/task-plan`** before th
 - **Reproduce:** build a star graph n→n for n in {5000, 10000, 20000} and time the `add_edge` loop (script output in the evidence file).
 - **Proposed fix:** `dict[tuple[str, str, str], Edge]` index, populated in `add_edge` and `from_dict`, with byte-identical serialization.
 - **Fix task:** **H4** (E0).
-- **Status:** REPRODUCED, OPEN.
+- **Status:** FIXED in H4 (`b4e63c8`, 2026-11-13): `Graph._edge_index` keyed by `(source, target, kind)`; 20k edges 16.402s → 0.027s in the comparison run, `graph.json` fingerprint unchanged. Evidence: `docs/evidence/H4-edge-index-bench.txt`.
 
 ### F6: Node-ID length rule in `AGENTS.md` contradicts the code
 - **Severity:** Low — a wrong rule invites a schema-breaking "fix".

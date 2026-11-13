@@ -10,7 +10,7 @@ The roadmap narrative is [`docs/IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.m
 | H1 | Hermetic tests (F1, F2) | E0 | `fix/baseline-correctness` | — | M | E0-S1 | DONE | 822aa76 |
 | H2 | Fix the raw-graph fallback (F4) | E0 | `fix/baseline-correctness` | — | S | E0-S2 | DONE | fac4ec1 |
 | H3 | Real edge rollup for hidden nodes (F3) | E0 | `fix/baseline-correctness` | H2 | M | E0-S3 | TODO | — |
-| H4 | Keyed edge index (F5) | E0 | `fix/baseline-correctness` | — | S | E0-S2 | TODO | — |
+| H4 | Keyed edge index (F5) | E0 | `fix/baseline-correctness` | — | S | E0-S2 | DONE | b4e63c8 |
 | H5 | Doc and code drift (F6, F7, F8, F9 version) | E0 | `fix/baseline-correctness` | — | S | E0-S2 | TODO | — |
 | R0 | Golden baseline after E0 | E1 | `refactor/package-structure` | H1, H3, H4, H5 | S | E1-S1 | TODO | — |
 | R1 | Repo hygiene, licence, lint, CI | E1 | `refactor/package-structure` | R0 | M | E1-S2 | TODO | — |
@@ -75,7 +75,7 @@ The roadmap narrative is [`docs/IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.m
 
 | epic | branch | depends on | tasks done / total | status | accepted by author |
 |---|---|---|---|---|---|
-| E0 | `fix/baseline-correctness` | — | 2 / 5 | IN PROGRESS | no |
+| E0 | `fix/baseline-correctness` | — | 3 / 5 | IN PROGRESS | no |
 | E1 | `refactor/package-structure` | E0 | 0 / 13 | NOT STARTED | no |
 | E2 | `feature/unified-command-and-output` | E1 | 0 / 6 | NOT STARTED | no |
 | E3 | `feature/security-baseline` | E2 | 0 / 9 | NOT STARTED | no |
@@ -223,10 +223,11 @@ At most three small tasks, or one large task, per session. Sessions marked **(ga
 - **User check (epic review):** `pytest tests/test_model.py -q`; benchmark table in the evidence file.
 - **Evidence files:** `docs/evidence/H4-edge-index.txt`
 - **Planned commit message:** `H4: replace linear edge scan with a keyed index`
-- **Status:** TODO
-- **Commit hash:** —
-- **Failure log:** —
-- **Change log:** —
+- **Status:** DONE
+- **Commit hash:** `b4e63c8`
+- **Failure log:** Red run (`docs/evidence/H4-edge-index-red.txt`): `test_edge_index_tracks_edges` failed with `AttributeError: 'Graph' object has no attribute '_edge_index'`.
+- **Change log:**
+  - 2026-11-13: Added `_edge_index`, `_ensure_edge_index()` (rebuilds when `edges` is mutated externally), and index population in `from_dict`. Serialized fingerprint `2c9de1e6…` identical before/after. 20k-edge benchmark: 16.402s linear vs 0.027s keyed (`H4-edge-index-bench.txt`). Full suite 172 passed.
 
 ### H5: Doc and code drift (F6, F7, F8, F9 version)
 
