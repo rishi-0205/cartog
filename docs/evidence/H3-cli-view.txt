@@ -1,0 +1,10 @@
+# H3-cli-view
+Date: 2026-11-13 11:13:44
+Branch: fix/baseline-correctness
+Command: venv\Scripts\python.exe -c from cartog.cli import app; app() view .scratch\h3-fixture\graph.json --out .scratch\h3-out --no-helpers --no-open
+Exit: 0
+
+  Rolled up 1 edge to the nearest visible ancestor (0 self-edge(s) dropped).
+
+Success: Interactive map written to .scratch/h3-out/map.html
+

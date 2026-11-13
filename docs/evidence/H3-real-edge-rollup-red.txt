@@ -1,0 +1,88 @@
+# H3-real-edge-rollup-red
+Date: 2026-11-13 11:12:34
+Branch: fix/baseline-correctness
+Command: venv\Scripts\python.exe -m pytest tests\test_interactive_view.py -k hidden_endpoint or rollup_counts or mermaid_function_level -q
+Exit: 1
+
+FFF                                                                      [100%]
+================================== FAILURES ===================================
+______________ test_hidden_endpoint_rolls_up_to_visible_ancestor ______________
+
+    def test_hidden_endpoint_rolls_up_to_visible_ancestor():
+        """F3: an edge to a collapsed helper must roll up to its nearest visible ancestor."""
+        from cartog.export_html import convert_view_tree_to_cytoscape_elements
+        from cartog.views import build_universal_view_tree
+    
+        graph = _hidden_helper_graph()
+        tree = build_universal_view_tree(graph, include_helpers=False)
+        elements = convert_view_tree_to_cytoscape_elements(tree, graph)
+    
+        node_ids = {e["data"]["id"] for e in elements if "source" not in e["data"]}
+        assert "fn_internal" not in node_ids, "fixture must collapse the helper"
+        assert "file_core" in node_ids
+    
+        edge_keys = {
+            (e["data"]["source"], e["data"]["target"], e["data"]["kind"])
+            for e in elements
+            if "source" in e["data"]
+        }
+>       assert ("fn_index", "file_core", "calls") in edge_keys, edge_keys
+E       AssertionError: {('fn_index', 'fn_format', 'calls')}
+E       assert ('fn_index', 'file_core', 'calls') in {('fn_index', 'fn_format', 'calls')}
+
+tests\test_interactive_view.py:411: AssertionError
+_________________ test_rollup_counts_sum_to_underlying_edges __________________
+
+    def test_rollup_counts_sum_to_underlying_edges():
+        """Rolled-up weights plus dropped self-edges must equal the underlying edge weights."""
+        from cartog.export_html import convert_view_tree_to_cytoscape_elements
+        from cartog.model import Edge, Node
+        from cartog.views import build_universal_view_tree
+    
+        graph = _hidden_helper_graph()
+        graph.add_node(
+            Node(id="fn_other", name="other", qualified_name="core:other", kind="function",
+                 path="core.py", parent="file_core")
+        )
+        graph.add_node(
+            Node(id="fn_util_worker", name="worker", qualified_name="util:worker", kind="function",
+                 path="util.py", parent="file_util")
+        )
+        # Both endpoints hidden: rolls up to file_core -> file_core, a self-edge to drop.
+        graph.add_edge(Edge(source="fn_other", target="fn_internal", kind="calls", confidence="resolved", count=1))
+        # Only the source is hidden: rolls up to the visible file container.
+        graph.add_edge(Edge(source="fn_util_worker", target="fn_format", kind="calls", confidence="resolved", count=1))
+    
+        tree = build_universal_view_tree(graph, include_helpers=False)
+        stats: dict[str, int] = {}
+>       elements = convert_view_tree_to_cytoscape_elements(tree, graph, stats=stats)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: convert_view_tree_to_cytoscape_elements() got an unexpected keyword argument 'stats'
+
+tests\test_interactive_view.py:437: TypeError
+______________ test_mermaid_function_level_rollup_matches_viewer ______________
+
+    def test_mermaid_function_level_rollup_matches_viewer():
+        """F3: the function-level Mermaid exporter rolls hidden helpers up the same way as the viewer."""
+        from cartog.export_html import convert_view_tree_to_cytoscape_elements
+        from cartog.export_mermaid import generate_overview_mermaid
+        from cartog.views import build_universal_view_tree
+    
+        graph = _hidden_helper_graph()
+        tree = build_universal_view_tree(graph, include_helpers=False)
+        elements = convert_view_tree_to_cytoscape_elements(tree, graph)
+        edge_keys = {
+            (e["data"]["source"], e["data"]["target"], e["data"]["kind"])
+            for e in elements
+            if "source" in e["data"]
+        }
+>       assert ("fn_index", "file_core", "calls") in edge_keys, edge_keys
+E       AssertionError: {('fn_index', 'fn_format', 'calls')}
+E       assert ('fn_index', 'file_core', 'calls') in {('fn_index', 'fn_format', 'calls')}
+
+tests\test_interactive_view.py:464: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_interactive_view.py::test_hidden_endpoint_rolls_up_to_visible_ancestor
+FAILED tests/test_interactive_view.py::test_rollup_counts_sum_to_underlying_edges
+FAILED tests/test_interactive_view.py::test_mermaid_function_level_rollup_matches_viewer
+3 failed, 11 deselected in 0.47s

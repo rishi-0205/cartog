@@ -26,8 +26,14 @@ def convert_view_tree_to_cytoscape_elements(
     graph: Graph,
     flow_nodes: Optional[list[Node]] = None,
     flow_edges: Optional[list[Edge]] = None,
+    stats: Optional[dict[str, int]] = None,
 ) -> list[dict[str, Any]]:
-    """Convert Universal View Model hierarchy and semantic edges into Cytoscape element definitions."""
+    """Convert Universal View Model hierarchy and semantic edges into Cytoscape element definitions.
+
+    Edges whose endpoint is hidden behind a collapsed container are rolled up to the
+    nearest visible ancestor instead of being dropped. ``stats`` (when given) is
+    filled with underlying/emitted/rolled-up/self-edge counts.
+    """
     elements: list[dict[str, Any]] = []
     registered_node_ids: set[str] = set()
 
@@ -93,33 +99,60 @@ def convert_view_tree_to_cytoscape_elements(
             elements.append({"data": data})
             registered_node_ids.add(node.id)
 
+    # Roll hidden endpoints up to their nearest visible ancestor (F3).
+    def _nearest_visible(nid: str) -> Optional[str]:
+        if nid in registered_node_ids:
+            return nid
+        node = graph.nodes.get(nid)
+        seen: set[str] = set()
+        while node is not None and node.parent and node.parent not in seen:
+            seen.add(node.parent)
+            if node.parent in registered_node_ids:
+                return node.parent
+            node = graph.nodes.get(node.parent)
+        return None
+
+    counts = {
+        "underlying_edges": 0,
+        "emitted_edges": 0,
+        "rolled_up_edges": 0,
+        "dropped_self_edges": 0,
+        "dropped_unresolved_edges": 0,
+    }
+
     # Add edges with aggregation & rollup by (source, target, kind)
     grouped_edges: dict[tuple[str, str, str], dict[str, Any]] = {}
     for edge in graph.edges:
         if edge.kind == "contains":
             continue
+        if flow_edge_pairs is not None and (edge.source, edge.target) not in flow_edge_pairs:
+            continue
 
-        src = edge.source
-        tgt = edge.target
+        counts["underlying_edges"] += 1
+        src = _nearest_visible(edge.source)
+        tgt = _nearest_visible(edge.target)
+        if src is None or tgt is None:
+            counts["dropped_unresolved_edges"] += 1
+            continue
+        if src != edge.source or tgt != edge.target:
+            counts["rolled_up_edges"] += 1
+        if src == tgt:
+            counts["dropped_self_edges"] += 1
+            continue
 
-        # Check direct visibility
-        if src in registered_node_ids and tgt in registered_node_ids:
-            if flow_edge_pairs is not None and (src, tgt) not in flow_edge_pairs:
-                continue
-
-            key = (src, tgt, edge.kind)
-            cnt = edge.count or 1
-            if key not in grouped_edges:
-                grouped_edges[key] = {
-                    "source": src,
-                    "target": tgt,
-                    "kind": edge.kind,
-                    "count": cnt,
-                    "confidence": edge.confidence,
-                    "is_reference": (edge.kind == "references"),
-                }
-            else:
-                grouped_edges[key]["count"] += cnt
+        key = (src, tgt, edge.kind)
+        cnt = edge.count or 1
+        if key not in grouped_edges:
+            grouped_edges[key] = {
+                "source": src,
+                "target": tgt,
+                "kind": edge.kind,
+                "count": cnt,
+                "confidence": edge.confidence,
+                "is_reference": (edge.kind == "references"),
+            }
+        else:
+            grouped_edges[key]["count"] += cnt
 
     edge_counter = 0
     for (src, tgt, kind), data in grouped_edges.items():
@@ -141,6 +174,10 @@ def convert_view_tree_to_cytoscape_elements(
             }
         })
 
+    counts["emitted_edges"] = edge_counter
+    if stats is not None:
+        stats.update(counts)
+
     return elements
 
 
@@ -153,8 +190,10 @@ def generate_html_map(
     flow_nodes: Optional[list[Node]] = None,
     flow_edges: Optional[list[Edge]] = None,
     include_helpers: bool = True,
+    stats: Optional[dict[str, int]] = None,
 ) -> str:
     """Generate self-contained map.html with inlined Cytoscape stack, CSS, JS, and graph data."""
+    rollup_stats: dict[str, int] = {} if stats is None else stats
     view_tree = build_universal_view_tree(
         graph,
         show_noise=show_noise,
@@ -168,6 +207,7 @@ def generate_html_map(
         graph=graph,
         flow_nodes=flow_nodes,
         flow_edges=flow_edges,
+        stats=rollup_stats,
     )
 
     # Load vendor assets
@@ -182,12 +222,26 @@ def generate_html_map(
     target_name = graph.meta.get("target_path", "Project Architecture")
     subtitle = "Call Flow Trace" if flow_nodes else "Interactive Codebase Architecture"
 
+    rolled_up = rollup_stats.get("rolled_up_edges", 0)
+    dropped_self = rollup_stats.get("dropped_self_edges", 0)
+    if rolled_up:
+        noun = "edge" if rolled_up == 1 else "edges"
+        rollup_note = f"{rolled_up} {noun} rolled up to a visible ancestor"
+        if dropped_self:
+            edge_word = "self-edge" if dropped_self == 1 else "self-edges"
+            rollup_note += f" ({dropped_self} {edge_word} dropped)"
+    else:
+        rollup_note = "No edges rolled up"
+
     payload_json = json.dumps({
         "elements": elements,
         "meta": {
             "target_path": graph.meta.get("target_path", ""),
             "cartog_version": graph.meta.get("cartog_version", "0.1.0"),
             "is_flow": bool(flow_nodes),
+            "rolled_up_edges": rolled_up,
+            "dropped_self_edges": dropped_self,
+            "emitted_edges": rollup_stats.get("emitted_edges", 0),
         }
     }, indent=None, separators=(",", ":"))
 
@@ -207,6 +261,7 @@ def generate_html_map(
       <div class="brand-section">
         <span class="brand-logo">&#9670; Cartog</span>
         <span class="project-title">{target_name} &bull; {subtitle}</span>
+        <span id="rollup-note" class="rollup-note" title="Edges whose endpoint is collapsed are aggregated at the nearest visible ancestor">{rollup_note}</span>
       </div>
       <div class="header-controls">
         <input type="text" id="search-input" class="search-box" placeholder="Filter symbols, files..." aria-label="Search">

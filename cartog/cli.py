@@ -1250,6 +1250,7 @@ def view(
             max_depth=depth,
         )
 
+    rollup_stats: dict[str, int] = {}
     generate_html_map(
         graph,
         out_file=out_file,
@@ -1259,7 +1260,16 @@ def view(
         flow_nodes=flow_nodes,
         flow_edges=flow_edges,
         include_helpers=include_helpers,
+        stats=rollup_stats,
     )
+
+    rolled_up = rollup_stats.get("rolled_up_edges", 0)
+    if rolled_up:
+        edge_word = "edge" if rolled_up == 1 else "edges"
+        console.print(
+            f"  Rolled up [bold]{rolled_up}[/bold] {edge_word} to the nearest visible ancestor "
+            f"({rollup_stats.get('dropped_self_edges', 0)} self-edge(s) dropped)."
+        )
 
     console.print(f"\n[bold green]Success:[/bold green] Interactive map written to [bold]{out_file.as_posix()}[/bold]\n")
 

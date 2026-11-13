@@ -73,6 +73,16 @@ body, html {
   font-weight: 500;
 }
 
+.rollup-note {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color, #30363d);
+  border-radius: 10px;
+  padding: 2px 8px;
+  white-space: nowrap;
+  opacity: 0.85;
+}
+
 .header-controls {
   display: flex;
   align-items: center;

@@ -1,0 +1,12 @@
+# H3-cli-view-html
+Date: 2026-11-13 11:13:51
+Branch: fix/baseline-correctness
+Command: venv\Scripts\python.exe .scratch\check_h3_html.py
+Exit: 0
+
+map.html bytes: 822602
+header note present: True
+header text present : True
+payload rolled_up_edges: 1
+payload has fn_internal: False
+payload has file_core edge: True
