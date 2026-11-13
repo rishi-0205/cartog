@@ -98,7 +98,7 @@ All nine findings below were **reproduced on branch `docs/task-plan`** before th
 - **Reproduce:** `git grep -n '\[:12\]' -- AGENTS.md` and `git grep -n '\[:10\]' -- cartog/model.py`.
 - **Proposed fix:** correct the rule to 10 characters; add a docs-consistency test.
 - **Fix task:** **H5** (E0).
-- **Status:** REPRODUCED, OPEN.
+- **Status:** FIXED in H5 (`6b1f634`, 2026-11-13): AGENTS.md uses `[:10]`; `test_agents_id_length_matches_code` fails on `[:12]` and passes on `[:10]` (`docs/evidence/H5-doc-drift-red.txt`, `docs/evidence/H5-doc-drift.txt`).
 
 ### F7: `SourceRange` is documented as 0-indexed but the pipeline is 1-based
 - **Severity:** Medium — off-by-one risk for any new adapter.
@@ -108,7 +108,7 @@ All nine findings below were **reproduced on branch `docs/task-plan`** before th
 - **Reproduce:** `git grep -n 0-indexed -- cartog/model.py cartog/langs/base.py` and `git grep -n 'start_point.row + 1' -- cartog/langs/python_adapter.py`.
 - **Proposed fix:** comment and docstring corrections (1-based lines, 0-based columns), no behavior change.
 - **Fix task:** **H5** (E0).
-- **Status:** REPRODUCED, OPEN.
+- **Status:** FIXED in H5 (`6b1f634`, 2026-11-13): `SourceRange` and `SymbolRecord` comments state 1-based lines and 0-based columns; no behavior change.
 
 ### F8: Stale documentation claims
 - **Severity:** Low — misleads the next agent.
@@ -122,7 +122,7 @@ All nine findings below were **reproduced on branch `docs/task-plan`** before th
 - **Reproduce:** `git grep -n 'No interactive viewer yet\|compute_call_interactions\|Milestone 12' -- docs`.
 - **Proposed fix:** refresh all listed documents; the path fix is part of this task, the rest is **H5**.
 - **Fix task:** **H5** (E0). The `HANDOFF.md` portion of this documentation task already removes the stale line.
-- **Status:** REPRODUCED, OPEN (HANDOFF stale line and M12/M13 status table corrected in this task; ALIGNMENT title, the `compute_call_interactions` citation, and the report/onboarding references remain for H5).
+- **Status:** FIXED for the E0 docs in H5 (`6b1f634`, 2026-11-13): HANDOFF, ALIGNMENT (retitled Milestones 0–11 with a snapshot note), the report, and the onboarding notes are refreshed. README's 162-test badge/count and historical milestone matrices remain for E8/D1; they are recorded here rather than rewritten in E0.
 
 ### F9: No `LICENSE`, and the version string is duplicated
 - **Severity:** Medium for the licence (a public repo without one is legally unusable); Low for the version.
@@ -132,7 +132,7 @@ All nine findings below were **reproduced on branch `docs/task-plan`** before th
 - **Reproduce:** `Test-Path LICENSE` and `git grep -n -E '^version|__version__' -- pyproject.toml cartog/__init__.py`.
 - **Proposed fix:** **R1** adds `LICENSE` after the author confirms MIT and the copyright name. **H5** makes the version single-source (`dynamic = ["version"]`).
 - **Fix task:** **R1** (E1, author gate) and **H5** (E0).
-- **Status:** REPRODUCED, OPEN.
+- **Status:** PARTIALLY FIXED in H5 (`6b1f634`, 2026-11-13): the version is single-source (`dynamic = ["version"]`, setuptools `attr = "cartog.__version__"`) and `test_version_single_source` enforces it. `LICENSE` is still missing and remains open under R1.
 
 ---
 
@@ -145,7 +145,7 @@ All nine findings below were **reproduced on branch `docs/task-plan`** before th
 
 ### Resolved: Shared Single-Source Call Counting Engine (Formerly Rank 2)
 - **Resolved in:** T4 (2026-10-30)
-- **Fix:** Implemented centralized `compute_call_interactions(graph, source_scope, target_scope)` in `cartog/views.py`. Unified call accounting across overview cluster node summaries, flowchart edge labels, and architectural digest.
+- **Fix:** Implemented centralized `get_call_counts(graph, ...)` in `cartog/views.py`. Unified call accounting across overview cluster node summaries, flowchart edge labels, and architectural digest.
 - **Evidence & Verification:** Verified in `tests/test_views_mermaid.py::test_call_counts_agree_across_map_and_digest`.
 
 ### Resolved: Rewired Barrel Import Edge Count Fan-Out Duplication (Formerly Rank 3)

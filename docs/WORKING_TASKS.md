@@ -11,7 +11,7 @@ The roadmap narrative is [`docs/IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.m
 | H2 | Fix the raw-graph fallback (F4) | E0 | `fix/baseline-correctness` | — | S | E0-S2 | DONE | fac4ec1 |
 | H3 | Real edge rollup for hidden nodes (F3) | E0 | `fix/baseline-correctness` | H2 | M | E0-S3 | TODO | — |
 | H4 | Keyed edge index (F5) | E0 | `fix/baseline-correctness` | — | S | E0-S2 | DONE | b4e63c8 |
-| H5 | Doc and code drift (F6, F7, F8, F9 version) | E0 | `fix/baseline-correctness` | — | S | E0-S2 | TODO | — |
+| H5 | Doc and code drift (F6, F7, F8, F9 version) | E0 | `fix/baseline-correctness` | — | S | E0-S2 | DONE | 6b1f634 |
 | R0 | Golden baseline after E0 | E1 | `refactor/package-structure` | H1, H3, H4, H5 | S | E1-S1 | TODO | — |
 | R1 | Repo hygiene, licence, lint, CI | E1 | `refactor/package-structure` | R0 | M | E1-S2 | TODO | — |
 | R2 | Remove absolute local paths | E1 | `refactor/package-structure` | R0 | S | E1-S1 | TODO | — |
@@ -75,7 +75,7 @@ The roadmap narrative is [`docs/IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.m
 
 | epic | branch | depends on | tasks done / total | status | accepted by author |
 |---|---|---|---|---|---|
-| E0 | `fix/baseline-correctness` | — | 3 / 5 | IN PROGRESS | no |
+| E0 | `fix/baseline-correctness` | — | 4 / 5 | IN PROGRESS | no |
 | E1 | `refactor/package-structure` | E0 | 0 / 13 | NOT STARTED | no |
 | E2 | `feature/unified-command-and-output` | E1 | 0 / 6 | NOT STARTED | no |
 | E3 | `feature/security-baseline` | E2 | 0 / 9 | NOT STARTED | no |
@@ -247,10 +247,11 @@ At most three small tasks, or one large task, per session. Sessions marked **(ga
 - **User check (epic review):** `pytest tests/test_docs_consistency.py -q` → 2 passed.
 - **Evidence files:** `docs/evidence/H5-doc-drift.txt`
 - **Planned commit message:** `H5: fix doc and code drift`
-- **Status:** TODO
-- **Commit hash:** —
-- **Failure log:** —
-- **Change log:** —
+- **Status:** DONE
+- **Commit hash:** `6b1f634`
+- **Failure log:** Red run (`docs/evidence/H5-doc-drift-red.txt`): `test_agents_id_length_matches_code` failed because AGENTS.md documented `[:12]`; `test_version_single_source` failed because `pyproject.toml` hard-coded `version = "0.1.0"`.
+- **Change log:**
+  - 2026-11-13: AGENTS.md corrected to `[:10]`; `SourceRange`/`SymbolRecord` comments now say 1-based lines, 0-based columns; version is dynamic from `cartog.__version__`; HANDOFF/ALIGNMENT refreshed and stale M12/M13 claims marked superseded. 2 consistency tests (red then green), setuptools resolves version 0.1.0. Full suite 174 passed.
 
 ### R0: Golden baseline after E0
 
