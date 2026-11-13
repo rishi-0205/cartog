@@ -16,6 +16,8 @@ from cartog.scip_pass import (
     run_scip_indexer,
 )
 
+from conftest import requires_sample
+
 
 def test_normalize_scip_range():
     """Verify SCIP 3-tuple and 4-tuple ranges convert correctly to SourceRange."""
@@ -235,6 +237,8 @@ def test_audit_scip_calls_and_relationships():
     """Diagnostic audit: inspect SCIP evidence, node/edge records, and call edge breakdown."""
     import json
     from cartog.scip_pb2 import Index
+
+    requires_sample("click")
 
     # 1. SCIP symbol evidence for click in tests vs src/click
     click_scip_file = Path("cartog-out/click-map-scip/.cartog/scip/281f030a7dc8/index.scip")

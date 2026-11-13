@@ -9,6 +9,8 @@ from cartog.cache import ParseCache
 from cartog.scan import FileInfo
 from cartog.export_json import write_parse_json
 
+from conftest import requires_sample
+
 
 def test_path_to_module_name():
     assert path_to_module_name("src/click/core.py") == "click.core"
@@ -163,9 +165,8 @@ def test_cache_and_export_json(tmp_path: Path):
 
 def test_parse_click_sample():
     from cartog.scan import walk_files
+    requires_sample("click")
     click_dir = Path("samples/click")
-    if not click_dir.exists():
-        pytest.skip("samples/click not cloned")
     scan_res = walk_files(click_dir)
     assert len(scan_res.files) > 0
     parsed = [parse_source_file(f) for f in scan_res.files]

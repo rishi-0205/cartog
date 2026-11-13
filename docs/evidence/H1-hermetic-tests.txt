@@ -1,0 +1,19 @@
+# H1-hermetic-tests
+Date: 2026-11-13 10:55:59
+Branch: fix/baseline-correctness
+Command: venv\Scripts\python.exe -m pytest tests\test_hermetic.py -v
+Exit: 0
+
+============================= test session starts =============================
+platform win32 -- Python 3.13.1, pytest-9.1.1, pluggy-1.7.0 -- C:\Users\rishi\OneDrive\Desktop\Dev\cartog\venv\Scripts\python.exe
+cachedir: .pytest_cache
+rootdir: C:\Users\rishi\OneDrive\Desktop\Dev\cartog
+configfile: pyproject.toml
+collecting ... collected 4 items
+
+tests/test_hermetic.py::test_samples_marker_skips_with_reason PASSED     [ 25%]
+tests/test_hermetic.py::test_sample_test_skips_in_a_tree_without_samples PASSED [ 50%]
+tests/test_hermetic.py::test_flow_demos_write_only_tmp_path PASSED       [ 75%]
+tests/test_hermetic.py::test_suite_leaves_worktree_clean PASSED          [100%]
+
+============================= 4 passed in 58.29s ==============================

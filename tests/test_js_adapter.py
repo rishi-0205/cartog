@@ -14,6 +14,8 @@ from cartog.langs.js_adapter import (
 )
 from cartog.scan import FileInfo, walk_files
 
+from conftest import requires_sample
+
 
 def test_js_adapter_registration():
     """Verify JsAdapter is registered for all JS/TS extensions."""
@@ -268,9 +270,8 @@ export async function POST(request: Request) {
 
 def test_parse_ky_sample():
     """Integration test parsing samples/ky/source/index.ts."""
+    requires_sample("ky")
     ky_index = Path("samples/ky/source/index.ts")
-    if not ky_index.is_file():
-        pytest.skip("samples/ky is not cloned")
 
     content = ky_index.read_bytes()
     adapter = get_adapter("typescript")
