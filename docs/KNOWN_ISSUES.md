@@ -78,7 +78,7 @@ All nine findings below were **reproduced on branch `docs/task-plan`** before th
 - **Reproduce:** export a graph containing only symbol nodes (no `file` nodes) through `convert_view_tree_to_cytoscape_elements`.
 - **Proposed fix:** `node.range.start_line` and `node.parent`.
 - **Fix task:** **H2** (E0).
-- **Status:** REPRODUCED, OPEN.
+- **Status:** FIXED in H2 (`fac4ec1`, 2026-11-13): fallback reads `node.range.start_line` and `node.parent`; tests `test_export_html_raw_graph_fallback_reads_range` and `..._parent` fail before the fix and pass after (`docs/evidence/H2-raw-graph-fallback-red.txt`, `docs/evidence/H2-raw-graph-fallback.txt`).
 
 ### F5: `Graph.add_edge` is a linear scan (quadratic build)
 - **Severity:** Medium — large repos pay O(E²).

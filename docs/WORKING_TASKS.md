@@ -8,7 +8,7 @@ The roadmap narrative is [`docs/IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.m
 | ID | title | epic | branch | depends on | size | session group | status | commit |
 |---|---|---|---|---|---|---|---|---|
 | H1 | Hermetic tests (F1, F2) | E0 | `fix/baseline-correctness` | — | M | E0-S1 | DONE | 822aa76 |
-| H2 | Fix the raw-graph fallback (F4) | E0 | `fix/baseline-correctness` | — | S | E0-S2 | TODO | — |
+| H2 | Fix the raw-graph fallback (F4) | E0 | `fix/baseline-correctness` | — | S | E0-S2 | DONE | fac4ec1 |
 | H3 | Real edge rollup for hidden nodes (F3) | E0 | `fix/baseline-correctness` | H2 | M | E0-S3 | TODO | — |
 | H4 | Keyed edge index (F5) | E0 | `fix/baseline-correctness` | — | S | E0-S2 | TODO | — |
 | H5 | Doc and code drift (F6, F7, F8, F9 version) | E0 | `fix/baseline-correctness` | — | S | E0-S2 | TODO | — |
@@ -75,7 +75,7 @@ The roadmap narrative is [`docs/IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.m
 
 | epic | branch | depends on | tasks done / total | status | accepted by author |
 |---|---|---|---|---|---|
-| E0 | `fix/baseline-correctness` | — | 1 / 5 | IN PROGRESS | no |
+| E0 | `fix/baseline-correctness` | — | 2 / 5 | IN PROGRESS | no |
 | E1 | `refactor/package-structure` | E0 | 0 / 13 | NOT STARTED | no |
 | E2 | `feature/unified-command-and-output` | E1 | 0 / 6 | NOT STARTED | no |
 | E3 | `feature/security-baseline` | E2 | 0 / 9 | NOT STARTED | no |
@@ -178,10 +178,11 @@ At most three small tasks, or one large task, per session. Sessions marked **(ga
 - **User check (epic review):** `pytest tests/test_interactive_view.py -k fallback -q` → 2 passed.
 - **Evidence files:** `docs/evidence/H2-raw-graph-fallback.txt`
 - **Planned commit message:** `H2: fix raw-graph fallback range and parent lookup`
-- **Status:** TODO
-- **Commit hash:** —
-- **Failure log:** —
-- **Change log:** —
+- **Status:** DONE
+- **Commit hash:** `fac4ec1`
+- **Failure log:** Red run (`docs/evidence/H2-raw-graph-fallback-red.txt`): both tests failed with `TypeError: 'SourceRange' object is not subscriptable` at `cartog/export_html.py:88`.
+- **Change log:**
+  - 2026-11-13: Fallback reads `node.range.start_line` and `node.parent`; two tests added. Full suite 168 passed.
 
 ### H3: Real edge rollup for hidden nodes (F3)
 
