@@ -1,0 +1,30 @@
+# H4-edge-index-red
+Date: 2026-11-13 11:03:45
+Branch: fix/baseline-correctness
+Command: venv\Scripts\python.exe -m pytest tests\test_model.py -q
+Exit: 1
+
+...F...                                                                  [100%]
+================================== FAILURES ===================================
+________________________ test_edge_index_tracks_edges _________________________
+
+    def test_edge_index_tracks_edges():
+        """F5: add_edge keeps a keyed index in sync with the edge list."""
+        graph = Graph()
+        graph.add_edge(_edge("a", "b", count=1))
+        graph.add_edge(_edge("c", "d", count=2))
+        graph.add_edge(_edge("a", "b", count=3))
+    
+        assert len(graph.edges) == 2
+        assert {(e.source, e.target, e.kind) for e in graph.edges} == {
+            ("a", "b", "calls"),
+            ("c", "d", "calls"),
+        }
+>       assert len(graph._edge_index) == len(graph.edges)
+                   ^^^^^^^^^^^^^^^^^
+E       AttributeError: 'Graph' object has no attribute '_edge_index'
+
+tests\test_model.py:76: AttributeError
+=========================== short test summary info ===========================
+FAILED tests/test_model.py::test_edge_index_tracks_edges - AttributeError: 'G...
+1 failed, 6 passed in 0.12s

@@ -1,0 +1,11 @@
+# H4-edge-index-bench
+Date: 2026-11-13 11:04:40
+Branch: fix/baseline-correctness
+Command: venv\Scripts\python.exe .scratch\h4_bench.py compare
+Exit: 0
+
+serialized sha256 (compare): 2c9de1e68fa4cf5648d09d13e95ba1593d05b6b73c26028233f818bcef674561
+  edges     linear      keyed  speedup
+   5000     1.036s     0.005s      191x
+  10000     4.082s     0.012s      350x
+  20000    16.402s     0.027s      618x
