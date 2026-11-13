@@ -1,0 +1,231 @@
+# H2-raw-graph-fallback-red
+Date: 2026-11-13 10:59:40
+Branch: fix/baseline-correctness
+Command: venv\Scripts\python.exe -m pytest tests\test_interactive_view.py -k fallback -q
+Exit: 1
+
+FF                                                                       [100%]
+================================== FAILURES ===================================
+_______________ test_export_html_raw_graph_fallback_reads_range _______________
+
+    def test_export_html_raw_graph_fallback_reads_range():
+        """F4: the raw-graph fallback must read ``SourceRange.start_line``, not ``range[0]``."""
+        from cartog.export_html import convert_view_tree_to_cytoscape_elements
+        from cartog.model import Graph, Node, SourceRange
+        from cartog.views import build_universal_view_tree
+    
+        graph = Graph(meta={"target_path": "fallback"})
+        graph.add_node(
+            Node(
+                id="fn_orphan",
+                name="orphan",
+                qualified_name="orphan.py:orphan",
+                kind="function",
+                path="orphan.py",
+                range=SourceRange(7, 0, 9, 0),
+            )
+        )
+    
+        tree = build_universal_view_tree(graph)
+        assert tree.children == [], "fixture must exercise the raw-graph fallback"
+    
+>       elements = convert_view_tree_to_cytoscape_elements(tree, graph)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_interactive_view.py:324: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+tree = ViewNode(id='root', name='fallback', kind='subsystem', path=None, parent_id=None, children=[], attrs={'root': True}, visible=True)
+graph = Graph(schema_version='2.0.0', meta={'target_path': 'fallback'}, nodes={'fn_orphan': Node(id='fn_orphan', kind='functio...root='.', attrs={}, parent=None)}, edges=[], stats={}, skipped=[], unresolved=[], mismatches=[], duplicate_node_ids=[])
+flow_nodes = None, flow_edges = None
+
+    def convert_view_tree_to_cytoscape_elements(
+        tree: ViewNode,
+        graph: Graph,
+        flow_nodes: Optional[list[Node]] = None,
+        flow_edges: Optional[list[Edge]] = None,
+    ) -> list[dict[str, Any]]:
+        """Convert Universal View Model hierarchy and semantic edges into Cytoscape element definitions."""
+        elements: list[dict[str, Any]] = []
+        registered_node_ids: set[str] = set()
+    
+        # If in flow mode, restrict visible nodes/edges to the flow trace
+        flow_node_ids = {n.id for n in flow_nodes} if flow_nodes else None
+        flow_edge_pairs = {(e.source, e.target) for e in flow_edges} if flow_edges else None
+    
+        def _traverse(node: ViewNode, parent_id: Optional[str] = None):
+            # In flow mode, if none of the descendants are in flow, skip
+            if flow_node_ids is not None:
+                descendant_ids = _collect_ids(node)
+                if not descendant_ids.intersection(flow_node_ids):
+                    return
+    
+            node_data: dict[str, Any] = {
+                "id": node.id,
+                "label": node.name,
+                "kind": node.kind,
+                "path": node.path or "",
+                "line": node.attrs.get("line", 1),
+                "qualified_name": node.attrs.get("qualified_name", node.name),
+                "description": node.attrs.get("description", ""),
+                "is_helper": 1 if node.attrs.get("is_helper") else 0,
+            }
+    
+            # Root subsystem / top-level container has no parent
+            if parent_id and parent_id != "root":
+                node_data["parent"] = parent_id
+    
+            # Skip adding dummy root to the visual elements if multiple top-level folders exist
+            if node.id != "root":
+                elements.append({"data": node_data})
+                registered_node_ids.add(node.id)
+    
+            next_parent = node.id if node.id != "root" else None
+            for child in node.children:
+                _traverse(child, parent_id=next_parent)
+    
+        def _collect_ids(vn: ViewNode) -> set[str]:
+            s = {vn.id}
+            for c in vn.children:
+                s.update(_collect_ids(c))
+            return s
+    
+        _traverse(tree)
+    
+        # If the synthetic tree didn't register nodes (e.g. raw graph fallback), register nodes directly
+        if not registered_node_ids:
+            for nid, node in sorted(graph.nodes.items()):
+                if node.kind in ("dependency", "ci_job"):
+                    continue
+                parent = node.attrs.get("parent")
+                data = {
+                    "id": node.id,
+                    "label": node.name,
+                    "kind": node.kind,
+                    "path": node.path or "",
+>                   "line": node.range[0] if node.range else 1,
+                            ^^^^^^^^^^^^^
+                    "qualified_name": node.qualified_name or node.name,
+                }
+E               TypeError: 'SourceRange' object is not subscriptable
+
+cartog\export_html.py:88: TypeError
+_________________ test_export_html_raw_graph_fallback_parent __________________
+
+    def test_export_html_raw_graph_fallback_parent():
+        """F4: the raw-graph fallback must read ``node.parent``, not ``attrs["parent"]``."""
+        from cartog.export_html import convert_view_tree_to_cytoscape_elements
+        from cartog.model import Graph, Node, SourceRange
+        from cartog.views import build_universal_view_tree
+    
+        graph = Graph(meta={"target_path": "fallback"})
+        graph.add_node(
+            Node(
+                id="fn_parent",
+                name="parent",
+                qualified_name="p.py:parent",
+                kind="function",
+                path="p.py",
+                range=SourceRange(1, 0, 2, 0),
+            )
+        )
+        graph.add_node(
+            Node(
+                id="fn_child",
+                name="child",
+                qualified_name="p.py:child",
+                kind="function",
+                path="p.py",
+                range=SourceRange(4, 0, 5, 0),
+                parent="fn_parent",
+            )
+        )
+    
+        tree = build_universal_view_tree(graph)
+        assert tree.children == [], "fixture must exercise the raw-graph fallback"
+    
+>       elements = convert_view_tree_to_cytoscape_elements(tree, graph)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_interactive_view.py:362: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+tree = ViewNode(id='root', name='fallback', kind='subsystem', path=None, parent_id=None, children=[], attrs={'root': True}, visible=True)
+graph = Graph(schema_version='2.0.0', meta={'target_path': 'fallback'}, nodes={'fn_parent': Node(id='fn_parent', kind='functio...', attrs={}, parent='fn_parent')}, edges=[], stats={}, skipped=[], unresolved=[], mismatches=[], duplicate_node_ids=[])
+flow_nodes = None, flow_edges = None
+
+    def convert_view_tree_to_cytoscape_elements(
+        tree: ViewNode,
+        graph: Graph,
+        flow_nodes: Optional[list[Node]] = None,
+        flow_edges: Optional[list[Edge]] = None,
+    ) -> list[dict[str, Any]]:
+        """Convert Universal View Model hierarchy and semantic edges into Cytoscape element definitions."""
+        elements: list[dict[str, Any]] = []
+        registered_node_ids: set[str] = set()
+    
+        # If in flow mode, restrict visible nodes/edges to the flow trace
+        flow_node_ids = {n.id for n in flow_nodes} if flow_nodes else None
+        flow_edge_pairs = {(e.source, e.target) for e in flow_edges} if flow_edges else None
+    
+        def _traverse(node: ViewNode, parent_id: Optional[str] = None):
+            # In flow mode, if none of the descendants are in flow, skip
+            if flow_node_ids is not None:
+                descendant_ids = _collect_ids(node)
+                if not descendant_ids.intersection(flow_node_ids):
+                    return
+    
+            node_data: dict[str, Any] = {
+                "id": node.id,
+                "label": node.name,
+                "kind": node.kind,
+                "path": node.path or "",
+                "line": node.attrs.get("line", 1),
+                "qualified_name": node.attrs.get("qualified_name", node.name),
+                "description": node.attrs.get("description", ""),
+                "is_helper": 1 if node.attrs.get("is_helper") else 0,
+            }
+    
+            # Root subsystem / top-level container has no parent
+            if parent_id and parent_id != "root":
+                node_data["parent"] = parent_id
+    
+            # Skip adding dummy root to the visual elements if multiple top-level folders exist
+            if node.id != "root":
+                elements.append({"data": node_data})
+                registered_node_ids.add(node.id)
+    
+            next_parent = node.id if node.id != "root" else None
+            for child in node.children:
+                _traverse(child, parent_id=next_parent)
+    
+        def _collect_ids(vn: ViewNode) -> set[str]:
+            s = {vn.id}
+            for c in vn.children:
+                s.update(_collect_ids(c))
+            return s
+    
+        _traverse(tree)
+    
+        # If the synthetic tree didn't register nodes (e.g. raw graph fallback), register nodes directly
+        if not registered_node_ids:
+            for nid, node in sorted(graph.nodes.items()):
+                if node.kind in ("dependency", "ci_job"):
+                    continue
+                parent = node.attrs.get("parent")
+                data = {
+                    "id": node.id,
+                    "label": node.name,
+                    "kind": node.kind,
+                    "path": node.path or "",
+>                   "line": node.range[0] if node.range else 1,
+                            ^^^^^^^^^^^^^
+                    "qualified_name": node.qualified_name or node.name,
+                }
+E               TypeError: 'SourceRange' object is not subscriptable
+
+cartog\export_html.py:88: TypeError
+=========================== short test summary info ===========================
+FAILED tests/test_interactive_view.py::test_export_html_raw_graph_fallback_reads_range
+FAILED tests/test_interactive_view.py::test_export_html_raw_graph_fallback_parent
+2 failed, 9 deselected in 0.55s

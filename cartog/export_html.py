@@ -79,13 +79,13 @@ def convert_view_tree_to_cytoscape_elements(
         for nid, node in sorted(graph.nodes.items()):
             if node.kind in ("dependency", "ci_job"):
                 continue
-            parent = node.attrs.get("parent")
+            parent = node.parent
             data = {
                 "id": node.id,
                 "label": node.name,
                 "kind": node.kind,
                 "path": node.path or "",
-                "line": node.range[0] if node.range else 1,
+                "line": node.range.start_line if node.range else 1,
                 "qualified_name": node.qualified_name or node.name,
             }
             if parent:

@@ -1,0 +1,8 @@
+# H2-raw-graph-fallback
+Date: 2026-11-13 10:59:48
+Branch: fix/baseline-correctness
+Command: venv\Scripts\python.exe -m pytest tests\test_interactive_view.py -k fallback -q
+Exit: 0
+
+..                                                                       [100%]
+2 passed, 9 deselected in 0.31s

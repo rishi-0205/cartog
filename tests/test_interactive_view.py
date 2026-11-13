@@ -298,3 +298,67 @@ def test_viewer_expanded_spacing_and_helper_toggle(tmp_path: Path):
 
 
 
+
+
+def test_export_html_raw_graph_fallback_reads_range():
+    """F4: the raw-graph fallback must read ``SourceRange.start_line``, not ``range[0]``."""
+    from cartog.export_html import convert_view_tree_to_cytoscape_elements
+    from cartog.model import Graph, Node, SourceRange
+    from cartog.views import build_universal_view_tree
+
+    graph = Graph(meta={"target_path": "fallback"})
+    graph.add_node(
+        Node(
+            id="fn_orphan",
+            name="orphan",
+            qualified_name="orphan.py:orphan",
+            kind="function",
+            path="orphan.py",
+            range=SourceRange(7, 0, 9, 0),
+        )
+    )
+
+    tree = build_universal_view_tree(graph)
+    assert tree.children == [], "fixture must exercise the raw-graph fallback"
+
+    elements = convert_view_tree_to_cytoscape_elements(tree, graph)
+    nodes = [e["data"] for e in elements if "source" not in e["data"]]
+    assert [n["id"] for n in nodes] == ["fn_orphan"]
+    assert nodes[0]["line"] == 7
+
+
+def test_export_html_raw_graph_fallback_parent():
+    """F4: the raw-graph fallback must read ``node.parent``, not ``attrs["parent"]``."""
+    from cartog.export_html import convert_view_tree_to_cytoscape_elements
+    from cartog.model import Graph, Node, SourceRange
+    from cartog.views import build_universal_view_tree
+
+    graph = Graph(meta={"target_path": "fallback"})
+    graph.add_node(
+        Node(
+            id="fn_parent",
+            name="parent",
+            qualified_name="p.py:parent",
+            kind="function",
+            path="p.py",
+            range=SourceRange(1, 0, 2, 0),
+        )
+    )
+    graph.add_node(
+        Node(
+            id="fn_child",
+            name="child",
+            qualified_name="p.py:child",
+            kind="function",
+            path="p.py",
+            range=SourceRange(4, 0, 5, 0),
+            parent="fn_parent",
+        )
+    )
+
+    tree = build_universal_view_tree(graph)
+    assert tree.children == [], "fixture must exercise the raw-graph fallback"
+
+    elements = convert_view_tree_to_cytoscape_elements(tree, graph)
+    by_id = {e["data"]["id"]: e["data"] for e in elements if "source" not in e["data"]}
+    assert by_id["fn_child"]["parent"] == "fn_parent"
