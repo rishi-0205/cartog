@@ -7,7 +7,7 @@ The roadmap narrative is [`docs/IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.m
 
 | ID | title | epic | branch | depends on | size | session group | status | commit |
 |---|---|---|---|---|---|---|---|---|
-| H1 | Hermetic tests (F1, F2) | E0 | `fix/baseline-correctness` | — | M | E0-S1 | TODO | — |
+| H1 | Hermetic tests (F1, F2) | E0 | `fix/baseline-correctness` | — | M | E0-S1 | DONE | 822aa76 |
 | H2 | Fix the raw-graph fallback (F4) | E0 | `fix/baseline-correctness` | — | S | E0-S2 | TODO | — |
 | H3 | Real edge rollup for hidden nodes (F3) | E0 | `fix/baseline-correctness` | H2 | M | E0-S3 | TODO | — |
 | H4 | Keyed edge index (F5) | E0 | `fix/baseline-correctness` | — | S | E0-S2 | TODO | — |
@@ -75,7 +75,7 @@ The roadmap narrative is [`docs/IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.m
 
 | epic | branch | depends on | tasks done / total | status | accepted by author |
 |---|---|---|---|---|---|
-| E0 | `fix/baseline-correctness` | — | 0 / 5 | NOT STARTED | no |
+| E0 | `fix/baseline-correctness` | — | 1 / 5 | IN PROGRESS | no |
 | E1 | `refactor/package-structure` | E0 | 0 / 13 | NOT STARTED | no |
 | E2 | `feature/unified-command-and-output` | E1 | 0 / 6 | NOT STARTED | no |
 | E3 | `feature/security-baseline` | E2 | 0 / 9 | NOT STARTED | no |
@@ -156,10 +156,11 @@ At most three small tasks, or one large task, per session. Sessions marked **(ga
 - **User check (epic review):** `pytest -q` then `git status --porcelain` → empty; `pytest -q -m "not samples"` → no failures.
 - **Evidence files:** `docs/evidence/H1-hermetic-tests.txt`
 - **Planned commit message:** `H1: make sample-dependent tests hermetic`
-- **Status:** TODO
-- **Commit hash:** —
-- **Failure log:** —
-- **Change log:** —
+- **Status:** DONE
+- **Commit hash:** `822aa76`
+- **Failure log:** Red run (`docs/evidence/H1-hermetic-tests-red.txt`): `test_sample_test_skips_in_a_tree_without_samples` failed because the E2E test ran against a missing sample; `test_flow_demos_write_only_tmp_path` failed with `TypeError: test_flow_demos_end_to_end() takes 0 positional arguments but 1 was given` and the test wrote `cartog-out/flow_*.mmd`.
+- **Change log:**
+  - 2026-11-13: Added `tests/conftest.py` (marker, `requires_sample`, `CARTOG_SAMPLES_DIR` override), `tests/test_hermetic.py` (4 tests), `scripts/fetch_samples.py`, `scripts/samples.lock`. E2E flow test now uses `tmp_path`; python/js/scip sample tests use the helper. Full suite 166 passed (162 baseline + 4 new).
 
 ### H2: Fix the raw-graph fallback (F4)
 
