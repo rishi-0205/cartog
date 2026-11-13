@@ -1,5 +1,7 @@
 # Cartog Onboarding & Verification Report
 
+> **Status note (2026-11-13):** Milestone 12 was folded into E5 (tasks L1/L5/L6) and Milestone 13 was split into E4 (V4/V5) and E8 (D1) by the 2026-11-12 realignment. The "PENDING" milestone lists below are superseded by `docs/IMPLEMENTATION_PLAN.md` and the live board `docs/WORKING_TASKS.md`.
+
 ## 1. What the Docs Claim
 
 ### Overview & Purpose

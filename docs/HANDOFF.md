@@ -1,6 +1,6 @@
 # Cartog — Handoff Document
 
-**Last updated:** 2026-11-12 (plan restructured into epics E0–E8, 63 tasks; baseline unchanged at 162 tests passing)  
+**Last updated:** 2026-11-13 (E0 in progress: H1, H2, H4 and H5 done, H3 remains; suite is 174 tests passing)  
 **Role:** Single entry point for any model or developer picking up this project.  
 **Active Working Tasks:** See [`docs/WORKING_TASKS.md`](./WORKING_TASKS.md) for the live epic board and command loop. The historical T0–T21 board is [`docs/archive/WORKING_TASKS_T0-T21.md`](./archive/WORKING_TASKS_T0-T21.md).  
 **Git rules:** [`docs/dev/GIT_WORKFLOW.md`](./dev/GIT_WORKFLOW.md) — one branch per epic, commit per task, never push, merge only after `Accept <epic id>`.
@@ -67,30 +67,24 @@ Epic order is **E0 → E1 → E2 → E3 → E4 → E5 → E6 → E7 → E8**. An
 | Phase | Tasks | Scope & Achievements |
 |---|---|---|
 | **Phase A: Trust the checks** | T0, T1, T2 | Verified M0–M10 alignment; strengthened test suite trustworthiness; fixed AST cache `is_type_only` preservation across cache serialization. |
-| **Phase B: Counts and recall** | T3, T4, T5, T6 | Resolved barrel import edge duplication with exact symbol matching; unified call accounting into single source of truth `compute_call_interactions()`; implemented re-export call reconciliation; spot-checked Click call graph. |
+| **Phase B: Counts and recall** | T3, T4, T5, T6 | Resolved barrel import edge duplication with exact symbol matching; unified call accounting into single source of truth `get_call_counts()` (`cartog/views.py`); implemented re-export call reconciliation; spot-checked Click call graph. |
 | **Phase C: Flow view** | T7, T8, T9, T10, T11 | Added disambiguating flow candidate selector; resolved name collisions in flat Mermaid nodes; plumbed in-memory SCIP data into flow CLI; added BFS depth limits and class instantiation tracking; verified multi-hop flow demos across Flask, Ky, and Click. |
 | **Phase D: Function names in overview** | T12 | Added function-level diagram view with boundary symbol selection and helper collapsing; implemented graceful node budget fallback to file-level. |
 | **Phase E: Polish** | T13, T14, T15, T16 | Added visible legends and summary subgraphs in Mermaid; ranked digest files by connectivity and attributed constructors to enclosing classes; completed noise filtering with `if t.TYPE_CHECKING:` guard support; benchmarked compact serialization (44–50% reduction) and token budgets (<2,000 tokens). |
 | **Milestone 11: Interactive Viewer** | T11 | Packaged offline Cytoscape stack in `cartog/view_assets/`; implemented `cartog view` generating offline `map.html`; implemented orthogonal Manhattan edge routing (`taxi`), edge rollup (`N calls`), reference filter toggle (`References: Off / On`), compound padding (35-50px) & layout physics, and internal helper expansion & linking with toggle. |
 
-**Test suite:** 162 passed, 1 warning (2026-11-03, `pytest tests/` in venv, +10 new tests added in M11, 0 regressions from 152 baseline).
+**Test suite:** 174 passed, 1 warning (2026-11-13, `pytest tests/` in venv; E0 raised the 162 baseline by 12 tests with 0 regressions).
 
 ---
 
 ## 3. Next Tasks (E0 — `fix/baseline-correctness`)
 
-Start on branch `fix/baseline-correctness` created from a clean `main`. Work the tasks in this order; do not start E1 until E0 is accepted.
+Start on branch `fix/baseline-correctness`, created from `docs/task-plan` HEAD (`fcb11f2`) rather than a clean `main` because the epic board and git rules live on that branch (Decision 29 in `docs/ISSUES_AND_DECISIONS.md`). H1, H2, H4 and H5 are DONE; one task remains:
 
-1. **H1 — Hermetic tests (F1, F2)**  
-   Add the `samples` marker and `tests/conftest.py::requires_sample()` skip helper, route every sample-dependent test through it, pass `--out <tmp_path>` in the E2E flow test, and add `scripts/fetch_samples.py` with pinned SHAs. Acceptance: a tree without `samples/` skips rather than fails, and a full suite run leaves `git status --porcelain` empty.
+1. **H3 — Real edge rollup for hidden nodes (F3)**  
+   Write failing tests first. Edges whose endpoint is hidden behind a collapsed compound must roll up to the nearest visible ancestor, aggregate by `(source, target, kind)`, drop self-edges, and surface the rolled-up count. H3 depends on H2.
 
-2. **H2 — Fix the raw-graph fallback (F4)**  
-   Write the failing test first. Replace `node.range[0]` with `node.range.start_line` and read the parent from `node.parent` in `cartog/export_html.py`.
-
-3. **H4 — Keyed edge index (F5)**  
-   Add `_edge_index: dict[tuple[str, str, str], Edge]` to `Graph`, populate it in `add_edge` and `from_dict`, prove byte-identical `graph.json`, and record the 5k/10k/20k benchmark.
-
-Then H3 (edge rollup) and H5 (doc drift) close E0. Full task fields, tests, acceptance criteria, and user checks are in [`docs/WORKING_TASKS.md`](./WORKING_TASKS.md).
+H3 closes E0. Full task fields, tests, acceptance criteria, and user checks are in [`docs/WORKING_TASKS.md`](./WORKING_TASKS.md). Do not start E1 until E0 is accepted.
 
 ---
 
@@ -152,7 +146,7 @@ On Windows, always use `venv\Scripts\python.exe` inside the repo venv. Cartog's 
 - **Dynamic dispatch:** SCIP resolves static call targets only. Python closures, metaclass dispatch, and `super()` to overridden methods in subclasses are not resolved.
 - **Click self-map:** Cartog maps `samples/click` with Click installed as a system package (8.5.0 on Python313). Running without `--python` picks up a different Python and produces commit-hash symbols.
 - **Receiver Attribute Member Calls:** When a method call is performed on an in-repo class attribute (e.g. `self.copy_to.flush()`), receiver attribute reference may be attributed to enclosing member class rather than external method selector (see `docs/KNOWN_ISSUES.md` Rank 1).
-- **Baseline test hygiene:** `samples/` is gitignored and the E2E flow test has no skip guard, so a fresh clone fails one test; the same test also writes `cartog-out/flow_*.mmd`. Tracked as F1/F2 and fixed by H1.
+- **Baseline test hygiene:** fixed by H1 — `samples/` is gitignored, sample-dependent tests now skip with a fetch hint (`scripts/fetch_samples.py`), and the E2E flow test writes only to `tmp_path`.
 - **Viewer edge rollup:** edges whose endpoint is collapsed are currently dropped rather than rolled up to the nearest visible ancestor (F3, fixed by H3).
 
 ---
@@ -166,13 +160,13 @@ On Windows, always use `venv\Scripts\python.exe` inside the repo venv. Cartog's 
 | `docs/archive/WORKING_TASKS_T0-T21.md` | Archived T0–T21 session board (all accepted) |
 | `docs/dev/GIT_WORKFLOW.md` | Branch, commit, merge, and history-safety rules |
 | `docs/evidence/` | Per-task command output proving every claim |
-| `docs/ALIGNMENT.md` | M0–M6.5 delivery matrix (title stale; extends further — see F8) |
+| `docs/ALIGNMENT.md` | M0–M11 delivery matrix (2026-10-28 audit snapshot; test counts in it are historical — current numbers are in `docs/evidence/`) |
 | `docs/IMPLEMENTATION_PLAN.md` | Milestone record plus §5.1 epic plan E0–E8 |
 | `docs/BUILD_LOG.md` | Append-only chronological log (Entry index at top) |
 | `docs/ISSUES_AND_DECISIONS.md` | Technical issue archive: root cause, options, decision rationale |
 | `docs/KNOWN_ISSUES.md` | Ranked issues, review findings F1–F9, and architectural limits |
 | `docs/AUDIT_SUMMARY.md` | Takeover audit findings, fixes made, top risks |
-| `docs/pytest_report.txt` | Archived pytest session (152 passed, 1 warning); current baseline is 162 passed |
+| `docs/pytest_report.txt` | Archived pytest session (152 passed, 1 warning); current baseline is 174 passed (`docs/evidence/H5-full-suite.txt`) |
 | `AGENTS.md` | Standing rules for any model/agent working on this project |
 | `opencode.jsonc` | Permission deny rules for destructive git commands |
 | `GEMINI.md` | Gemini entry point → AGENTS.md |

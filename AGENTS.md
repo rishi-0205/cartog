@@ -37,7 +37,7 @@ Full rules: [`docs/dev/GIT_WORKFLOW.md`](docs/dev/GIT_WORKFLOW.md). Summary:
 ## Code Standards
 
 - **All line numbers in `graph.json` are 1-based.** Column offsets are 0-based. Never commit 0-based line numbers.
-- **Stable SHA-1 node IDs.** `Node.id = sha1(kind + ":" + path + ":" + qualified_name)[:12]`. Do not change the scheme without a schema version bump.
+- **Stable SHA-1 node IDs.** `Node.id = sha1(kind + ":" + path + ":" + qualified_name)[:10]`. Do not change the scheme without a schema version bump.
 - **Confidence values.** Only `"resolved"`, `"reconciled"`, `"import"`, or `"heuristic"` are valid. `validate_graph()` checks this.
 - **No assert weakening.** When modifying a test, only strengthen or add assertions. Never weaken or delete an assertion to make a test pass.
 - **JSONC files** (`tsconfig.json`, `jsconfig.json`) must use `cartog.jsonc.load_jsonc_file()`. Strict JSON files (`package.json`) use `cartog.jsonc.load_strict_json_file()`. Never use bare `json.load()` or a regex comment-stripper.

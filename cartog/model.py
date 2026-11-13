@@ -16,7 +16,7 @@ from cartog.config import SCHEMA_VERSION
 
 @dataclass(frozen=True)
 class SourceRange:
-    """Exact source coordinates (0-indexed)."""
+    """Exact source coordinates (1-based lines, 0-based columns)."""
     start_line: int
     start_col: int
     end_line: int

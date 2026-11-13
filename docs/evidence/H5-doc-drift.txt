@@ -1,0 +1,8 @@
+# H5-doc-drift
+Date: 2026-11-13 11:08:27
+Branch: fix/baseline-correctness
+Command: venv\Scripts\python.exe -m pytest tests\test_docs_consistency.py -q
+Exit: 0
+
+..                                                                       [100%]
+2 passed in 0.04s

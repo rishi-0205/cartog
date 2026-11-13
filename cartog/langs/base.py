@@ -13,10 +13,10 @@ class SymbolRecord:
     kind: str                    # "function", "method", "class"
     name: str                    # e.g. "Command", "_split_opt"
     qualified_name: str          # e.g. "click.core.Command", "click.parser._split_opt"
-    start_line: int              # 0-indexed line
-    start_col: int               # 0-indexed character offset
-    end_line: int                # 0-indexed line
-    end_col: int                 # 0-indexed character offset
+    start_line: int              # 1-based line
+    start_col: int               # 0-based character offset
+    end_line: int                # 1-based line
+    end_col: int                 # 0-based character offset
     parent: Optional[str] = None # Name of parent symbol (e.g. class name for methods)
     attrs: dict[str, Any] = field(default_factory=dict)
 
