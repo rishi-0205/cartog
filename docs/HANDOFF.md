@@ -1,6 +1,6 @@
 # Cartog — Handoff Document
 
-**Last updated:** 2026-11-15 (E0 ACCEPTED by the author and merged to `main`; next is E1 R0; suite is 178 tests passing)  
+**Last updated:** 2026-11-15 (E1 in progress on `refactor/package-structure`: R0, R2, R3 DONE; next is R1, the licence gate; suite is 184 tests passing)  
 **Role:** Single entry point for any model or developer picking up this project.  
 **Active Working Tasks:** See [`docs/WORKING_TASKS.md`](./WORKING_TASKS.md) for the live epic board and command loop. The historical T0–T21 board is [`docs/archive/WORKING_TASKS_T0-T21.md`](./archive/WORKING_TASKS_T0-T21.md).  
 **Git rules:** [`docs/dev/GIT_WORKFLOW.md`](./dev/GIT_WORKFLOW.md) — one branch per epic, commit per task, never push, merge only after `Accept <epic id>`.
@@ -73,7 +73,7 @@ Epic order is **E0 → E1 → E2 → E3 → E4 → E5 → E6 → E7 → E8**. An
 | **Phase E: Polish** | T13, T14, T15, T16 | Added visible legends and summary subgraphs in Mermaid; ranked digest files by connectivity and attributed constructors to enclosing classes; completed noise filtering with `if t.TYPE_CHECKING:` guard support; benchmarked compact serialization (44–50% reduction) and token budgets (<2,000 tokens). |
 | **Milestone 11: Interactive Viewer** | T11 | Packaged offline Cytoscape stack in `cartog/view_assets/`; implemented `cartog view` generating offline `map.html`; implemented orthogonal Manhattan edge routing (`taxi`), edge rollup (`N calls`), reference filter toggle (`References: Off / On`), compound padding (35-50px) & layout physics, and internal helper expansion & linking with toggle. |
 
-**Test suite:** 178 passed, 1 warning (2026-11-13, `pytest tests/` in venv; E0 raised the 162 baseline by 16 tests with 0 regressions).
+**Test suite:** 184 passed, 1 warning (2026-11-15, `pytest tests/` in venv; E1 R0 added 2 golden tests, R2 added 2 path tests, R3 added 2 doc-link tests, 0 regressions).
 
 ---
 
@@ -81,7 +81,7 @@ Epic order is **E0 → E1 → E2 → E3 → E4 → E5 → E6 → E7 → E8**. An
 
 E0 (`fix/baseline-correctness`) was **ACCEPTED by the author on 2026-11-15** and merged into `main` with `git merge --no-ff`. H1–H5 are all DONE; the branch was deleted after the merge. E0 was built from `docs/task-plan` HEAD (`fcb11f2`), so that merge also brought the T22 documentation restructure into `main` (Decision 29 in `docs/ISSUES_AND_DECISIONS.md`).
 
-The next task is **R0 — Golden baseline after E0** on a new branch `refactor/package-structure`, created from a clean `main` per [`docs/dev/GIT_WORKFLOW.md`](./dev/GIT_WORKFLOW.md). R0 records the post-E0 baseline before the package restructure begins. Full task fields, tests, acceptance criteria, and user checks are in [`docs/WORKING_TASKS.md`](./WORKING_TASKS.md).
+The branch is `refactor/package-structure`, created from a clean `main` per [`docs/dev/GIT_WORKFLOW.md`](./dev/GIT_WORKFLOW.md). R0 (golden baseline), R2 (absolute paths), and R3 (agent-process docs) are DONE. The next task is **R1 — Repo hygiene, licence, lint, CI**, which is an **author gate**: it needs the licence choice and the copyright holder's name before it can start. Full task fields, tests, acceptance criteria, and user checks are in [`docs/WORKING_TASKS.md`](./WORKING_TASKS.md).
 
 ---
 
@@ -97,7 +97,7 @@ pip install -e .
 venv\Scripts\python.exe -m pytest tests\ -q
 
 # Map a sample project (Python, with SCIP call graph)
-cartog map samples/click --out cartog-out/click --python C:\Python313\python.exe
+cartog map samples/click --out cartog-out/click --python <python>
 
 # Map a sample project (JS/TS)
 cartog map samples/ky --out cartog-out/ky
@@ -164,7 +164,11 @@ On Windows, always use `venv\Scripts\python.exe` inside the repo venv. Cartog's 
 | `docs/KNOWN_ISSUES.md` | Ranked issues, review findings F1–F9, and architectural limits |
 | `docs/AUDIT_SUMMARY.md` | Takeover audit findings, fixes made, top risks |
 | `docs/pytest_report.txt` | Archived pytest session (152 passed, 1 warning); current baseline is 178 passed (`docs/evidence/H3-full-suite.txt`) |
-| `AGENTS.md` | Standing rules for any model/agent working on this project |
+| `AGENTS.md` | Root entry point for any model/agent: links to the process docs in `docs/dev/` |
+| `docs/dev/EVIDENCE_PROTOCOL.md` | Proof for every claim: red-green, evidence files, test counts |
+| `docs/dev/COMMAND_LOOP.md` | Session loop: work unit, scope, decide-vs-ask, command surface |
+| `docs/dev/REPORTING.md` | Status vocabulary, board updates, report format |
+| `docs/dev/CODE_STANDARDS.md` | Code standards, repository map, key invariants |
 | `opencode.jsonc` | Permission deny rules for destructive git commands |
 | `GEMINI.md` | Gemini entry point → AGENTS.md |
 | `CLAUDE.md` | Claude entry point → AGENTS.md |

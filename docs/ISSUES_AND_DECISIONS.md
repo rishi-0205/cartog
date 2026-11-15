@@ -1071,3 +1071,11 @@ Following the initial orthogonal routing updates, user testing identified two re
 - **Rationale:** branching from `main` would produce an epic branch without `docs/WORKING_TASKS.md` or `docs/dev/GIT_WORKFLOW.md`, making the workflow self-inconsistent. Merging T22 into `main` first would itself be an unaccepted merge.
 - **Consequence:** when E0 is accepted, `git merge --no-ff fix/baseline-correctness` into `main` brings the T22 commits with it. If the author prefers the T22 docs reviewed separately, merge `docs/task-plan` first; the E0 branch is then a strict descendant.
 - **Date:** 2026-11-13
+
+## Decision 30: A fourth process doc, `docs/dev/CODE_STANDARDS.md`, and the one rule that stays in `AGENTS.md`
+
+- **Context:** R3 moves the process material out of `AGENTS.md` into `docs/dev/EVIDENCE_PROTOCOL.md`, `COMMAND_LOOP.md`, and `REPORTING.md`, and shrinks `AGENTS.md` to a pointer. The old `AGENTS.md` also carried project facts (code standards, repository map, key invariants) that are not process rules but must remain one click away, and `tests/test_docs_consistency.py::test_agents_id_length_matches_code` reads the node-ID rule **from `AGENTS.md`** and must not be edited.
+- **Decision:** put the code standards, repository map, and key invariants in `docs/dev/CODE_STANDARDS.md` (a fourth document, linked from the `AGENTS.md` table), and keep the single node-ID line in `AGENTS.md` under "Stable identifiers".
+- **Rationale:** the alternative — leaving ~30 lines of project facts in `AGENTS.md` — keeps it from being a pointer. Moving them without a destination would lose them. Editing the existing drift test to read a new file would change a test to fit a refactor, which the evidence protocol forbids; keeping the line in `AGENTS.md` leaves the test untouched and still meaningful.
+- **Consequence:** `AGENTS.md` is under 45 lines and every rule has exactly one home. The node-ID rule is deliberately duplicated in `AGENTS.md` and `CODE_STANDARDS.md`; if it changes, both must change, and the drift test fails until `AGENTS.md` is fixed.
+- **Date:** 2026-11-15

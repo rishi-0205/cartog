@@ -1,0 +1,28 @@
+﻿FF                                                                       [100%]
+================================== FAILURES ===================================
+_________________________ test_docs_dev_links_resolve _________________________
+
+    def test_docs_dev_links_resolve() -> None:
+        missing_docs = [name for name in REQUIRED_DEV_DOCS if not (DEV_DIR / name).is_file()]
+>       assert not missing_docs, f"missing process document(s) in docs/dev: {missing_docs}"
+E       AssertionError: missing process document(s) in docs/dev: ['EVIDENCE_PROTOCOL.md', 'COMMAND_LOOP.md', 'REPORTING.md']
+E       assert not ['EVIDENCE_PROTOCOL.md', 'COMMAND_LOOP.md', 'REPORTING.md']
+
+tests\test_docs_links.py:89: AssertionError
+_______________________ test_agents_points_to_docs_dev ________________________
+
+    def test_agents_points_to_docs_dev() -> None:
+        text = AGENTS.read_text(encoding="utf-8")
+    
+        missing = [
+            name for name in REQUIRED_DEV_DOCS if f"docs/dev/{name}" not in text
+        ]
+>       assert not missing, f"AGENTS.md does not link to {missing}"
+E       AssertionError: AGENTS.md does not link to ['EVIDENCE_PROTOCOL.md', 'COMMAND_LOOP.md', 'REPORTING.md']
+E       assert not ['EVIDENCE_PROTOCOL.md', 'COMMAND_LOOP.md', 'REPORTING.md']
+
+tests\test_docs_links.py:103: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_docs_links.py::test_docs_dev_links_resolve - AssertionError...
+FAILED tests/test_docs_links.py::test_agents_points_to_docs_dev - AssertionEr...
+2 failed in 0.10s

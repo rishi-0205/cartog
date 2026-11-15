@@ -1,0 +1,61 @@
+# R3 evidence - agent-process docs moved to docs/dev
+Date: 2026-11-15 14:10:26
+Branch: refactor/package-structure
+
+## Red: both tests fail before the docs exist
+Command: venv\Scripts\python.exe -m pytest tests\test_docs_links.py -q
+FF                                                                       [100%]
+================================== FAILURES ===================================
+_________________________ test_docs_dev_links_resolve _________________________
+
+    def test_docs_dev_links_resolve() -> None:
+        missing_docs = [name for name in REQUIRED_DEV_DOCS if not (DEV_DIR / name).is_file()]
+>       assert not missing_docs, f"missing process document(s) in docs/dev: {missing_docs}"
+E       AssertionError: missing process document(s) in docs/dev: ['EVIDENCE_PROTOCOL.md', 'COMMAND_LOOP.md', 'REPORTING.md']
+E       assert not ['EVIDENCE_PROTOCOL.md', 'COMMAND_LOOP.md', 'REPORTING.md']
+
+tests\test_docs_links.py:89: AssertionError
+_______________________ test_agents_points_to_docs_dev ________________________
+
+    def test_agents_points_to_docs_dev() -> None:
+        text = AGENTS.read_text(encoding="utf-8")
+    
+        missing = [
+            name for name in REQUIRED_DEV_DOCS if f"docs/dev/{name}" not in text
+        ]
+>       assert not missing, f"AGENTS.md does not link to {missing}"
+E       AssertionError: AGENTS.md does not link to ['EVIDENCE_PROTOCOL.md', 'COMMAND_LOOP.md', 'REPORTING.md']
+E       assert not ['EVIDENCE_PROTOCOL.md', 'COMMAND_LOOP.md', 'REPORTING.md']
+
+tests\test_docs_links.py:103: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_docs_links.py::test_docs_dev_links_resolve - AssertionError...
+FAILED tests/test_docs_links.py::test_agents_points_to_docs_dev - AssertionEr...
+2 failed in 0.10s
+
+## Green: the two link tests pass
+Command: venv\Scripts\python.exe -m pytest tests\test_docs_links.py -q
+..                                                                       [100%]
+2 passed in 0.05s
+
+## The existing doc-consistency tests still pass (no test was edited)
+Command: venv\Scripts\python.exe -m pytest tests\test_docs_links.py tests\test_docs_consistency.py tests\test_no_absolute_paths.py -q
+......                                                                   [100%]
+6 passed in 2.96s
+
+## Goldens unchanged by the doc move
+Command: venv\Scripts\python.exe scripts\golden.py --check
+click: 0 differences
+flask: 0 differences
+ky: 0 differences
+0 differences
+
+## Full suite after R3
+Command: venv\Scripts\python.exe -m pytest tests\ -q
+184 passed, 1 warning in 175.74s (0:02:55)
+
+## Agent docs created
+docs/dev/EVIDENCE_PROTOCOL.md, docs/dev/COMMAND_LOOP.md, docs/dev/REPORTING.md, docs/dev/CODE_STANDARDS.md (Decision 30); AGENTS.md reduced to 40 lines.
+
+## Test count
+Start of task: 182 passed. End of task: 184 passed (+2, the two R3 link tests).

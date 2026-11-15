@@ -890,7 +890,7 @@
 
 ## Decisions
 
-All architectural decisions made during task execution are recorded in [`docs/ISSUES_AND_DECISIONS.md`](./ISSUES_AND_DECISIONS.md):
+All architectural decisions made during task execution are recorded in [`docs/ISSUES_AND_DECISIONS.md`](../ISSUES_AND_DECISIONS.md):
 - Decision 1: Tree-sitter statement-level AST queries to prevent GC crash (`docs/ISSUES_AND_DECISIONS.md:15`)
 - Issue 12: Win32 Node.js RegExp backslash shim (`docs/ISSUES_AND_DECISIONS.md:380`)
 - Issue 15: Interactive Viewer and Universal View Model (`docs/ISSUES_AND_DECISIONS.md:504`)
@@ -904,7 +904,7 @@ All architectural decisions made during task execution are recorded in [`docs/IS
 
 ## Known Issues Found Along the Way
 
-All issues and edge cases discovered during task execution are recorded in [`docs/KNOWN_ISSUES.md`](./KNOWN_ISSUES.md):
+All issues and edge cases discovered during task execution are recorded in [`docs/KNOWN_ISSUES.md`](../KNOWN_ISSUES.md):
 - Rank 1: Call graph reconciliation missing calls through re-exports (`docs/KNOWN_ISSUES.md:20`)
 - Rank 2: Route pattern mis-attribution with multiple same-named functions (`docs/KNOWN_ISSUES.md:37`)
 - Rank 3: Fan-out barrel edge rewiring duplicates import counts (`docs/KNOWN_ISSUES.md:55`)
