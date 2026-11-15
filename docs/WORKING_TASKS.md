@@ -15,7 +15,7 @@ The roadmap narrative is [`docs/IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.m
 | R0 | Golden baseline after E0 | E1 | `refactor/package-structure` | H1, H3, H4, H5 | S | E1-S1 | DONE | 6dbd7fe |
 | R1 | Repo hygiene, licence, lint, CI | E1 | `refactor/package-structure` | R0 | M | E1-S2 | TODO | — |
 | R2 | Remove absolute local paths | E1 | `refactor/package-structure` | R0 | S | E1-S1 | DONE | 57c5900 |
-| R3 | Move agent-process docs to docs/dev/ | E1 | `refactor/package-structure` | R0 | S | E1-S1 | DONE | PENDING |
+| R3 | Move agent-process docs to docs/dev/ | E1 | `refactor/package-structure` | R0 | S | E1-S1 | DONE | d303f32 |
 | R4 | Package layout design | E1 | `refactor/package-structure` | R0 | S | E1-S3 | TODO | — |
 | R5 | Move core modules | E1 | `refactor/package-structure` | R4 | M | E1-S4 | TODO | — |
 | R6 | Move scanning | E1 | `refactor/package-structure` | R5 | M | E1-S5 | TODO | — |
@@ -339,7 +339,7 @@ At most three small tasks, or one large task, per session. Sessions marked **(ga
 - **Evidence files:** `docs/evidence/R3-agent-docs.txt`
 - **Planned commit message:** `R3: move agent-process docs to docs/dev`
 - **Status:** DONE
-- **Commit hash:** PENDING
+- **Commit hash:** `d303f32`
 - **Failure log:** Red run (`docs/evidence/R3-agent-docs-red.txt`): both tests failed because `docs/dev/EVIDENCE_PROTOCOL.md`, `COMMAND_LOOP.md`, and `REPORTING.md` did not exist and `AGENTS.md` did not link to them.
 - **Change log:**
   - 2026-11-15: Added `docs/dev/EVIDENCE_PROTOCOL.md`, `docs/dev/COMMAND_LOOP.md`, `docs/dev/REPORTING.md` (process material moved out of `AGENTS.md`) and `docs/dev/CODE_STANDARDS.md` (code standards, repository map, invariants — Decision 30). `AGENTS.md` is now a 40-line pointer. Fixed the two broken `docs/archive` links, stale R0 pointer and machine-specific python path in `HANDOFF.md`, and linked the agent loop from `WORKING_TASKS.md`. `tests/test_docs_links.py` (2 tests) resolves every relative markdown link and enforces the pointer shape. Goldens `0 differences`; full suite 184 passed (+2).
