@@ -12,7 +12,7 @@ The roadmap narrative is [`docs/IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.m
 | H3 | Real edge rollup for hidden nodes (F3) | E0 | `fix/baseline-correctness` | H2 | M | E0-S3 | DONE | d858c49 |
 | H4 | Keyed edge index (F5) | E0 | `fix/baseline-correctness` | — | S | E0-S2 | DONE | b4e63c8 |
 | H5 | Doc and code drift (F6, F7, F8, F9 version) | E0 | `fix/baseline-correctness` | — | S | E0-S2 | DONE | 6b1f634 |
-| R0 | Golden baseline after E0 | E1 | `refactor/package-structure` | H1, H3, H4, H5 | S | E1-S1 | TODO | — |
+| R0 | Golden baseline after E0 | E1 | `refactor/package-structure` | H1, H3, H4, H5 | S | E1-S1 | DONE | 6dbd7fe |
 | R1 | Repo hygiene, licence, lint, CI | E1 | `refactor/package-structure` | R0 | M | E1-S2 | TODO | — |
 | R2 | Remove absolute local paths | E1 | `refactor/package-structure` | R0 | S | E1-S1 | TODO | — |
 | R3 | Move agent-process docs to docs/dev/ | E1 | `refactor/package-structure` | R0 | S | E1-S1 | TODO | — |
@@ -76,7 +76,7 @@ The roadmap narrative is [`docs/IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.m
 | epic | branch | depends on | tasks done / total | status | accepted by author |
 |---|---|---|---|---|---|
 | E0 | `fix/baseline-correctness` | — | 5 / 5 | ACCEPTED | 2026-11-15 |
-| E1 | `refactor/package-structure` | E0 | 0 / 13 | NOT STARTED | no |
+| E1 | `refactor/package-structure` | E0 | 1 / 13 | IN PROGRESS | no |
 | E2 | `feature/unified-command-and-output` | E1 | 0 / 6 | NOT STARTED | no |
 | E3 | `feature/security-baseline` | E2 | 0 / 9 | NOT STARTED | no |
 | E4 | `feature/verification` | E2 | 0 / 5 | NOT STARTED | no |
@@ -270,10 +270,11 @@ At most three small tasks, or one large task, per session. Sessions marked **(ga
 - **User check (epic review):** `python scripts/golden.py --check` → `0 differences`.
 - **Evidence files:** `docs/evidence/R0-golden-baseline.txt`
 - **Planned commit message:** `R0: add deterministic golden baseline`
-- **Status:** TODO
-- **Commit hash:** —
-- **Failure log:** —
-- **Change log:** —
+- **Status:** DONE
+- **Commit hash:** `6dbd7fe`
+- **Failure log:** Red run (`docs/evidence/R0-golden-baseline-red.txt`): both tests failed with `FileNotFoundError` because `scripts/golden.py` did not exist. Two intermediate green attempts failed on `graph.json` shape (`AttributeError: 'list' object has no attribute 'values'`) and on printing a temp path with `relative_to(REPO_ROOT)`; both are recorded.
+- **Change log:**
+  - 2026-11-15: Added `scripts/golden.py` (`--write|--check`, `--golden-dir`, explicit paths; defaults to pinned click/flask/ky) and `tests/test_golden.py` (2 tests). Fingerprints normalise absolute paths to the repo name, so they are portable. Two independent writes are byte-identical; `--check` reports `0 differences` twice. Goldens: click 2777 nodes / 1023 edges, flask 2137 / 819, ky 1342 / 378. Full suite 180 passed.
 
 ### R1: Repo hygiene, licence, lint, CI
 
