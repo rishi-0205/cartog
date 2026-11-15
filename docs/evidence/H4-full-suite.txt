@@ -1,0 +1,16 @@
+# H4-full-suite full suite
+Date: 2026-11-13 11:07:18
+Branch: fix/baseline-correctness
+Command: venv\Scripts\python.exe -m pytest tests\ -q
+Exit: 0
+
+........................................................................ [ 41%]
+........................................................................ [ 83%]
+............................                                             [100%]
+============================== warnings summary ===============================
+tests/test_jsonc.py::test_jsonc_unterminated_block_comment
+  C:\Users\rishi\OneDrive\Desktop\Dev\cartog\cartog\jsonc.py:82: UserWarning: Unterminated block comment in 'C:/Users/rishi/AppData/Local/Temp/pytest-of-rishi/pytest-244/test_jsonc_unterminated_block_0/tsconfig.json' starting at line 3
+    warnings.warn(msg, UserWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+172 passed, 1 warning in 151.04s (0:02:31)

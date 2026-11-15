@@ -4,7 +4,6 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "cartog"
-version = "0.1.0"
 description = "Cartography for codebases: maps source files with tree-sitter + SCIP into JSON + Mermaid"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -12,6 +11,7 @@ license = { text = "MIT" }
 authors = [
     { name = "Cartog Contributors" }
 ]
+dynamic = ["version"]
 dependencies = [
     "tree-sitter>=0.25.2,<0.26",
     "tree-sitter-python>=0.23.0",
@@ -35,6 +35,9 @@ cartog = "cartog.cli:app"
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["cartog*"]
+
+[tool.setuptools.dynamic]
+version = { attr = "cartog.__version__" }
 
 [tool.setuptools.package-data]
 cartog = ["*.js", "view_assets/*"]

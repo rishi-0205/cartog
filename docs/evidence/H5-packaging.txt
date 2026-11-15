@@ -1,0 +1,8 @@
+# H5-packaging
+Date: 2026-11-13 11:09:32
+Branch: fix/baseline-correctness
+Command: venv\Scripts\python.exe -c from setuptools.config.pyprojecttoml import read_configuration; c = read_configuration('pyproject.toml'); print('dynamic:', c['project']['dynamic']); print('version:', c['project']['version'])
+Exit: 0
+
+dynamic: ['version']
+version: 0.1.0

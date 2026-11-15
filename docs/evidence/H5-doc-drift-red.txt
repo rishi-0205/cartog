@@ -1,0 +1,42 @@
+# H5-doc-drift-red
+Date: 2026-11-13 11:08:06
+Branch: fix/baseline-correctness
+Command: venv\Scripts\python.exe -m pytest tests\test_docs_consistency.py -q
+Exit: 1
+
+FF                                                                       [100%]
+================================== FAILURES ===================================
+_____________________ test_agents_id_length_matches_code ______________________
+
+    def test_agents_id_length_matches_code():
+        """The node-ID rule in AGENTS.md must match the implemented prefix length."""
+        agents = (REPO_ROOT / "AGENTS.md").read_text(encoding="utf-8")
+        match = re.search(
+            r"sha1\(kind \+ \":\" \+ path \+ \":\" \+ qualified_name\)\[:(\d+)\]",
+            agents,
+        )
+        assert match is not None, "node-ID rule not found in AGENTS.md"
+    
+        documented_length = int(match.group(1))
+        actual_length = len(make_node_id("function", "pkg/mod.py", "pkg.mod.fn"))
+    
+>       assert documented_length == actual_length == 10
+E       assert 12 == 10
+
+tests\test_docs_consistency.py:31: AssertionError
+_________________________ test_version_single_source __________________________
+
+    def test_version_single_source():
+        """The version must come from cartog.__version__, not a second literal."""
+        data = tomllib.loads((REPO_ROOT / "pyproject.toml").read_text(encoding="utf-8"))
+        project = data["project"]
+    
+>       assert "version" not in project, "pyproject.toml must not hard-code a version"
+E       AssertionError: pyproject.toml must not hard-code a version
+E       assert 'version' not in {'name': 'cartog', 'version': '0.1.0', 'description': 'Cartography for codebases: maps source files with tree-sitter + SCIP into JSON + Mermaid', 'readme': 'README.md', ...}
+
+tests\test_docs_consistency.py:39: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_docs_consistency.py::test_agents_id_length_matches_code - a...
+FAILED tests/test_docs_consistency.py::test_version_single_source - Assertion...
+2 failed in 0.10s

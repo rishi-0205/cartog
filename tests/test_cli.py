@@ -7,6 +7,8 @@ from typer.testing import CliRunner
 from cartog.cli import app
 from cartog import __version__
 
+from conftest import requires_sample
+
 runner = CliRunner()
 
 
@@ -422,14 +424,19 @@ def test_flow_works_from_graph_json_without_cache(tmp_path):
         cli_mod._resolve_scip = orig_resolve_scip
 
 
-def test_flow_demos_end_to_end():
+def test_flow_demos_end_to_end(tmp_path):
     """Verify T11 end-to-end flow demos on samples/flask:
     (a) 'GET /' lists candidate routes in excluded categories and exits 1.
     (b) 'GET /' --include-examples --pick blog.index traces blog.index into src/flask templating.
     (c) 'run' traces flask CLI run command through src/flask/cli.py.
+
+    Writes go to ``tmp_path`` so the suite never touches the repository (F2).
     """
+    requires_sample("flask")
+    out_dir = tmp_path / "flow-out"
+
     # Demo (a): GET / exits non-zero and lists candidate routes
-    res_a = runner.invoke(app, ["flow", "samples/flask", "GET /"])
+    res_a = runner.invoke(app, ["flow", "samples/flask", "GET /", "--out", str(out_dir)])
     assert res_a.exit_code == 1
     assert "Notice:" in res_a.stdout
     assert "excluded categories" in res_a.stdout
@@ -438,12 +445,13 @@ def test_flow_demos_end_to_end():
     # Demo (b): GET / with --include-examples and --pick blog.index traces from blog.index into src/flask
     res_b = runner.invoke(
         app,
-        ["flow", "samples/flask", "GET /", "--include-examples", "--pick", "blog.index"],
+        ["flow", "samples/flask", "GET /", "--include-examples", "--pick", "blog.index",
+         "--out", str(out_dir)],
     )
     assert res_b.exit_code == 0
     assert "Cartog Call Flow Trace: 'GET /'" in res_b.stdout
     assert "render_template" in res_b.stdout
-    mmd_b_path = Path("cartog-out/flow_GET.mmd")
+    mmd_b_path = out_dir / "flow_GET.mmd"
     assert mmd_b_path.exists()
     mmd_b = mmd_b_path.read_text(encoding="utf-8")
     assert "render_template" in mmd_b
@@ -452,17 +460,18 @@ def test_flow_demos_end_to_end():
     # Also verify numeric --pick 2 works
     res_b_num = runner.invoke(
         app,
-        ["flow", "samples/flask", "GET /", "--include-examples", "--pick", "2"],
+        ["flow", "samples/flask", "GET /", "--include-examples", "--pick", "2",
+         "--out", str(out_dir)],
     )
     assert res_b_num.exit_code == 0
     assert "Cartog Call Flow Trace: 'GET /'" in res_b_num.stdout
 
     # Demo (c): run traces flask CLI run command through src/flask/cli.py
-    res_c = runner.invoke(app, ["flow", "samples/flask", "run"])
+    res_c = runner.invoke(app, ["flow", "samples/flask", "run", "--out", str(out_dir)])
     assert res_c.exit_code == 0
     assert "Cartog Call Flow Trace: 'run'" in res_c.stdout
     assert "run_command" in res_c.stdout
-    mmd_c_path = Path("cartog-out/flow_run.mmd")
+    mmd_c_path = out_dir / "flow_run.mmd"
     assert mmd_c_path.exists()
     mmd_c = mmd_c_path.read_text(encoding="utf-8")
     assert "run_command" in mmd_c

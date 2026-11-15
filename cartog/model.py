@@ -16,7 +16,7 @@ from cartog.config import SCHEMA_VERSION
 
 @dataclass(frozen=True)
 class SourceRange:
-    """Exact source coordinates (0-indexed)."""
+    """Exact source coordinates (1-based lines, 0-based columns)."""
     start_line: int
     start_col: int
     end_line: int
@@ -223,6 +223,8 @@ class Graph:
     unresolved: list[dict[str, Any]] = field(default_factory=list)
     mismatches: list[dict[str, Any]] = field(default_factory=list)
     duplicate_node_ids: list[str] = field(default_factory=list)
+    # Keyed lookup for add_edge aggregation; rebuilt if `edges` is mutated directly.
+    _edge_index: dict[tuple[str, str, str], Edge] = field(default_factory=dict, repr=False, compare=False)
 
     def add_node(self, node: Node) -> None:
         if node.id in self.nodes:
@@ -232,25 +234,32 @@ class Graph:
     def get_node(self, node_id: str) -> Optional[Node]:
         return self.nodes.get(node_id)
 
-    def add_edge(self, edge: Edge) -> None:
-        # Check for existing edge with same source, target, kind to aggregate count
+    def _ensure_edge_index(self) -> None:
+        """Rebuild the index when ``edges`` was mutated outside this class."""
+        if len(self._edge_index) == len(self.edges):
+            return
+        index: dict[tuple[str, str, str], Edge] = {}
         for existing in self.edges:
-            if (
-                existing.source == edge.source
-                and existing.target == edge.target
-                and existing.kind == edge.kind
-            ):
-                existing.count += edge.count
-                for ev in edge.evidence:
-                    if ev not in existing.evidence and len(existing.evidence) < 3:
-                        existing.evidence.append(ev)
-                if "imported_names" in edge.attrs:
-                    existing_names = existing.attrs.setdefault("imported_names", [])
-                    for name in edge.attrs["imported_names"]:
-                        if name not in existing_names:
-                            existing_names.append(name)
-                return
+            index.setdefault((existing.source, existing.target, existing.kind), existing)
+        self._edge_index = index
+
+    def add_edge(self, edge: Edge) -> None:
+        self._ensure_edge_index()
+        key = (edge.source, edge.target, edge.kind)
+        existing = self._edge_index.get(key)
+        if existing is not None:
+            existing.count += edge.count
+            for ev in edge.evidence:
+                if ev not in existing.evidence and len(existing.evidence) < 3:
+                    existing.evidence.append(ev)
+            if "imported_names" in edge.attrs:
+                existing_names = existing.attrs.setdefault("imported_names", [])
+                for name in edge.attrs["imported_names"]:
+                    if name not in existing_names:
+                        existing_names.append(name)
+            return
         self.edges.append(edge)
+        self._edge_index[key] = edge
 
     def compute_stats(self) -> dict[str, int]:
         stats: dict[str, int] = {}
@@ -304,6 +313,7 @@ class Graph:
         for ed in data.get("edges", []):
             edge = Edge.from_dict(ed)
             g.edges.append(edge)
+            g._edge_index.setdefault((edge.source, edge.target, edge.kind), edge)
         return g
 
     def to_json(self, indent: Optional[int] = None) -> str:

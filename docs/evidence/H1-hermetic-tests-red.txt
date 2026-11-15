@@ -1,0 +1,75 @@
+# H1-hermetic-tests-red
+Date: 2026-11-13 10:54:54
+Branch: fix/baseline-correctness
+Command: venv\Scripts\python.exe -m pytest tests\test_hermetic.py -q
+Exit: 1
+
+.FF.                                                                     [100%]
+================================== FAILURES ===================================
+______________ test_sample_test_skips_in_a_tree_without_samples _______________
+
+tmp_path = WindowsPath('C:/Users/rishi/AppData/Local/Temp/pytest-of-rishi/pytest-235/test_sample_test_skips_in_a_tr0')
+
+    def test_sample_test_skips_in_a_tree_without_samples(tmp_path):
+        """The E2E flow test must skip when its samples directory is absent.
+    
+        This is the fresh-clone scenario from F1: the test node runs in a separate
+        process whose ``CARTOG_SAMPLES_DIR`` points at an empty directory.
+        """
+        node = f"{REPO_ROOT / 'tests' / 'test_cli.py'}::test_flow_demos_end_to_end"
+        env = {**os.environ, "CARTOG_SAMPLES_DIR": str(tmp_path / "no-samples")}
+        res = subprocess.run(
+            [sys.executable, "-m", "pytest", node, "-q", "-p", "no:cacheprovider"],
+            cwd=tmp_path,
+            capture_output=True,
+            text=True,
+            timeout=300,
+            env=env,
+        )
+        output = res.stdout + res.stderr
+>       assert res.returncode == 0, output
+E       AssertionError: F                                                                        [100%]
+E         ================================== FAILURES ===================================
+E         _________________________ test_flow_demos_end_to_end __________________________
+E         
+E             def test_flow_demos_end_to_end():
+E                 """Verify T11 end-to-end flow demos on samples/flask:
+E                 (a) 'GET /' lists candidate routes in excluded categories and exits 1.
+E                 (b) 'GET /' --include-examples --pick blog.index traces blog.index into src/flask templating.
+E                 (c) 'run' traces flask CLI run command through src/flask/cli.py.
+E                 """
+E                 # Demo (a): GET / exits non-zero and lists candidate routes
+E                 res_a = runner.invoke(app, ["flow", "samples/flask", "GET /"])
+E                 assert res_a.exit_code == 1
+E         >       assert "Notice:" in res_a.stdout
+E         E       assert 'Notice:' in "Error: graph.json not found for path 'samples/flask'\n"
+E         E        +  where "Error: graph.json not found for path 'samples/flask'\n" = <Result SystemExit(1)>.stdout
+E         
+E         C:\Users\rishi\OneDrive\Desktop\Dev\cartog\tests\test_cli.py:434: AssertionError
+E         =========================== short test summary info ===========================
+E         FAILED ..\..\..\..\..\..\OneDrive\Desktop\Dev\cartog\tests\test_cli.py::test_flow_demos_end_to_end
+E         1 failed in 0.44s
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['C:\\Users\\rishi\\OneDrive\\Desktop\\Dev\\cartog\\venv\\Scripts\\python.exe', '-m', 'pytest', ....\\..\\OneDrive\\Desktop\\Dev\\cartog\\tests\\test_cli.py::test_flow_demos_end_to_end\n1 failed in 0.44s\n', stderr='').returncode
+
+tests\test_hermetic.py:77: AssertionError
+_____________________ test_flow_demos_write_only_tmp_path _____________________
+
+tmp_path = WindowsPath('C:/Users/rishi/AppData/Local/Temp/pytest-of-rishi/pytest-235/test_flow_demos_write_only_tmp0')
+
+    def test_flow_demos_write_only_tmp_path(tmp_path):
+        """Running the E2E flow test must not touch the tree or `cartog-out` (F2)."""
+        from test_cli import test_flow_demos_end_to_end
+    
+        before_files = _cartog_out_snapshot()
+        before_status = _git_status()
+    
+>       test_flow_demos_end_to_end(tmp_path)
+E       TypeError: test_flow_demos_end_to_end() takes 0 positional arguments but 1 was given
+
+tests\test_hermetic.py:89: TypeError
+=========================== short test summary info ===========================
+FAILED tests/test_hermetic.py::test_sample_test_skips_in_a_tree_without_samples
+FAILED tests/test_hermetic.py::test_flow_demos_write_only_tmp_path - TypeErro...
+2 failed, 2 passed in 3.23s

@@ -298,3 +298,191 @@ def test_viewer_expanded_spacing_and_helper_toggle(tmp_path: Path):
 
 
 
+
+
+def test_export_html_raw_graph_fallback_reads_range():
+    """F4: the raw-graph fallback must read ``SourceRange.start_line``, not ``range[0]``."""
+    from cartog.export_html import convert_view_tree_to_cytoscape_elements
+    from cartog.model import Graph, Node, SourceRange
+    from cartog.views import build_universal_view_tree
+
+    graph = Graph(meta={"target_path": "fallback"})
+    graph.add_node(
+        Node(
+            id="fn_orphan",
+            name="orphan",
+            qualified_name="orphan.py:orphan",
+            kind="function",
+            path="orphan.py",
+            range=SourceRange(7, 0, 9, 0),
+        )
+    )
+
+    tree = build_universal_view_tree(graph)
+    assert tree.children == [], "fixture must exercise the raw-graph fallback"
+
+    elements = convert_view_tree_to_cytoscape_elements(tree, graph)
+    nodes = [e["data"] for e in elements if "source" not in e["data"]]
+    assert [n["id"] for n in nodes] == ["fn_orphan"]
+    assert nodes[0]["line"] == 7
+
+
+def test_export_html_raw_graph_fallback_parent():
+    """F4: the raw-graph fallback must read ``node.parent``, not ``attrs["parent"]``."""
+    from cartog.export_html import convert_view_tree_to_cytoscape_elements
+    from cartog.model import Graph, Node, SourceRange
+    from cartog.views import build_universal_view_tree
+
+    graph = Graph(meta={"target_path": "fallback"})
+    graph.add_node(
+        Node(
+            id="fn_parent",
+            name="parent",
+            qualified_name="p.py:parent",
+            kind="function",
+            path="p.py",
+            range=SourceRange(1, 0, 2, 0),
+        )
+    )
+    graph.add_node(
+        Node(
+            id="fn_child",
+            name="child",
+            qualified_name="p.py:child",
+            kind="function",
+            path="p.py",
+            range=SourceRange(4, 0, 5, 0),
+            parent="fn_parent",
+        )
+    )
+
+    tree = build_universal_view_tree(graph)
+    assert tree.children == [], "fixture must exercise the raw-graph fallback"
+
+    elements = convert_view_tree_to_cytoscape_elements(tree, graph)
+    by_id = {e["data"]["id"]: e["data"] for e in elements if "source" not in e["data"]}
+    assert by_id["fn_child"]["parent"] == "fn_parent"
+
+
+def _hidden_helper_graph():
+    """F3 fixture: a route calls a collapsed helper and a visible boundary function."""
+    from cartog.model import Edge, Graph, Node
+
+    g = Graph(meta={"target_path": "rollup"})
+    f_core = Node(id="file_core", name="core.py", qualified_name="core.py", kind="file", path="core.py")
+    f_util = Node(id="file_util", name="util.py", qualified_name="util.py", kind="file", path="util.py")
+    route = Node(
+        id="fn_index", name="index", qualified_name="core:index", kind="route",
+        path="core.py", parent="file_core",
+    )
+    helper = Node(
+        id="fn_internal", name="_internal", qualified_name="core:_internal", kind="function",
+        path="core.py", parent="file_core",
+    )
+    target = Node(
+        id="fn_format", name="format", qualified_name="util:format", kind="function",
+        path="util.py", parent="file_util",
+    )
+    for node in (f_core, f_util, route, helper, target):
+        g.add_node(node)
+    g.add_edge(Edge(source="fn_index", target="fn_internal", kind="calls", confidence="resolved", count=1))
+    g.add_edge(Edge(source="fn_index", target="fn_format", kind="calls", confidence="resolved", count=1))
+    return g
+
+
+def test_hidden_endpoint_rolls_up_to_visible_ancestor():
+    """F3: an edge to a collapsed helper must roll up to its nearest visible ancestor."""
+    from cartog.export_html import convert_view_tree_to_cytoscape_elements
+    from cartog.views import build_universal_view_tree
+
+    graph = _hidden_helper_graph()
+    tree = build_universal_view_tree(graph, include_helpers=False)
+    elements = convert_view_tree_to_cytoscape_elements(tree, graph)
+
+    node_ids = {e["data"]["id"] for e in elements if "source" not in e["data"]}
+    assert "fn_internal" not in node_ids, "fixture must collapse the helper"
+    assert "file_core" in node_ids
+
+    edge_keys = {
+        (e["data"]["source"], e["data"]["target"], e["data"]["kind"])
+        for e in elements
+        if "source" in e["data"]
+    }
+    assert ("fn_index", "file_core", "calls") in edge_keys, edge_keys
+    assert ("fn_index", "fn_format", "calls") in edge_keys, edge_keys
+
+
+def test_rollup_counts_sum_to_underlying_edges():
+    """Rolled-up weights plus dropped self-edges must equal the underlying edge weights."""
+    from cartog.export_html import convert_view_tree_to_cytoscape_elements
+    from cartog.model import Edge, Node
+    from cartog.views import build_universal_view_tree
+
+    graph = _hidden_helper_graph()
+    graph.add_node(
+        Node(id="fn_other", name="other", qualified_name="core:other", kind="function",
+             path="core.py", parent="file_core")
+    )
+    graph.add_node(
+        Node(id="fn_util_worker", name="worker", qualified_name="util:worker", kind="function",
+             path="util.py", parent="file_util")
+    )
+    # Both endpoints hidden: rolls up to file_core -> file_core, a self-edge to drop.
+    graph.add_edge(Edge(source="fn_other", target="fn_internal", kind="calls", confidence="resolved", count=1))
+    # Only the source is hidden: rolls up to the visible file container.
+    graph.add_edge(Edge(source="fn_util_worker", target="fn_format", kind="calls", confidence="resolved", count=1))
+
+    tree = build_universal_view_tree(graph, include_helpers=False)
+    stats: dict[str, int] = {}
+    elements = convert_view_tree_to_cytoscape_elements(tree, graph, stats=stats)
+
+    edges = [e["data"] for e in elements if "source" in e["data"]]
+    underlying = sum(e.count for e in graph.edges if e.kind != "contains")
+    emitted = sum(e["count"] for e in edges)
+
+    assert stats["underlying_edges"] == underlying == 4
+    assert stats["rolled_up_edges"] == 3
+    assert stats["dropped_self_edges"] == 1
+    assert emitted + stats["dropped_self_edges"] == underlying, (emitted, stats)
+    assert stats["emitted_edges"] == len(edges)
+
+
+def test_mermaid_function_level_rollup_matches_viewer():
+    """F3: the function-level Mermaid exporter rolls hidden helpers up the same way as the viewer."""
+    from cartog.export_html import convert_view_tree_to_cytoscape_elements
+    from cartog.export_mermaid import generate_overview_mermaid
+    from cartog.views import build_universal_view_tree
+
+    graph = _hidden_helper_graph()
+    tree = build_universal_view_tree(graph, include_helpers=False)
+    elements = convert_view_tree_to_cytoscape_elements(tree, graph)
+    edge_keys = {
+        (e["data"]["source"], e["data"]["target"], e["data"]["kind"])
+        for e in elements
+        if "source" in e["data"]
+    }
+    assert ("fn_index", "file_core", "calls") in edge_keys, edge_keys
+
+    mmd = generate_overview_mermaid(graph, level="function")
+    assert "fn_fn_index -->|1 call| file_file_core" in mmd, mmd
+    assert "fn_fn_index -->|1 call| fn_fn_format" in mmd, mmd
+
+
+def test_html_payload_reports_rolled_up_edges(tmp_path):
+    """The viewer payload and header note must surface the rolled-up edge count."""
+    from cartog.export_html import generate_html_map
+
+    graph = _hidden_helper_graph()
+    stats: dict[str, int] = {}
+    html = generate_html_map(
+        graph,
+        out_file=tmp_path / "map.html",
+        include_helpers=False,
+        stats=stats,
+    )
+
+    assert stats["rolled_up_edges"] == 1
+    assert stats["emitted_edges"] == 2
+    assert '"rolled_up_edges":1' in html
+    assert 'id="rollup-note"' in html
+    assert "1 edge rolled up to a visible ancestor" in html

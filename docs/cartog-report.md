@@ -1,5 +1,7 @@
 # Cartog: Project Report
 
+> **Status note (2026-11-13):** This report is a snapshot compiled on 1 November 2026. The 2026-11-12 epic realignment removed Milestone 12 (folded into E5 tasks L1/L5/L6) and split Milestone 13 into E4 (V4/V5) and E8 (D1). Treat the "pending"/"planned" lists in §15 and §17 as superseded by `docs/IMPLEMENTATION_PLAN.md` and the live board `docs/WORKING_TASKS.md`.
+
 *Cartography for codebases*
 
 Compiled: 1 November 2026. Scope: everything decided, built, and learned from the first design conversation (5 October 2026) through the completion and verification of Milestones 10 and 11 (Phase A through F).

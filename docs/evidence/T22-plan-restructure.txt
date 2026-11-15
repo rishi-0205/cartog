@@ -1,0 +1,154 @@
+# T22 evidence - plan restructure and finding reproduction
+Date: 2026-11-12 19:31:14
+Branch: docs/task-plan
+Baseline full suite (run earlier this session): 162 passed, 1 warning in 109.22s
+
+## F1 - samples/ is untracked and the E2E test has no skip guard
+
+$ git check-ignore -v samples/flask   (cwd=C:\Users\rishi\OneDrive\Desktop\Dev\cartog)
+[exit 0]
+.gitignore:27:samples/	samples/flask
+
+$ git ls-files samples   (cwd=C:\Users\rishi\OneDrive\Desktop\Dev\cartog)
+[exit 0]
+
+
+$ git grep -n -E 'skipif|skip\(' -- tests/test_cli.py
+(no output: test_cli.py has no skip guards)
+
+Fresh-clone simulation: run the E2E test from a directory with no samples/.
+
+$ C:\Users\rishi\OneDrive\Desktop\Dev\cartog\venv\Scripts\python.exe -m pytest C:\Users\rishi\OneDrive\Desktop\Dev\cartog\tests\test_cli.py::test_flow_demos_end_to_end -q   (cwd=C:\Users\rishi\AppData\Local\Temp\cartog-f1-empty)
+[exit 1]
+F                                                                        [100%]
+================================== FAILURES ===================================
+_________________________ test_flow_demos_end_to_end __________________________
+
+    def test_flow_demos_end_to_end():
+        """Verify T11 end-to-end flow demos on samples/flask:
+        (a) 'GET /' lists candidate routes in excluded categories and exits 1.
+        (b) 'GET /' --include-examples --pick blog.index traces blog.index into src/flask templating.
+        (c) 'run' traces flask CLI run command through src/flask/cli.py.
+        """
+        # Demo (a): GET / exits non-zero and lists candidate routes
+        res_a = runner.invoke(app, ["flow", "samples/flask", "GET /"])
+        assert res_a.exit_code == 1
+>       assert "Notice:" in res_a.stdout
+E       assert 'Notice:' in "Error: graph.json not found for path 'samples/flask'\n"
+E        +  where "Error: graph.json not found for path 'samples/flask'\n" = <Result SystemExit(1)>.stdout
+
+..\..\..\..\OneDrive\Desktop\Dev\cartog\tests\test_cli.py:434: AssertionError
+=========================== short test summary info ===========================
+FAILED ..\..\..\..\OneDrive\Desktop\Dev\cartog\tests\test_cli.py::test_flow_demos_end_to_end
+1 failed in 0.50s
+
+## F2 - the same test writes artifacts into the repo
+
+$ C:\Users\rishi\OneDrive\Desktop\Dev\cartog\venv\Scripts\python.exe -c from pathlib import Path; from datetime import datetime; [print(p.name, p.stat().st_size, 'bytes', datetime.fromtimestamp(p.stat().st_mtime).isoformat(sep=' ')) for p in Path('cartog-out').glob('flow_*.mmd')]   (cwd=C:\Users\rishi\OneDrive\Desktop\Dev\cartog)
+[exit 0]
+flow_GET.mmd 1844 bytes 2026-11-12 17:10:47.394193
+flow_run.mmd 2710 bytes 2026-11-12 17:11:01.708837
+
+$ git status --porcelain   (cwd=C:\Users\rishi\OneDrive\Desktop\Dev\cartog)
+[exit 0]
+?? .scratch/
+?? docs/evidence/T22-plan-restructure.txt
+
+## F3/F4/F5 - executed reproduction script
+
+$ C:\Users\rishi\OneDrive\Desktop\Dev\cartog\venv\Scripts\python.exe C:\Users\rishi\OneDrive\Desktop\Dev\cartog\.scratch\repro_findings.py   (cwd=C:\Users\rishi\OneDrive\Desktop\Dev\cartog)
+[exit 0]
+======================================================================
+F3: edges to collapsed helpers are dropped, not rolled up
+======================================================================
+underlying graph edges : 2
+emitted cytoscape edges: 1 [('fn_index', 'fn_format')]
+fn_internal registered : False
+helper_group registered: True
+edge fn_index -> fn_internal present: False
+
+======================================================================
+F4: raw-graph fallback raises TypeError on node.range[0]
+======================================================================
+view tree children: 0
+RESULT: TypeError: 'SourceRange' object is not subscriptable
+
+======================================================================
+F5: Graph.add_edge linear scan (O(E^2))
+======================================================================
+edges=  5000  time=  0.320s  stored=5000
+edges= 10000  time=  1.315s  stored=10000
+edges= 20000  time=  4.948s  stored=20000
+
+## F6 - ID length rule mismatch
+
+$ git grep -n \[:12\] -- AGENTS.md   (cwd=C:\Users\rishi\OneDrive\Desktop\Dev\cartog)
+[exit 0]
+AGENTS.md:26:- **Stable SHA-1 node IDs.** `Node.id = sha1(kind + ":" + path + ":" + qualified_name)[:12]`. Do not change the scheme without a schema version bump.
+
+$ git grep -n \[:10\] -- cartog/model.py   (cwd=C:\Users\rishi\OneDrive\Desktop\Dev\cartog)
+[exit 0]
+cartog/model.py:85:    return hashlib.sha1(key.encode("utf-8")).hexdigest()[:10]
+cartog/model.py:91:    return hashlib.sha1(key.encode("utf-8")).hexdigest()[:10]
+
+## F7 - SourceRange documented as 0-indexed, pipeline is 1-based
+
+$ git grep -n 0-indexed -- cartog/model.py   (cwd=C:\Users\rishi\OneDrive\Desktop\Dev\cartog)
+[exit 0]
+cartog/model.py:19:    """Exact source coordinates (0-indexed)."""
+
+$ git grep -n 0-indexed -- cartog/langs/base.py   (cwd=C:\Users\rishi\OneDrive\Desktop\Dev\cartog)
+[exit 0]
+cartog/langs/base.py:16:    start_line: int              # 0-indexed line
+cartog/langs/base.py:17:    start_col: int               # 0-indexed character offset
+cartog/langs/base.py:18:    end_line: int                # 0-indexed line
+cartog/langs/base.py:19:    end_col: int                 # 0-indexed character offset
+
+$ git grep -n -E start_point.row [+][ ]1 -- cartog/langs/python_adapter.py   (cwd=C:\Users\rishi\OneDrive\Desktop\Dev\cartog)
+[exit 0]
+cartog/langs/python_adapter.py:278:                start_line=node.start_point.row + 1,
+cartog/langs/python_adapter.py:308:                line = node.start_point.row + 1
+cartog/langs/python_adapter.py:345:                line = node.start_point.row + 1
+cartog/langs/python_adapter.py:417:                dec_line = dec_node.start_point.row + 1
+cartog/langs/python_adapter.py:418:                handler_def_line = func_def_node.start_point.row + 1
+cartog/langs/python_adapter.py:454:                                dec_node.start_point.row + 1,
+cartog/langs/python_adapter.py:476:                                dec_node.start_point.row + 1,
+cartog/langs/python_adapter.py:504:                                if_node.start_point.row + 1,
+
+$ git grep -n -E line [+][ ]1 -- cartog/scip_pass.py   (cwd=C:\Users\rishi\OneDrive\Desktop\Dev\cartog)
+[exit 0]
+cartog/scip_pass.py:130:        return SourceRange(start_line=line + 1, start_col=start_col, end_line=line + 1, end_col=end_col)
+
+$ git grep -n -E 1-based coordinate bounds -- cartog/validate.py   (cwd=C:\Users\rishi\OneDrive\Desktop\Dev\cartog)
+[exit 0]
+cartog/validate.py:277:    """Validate 1-based coordinate bounds, physical file lengths, caller bounds, and child containment."""
+
+## F8 - stale docs
+
+$ git grep -n No interactive viewer yet -- docs/HANDOFF.md   (cwd=C:\Users\rishi\OneDrive\Desktop\Dev\cartog)
+[exit 0]
+docs/HANDOFF.md:135:- **No interactive viewer yet:** (Milestone 11 next) — Mermaid and digest are the current view outputs.
+
+$ C:\Users\rishi\OneDrive\Desktop\Dev\cartog\venv\Scripts\python.exe -c from pathlib import Path; print('docs/ALIGNMENT.md:1:', Path('docs/ALIGNMENT.md').read_text(encoding='utf-8').splitlines()[0])   (cwd=C:\Users\rishi\OneDrive\Desktop\Dev\cartog)
+[exit 0]
+docs/ALIGNMENT.md:1: # Cartog Alignment Matrix: Milestones 0–6.5
+
+$ git grep -n compute_call_interactions -- docs   (cwd=C:\Users\rishi\OneDrive\Desktop\Dev\cartog)
+[exit 0]
+docs/HANDOFF.md:51:| **Phase B: Counts and recall** | T3, T4, T5, T6 | Resolved barrel import edge duplication with exact symbol matching; unified call accounting into single source of truth `compute_call_interactions()`; implemented re-export call reconciliation; spot-checked Click call graph. |
+docs/KNOWN_ISSUES.md:45:- **Fix:** Implemented centralized `compute_call_interactions(graph, source_scope, target_scope)` in `cartog/views.py`. Unified call accounting across overview cluster node summaries, flowchart edge labels, and architectural digest.
+
+$ git grep -n def get_call_counts -- cartog   (cwd=C:\Users\rishi\OneDrive\Desktop\Dev\cartog)
+[exit 0]
+cartog/views.py:551:def get_call_counts(
+
+## F9 - LICENSE missing, version duplicated
+
+$ C:\Users\rishi\OneDrive\Desktop\Dev\cartog\venv\Scripts\python.exe -c from pathlib import Path; print('LICENSE exists:', Path('LICENSE').is_file())   (cwd=C:\Users\rishi\OneDrive\Desktop\Dev\cartog)
+[exit 0]
+LICENSE exists: False
+
+$ git grep -n -E ^version|__version__ -- pyproject.toml cartog/__init__.py   (cwd=C:\Users\rishi\OneDrive\Desktop\Dev\cartog)
+[exit 0]
+cartog/__init__.py:3:__version__ = "0.1.0"
+pyproject.toml:7:version = "0.1.0"

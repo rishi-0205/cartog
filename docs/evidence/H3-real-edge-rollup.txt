@@ -1,0 +1,8 @@
+# H3-real-edge-rollup
+Date: 2026-11-13 11:13:26
+Branch: fix/baseline-correctness
+Command: venv\Scripts\python.exe -m pytest tests\test_interactive_view.py -k hidden_endpoint or rollup_counts or mermaid_function_level or payload_reports -q
+Exit: 0
+
+....                                                                     [100%]
+4 passed, 11 deselected in 0.36s

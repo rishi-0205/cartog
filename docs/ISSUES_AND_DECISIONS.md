@@ -1061,3 +1061,13 @@ Following the initial orthogonal routing updates, user testing identified two re
 
 
 
+
+---
+
+## Decision 29: E0 branch based on `docs/task-plan`, not `main`
+
+- **Context:** `docs/task-plan` holds the accepted-ish T22 documentation restructure (epic board, git rules, evidence) but is four commits ahead of `main` and not merged, because the author has not issued an epic acceptance for it.
+- **Decision:** create `fix/baseline-correctness` from `docs/task-plan` HEAD (commit `fcb11f2`) instead of `main`, so E0 works against the live task board and git rules. The E0 commits therefore sit on top of the four T22 commits.
+- **Rationale:** branching from `main` would produce an epic branch without `docs/WORKING_TASKS.md` or `docs/dev/GIT_WORKFLOW.md`, making the workflow self-inconsistent. Merging T22 into `main` first would itself be an unaccepted merge.
+- **Consequence:** when E0 is accepted, `git merge --no-ff fix/baseline-correctness` into `main` brings the T22 commits with it. If the author prefers the T22 docs reviewed separately, merge `docs/task-plan` first; the E0 branch is then a strict descendant.
+- **Date:** 2026-11-13

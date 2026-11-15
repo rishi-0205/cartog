@@ -1,0 +1,15 @@
+# T22 full suite after documentation restructure
+Date: 2026-11-12 19:41:07
+Branch: docs/task-plan
+Command: venv\Scripts\python.exe -m pytest tests\ -q
+
+........................................................................ [ 44%]
+........................................................................ [ 88%]
+..................                                                       [100%]
+============================== warnings summary ===============================
+tests/test_jsonc.py::test_jsonc_unterminated_block_comment
+  C:\Users\rishi\OneDrive\Desktop\Dev\cartog\cartog\jsonc.py:82: UserWarning: Unterminated block comment in 'C:/Users/rishi/AppData/Local/Temp/pytest-of-rishi/pytest-222/test_jsonc_unterminated_block_0/tsconfig.json' starting at line 3
+    warnings.warn(msg, UserWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+162 passed, 1 warning in 102.19s (0:01:42)

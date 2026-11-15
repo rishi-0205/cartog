@@ -40,14 +40,26 @@ Following thorough inspection of real-world repository maps (Click, Flask, Ky) a
 | Milestone 4 | **Milestone 4** | Tree-sitter on JavaScript/TypeScript & Monorepos | COMPLETE |
 | Milestone 5 | **Milestone 5** | SCIP on Python | COMPLETE |
 | Milestone 6 | **Milestone 6** | SCIP on JavaScript & TypeScript | COMPLETE |
-| — | **Milestone 6.5** | **Hardening & Carry-Over Verification:** Windows shim safety, recall round 2 audit, edge label consistency, manifest node cleanup, test-d classification, and full pytest recording. | PENDING |
-| **Milestone 7** | **Milestone 7** | **Cross-Check, Validation, and `cartog check` (Extended):** Mismatch categorization (explained vs unexplained), 1-based line bounds, caller range containment, `--strict` failing on unexplained mismatches and warnings. (Default non-zero exit on unrun SCIP or validation errors already completed in Milestone 6/Step 4). | PENDING |
-| — | **Milestone 8** | **`.cartogignore` Support:** Additive exclusions on top of `.gitignore`, repeatable `--ignore` flag, dropped edge accounting, cache key invalidation. | PENDING |
-| — | **Milestone 9** | **Deterministic Noise Filtering for Views:** AST heuristics hiding re-export barrel files and constants/types modules from views; import edge rewiring; `--show-noise`. | PENDING |
-| **Milestone 8** | **Milestone 10** | **Views, View Model, Node Budgeting, Flow Tracing, Compact Output & Digest (Original M8 Expanded):** Universal View Model (Subsystem -> Folder -> File -> Class -> Function), boundary function selection, internal helper rollup, nested Mermaid subgraphs, compact `graph.json`, `cartog digest` for LLMs, `cartog query`. | PENDING |
-| — | **Milestone 11** | **Interactive Viewer (`cartog view`):** Self-contained offline `map.html` with Cytoscape.js, dynamic compound node expand/collapse, sidebar details, and `vscode://` protocol links. | PENDING |
-| — | **Milestone 12** | **Hand-Written Subsystem Map (`subsystems.toml`):** High-level subsystem partitioning schema, overlap validation, unassigned grouping, and viewer integration (aligned with future LLM layer). | PENDING |
-| **Milestone 9** | **Milestone 13** | **Comparative Verification and Final Documentation (Original M9 Adjusted):** Comparison against `grimp` and `madge` on raw import edges, recall sample logging, complete docs (`ARCHITECTURE.md`, `USAGE.md`, `README.md`), fresh venv git install verification. | PENDING |
+| — | **Milestone 6.5** | **Hardening & Carry-Over Verification:** Windows shim safety, recall round 2 audit, edge label consistency, manifest node cleanup, test-d classification, and full pytest recording. | COMPLETE |
+| **Milestone 7** | **Milestone 7** | **Cross-Check, Validation, and `cartog check` (Extended):** Mismatch categorization (explained vs unexplained), 1-based line bounds, caller range containment, `--strict` failing on unexplained mismatches and warnings. (Default non-zero exit on unrun SCIP or validation errors already completed in Milestone 6/Step 4). | COMPLETE |
+| — | **Milestone 8** | **`.cartogignore` Support:** Additive exclusions on top of `.gitignore`, repeatable `--ignore` flag, dropped edge accounting, cache key invalidation. | COMPLETE |
+| — | **Milestone 9** | **Deterministic Noise Filtering for Views:** AST heuristics hiding re-export barrel files and constants/types modules from views; import edge rewiring; `--show-noise`. | COMPLETE |
+| **Milestone 8** | **Milestone 10** | **Views, View Model, Node Budgeting, Flow Tracing, Compact Output & Digest (Original M8 Expanded):** Universal View Model (Subsystem -> Folder -> File -> Class -> Function), boundary function selection, internal helper rollup, nested Mermaid subgraphs, compact `graph.json`, `cartog digest` for LLMs, `cartog query`. | COMPLETE |
+| — | **Milestone 11** | **Interactive Viewer (`cartog view`):** Self-contained offline `map.html` with Cytoscape.js, dynamic compound node expand/collapse, sidebar details, and `vscode://` protocol links. | COMPLETE (ACCEPTED 2026-11-03) |
+| — | ~~Milestone 12~~ | ~~**Hand-Written Subsystem Map (`subsystems.toml`):** High-level subsystem partitioning schema, overlap validation, unassigned grouping, and viewer integration.~~ | REMOVED — folded into E5 tasks L1, L5, L6 |
+| **Milestone 9** | ~~Milestone 13~~ | ~~**Comparative Verification and Final Documentation:** Comparison against `grimp` and `madge` on raw import edges, recall sample logging, complete docs, fresh venv install verification.~~ | SPLIT — E4 tasks V4, V5 and E8 task D1 |
+
+### 2.0.1 Epic Realignment (2026-11-12)
+The project now runs as epics E0–E8. Each epic has its own branch and small committed tasks, and the author accepts work per epic. There is **no automatic inference of subsystems** from folder names, file names, or patterns; subsystem proposals come only from the LLM layer (E5). The live task board is [`docs/WORKING_TASKS.md`](./WORKING_TASKS.md).
+
+| Old scope | New home |
+|---|---|
+| Milestone 11 — interactive viewer | Complete and accepted; kept as the record below |
+| Milestone 12 — hand-written `subsystems.toml` | **E5:** L1 (schema), L5 (loader, validation, accept step), L6 (viewer layer) |
+| Milestone 13 — comparative verification and final docs | **E4:** V4 (grimp/madge), V5 (call-edge recall); **E8:** D1 (final docs) |
+| Milestones 14–18 — LLM layer (never numbered in this document; scope is `docs/cartog-report.md` §18) | **E5:** L2–L10 |
+| New work from the 2026-11-12 review | **E0** baseline correctness, **E1** package structure, **E2** unified command and output, **E3** security baseline, **E6** gallery, **E7** analysis service |
+
 
 ---
 
@@ -232,43 +244,18 @@ Following thorough inspection of real-world repository maps (Click, Flask, Ky) a
 ---
 
 ### Phase 6: Interactive Presentation, Subsystems & Final Delivery
-- [ ] **Milestone 11: Interactive Viewer (`cartog view`)**
-  - [ ] Implement `cartog view <path>` compiling view model into a self-contained offline `map.html`
-  - [ ] Integrate Cytoscape.js core (`cytoscape` v3.34.4, MIT), `cytoscape-expand-collapse` (v4.1.1, MIT), and `cytoscape-fcose` (v2.2.0, MIT) (pinned versions to be re-verified on npm, with licences, at the start of the milestone)
-  - [ ] Bundle and inline all JavaScript and CSS assets into `map.html` with zero external network requests
-  - [ ] Update `pyproject.toml` package data to include `view_assets/*` and verify with clean venv install
-  - [ ] Implement dynamic compound node behavior: start collapsed at top level, expand/collapse on click down to functions
-  - [ ] Implement interactive metadata side panel: file path, 1-based line range, callers, callees, routes, and `vscode://file/<path>:<line>` links
-  - [ ] Embed trimmed view model data rather than raw `graph.json`, supporting lazy child expansion
-  - [ ] Enable rendering of `cartog flow` execution traces directly inside the interactive viewer
-  - [ ] Retain Mermaid as a static text/PNG export format for repository READMEs
-  - [ ] Unit tests verifying HTML generation, embedded JSON schema validity, and absence of external network calls
-  - [ ] Run Demo Checkpoint 11 (`cartog view samples/click`, `cartog view samples/ky`)
-  - [ ] Record in `BUILD_LOG.md`
-  - [ ] **PAUSE FOR USER CONFIRMATION**
+- [x] **Milestone 11: Interactive Viewer (`cartog view`)** — COMPLETE (ACCEPTED 2026-11-03)
+  - [x] Self-contained offline `map.html`; inlined Cytoscape.js, expand/collapse, fcose, layout-base, cose-base
+  - [x] Metadata sidebar, `vscode://` links, and call-flow mode
+  - [x] Package data ships `view_assets/*` and `*.js`
+  - [x] Tests: `tests/test_interactive_view.py`; full suite 162 passed
+  - [x] Demo Checkpoint 11 and BUILD_LOG entry
+- **Milestone 12: Hand-Written Subsystem Map (`subsystems.toml`)** — REMOVED as a standalone milestone.
+  - Scope folded into **E5**: L1 (schema), L5 (loader, validation, accept step), L6 (viewer layer). See §5.1.
+- **Milestone 13: Comparative Verification and Final Documentation** — SPLIT into epics.
+  - grimp/madge comparison and call-edge recall: **E4** tasks V4, V5.
+  - ARCHITECTURE / USAGE / README / CHANGELOG: **E8** task D1.
 
-- [ ] **Milestone 12: Hand-Written Subsystem Map (`subsystems.toml`)**
-  - [ ] Define and document the official `subsystems.toml` schema (matching future LLM synthesis specification)
-  - [ ] Implement TOML parser in `cartog/scan.py` assigning file glob patterns to named subsystems with descriptions
-  - [ ] Validate subsystem mappings: warn on dead patterns, error on overlapping files, assign unmatched files to `"unassigned"`
-  - [ ] Integrate subsystem layer into Universal View Model and Cytoscape viewer as the topmost container level above folders
-  - [ ] Unit tests for TOML parsing, dead glob warnings, overlap error detection, and unassigned partitioning
-  - [ ] Create handwritten `subsystems.toml` for `samples/click` and demo in interactive viewer
-  - [ ] Run Demo Checkpoint 12 (`cartog view samples/click`)
-  - [ ] Record in `BUILD_LOG.md`
-  - [ ] **PAUSE FOR USER CONFIRMATION**
-
-- [ ] **Milestone 13: Comparative Verification and Final Documentation (Original Milestone 9 Adjusted)**
-  - [ ] Implement `scripts/compare_imports.py` comparing Cartog import edges against `grimp` (Python) and `madge` (JS/TS)
-  - [ ] Run comparison strictly on RAW import edges before noise filtering and rewiring, respecting active ignore rules
-  - [ ] Measure and record precision and recall metrics, thoroughly investigating and documenting all discrepancies
-  - [ ] Record call-edge recall samples from manual inspections as a labeled verification sample (not an automated benchmark)
-  - [ ] Write `docs/ARCHITECTURE.md` covering system design, pipeline stages, view model, and known limitations
-  - [ ] Write `docs/USAGE.md` covering all commands (`map`, `parse`, `scip`, `build`, `check`, `flow`, `view`, `digest`, `query`, `doctor`), all flags, `.cartogignore`, and `subsystems.toml`
-  - [ ] Finalize `README.md` with updated architecture diagrams, feature descriptions, and CLI guides
-  - [ ] Perform fresh virtual environment clean install test from git repository URL (`pip install git+...`), verifying package data inclusion and CLI operations
-  - [ ] Run Demo Checkpoint 13 and record in `BUILD_LOG.md`
-  - [ ] **PAUSE FOR FINAL USER APPROVAL**
 
 ## 3. Directory Layout & Module Responsibilities
 
@@ -278,8 +265,8 @@ cartog/                               # Repository root
 │   ├── IMPLEMENTATION_PLAN.md        # This living document
 │   ├── BUILD_LOG.md                  # Append-only chronological build log
 │   ├── ISSUES_AND_DECISIONS.md        # Technical incident log, tradeoffs, and design choices
-│   ├── ARCHITECTURE.md               # Final architecture & design document (Milestone 13)
-│   └── USAGE.md                      # CLI usage guide & flag documentation (Milestone 13)
+│   ├── ARCHITECTURE.md               # Final architecture & design document (E8: D1)
+│   └── USAGE.md                      # CLI usage guide & flag documentation (E8: D1)
 ├── cartog/                           # Main Python package
 │   ├── __init__.py                   # Package metadata (__version__ = "0.1.0")
 │   ├── __main__.py                   # Support for `python -m cartog`
@@ -305,7 +292,7 @@ cartog/                               # Repository root
 │       ├── python_adapter.py         # Python tree-sitter parser, import resolver, Flask/FastAPI/click extractor
 │       └── js_adapter.py             # JS/TS/TSX tree-sitter parser, tsconfig/workspace resolver, Express/Next extractor
 ├── scripts/
-│   └── compare_imports.py            # Validation script comparing Cartog against grimp and madge (Milestone 13)
+│   └── compare_imports.py            # Validation script comparing Cartog against grimp and madge (E4: V4)
 ├── tests/
 │   ├── conftest.py                   # Pytest fixtures and helpers
 │   ├── test_cli.py                   # CLI tests (doctor, version, help, check strictness, query)
@@ -319,14 +306,13 @@ cartog/                               # Repository root
 │   ├── test_views_mermaid.py         # Universal view model, boundary function rollup, Mermaid nested subgraphs
 │   ├── test_noise.py                 # Re-export barrel detection, constants/types module filtering, rewiring
 │   ├── test_interactive_view.py      # Self-contained offline HTML generation, embedded view model validation
-│   ├── test_subsystems.py            # TOML parser, overlap errors, dead glob warnings, unassigned grouping
 │   └── fixtures/                     # Small, self-contained repositories for unit and integration testing
 ├── samples/                          # Cloned real-world repositories (gitignored)
 │   ├── click/                        # Pallets Click repo for Python testing
 │   ├── flask/                        # Pallets Flask repo for route testing
 │   └── ky/                           # Sindre Sorhus Ky repo for TS testing
 ├── .cartogignore                     # Optional secondary codebase ignore rules (Milestone 8)
-├── subsystems.toml                   # Optional high-level architectural subsystem definitions (Milestone 12)
+├── subsystems.toml                   # Optional subsystem definitions (E5: L5; absent today)
 ├── pyproject.toml                    # PEP 621 build config with `cartog` entry point and package data
 ├── README.md                         # Project documentation
 └── .gitignore                        # Git ignore rules (.cartog/, samples/, venv/, dist/, etc.)
@@ -910,65 +896,38 @@ patterns = [
 - **Definition of Done:** Offline `map.html` fully functional; interactive drill-down works; package data includes assets in clean wheel install; Cartog remains installed and all tests pass.
 - **Checkpoint Pause:** `ACCEPTED BY USER (2026-11-03)`
 
-### Milestone 12: Hand-Written Subsystem Map (`subsystems.toml`)
-- **Goal:** Implement optional root-level `subsystems.toml` defining high-level architectural subsystems; validate patterns and handle unassigned files; render the Subsystem container level in the interactive viewer and view model.
-- **Deliverables:**
-  - Formal `subsystems.toml` schema specification and TOML parser in `cartog/scan.py`. Schema strictly aligned with future LLM layer synthesis output.
-  - Subsystem mapping engine: maps repository glob patterns to named subsystems with descriptions.
-  - Validation rules:
-    - Warn on dead patterns (patterns matching zero files in repo).
-    - Error on file overlap (a file matching multiple subsystems).
-    - Automatically group all unmatched files into an `"unassigned"` subsystem.
-  - Universal View Model and Cytoscape viewer integration: adds Subsystem as the topmost container level above folders when `subsystems.toml` is present.
-  - Sample handwritten `subsystems.toml` for `samples/click`.
-- **Files Touched / Built:**
-  - `cartog/scan.py`
-  - `cartog/views.py`
-  - `cartog/cli.py`
-  - `tests/test_subsystems.py`
-  - `docs/BUILD_LOG.md`
-- **CLI Changes:** None (reads `subsystems.toml` automatically if present, or accepts `--subsystems <path>`).
-- **Tests:**
-  - `tests/test_subsystems.py`: test TOML parsing; test dead pattern warnings; test overlap hard errors; test unassigned fallback grouping; test view model hierarchy with subsystems.
-- **Demo Command on a Real Repo:**
-  - Place handwritten `subsystems.toml` in `samples/click`.
-  - `cartog view samples/click --out cartog-out/click-subsystems --no-open`
-- **What to Look At in the Demo:**
-  - Open `map.html`: verify top-level view displays high-level subsystems (e.g. `CLI Core`, `Parameter Types`, `Formatting & UI`, `Unassigned`) instead of raw folders.
-  - Expanding a subsystem reveals its constituent folders, files, and functions.
-- **Definition of Done:** Subsystem schema strictly documented; validation enforces 1-to-1 file membership; viewer seamlessly renders subsystem level; Cartog remains installed and all tests pass.
-- **Checkpoint Pause:** `PAUSE FOR USER CONFIRMATION`
+## 5.1 Epic Plan (E0–E8)
 
-### Milestone 13: Comparative Verification and Final Documentation (Original Milestone 9 Adjusted)
-- **Goal:** Comparative verification with `grimp` (Python) and `madge` (JS/TS) using `scripts/compare_imports.py` on raw import edges; precision/recall reporting; recording labeled call-edge recall samples; final documentation (`docs/ARCHITECTURE.md`, `docs/USAGE.md`, `README.md`); clean virtual environment install verification from git URL.
-- **Deliverables:**
-  - `scripts/compare_imports.py` comparing Cartog import edges against `grimp` and `madge`.
-  - Comparison benchmark operates strictly on RAW import edges (prior to view noise filtering and rewiring) and respects active ignore rules, ensuring rigorous evaluation of the AST resolver.
-  - Manual recall samples on SCIP call edges recorded as a clearly labeled verification sample (not an automated benchmark).
-  - Complete `docs/ARCHITECTURE.md`: comprehensive system architecture, stage isolation, graph data structures, view model, and known limitations (dynamic callbacks, decorators, dynamic dispatch).
-  - Complete `docs/USAGE.md`: exhaustive guide covering every command (`map`, `parse`, `scip`, `build`, `check`, `flow`, `view`, `digest`, `query`, `doctor`), all flags, `.cartogignore`, and `subsystems.toml`.
-  - Finalized `README.md` with updated architecture diagrams, feature highlights, and CLI reference.
-  - Fresh virtual environment clean install test from git repository URL (`pip install git+...`), verifying that the Windows shim and viewer assets are present and `cartog view` functions.
-- **Files Touched / Built:**
-  - `scripts/compare_imports.py`
-  - `docs/ARCHITECTURE.md`
-  - `docs/USAGE.md`
-  - `README.md`
-  - `docs/BUILD_LOG.md`
-- **CLI Changes:** None.
-- **Tests:**
-  - Run `scripts/compare_imports.py` on Click and Ky.
-  - Complete pytest test suite across all modules passes 100%.
-  - Clean venv git install test passes.
-- **Demo Checkpoint 13:**
-  - Command 1: `python scripts/compare_imports.py samples/click`
-  - Command 2: `python scripts/compare_imports.py samples/ky`
-  - Command 3: Clean venv install test: `pip install git+https://github.com/...` in fresh venv; run `cartog doctor`, `cartog map`, and `cartog view`.
-- **What to Look At in the Demo:**
-  - Comparison scripts report high precision and recall against Grimp/Madge with all differences analyzed.
-  - Clean venv confirms package data wheels contain all assets and CLI operates seamlessly.
-- **Definition of Done:** Comparative metrics documented; documentation complete and accurate across all commands and features; fresh venv installation successful; user sign-off.
-- **Checkpoint Pause:** `PAUSE FOR FINAL USER APPROVAL`
+The remaining work is organized as nine epics. The full task sections, status tables, session groups, and user checks live in [`docs/WORKING_TASKS.md`](./WORKING_TASKS.md). Epic order: **E0, E1, E2, E3, E4, E5, E6, E7, E8**. An epic counts as complete for dependency purposes only after the author has accepted it with `Accept <epic id>` and it is merged into `main`.
+
+| Epic | Branch | Depends on | Tasks | Goal |
+|---|---|---|---|---|
+| **E0** | `fix/baseline-correctness` | — | H1–H5 (5) | Make the baseline honest: hermetic tests, viewer fallback and rollup fixes, edge index, doc drift |
+| **E1** | `refactor/package-structure` | E0 | R0–R12 (13) | Golden baseline, repo hygiene, docs move, module-by-module package refactor, cleanup |
+| **E2** | `feature/unified-command-and-output` | E1 | U1–U6 (6) | One command, per-user output home, stable output layout, legacy stage commands |
+| **E3** | `feature/security-baseline` | E2 | S1–S9 (9) | Subprocess runner, hostile-repo canary, HTML/Mermaid escaping, path confinement, limits |
+| **E4** | `feature/verification` | E2 | V1–V5 (5) | Timings/memory, `index.scip` invariant, SCIP environment study, grimp/madge comparison, recall |
+| **E5** | `feature/llm-layer` | E2, E3 | L0–L10 (11) | Narrator layer: spike, schema, plumbing, cache/redaction, verification, subsystems, roles, descriptions, eval |
+| **E6** | `feature/gallery` | E3 | G1–G4 (4) | Pinned public-repo gallery generated by the unified command |
+| **E7** | `feature/analysis-service` | E3, E4 | W1–W9 (9) | Sandboxed hosted analysis service: threat model, safe mode, container, queue, API, limits |
+| **E8** | `docs/final` | E0–E7 | D1 (1) | ARCHITECTURE, USAGE, README with demo GIF, CHANGELOG, refreshed report and handoff |
+
+**Task index:**
+
+- **E0:** H1 hermetic tests (M), H2 raw-graph fallback (S), H3 real edge rollup (M), H4 keyed edge index (S), H5 doc and code drift (S).
+- **E1:** R0 golden baseline (S), R1 repo hygiene + licence (M, author gate), R2 remove absolute paths (S), R3 move agent docs (S), R4 layout design (S, author gate), R5 core modules (M), R6 scanning (M), R7 language adapters (M), R8 SCIP (M), R9 graph build/validate (M), R10 views/exporters (M), R11 split CLI (M), R12 cleanup (M).
+- **E2:** U1 design (S, author gate), U2 default output home (M), U3 output layout (M), U4 unified command (M), U5 stage commands and flags (M), U6 docs and tests (S).
+- **E3:** S1 subprocess runner (M), S2 hostile canary (S), S3 HTML escaping (M), S4 Mermaid sanitisation (S), S5 path confinement (M), S6 terminal control chars (S), S7 pin and checksum vendors (S), S8 configurable limits (S), S9 SECURITY.md (S).
+- **E4:** V1 timings and peak memory (S), V2 `index.scip` invariant (S), V3 SCIP environment study (M), V4 grimp/madge comparison (M), V5 call-edge recall sample (S).
+- **E5:** L0 spike kit (S, author-driven), L1 schema design (S, author gate), L2 plumbing (M), L3 cache/redaction/audit (M), L4 verification framework (M), L5 subsystem proposals and loader (M), L6 subsystem viewer layer (M), L7 roles and link labels (M), L8 leaf descriptions and `narrate` (M), L9 evaluation harness (M), L10 optional distilled model (L).
+- **E6:** G1 choose and pin repos (S, author gate), G2 batch generation (M), G3 static gallery (M), G4 hosting notes (S).
+- **E7:** W1 threat model (M, author + independent review), W2 tree-sitter safe mode (M), W3 container image (L), W4 clone step (M), W5 job runner and queue (L), W6 API and front end (L), W7 rate limits and cost caps (M), W8 SCIP in sandbox (L), W9 deployment notes (M).
+- **E8:** D1 final documentation (M).
+
+**Mid-epic author gates:** R1 (confirm MIT and copyright name), R4 (approve the package layout), U1 (approve the unified-command design), L0 (run the LLM spike by hand), L1 (approve the overlay schema), G1 (approve the repository list), W1 (review the threat model, with an independent sandbox reviewer). The agent marks a gate task `BLOCKED` when it reaches it, continues with independent tasks if the dependency order allows, and stops before the dependent task.
+
+---
+
 
 ---
 
@@ -1028,12 +987,13 @@ patterns = [
   - Added **Milestone 11: Interactive Viewer (`cartog view`)** providing offline Cytoscape.js visualization with collapsible compound nodes, sidebar inspection, and `vscode://` links.
   - Added **Milestone 12: Hand-Written Subsystem Map (`subsystems.toml`)** for high-level architectural subsystem grouping.
   - Adjusted original Milestone 9 into **Milestone 13: Comparative Verification and Final Documentation** ensuring comparative benchmarks evaluate raw import edges and documenting all system commands and limitations.
+- **Epic realignment (2026-11-12):** Milestone 12 removed as a standalone milestone and folded into E5 (L1, L5, L6). Milestone 13 split into E4 (V4, V5) and E8 (D1). The LLM layer is scheduled as E5 (L2–L10). New epics E0–E3 and E6–E7 added from the baseline review. The live task board is `docs/WORKING_TASKS.md`; the old board is archived at `docs/archive/WORKING_TASKS_T0-T21.md`.
 
 ---
 
 ## 8. Future Capabilities (Document Only, Do Not Schedule or Build)
 
-1. **LLM Synthesis Layer:**
+1. **LLM Synthesis Layer — now scheduled as epic E5 (L0–L10); design in `docs/cartog-report.md` §18:**
    - Automatic generation of `subsystems.toml`: infers architectural subsystem clusters, assigns glob patterns, and writes human-readable subsystem descriptions.
    - Generates natural-language architectural role summaries for modules and boundary functions.
    - **Strict Input Constraint:** Ingests ONLY the compact `cartog digest` output (~2,000-4,000 tokens); NEVER reads raw `graph.json`.
