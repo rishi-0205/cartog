@@ -1,0 +1,43 @@
+{
+  "digest": {
+    "approx_tokens": 542,
+    "chars": 2167,
+    "sha256": "ed6d5144cd16b2202626199ba0a23d4443506ec2cf9fe1202f646cce9bbff39a"
+  },
+  "edges": {
+    "by_kind": {
+      "depends_on": 306,
+      "imports": 185,
+      "serves": 326,
+      "starts": 2
+    },
+    "total": 819
+  },
+  "mermaid": {
+    "overview_sha256": "53d38005b81b82780c712a0109bff7fe465563532b0771d333387baa654ab449"
+  },
+  "nodes": {
+    "by_kind": {
+      "ci_job": 8,
+      "class": 149,
+      "command": 21,
+      "dependency": 99,
+      "entrypoint": 2,
+      "file": 93,
+      "folder": 29,
+      "function": 1055,
+      "method": 376,
+      "route": 305
+    },
+    "total": 2137
+  },
+  "repo": "flask",
+  "viewer": {
+    "dropped_self_edges": 0,
+    "edges": 443,
+    "elements": 2435,
+    "emitted_edges": 443,
+    "nodes": 1992,
+    "rolled_up_edges": 0
+  }
+}

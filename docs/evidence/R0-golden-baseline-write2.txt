@@ -1,0 +1,3 @@
+﻿wrote .scratch\golden-second\click.json (2777 nodes, 1023 edges)
+wrote .scratch\golden-second\flask.json (2137 nodes, 819 edges)
+wrote .scratch\golden-second\ky.json (1342 nodes, 378 edges)

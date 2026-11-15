@@ -1,0 +1,115 @@
+# R0 evidence - deterministic golden baseline
+Date: 2026-11-15 13:53:53
+Branch: refactor/package-structure
+
+## Red: the two tests fail before scripts/golden.py exists
+Command: venv\Scripts\python.exe -m pytest tests\test_golden.py -q
+FF                                                                       [100%]
+================================== FAILURES ===================================
+_____________________ test_golden_files_are_deterministic _____________________
+
+tmp_path = WindowsPath('C:/Users/rishi/AppData/Local/Temp/pytest-of-rishi/pytest-253/test_golden_files_are_determin0')
+
+    def test_golden_files_are_deterministic(tmp_path: Path) -> None:
+        first = tmp_path / "golden-first"
+        second = tmp_path / "golden-second"
+    
+>       assert _write_goldens(first) == 0
+               ^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_golden.py:39: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_golden.py:29: in _write_goldens
+    golden = _load_golden()
+             ^^^^^^^^^^^^^^
+tests\test_golden.py:24: in _load_golden
+    spec.loader.exec_module(module)
+<frozen importlib._bootstrap_external>:1022: in exec_module
+    ???
+<frozen importlib._bootstrap_external>:1159: in get_code
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <_frozen_importlib_external.SourceFileLoader object at 0x000001C4D2546AB0>
+path = 'C:\\Users\\rishi\\OneDrive\\Desktop\\Dev\\cartog\\scripts\\golden.py'
+
+>   ???
+E   FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\rishi\\OneDrive\\Desktop\\Dev\\cartog\\scripts\\golden.py'
+
+<frozen importlib._bootstrap_external>:1217: FileNotFoundError
+_________________ test_golden_check_reports_zero_differences __________________
+
+tmp_path = WindowsPath('C:/Users/rishi/AppData/Local/Temp/pytest-of-rishi/pytest-253/test_golden_check_reports_zero0')
+capsys = <_pytest.capture.CaptureFixture object at 0x000001C4D25B23C0>
+
+    def test_golden_check_reports_zero_differences(tmp_path: Path, capsys) -> None:
+        golden_dir = tmp_path / "golden"
+>       assert _write_goldens(golden_dir) == 0
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_golden.py:53: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_golden.py:29: in _write_goldens
+    golden = _load_golden()
+             ^^^^^^^^^^^^^^
+tests\test_golden.py:24: in _load_golden
+    spec.loader.exec_module(module)
+<frozen importlib._bootstrap_external>:1022: in exec_module
+    ???
+<frozen importlib._bootstrap_external>:1159: in get_code
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <_frozen_importlib_external.SourceFileLoader object at 0x000001C4D2589A90>
+path = 'C:\\Users\\rishi\\OneDrive\\Desktop\\Dev\\cartog\\scripts\\golden.py'
+
+>   ???
+E   FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\rishi\\OneDrive\\Desktop\\Dev\\cartog\\scripts\\golden.py'
+
+<frozen importlib._bootstrap_external>:1217: FileNotFoundError
+=========================== short test summary info ===========================
+FAILED tests/test_golden.py::test_golden_files_are_deterministic - FileNotFou...
+FAILED tests/test_golden.py::test_golden_check_reports_zero_differences - Fil...
+2 failed in 0.29s
+
+## Two intermediate implementation failures (fixed before green)
+The first two green attempts failed on graph.json node shape (``nodes`` is a list)
+and on printing a temp path with ``relative_to(REPO_ROOT)``. Both are recorded
+in ``R0-golden-baseline-impl-fail.txt`` and ``R0-golden-baseline-impl-fail2.txt``.
+
+
+## Green: the two tests pass after the implementation
+Command: venv\Scripts\python.exe -m pytest tests\test_golden.py -q
+..                                                                       [100%]
+2 passed in 25.09s
+
+## Write the pinned goldens (first run)
+Command: venv\Scripts\python.exe scripts\golden.py --write
+wrote tests\golden\click.json (2777 nodes, 1023 edges)
+wrote tests\golden\flask.json (2137 nodes, 819 edges)
+wrote tests\golden\ky.json (1342 nodes, 378 edges)
+
+## Determinism: an independent second write is byte-identical
+Command: venv\Scripts\python.exe scripts\golden.py --write --golden-dir .scratch\golden-second
+wrote .scratch\golden-second\click.json (2777 nodes, 1023 edges)
+wrote .scratch\golden-second\flask.json (2137 nodes, 819 edges)
+wrote .scratch\golden-second\ky.json (1342 nodes, 378 edges)
+Compare-Object on click.json, flask.json, ky.json: click identical, flask identical, ky identical
+
+## Check (first run)
+Command: venv\Scripts\python.exe scripts\golden.py --check
+click: 0 differences
+flask: 0 differences
+ky: 0 differences
+0 differences
+
+## Check (second run)
+Command: venv\Scripts\python.exe scripts\golden.py --check
+click: 0 differences
+flask: 0 differences
+ky: 0 differences
+0 differences
+
+## Full suite after R0
+Command: venv\Scripts\python.exe -m pytest tests\ -q
+180 passed, 1 warning in 208.45s (0:03:28)

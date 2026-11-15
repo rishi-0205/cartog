@@ -1,0 +1,117 @@
+﻿FF                                                                       [100%]
+================================== FAILURES ===================================
+_____________________ test_golden_files_are_deterministic _____________________
+
+tmp_path = WindowsPath('C:/Users/rishi/AppData/Local/Temp/pytest-of-rishi/pytest-254/test_golden_files_are_determin0')
+
+    def test_golden_files_are_deterministic(tmp_path: Path) -> None:
+        first = tmp_path / "golden-first"
+        second = tmp_path / "golden-second"
+    
+>       assert _write_goldens(first) == 0
+               ^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_golden.py:39: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_golden.py:30: in _write_goldens
+    return golden.main(
+scripts\golden.py:255: in main
+    _write_one(repo, golden_dir)
+scripts\golden.py:208: in _write_one
+    data = fingerprint(repo)
+           ^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+repo = WindowsPath('C:/Users/rishi/OneDrive/Desktop/Dev/cartog/tests/fixtures/mixed_repo')
+
+    def fingerprint(repo: Path) -> dict[str, Any]:
+        """Run the pipeline on ``repo`` and return its golden fingerprint."""
+        if not repo.is_dir():
+            raise GoldenError(f"repository not found: {repo}")
+    
+        with tempfile.TemporaryDirectory(prefix="cartog-golden-") as tmp:
+            out = Path(tmp) / "out"
+            _run(
+                [
+                    sys.executable,
+                    "-m",
+                    "cartog",
+                    "map",
+                    str(repo),
+                    "--out",
+                    str(out),
+                    "--no-scip",
+                    "--force",
+                ]
+            )
+    
+            graph_file = out / "graph.json"
+            overview_file = out / "overview.mmd"
+            if not graph_file.is_file() or not overview_file.is_file():
+                raise GoldenError(f"pipeline did not write graph.json/overview.mmd for {repo}")
+    
+            graph = json.loads(graph_file.read_text(encoding="utf-8"))
+>           nodes = list(graph.get("nodes", {}).values())
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: 'list' object has no attribute 'values'
+
+scripts\golden.py:137: AttributeError
+_________________ test_golden_check_reports_zero_differences __________________
+
+tmp_path = WindowsPath('C:/Users/rishi/AppData/Local/Temp/pytest-of-rishi/pytest-254/test_golden_check_reports_zero0')
+capsys = <_pytest.capture.CaptureFixture object at 0x0000021C17E92A50>
+
+    def test_golden_check_reports_zero_differences(tmp_path: Path, capsys) -> None:
+        golden_dir = tmp_path / "golden"
+>       assert _write_goldens(golden_dir) == 0
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_golden.py:53: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_golden.py:30: in _write_goldens
+    return golden.main(
+scripts\golden.py:255: in main
+    _write_one(repo, golden_dir)
+scripts\golden.py:208: in _write_one
+    data = fingerprint(repo)
+           ^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+repo = WindowsPath('C:/Users/rishi/OneDrive/Desktop/Dev/cartog/tests/fixtures/mixed_repo')
+
+    def fingerprint(repo: Path) -> dict[str, Any]:
+        """Run the pipeline on ``repo`` and return its golden fingerprint."""
+        if not repo.is_dir():
+            raise GoldenError(f"repository not found: {repo}")
+    
+        with tempfile.TemporaryDirectory(prefix="cartog-golden-") as tmp:
+            out = Path(tmp) / "out"
+            _run(
+                [
+                    sys.executable,
+                    "-m",
+                    "cartog",
+                    "map",
+                    str(repo),
+                    "--out",
+                    str(out),
+                    "--no-scip",
+                    "--force",
+                ]
+            )
+    
+            graph_file = out / "graph.json"
+            overview_file = out / "overview.mmd"
+            if not graph_file.is_file() or not overview_file.is_file():
+                raise GoldenError(f"pipeline did not write graph.json/overview.mmd for {repo}")
+    
+            graph = json.loads(graph_file.read_text(encoding="utf-8"))
+>           nodes = list(graph.get("nodes", {}).values())
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: 'list' object has no attribute 'values'
+
+scripts\golden.py:137: AttributeError
+=========================== short test summary info ===========================
+FAILED tests/test_golden.py::test_golden_files_are_deterministic - AttributeE...
+FAILED tests/test_golden.py::test_golden_check_reports_zero_differences - Att...
+2 failed in 6.88s

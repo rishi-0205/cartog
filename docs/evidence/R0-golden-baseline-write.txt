@@ -1,0 +1,3 @@
+﻿wrote tests\golden\click.json (2777 nodes, 1023 edges)
+wrote tests\golden\flask.json (2137 nodes, 819 edges)
+wrote tests\golden\ky.json (1342 nodes, 378 edges)
