@@ -1,6 +1,6 @@
 # Cartog — Handoff Document
 
-**Last updated:** 2026-11-13 (E0 H1–H5 all DONE, `READY FOR EPIC REVIEW`; suite is 178 tests passing)  
+**Last updated:** 2026-11-15 (E0 ACCEPTED by the author and merged to `main`; next is E1 R0; suite is 178 tests passing)  
 **Role:** Single entry point for any model or developer picking up this project.  
 **Active Working Tasks:** See [`docs/WORKING_TASKS.md`](./WORKING_TASKS.md) for the live epic board and command loop. The historical T0–T21 board is [`docs/archive/WORKING_TASKS_T0-T21.md`](./archive/WORKING_TASKS_T0-T21.md).  
 **Git rules:** [`docs/dev/GIT_WORKFLOW.md`](./dev/GIT_WORKFLOW.md) — one branch per epic, commit per task, never push, merge only after `Accept <epic id>`.
@@ -77,11 +77,11 @@ Epic order is **E0 → E1 → E2 → E3 → E4 → E5 → E6 → E7 → E8**. An
 
 ---
 
-## 3. Next Tasks (E0 — `fix/baseline-correctness`)
+## 3. Next Tasks (E1 — `refactor/package-structure`)
 
-E0 is complete on branch `fix/baseline-correctness`, built from `docs/task-plan` HEAD (`fcb11f2`) rather than a clean `main` because the epic board and git rules live on that branch (Decision 29 in `docs/ISSUES_AND_DECISIONS.md`). H1–H5 are DONE and the epic is `READY FOR EPIC REVIEW`.
+E0 (`fix/baseline-correctness`) was **ACCEPTED by the author on 2026-11-15** and merged into `main` with `git merge --no-ff`. H1–H5 are all DONE; the branch was deleted after the merge. E0 was built from `docs/task-plan` HEAD (`fcb11f2`), so that merge also brought the T22 documentation restructure into `main` (Decision 29 in `docs/ISSUES_AND_DECISIONS.md`).
 
-**No task starts until the author issues `Accept E0`.** After acceptance, merge with `git merge --no-ff` and begin E1 with task R0 (golden baseline) on `refactor/package-structure`. Full task fields, tests, acceptance criteria, and user checks are in [`docs/WORKING_TASKS.md`](./WORKING_TASKS.md).
+The next task is **R0 — Golden baseline after E0** on a new branch `refactor/package-structure`, created from a clean `main` per [`docs/dev/GIT_WORKFLOW.md`](./dev/GIT_WORKFLOW.md). R0 records the post-E0 baseline before the package restructure begins. Full task fields, tests, acceptance criteria, and user checks are in [`docs/WORKING_TASKS.md`](./WORKING_TASKS.md).
 
 ---
 
