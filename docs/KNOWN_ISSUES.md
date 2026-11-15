@@ -132,7 +132,7 @@ All nine findings below were **reproduced on branch `docs/task-plan`** before th
 - **Reproduce:** `Test-Path LICENSE` and `git grep -n -E '^version|__version__' -- pyproject.toml cartog/__init__.py`.
 - **Proposed fix:** **R1** adds `LICENSE` after the author confirms MIT and the copyright name. **H5** makes the version single-source (`dynamic = ["version"]`).
 - **Fix task:** **R1** (E1, author gate) and **H5** (E0).
-- **Status:** FIXED in R1 (`<R1 commit>`, 2026-11-15): `LICENSE` (MIT, `Copyright (c) 2026 Cartog Contributors`) exists, `[project]` carries the SPDX expression `license = "MIT"` plus `license-files = ["LICENSE"]`, and `tests/test_repo_hygiene.py::test_pyproject_metadata_complete` enforces both. The version was made single-source in H5 (`6b1f634`).
+- **Status:** FIXED in R1 (`eff6c74`; staging fix `1653772`, 2026-11-15): `LICENSE` (MIT, `Copyright (c) 2026 Cartog Contributors`) exists, `[project]` carries the SPDX expression `license = "MIT"` plus `license-files = ["LICENSE"]`, and `tests/test_repo_hygiene.py::test_pyproject_metadata_complete` enforces both. The version was made single-source in H5 (`6b1f634`).
 
 ---
 
