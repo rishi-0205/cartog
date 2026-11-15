@@ -89,7 +89,7 @@ The next task is **R0 — Golden baseline after E0** on a new branch `refactor/p
 
 ```powershell
 # Install (editable)
-cd c:\Users\rishi\OneDrive\Desktop\Dev\cartog
+cd <path-to-cartog>
 venv\Scripts\activate
 pip install -e .
 

@@ -1138,7 +1138,9 @@ def generate_digest(
 
     By default, excludes tests, examples, docs, and scripts to focus on core system architecture.
     """
-    target_path = graph.meta.get("target_path") or "Repository"
+    raw_target = graph.meta.get("target_path") or "Repository"
+    # Never leak a machine-local path into the digest (R2): show the repo name.
+    target_path = Path(str(raw_target).replace("\\", "/")).name or "Repository"
     total_nodes = len(graph.nodes)
     total_edges = len(graph.edges)
 

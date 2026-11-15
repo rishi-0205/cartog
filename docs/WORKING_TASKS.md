@@ -307,7 +307,7 @@ At most three small tasks, or one large task, per session. Sessions marked **(ga
 - **Session group:** E1-S1
 - **Files to read:** `docs/`, `cartog/views.py:generate_digest`, `tests/`
 - **Steps:**
-  1. Grep docs and code for local absolute paths (`C:\Users`, `/home/`, the author's username) and replace them with placeholders.
+  1. Grep docs and code for local absolute paths (Windows user-profile paths, Unix home-directory paths, the author's username) and replace them with placeholders.
   2. Make the digest print the sanitized repository name, never a full path.
   3. Add a test that builds a graph in a deep temp path and asserts the digest contains only the basename.
 - **Tests (red-green):** `test_digest_has_no_absolute_paths`, `test_docs_have_no_local_absolute_paths`

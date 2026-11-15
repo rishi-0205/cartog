@@ -1,0 +1,111 @@
+# R2 evidence - no local absolute paths
+Date: 2026-11-15 13:59:58
+Branch: refactor/package-structure
+
+## Red: the two tests fail before the fixes
+Command: venv\Scripts\python.exe -m pytest tests\test_no_absolute_paths.py -q
+FF                                                                       [100%]
+================================== FAILURES ===================================
+___________________ test_docs_have_no_local_absolute_paths ____________________
+
+    def test_docs_have_no_local_absolute_paths() -> None:
+        offenders: list[str] = []
+        for path, rel in _iter_text_files():
+            try:
+                text = path.read_text(encoding="utf-8")
+            except (UnicodeDecodeError, OSError):
+                continue
+            for line_number, line in enumerate(text.splitlines(), 1):
+                for needle in NEEDLES:
+                    if needle in line:
+                        offenders.append(
+                            f"{rel.as_posix()}:{line_number}: {line.strip()[:120]}"
+                        )
+                        break
+>       assert not offenders, "local absolute path(s) found:\n" + "\n".join(offenders)
+E       AssertionError: local absolute path(s) found:
+E         docs/AUDIT_SUMMARY.md:49: Previous session left 60 scratch scripts in `C:\Users\rishi\.gemini\antigravity-ide\brain\e01d385b-9ebc-4b42-851d-b574ef
+E         docs/BUILD_LOG.md:744: - **Full Pytest Test Report:** [docs/pytest_report.txt](file:///c:/Users/rishi/OneDrive/Desktop/Dev/cartog/docs/pytest_r
+E         docs/BUILD_LOG.md:779: - `where.exe scip-python`: `C:\Users\rishi\AppData\Roaming\npm\scip-python`.
+E         docs/HANDOFF.md:92: cd c:\Users\rishi\OneDrive\Desktop\Dev\cartog
+E         docs/ISSUES_AND_DECISIONS.md:407: - **Add `target_path` to `ProjectContext`:** Added `target_path: str = "."` to [cartog/langs/base.py](file:///c:/Users/r
+E         docs/ISSUES_AND_DECISIONS.md:408: - **Pass `target_path` from `build_graph()`:** In [cartog/merge.py](file:///c:/Users/rishi/OneDrive/Desktop/Dev/cartog/c
+E         docs/ISSUES_AND_DECISIONS.md:409: - **Target-Relative Config Resolution:** Updated `_get_tsconfig()` and `_discover_workspace_packages()` in [cartog/langs
+E         docs/ISSUES_AND_DECISIONS.md:425: at Object.<anonymous> (C:\Users\...\AppData\Roaming\npm\node_modules\@sourcegraph\scip-python\dist\scip-python\src\virtu
+E         docs/ISSUES_AND_DECISIONS.md:656: 2. `C:\Users\rishi\AppData\Local\Programs\Python\Python310\python.exe` (`pip show click` -> WARNING: package(s) not foun
+E         docs/ISSUES_AND_DECISIONS.md:657: 3. `C:\Users\rishi\AppData\Local\Microsoft\WindowsApps\python.exe` (Python 3.11 Windows Store; `pip show click` -> Versi
+E         docs/ISSUES_AND_DECISIONS.md:659: 5. `C:\Users\rishi\OneDrive\Desktop\Dev\cartog\venv\Scripts\python.exe` (`pip show click` -> WARNING: package(s) not fou
+E         docs/ISSUES_AND_DECISIONS.md:661: 1. `C:\Users\rishi\AppData\Roaming\npm\scip-python`
+E         docs/ISSUES_AND_DECISIONS.md:662: 2. `C:\Users\rishi\AppData\Roaming\npm\scip-python.cmd`
+E         docs/WORKING_TASKS.md:310: 1. Grep docs and code for local absolute paths (`C:\Users`, `/home/`, the author's username) and replace them with place
+E       assert not ['docs/AUDIT_SUMMARY.md:49: Previous session left 60 scratch scripts in `C:\\Users\\rishi\\.gemini\\antigravity-ide\\b... `target_path` from `build_graph()`:** In [cartog/merge.py](file:///c:/Users/rishi/OneDrive/Desktop/Dev/cartog/c', ...]
+
+tests\test_no_absolute_paths.py:61: AssertionError
+______________________ test_digest_has_no_absolute_paths ______________________
+
+tmp_path = WindowsPath('C:/Users/rishi/AppData/Local/Temp/pytest-of-rishi/pytest-259/test_digest_has_no_absolute_pa0')
+
+    def test_digest_has_no_absolute_paths(tmp_path: Path) -> None:
+        repo = tmp_path / "deep" / "nested" / "cartog-fixture"
+        repo.mkdir(parents=True)
+        graph = Graph(meta={"target_path": repo.as_posix()})
+        file_node = Node(
+            id="file_a",
+            kind="file",
+            name="a.py",
+            qualified_name="a.py",
+            path="a.py",
+        )
+        func_node = Node(
+            id="fn_a",
+            kind="function",
+            name="a",
+            qualified_name="a.py:a",
+            path="a.py",
+            parent="file_a",
+        )
+        graph.add_node(file_node)
+        graph.add_node(func_node)
+    
+        digest = generate_digest(graph)
+    
+        assert "cartog-fixture" in digest
+        assert str(repo) not in digest
+>       assert repo.as_posix() not in digest
+E       AssertionError: assert 'C:/Users/ri...rtog-fixture' not in '# Architect... digest`)*\n'
+E         
+E         'C:/Users/rishi/App...sted/cartog-fixture' is contained here:
+E           # Architecture Digest: C:/Users/rishi/AppData/Local/Temp/pytest-of-rishi/pytest-259/test_digest_has_no_absolute_pa0/deep/nested/cartog-fixture
+E           
+E           ## 1. System Overview
+E           - **Target:** `C:/Users/rishi/AppData/Local/Temp/pytest-of-rishi/pytest-259/test_digest_has_no_absolute_pa0/deep/nested/cartog-fixture`
+E           - **Primary Languages:** N/A...
+E         
+E         ...Full output truncated (12 lines hidden), use '-vv' to show
+
+tests\test_no_absolute_paths.py:90: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_no_absolute_paths.py::test_docs_have_no_local_absolute_paths
+FAILED tests/test_no_absolute_paths.py::test_digest_has_no_absolute_paths - A...
+2 failed in 2.50s
+
+## Green: the two tests pass after the fixes
+Command: venv\Scripts\python.exe -m pytest tests\test_no_absolute_paths.py -q
+..                                                                       [100%]
+2 passed in 2.95s
+
+## User check: no Windows user-profile paths outside raw evidence
+Command: git grep -n "C:\\Users" -- ':!docs/evidence' ':!docs/pytest_report.txt'
+[no output]  (git grep exits 1 when nothing matches)
+[exit 1]
+
+## Goldens unchanged by the digest fix
+Command: venv\Scripts\python.exe scripts\golden.py --check
+click: 0 differences
+flask: 0 differences
+ky: 0 differences
+0 differences
+
+## Full suite after R2
+Command: venv\Scripts\python.exe -m pytest tests\ -q
+182 passed, 1 warning in 174.44s (0:02:54)

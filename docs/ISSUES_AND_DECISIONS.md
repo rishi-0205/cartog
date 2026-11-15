@@ -404,9 +404,9 @@ In `tests/test_js_adapter.py`, `test_resolve_tsconfig_paths_and_workspaces` fail
 - Consequently, `_get_tsconfig()` returned `None`, path aliases like `@core/*` could not be matched, and imports fell back to external packages.
 
 ### 3. Solution & Decision
-- **Add `target_path` to `ProjectContext`:** Added `target_path: str = "."` to [cartog/langs/base.py](file:///c:/Users/rishi/OneDrive/Desktop/Dev/cartog/cartog/langs/base.py) `ProjectContext`.
-- **Pass `target_path` from `build_graph()`:** In [cartog/merge.py](file:///c:/Users/rishi/OneDrive/Desktop/Dev/cartog/cartog/merge.py), passed `target_path=target_path` when creating `ProjectContext`.
-- **Target-Relative Config Resolution:** Updated `_get_tsconfig()` and `_discover_workspace_packages()` in [cartog/langs/js_adapter.py](file:///c:/Users/rishi/OneDrive/Desktop/Dev/cartog/cartog/langs/js_adapter.py) to resolve `tsconfig.json` and `package.json` relative to `project_context.target_path / root_dir`.
+- **Add `target_path` to `ProjectContext`:** Added `target_path: str = "."` to [cartog/langs/base.py](../cartog/langs/base.py) `ProjectContext`.
+- **Pass `target_path` from `build_graph()`:** In [cartog/merge.py](../cartog/merge.py), passed `target_path=target_path` when creating `ProjectContext`.
+- **Target-Relative Config Resolution:** Updated `_get_tsconfig()` and `_discover_workspace_packages()` in [cartog/langs/js_adapter.py](../cartog/langs/js_adapter.py) to resolve `tsconfig.json` and `package.json` relative to `project_context.target_path / root_dir`.
 - **Test Alignment:** In `tests/test_js_adapter.py`, passed `target_path="tests/fixtures/ts_monorepo"` to `ProjectContext`. All 43 tests pass cleanly.
 
 ---
@@ -422,7 +422,7 @@ Invoking `@sourcegraph/scip-python` on Windows immediately crashes with exit cod
 ```text
 SyntaxError: Invalid regular expression: /\/: \ at end of pattern
     at new RegExp (<anonymous>)
-    at Object.<anonymous> (C:\Users\...\AppData\Roaming\npm\node_modules\@sourcegraph\scip-python\dist\scip-python\src\virtualFile.js:15:23)
+    at Object.<anonymous> (<npm-prefix>\node_modules\@sourcegraph\scip-python\dist\scip-python\src\virtualFile.js:15:23)
     at Module._compile (node:internal/modules/cjs/loader:1546:14)
     at Module._extensions..js (node:internal/modules/cjs/loader:1691:10)
     at Module.load (node:internal/modules/cjs/loader:1317:32)
@@ -653,13 +653,13 @@ In `scip-python` (Sourcegraph's Pyright-based SCIP indexer), `--environment` is 
 #### Command Diagnostics
 - `where.exe python`:
   1. `C:\Python313\python.exe` (`python -m pip show click` -> Version: 8.5.0 in User site-packages)
-  2. `C:\Users\rishi\AppData\Local\Programs\Python\Python310\python.exe` (`pip show click` -> WARNING: package(s) not found: click)
-  3. `C:\Users\rishi\AppData\Local\Microsoft\WindowsApps\python.exe` (Python 3.11 Windows Store; `pip show click` -> Version: 8.1.7)
-  4. `C:\msys64\mingw64\bin\python.exe` (`pip show click` -> WARNING: package(s) not found: click)
-  5. `C:\Users\rishi\OneDrive\Desktop\Dev\cartog\venv\Scripts\python.exe` (`pip show click` -> WARNING: package(s) not found: click)
+  2. `%LOCALAPPDATA%\Programs\Python\Python310\python.exe` (`pip show click` -> WARNING: package(s) not found: click)
+  3. `%LOCALAPPDATA%\Microsoft\WindowsApps\python.exe` (Python 3.11 Windows Store; `pip show click` -> Version: 8.1.7)
+  4. `<msys64>\mingw64\bin\python.exe` (`pip show click` -> WARNING: package(s) not found: click)
+  5. `<repo>\venv\Scripts\python.exe` (`pip show click` -> WARNING: package(s) not found: click)
 - `where.exe scip-python`:
-  1. `C:\Users\rishi\AppData\Roaming\npm\scip-python`
-  2. `C:\Users\rishi\AppData\Roaming\npm\scip-python.cmd`
+  1. `%APPDATA%\npm\scip-python`
+  2. `%APPDATA%\npm\scip-python.cmd`
 
 #### Empirical Behavior: Reference Symbols Across Environments
 1. **When indexed with Windows Store Python 3.11 (Click 8.1.7 installed):**
