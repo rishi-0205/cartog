@@ -1,9 +1,10 @@
 """Python Language Adapter using tree-sitter-python and tree-sitter Query."""
 
 import ast
-from pathlib import Path
 import re
+from pathlib import Path
 from typing import Any, NamedTuple, Optional
+
 import tree_sitter
 import tree_sitter_python
 
@@ -13,7 +14,6 @@ from cartog.langs.base import (
     ProjectContext,
     SymbolRecord,
 )
-
 
 SYMBOL_QUERY = """
 (class_definition
@@ -212,7 +212,7 @@ class PythonAdapter(LanguageAdapter):
         # 1. Map target spans to decorator names using native query
         cursor_dec = tree_sitter.QueryCursor(self._query_decorators)
         decorators_by_target: dict[tuple[int, int], list[str]] = {}
-        for pat_idx, match in cursor_dec.matches(tree.root_node):
+        for _, match in cursor_dec.matches(tree.root_node):
             for target in match.get("target", []):
                 key = (target.start_byte, target.end_byte)
                 if key not in decorators_by_target:
@@ -228,7 +228,7 @@ class PythonAdapter(LanguageAdapter):
         cursor_sym = tree_sitter.QueryCursor(self._query_symbols)
         scope_stack: list[ScopeEntry] = []
 
-        for pat_idx, match in cursor_sym.matches(tree.root_node):
+        for _, match in cursor_sym.matches(tree.root_node):
             is_class = "class" in match
             node = match["class"][0] if is_class else match["func"][0]
             name_node = match["name"][0]
@@ -301,7 +301,7 @@ class PythonAdapter(LanguageAdapter):
             return source_bytes[node.start_byte:node.end_byte].decode("utf-8", errors="replace")
 
         cursor_imp = tree_sitter.QueryCursor(self._query_imports)
-        for pat_idx, match in cursor_imp.matches(tree.root_node):
+        for _, match in cursor_imp.matches(tree.root_node):
             if "import" in match:
                 node = match["import"][0]
                 raw_text = _get_node_text(node).strip()
@@ -407,7 +407,7 @@ class PythonAdapter(LanguageAdapter):
         patterns: list[dict[str, Any]] = []
         cursor = tree_sitter.QueryCursor(self._query_patterns)
 
-        for pat_idx, match in cursor.matches(tree.root_node):
+        for _, match in cursor.matches(tree.root_node):
             if "decorator" in match and "func_name" in match:
                 dec_node = match["decorator"][0]
                 func_node = match["func_name"][0]

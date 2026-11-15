@@ -1,8 +1,9 @@
 """JSON serialization for intermediate pipeline stages."""
 
 import json
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Any, Optional, Sequence
+from typing import Any, Optional
 
 from cartog.config import SCHEMA_VERSION
 from cartog.langs.base import ParseFileResult

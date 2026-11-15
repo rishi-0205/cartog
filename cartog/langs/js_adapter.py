@@ -1,10 +1,10 @@
 """JavaScript and TypeScript Language Adapter using tree-sitter."""
 
-import json
 import os
-from pathlib import Path
 import re
+from pathlib import Path
 from typing import Any, NamedTuple, Optional
+
 import tree_sitter
 import tree_sitter_javascript
 import tree_sitter_typescript

@@ -1079,3 +1079,11 @@ Following the initial orthogonal routing updates, user testing identified two re
 - **Rationale:** the alternative — leaving ~30 lines of project facts in `AGENTS.md` — keeps it from being a pointer. Moving them without a destination would lose them. Editing the existing drift test to read a new file would change a test to fit a refactor, which the evidence protocol forbids; keeping the line in `AGENTS.md` leaves the test untouched and still meaningful.
 - **Consequence:** `AGENTS.md` is under 45 lines and every rule has exactly one home. The node-ID rule is deliberately duplicated in `AGENTS.md` and `CODE_STANDARDS.md`; if it changes, both must change, and the drift test fails until `AGENTS.md` is fixed.
 - **Date:** 2026-11-15
+
+## Decision 31: MIT licence under "Cartog Contributors", and the scope of `ruff check .`
+
+- **Context:** R1 is gated on the licence choice and the copyright holder's name. The repository already advertised MIT (`pyproject.toml` and the README badge) with no `LICENSE` file, and the linter had never been run: `ruff check` with `E,F,I,UP,B` reported 1012 findings, 709 of them line length.
+- **Decision:** (1) add the standard MIT text as `Copyright (c) 2026 Cartog Contributors` and switch `[project]` to the PEP 639 form (`license = "MIT"`, `license-files = ["LICENSE"]`, `setuptools>=77`); (2) lint `cartog/`, `scripts/`, and `tests/` with `line-length = 120`, fixing every finding except `E501`, `UP045`, and `B008`, plus four test-only rule groups.
+- **Rationale:** the author asked for MIT and named no individual, and `authors` already said "Cartog Contributors", so the licence matches the existing metadata without inventing a person. For the linter: `B008` is the documented Typer idiom (`typer.Option(...)` in signatures); reflowing 230 long lines and rewriting 167 `Optional[...]` annotations inside a hygiene task would bury the module moves that follow, so both are recorded as debt in `KNOWN_ISSUES.md` and deferred to R12/R11.
+- **Consequence:** `ruff check .` is clean and CI enforces it; `License-Expression: MIT` and `License-File: LICENSE` appear in the built metadata. Generated protobuf (`cartog/scip_pb2.py`), `tests/fixtures/`, and `docs/evidence/` are excluded from lint so a formatter can never rewrite evidence or fixture line numbers.
+- **Date:** 2026-11-15

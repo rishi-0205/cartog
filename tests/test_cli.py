@@ -1,13 +1,10 @@
 """Basic CLI tests for Cartog."""
 
-from pathlib import Path
-import subprocess
-import sys
-from typer.testing import CliRunner
-from cartog.cli import app
-from cartog import __version__
-
 from conftest import requires_sample
+from typer.testing import CliRunner
+
+from cartog import __version__
+from cartog.cli import app
 
 runner = CliRunner()
 
@@ -356,6 +353,7 @@ def test_flow_resolves_graph_from_subfolder_output(tmp_path):
 def test_flow_works_from_graph_json_without_cache(tmp_path):
     """Verify flow operates correctly from graph.json without .cartog AST cache, and in-memory fallback includes SCIP calls."""
     import json
+
     from cartog.cli import _resolve_graph
     from cartog.scip_pass import ScipIndexResult
 

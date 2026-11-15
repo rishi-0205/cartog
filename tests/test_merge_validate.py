@@ -1,6 +1,5 @@
 """Tests for graph validation extensions: range integrity, containment, and cross-checking."""
 
-import pytest
 from pathlib import Path
 
 from cartog.model import Edge, Graph, Node, SourceRange

@@ -11,8 +11,8 @@ Handles:
 """
 
 import json
-from pathlib import Path
 import sys
+from pathlib import Path
 from typing import Any, Optional
 
 
@@ -79,7 +79,7 @@ def strip_jsonc_comments_and_trailing_commas(text: str, filename: str = "<string
                 if not terminated:
                     import warnings
                     msg = f"Unterminated block comment in '{filename}' starting at line {comment_start_line}"
-                    warnings.warn(msg, UserWarning)
+                    warnings.warn(msg, UserWarning, stacklevel=2)
                     raise JsoncParseError(msg)
             elif c == ",":
                 # Check for trailing comma before } or ]

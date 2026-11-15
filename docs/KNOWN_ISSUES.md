@@ -132,7 +132,22 @@ All nine findings below were **reproduced on branch `docs/task-plan`** before th
 - **Reproduce:** `Test-Path LICENSE` and `git grep -n -E '^version|__version__' -- pyproject.toml cartog/__init__.py`.
 - **Proposed fix:** **R1** adds `LICENSE` after the author confirms MIT and the copyright name. **H5** makes the version single-source (`dynamic = ["version"]`).
 - **Fix task:** **R1** (E1, author gate) and **H5** (E0).
-- **Status:** PARTIALLY FIXED in H5 (`6b1f634`, 2026-11-13): the version is single-source (`dynamic = ["version"]`, setuptools `attr = "cartog.__version__"`) and `test_version_single_source` enforces it. `LICENSE` is still missing and remains open under R1.
+- **Status:** FIXED in R1 (`<R1 commit>`, 2026-11-15): `LICENSE` (MIT, `Copyright (c) 2026 Cartog Contributors`) exists, `[project]` carries the SPDX expression `license = "MIT"` plus `license-files = ["LICENSE"]`, and `tests/test_repo_hygiene.py::test_pyproject_metadata_complete` enforces both. The version was made single-source in H5 (`6b1f634`).
+
+---
+
+## Lint debt (deferred from R1)
+
+R1 turns on `ruff check .` (select `E,F,I,UP,B`) and the tree is clean. Four
+rule groups are explicitly ignored; they are debt, not fixes.
+
+| Rule | Count | Why it is ignored | Owner |
+|---|---|---|---|
+| `E501` line-too-long | 230 | Reflowing 230 lines now would bury the E1 module moves in whitespace churn | R12 cleanup pass |
+| `UP045` `Optional[X]` | 167 | The PEP 604 conversion rewrites the same signatures the CLI split touches | R11 CLI split |
+| `E402` (tests) | 5 | `tests/test_interactive_view.py` imports after a mid-file section; harmless | R12 |
+| `F841`/`B023`/`B905` (tests) | 8 | Unused locals and `zip()` over parallel lists in diagnostic tests; fixing them risks changing test semantics | R12 |
+
 
 ---
 

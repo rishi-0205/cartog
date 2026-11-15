@@ -384,7 +384,8 @@ def build_graph(
             continue
 
         file_node_id = make_node_id("file", f.path, f.path)
-        depends_on_targets: set[str] = set()
+
+
 
         for imp in f.imports:
             resolved = adapter.resolve_import(imp, f.path, context)

@@ -7,17 +7,17 @@ import edges directly to defining files, and provides filtering for diagram view
 from __future__ import annotations
 
 import ast
+import re
 from collections import defaultdict, deque
 from dataclasses import dataclass, field
-from enum import Enum
+from enum import StrEnum
 from pathlib import Path
-import re
 from typing import Any, Optional
 
 from cartog.model import Edge, Graph, Node
 
 
-class NoiseCategory(str, Enum):
+class NoiseCategory(StrEnum):
     REEXPORT = "reexport"
     CONSTANTS_OR_TYPES = "constants_or_types"
 

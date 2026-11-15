@@ -13,7 +13,7 @@ The roadmap narrative is [`docs/IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.m
 | H4 | Keyed edge index (F5) | E0 | `fix/baseline-correctness` | — | S | E0-S2 | DONE | b4e63c8 |
 | H5 | Doc and code drift (F6, F7, F8, F9 version) | E0 | `fix/baseline-correctness` | — | S | E0-S2 | DONE | 6b1f634 |
 | R0 | Golden baseline after E0 | E1 | `refactor/package-structure` | H1, H3, H4, H5 | S | E1-S1 | DONE | 6dbd7fe |
-| R1 | Repo hygiene, licence, lint, CI | E1 | `refactor/package-structure` | R0 | M | E1-S2 | TODO | — |
+| R1 | Repo hygiene, licence, lint, CI | E1 | `refactor/package-structure` | R0 | M | E1-S2 | DONE | PENDING |
 | R2 | Remove absolute local paths | E1 | `refactor/package-structure` | R0 | S | E1-S1 | DONE | 57c5900 |
 | R3 | Move agent-process docs to docs/dev/ | E1 | `refactor/package-structure` | R0 | S | E1-S1 | DONE | d303f32 |
 | R4 | Package layout design | E1 | `refactor/package-structure` | R0 | S | E1-S3 | TODO | — |
@@ -76,7 +76,7 @@ The roadmap narrative is [`docs/IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.m
 | epic | branch | depends on | tasks done / total | status | accepted by author |
 |---|---|---|---|---|---|
 | E0 | `fix/baseline-correctness` | — | 5 / 5 | ACCEPTED | 2026-11-15 |
-| E1 | `refactor/package-structure` | E0 | 3 / 13 | IN PROGRESS | no |
+| E1 | `refactor/package-structure` | E0 | 4 / 13 | IN PROGRESS | no |
 | E2 | `feature/unified-command-and-output` | E1 | 0 / 6 | NOT STARTED | no |
 | E3 | `feature/security-baseline` | E2 | 0 / 9 | NOT STARTED | no |
 | E4 | `feature/verification` | E2 | 0 / 5 | NOT STARTED | no |
@@ -295,10 +295,13 @@ At most three small tasks, or one large task, per session. Sessions marked **(ga
 - **User check (epic review):** `ruff check .` → clean; open the workflow file.
 - **Evidence files:** `docs/evidence/R1-repo-hygiene.txt`
 - **Planned commit message:** `R1: add licence, lint, metadata, and CI`
-- **Status:** TODO
-- **Commit hash:** —
-- **Failure log:** —
-- **Change log:** —
+- **Status:** DONE
+- **Commit hash:** PENDING
+- **Gate resolution:** the author said "add MIT licence" on 2026-11-15 with no individual named; the `authors` field already says "Cartog Contributors", so the copyright line is `Copyright (c) 2026 Cartog Contributors` (Decision 31).
+- **Failure log:** Red run (`docs/evidence/R1-repo-hygiene-red.txt`): `LICENSE` and `.github/workflows/ci.yml` were missing. The first draft of the metadata test also demanded a `License :: OSI Approved :: MIT License` classifier; setuptools 84 rejects that classifier alongside the PEP 639 SPDX expression (`InvalidConfigError`), so the classifier was dropped from both the test and the metadata before the green run — the test had never passed.
+- **Change log:**
+  - 2026-11-15: Added `LICENSE` (MIT), switched `[project]` to PEP 639 (`license = "MIT"`, `license-files`, `setuptools>=77`), and added keywords, classifiers, three project URLs, and `ruff` to the dev extra. Added `[tool.ruff]` (`py311`, `line-length = 120`, select `E,F,I,UP,B`) with documented ignores (`E501`, `UP045`, `B008`) and test-only ignores; excluded generated protobuf, `tests/fixtures/`, and `docs/evidence/`. Fixed 104 findings mechanically and 13 by hand (unused loop variables, unused locals, `raise ... from`, `stacklevel`, `StrEnum`). Added `.github/workflows/ci.yml` (Python 3.11/3.13, editable dev install, fetch samples, `ruff check`, `pytest -q`). `ruff check .` clean; goldens `0 differences`; full suite 186 passed (+2).
+- **Lint debt:** 230 `E501` lines and 167 `UP045` annotations are deferred to R12/R11 and recorded in `docs/KNOWN_ISSUES.md`.
 
 ### R2: Remove absolute local paths
 

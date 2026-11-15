@@ -8,8 +8,8 @@ import json
 from pathlib import Path
 from typing import Any, Optional
 
-from cartog.model import Graph, Node, Edge
-from cartog.views import build_universal_view_tree, ViewNode, trace_call_flow
+from cartog.model import Edge, Graph, Node
+from cartog.views import ViewNode, build_universal_view_tree
 
 
 def _load_asset(name: str) -> str:
@@ -82,7 +82,7 @@ def convert_view_tree_to_cytoscape_elements(
 
     # If the synthetic tree didn't register nodes (e.g. raw graph fallback), register nodes directly
     if not registered_node_ids:
-        for nid, node in sorted(graph.nodes.items()):
+        for _, node in sorted(graph.nodes.items()):
             if node.kind in ("dependency", "ci_job"):
                 continue
             parent = node.parent

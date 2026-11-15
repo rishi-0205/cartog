@@ -1,7 +1,6 @@
 """Unit tests for manifest parsing (pyproject.toml, requirements, Docker, compose, CI)."""
 
 from pathlib import Path
-import tempfile
 
 from cartog.langs.base import ParseFileResult, SymbolRecord
 from cartog.manifests import (
@@ -9,12 +8,11 @@ from cartog.manifests import (
     parse_dockerfile,
     parse_github_workflow,
     parse_manifests,
-    parse_package_json,
     parse_pyproject_toml,
     parse_requirements_file,
 )
-from cartog.model import ManifestFacts, SourceRange
 from cartog.merge import build_graph
+from cartog.model import ManifestFacts
 from cartog.validate import validate_graph
 
 

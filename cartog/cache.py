@@ -4,7 +4,6 @@ import json
 from pathlib import Path
 from typing import Any, Optional
 
-
 from cartog import __version__ as CARTOG_VERSION
 
 DEFAULT_EXTRACTOR_SCHEMA_VERSION = f"cartog-v{CARTOG_VERSION}-m10"
@@ -38,7 +37,7 @@ class ParseCache:
         """Load cache entries from disk."""
         if self.cache_file.exists():
             try:
-                with open(self.cache_file, "r", encoding="utf-8") as f:
+                with open(self.cache_file, encoding="utf-8") as f:
                     data = json.load(f)
                     if isinstance(data, dict):
                         self._entries = data

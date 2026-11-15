@@ -5,9 +5,9 @@ Defines Node, Edge, SourceRange, Location, and Graph with deterministic SHA-1 ID
 
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass, field
 import hashlib
 import json
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Optional
 

@@ -56,7 +56,7 @@ def parse_source_file(
         if cached is not None:
             # Reconstruct ParseFileResult from cached dict
             symbols = []
-            from cartog.langs.base import SymbolRecord, ImportRecord
+            from cartog.langs.base import ImportRecord, SymbolRecord
             for s in cached.get("symbols", []):
                 rng = s.get("range", [0, 0, 0, 0])
                 symbols.append(

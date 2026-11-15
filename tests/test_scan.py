@@ -1,9 +1,8 @@
 """Unit tests for cartog.scan module."""
 
-import tempfile
 from pathlib import Path
-import pytest
-from cartog.scan import walk_files, hash_file, detect_roots, is_binary_file
+
+from cartog.scan import detect_roots, hash_file, is_binary_file, walk_files
 
 
 def test_hash_file(tmp_path: Path):

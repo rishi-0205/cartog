@@ -70,7 +70,7 @@ def test_python_import_resolution():
 
 
 def test_nested_complex_import_resolution():
-    from cartog.langs.python_adapter import path_to_module_name, get_enclosing_root
+    from cartog.langs.python_adapter import path_to_module_name
 
     adapter = PythonAdapter()
 

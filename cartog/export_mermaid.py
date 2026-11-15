@@ -4,12 +4,12 @@ Generates overview flowcharts with folder subgraphs, categorized collapse,
 internal edge summarization, and budget-aware node limits.
 """
 
-from collections import Counter, defaultdict
-from pathlib import Path
 import re
 import subprocess
 import sys
-from typing import Any, Optional, Union
+from collections import Counter, defaultdict
+from pathlib import Path
+from typing import Any, Optional
 
 from cartog.model import Edge, Graph, Node
 from cartog.views import classify_boundary_functions, detect_noise_files, get_call_counts, rewire_view_edges
@@ -139,7 +139,7 @@ def _generate_function_level_overview(
     graph: Graph,
     direction: str = "TD",
     max_nodes: int = 60,
-    include: Optional[Union[set[str], list[str]]] = None,
+    include: Optional[set[str] | list[str]] = None,
     show_manifests: bool = False,
     show_noise: bool = False,
     layout: str = "dagre",
@@ -458,7 +458,7 @@ def generate_overview_mermaid(
     graph: Graph,
     direction: str = "TD",
     max_nodes: int = 60,
-    include: Optional[Union[set[str], list[str]]] = None,
+    include: Optional[set[str] | list[str]] = None,
     show_manifests: bool = False,
     show_noise: bool = False,
     layout: str = "dagre",
@@ -630,7 +630,7 @@ def generate_overview_mermaid(
         cluster_labels[cl_id] = f"{folder}/"
 
     # C. Expanded files
-    for folder, flist in expanded_folder_to_files.items():
+    for flist in expanded_folder_to_files.values():
         for f in flist:
             file_to_visible[f.id] = sanitize_id(f"file_{f.id}")
     for f in root_files:
@@ -951,7 +951,8 @@ def generate_flow_mermaid(
     Disambiguates duplicate file basenames using shortest unique path suffixes.
     """
     start_ids_set: set[str] = set(start_node_ids or [])
-    nodes_by_id = {n.id: n for n in nodes}
+
+
 
     lines = [f"flowchart {direction}"]
 

@@ -1,15 +1,15 @@
 """SCIP indexer execution, decoding, occurrence extraction, and call graph resolution."""
 
-from dataclasses import dataclass, field
 import hashlib
 import json
 import logging
 import os
-from pathlib import Path
 import re
 import shutil
 import subprocess
 import sys
+from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any, Optional
 
 from cartog.config import SCHEMA_VERSION

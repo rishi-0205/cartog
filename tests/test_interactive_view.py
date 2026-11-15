@@ -1,7 +1,8 @@
 """Tests for Milestone 11: Interactive Cytoscape Viewer (cartog view)."""
 
-from pathlib import Path
 import tomllib
+from pathlib import Path
+
 import cartog
 
 
@@ -44,7 +45,8 @@ def test_view_assets_packaged_and_loadable():
 
 import json
 import re
-from cartog.model import Graph, Node, Edge, SourceRange
+
+from cartog.model import Edge, Graph, Node, SourceRange
 
 
 def _build_test_graph() -> Graph:
@@ -133,6 +135,7 @@ def test_export_html_no_external_network_tags(tmp_path: Path):
 
 
 from typer.testing import CliRunner
+
 from cartog.cli import app
 
 runner = CliRunner()
@@ -229,8 +232,8 @@ def test_export_html_includes_routing_and_filter_controls(tmp_path: Path):
 
 def test_universal_view_tree_expand_internal_helpers():
     """Verify that build_universal_view_tree with include_helpers=True retains individual helper symbols and their edges."""
-    from cartog.views import build_universal_view_tree
     from cartog.export_html import convert_view_tree_to_cytoscape_elements
+    from cartog.views import build_universal_view_tree
 
     g = Graph()
     g.meta = {"target_path": "helper_test"}

@@ -1,20 +1,15 @@
 """Unit tests for JavaScript and TypeScript tree-sitter adapter."""
 
 from pathlib import Path
-import pytest
-import tree_sitter
 
-from cartog.langs import get_adapter, get_adapter_for_path, parse_source_file
+from conftest import requires_sample
+
+from cartog.langs import get_adapter, get_adapter_for_path
 from cartog.langs.base import ImportRecord, ProjectContext
 from cartog.langs.js_adapter import (
     JsAdapter,
-    clean_string_literal,
-    extract_nextjs_route_path,
     path_to_js_module_name,
 )
-from cartog.scan import FileInfo, walk_files
-
-from conftest import requires_sample
 
 
 def test_js_adapter_registration():

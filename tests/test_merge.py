@@ -141,7 +141,9 @@ def test_validation_rejects_invalid_edge_endpoints():
 def test_build_graph_with_scip_calls():
     """Verify build_graph integrates SCIP call edges and passes full graph validation."""
     from pathlib import Path
+
     import pytest
+
     from cartog.langs import parse_source_file
     from cartog.scan import walk_files
     from cartog.scip_pass import decode_scip_index

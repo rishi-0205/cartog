@@ -4,45 +4,44 @@ import re
 import shutil
 import subprocess
 import sys
+from pathlib import Path
 from typing import Optional
+
 import typer
 from rich.console import Console
 from rich.markdown import Markdown
 from rich.table import Table
 
-from pathlib import Path
 from cartog import __version__
-from cartog.config import DEFAULT_MAX_FILE_SIZE_MB
-from cartog.scan import walk_files
 from cartog.cache import ParseCache
-from cartog.langs import parse_source_file
+from cartog.config import DEFAULT_MAX_FILE_SIZE_MB
 from cartog.export_json import write_parse_json
-from cartog.manifests import parse_manifests
-from cartog.model import Graph, Node
-from cartog.merge import build_graph
-from cartog.views import (
-    build_universal_view_tree,
-    classify_boundary_functions,
-    detect_noise_files,
-    generate_digest,
-    trace_call_flow,
-)
-from cartog.validate import (
-    cross_check_imports_and_calls,
-    validate_graph,
-    validate_ranges_and_containment,
-)
 from cartog.export_mermaid import (
     generate_flow_mermaid,
     generate_folder_mermaid,
     generate_overview_mermaid,
     render_mermaid,
 )
+from cartog.langs import parse_source_file
+from cartog.manifests import parse_manifests
+from cartog.merge import build_graph
+from cartog.model import Graph, Node
+from cartog.scan import walk_files
 from cartog.scip_pass import (
     ScipIndexResult,
     decode_scip_index,
     run_scip_indexer,
     write_scip_json,
+)
+from cartog.validate import (
+    cross_check_imports_and_calls,
+    validate_graph,
+    validate_ranges_and_containment,
+)
+from cartog.views import (
+    detect_noise_files,
+    generate_digest,
+    trace_call_flow,
 )
 
 app = typer.Typer(
@@ -149,7 +148,7 @@ def doctor():
 
     # 4. SCIP protobuf bindings
     try:
-        from cartog import scip_pb2
+        from cartog import scip_pb2  # noqa: F401  (the import itself is the probe)
         table.add_row("scip_pb2 bindings", "[green]PASS[/green]", "Bindings loaded", "-")
     except ImportError:
         table.add_row(
@@ -296,7 +295,7 @@ def _execute_parse(
         )
     except Exception as e:
         console.print(f"[bold red]Scan error:[/bold red] {e}")
-        raise typer.Exit(code=2)
+        raise typer.Exit(code=2) from e
 
     console.print(f"Discovered [green]{len(scan_result.files)}[/green] source files ([yellow]{len(scan_result.skipped)}[/yellow] skipped).")
 
@@ -944,8 +943,8 @@ def flow(
     max_nodes: int = typer.Option(60, "--max-nodes", help="Maximum diagram nodes."),
 ):
     """Trace call flow from entrypoints, routes, or functions across the codebase."""
-    from cartog.views import find_flow_candidates, trace_call_flow
     from cartog.export_mermaid import classify_path as _classify_path
+    from cartog.views import find_flow_candidates
 
     graph = _resolve_graph(path, out=out)
     scoped_cands, excluded_cands = find_flow_candidates(
@@ -1152,8 +1151,8 @@ def view(
 ):
     """Launch or export the interactive Cytoscape codebase architecture viewer."""
     from cartog.export_html import generate_html_map
-    from cartog.views import find_flow_candidates, trace_call_flow
     from cartog.export_mermaid import classify_path as _classify_path
+    from cartog.views import find_flow_candidates
 
     graph = _resolve_graph(path, out=out)
     out_p = Path(out)

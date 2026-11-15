@@ -1,14 +1,12 @@
 """Unit tests for AST parse caching and fidelity preservation."""
 
-from pathlib import Path
 import hashlib
-import pytest
+from pathlib import Path
 
-from cartog.langs import parse_source_file
-from cartog.langs.base import ParseFileResult, SymbolRecord, ImportRecord
 from cartog.cache import ParseCache
-from cartog.scan import FileInfo
+from cartog.langs import parse_source_file
 from cartog.merge import build_graph
+from cartog.scan import FileInfo
 
 
 def test_cache_preserves_is_type_only_cold_vs_warm(tmp_path: Path):

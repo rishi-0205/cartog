@@ -67,7 +67,18 @@ samples/          Real-world repos — DO NOT MODIFY (gitignored)
 cartog-out/       All cartog output — safe to delete and regenerate
 ```
 
-## 3. Key invariants
+## 3. Checks before a task is DONE
+
+```powershell
+venv\Scripts\python.exe -m ruff check .           # lint (config in pyproject.toml)
+venv\Scripts\python.exe scripts\golden.py --check  # pipeline fingerprint: 0 differences
+venv\Scripts\python.exe -m pytest tests\ -q        # full suite
+```
+
+CI (`.github/workflows/ci.yml`) runs the same three on Python 3.11 and 3.13
+after fetching the pinned samples.
+
+## 4. Key invariants
 
 - `samples/` directories must NEVER be modified by Cartog. The regression test
   `test_pipeline_leaves_analyzed_repo_untouched` in `tests/test_cli.py` enforces

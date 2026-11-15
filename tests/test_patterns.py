@@ -1,8 +1,8 @@
 """Unit tests for Python framework patterns (Flask, FastAPI, Click, __main__)."""
 
 from pathlib import Path
+
 import tree_sitter
-import tree_sitter_python
 
 from cartog.langs.base import ParseFileResult
 from cartog.langs.python_adapter import PythonAdapter

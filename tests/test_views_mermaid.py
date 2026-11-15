@@ -2,7 +2,7 @@
 
 import json
 from pathlib import Path
-import pytest
+
 from typer.testing import CliRunner
 
 from cartog.cli import app

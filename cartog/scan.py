@@ -1,10 +1,11 @@
 """File discovery, filtering, hashing, and project root detection."""
 
-from dataclasses import dataclass, field
 import hashlib
 import os
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional
+
 import pathspec
 
 from cartog.config import (
@@ -140,7 +141,7 @@ def _load_gitignore(dir_path: Path) -> Optional[pathspec.PathSpec]:
     gitignore_file = dir_path / ".gitignore"
     if gitignore_file.is_file():
         try:
-            with open(gitignore_file, "r", encoding="utf-8", errors="ignore") as f:
+            with open(gitignore_file, encoding="utf-8", errors="ignore") as f:
                 lines = [line.strip() for line in f if line.strip() and not line.startswith("#")]
                 if lines:
                     return pathspec.PathSpec.from_lines("gitignore", lines)
@@ -154,7 +155,7 @@ def _load_cartogignore(dir_path: Path) -> Optional[pathspec.PathSpec]:
     cartogignore_file = dir_path / ".cartogignore"
     if cartogignore_file.is_file():
         try:
-            with open(cartogignore_file, "r", encoding="utf-8", errors="ignore") as f:
+            with open(cartogignore_file, encoding="utf-8", errors="ignore") as f:
                 lines = [line.strip() for line in f if line.strip() and not line.startswith("#")]
                 if lines:
                     return pathspec.PathSpec.from_lines("gitignore", lines)

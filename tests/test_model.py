@@ -1,6 +1,7 @@
 """Unit tests for cartog.model."""
 
 from pathlib import Path
+
 from cartog.model import Edge, Graph, Node, SourceRange, make_edge_id, make_node_id
 
 

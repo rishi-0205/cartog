@@ -276,4 +276,4 @@ if __name__ == "__main__":
         raise SystemExit(main())
     except GoldenError as exc:
         print(f"error: {exc}", file=sys.stderr)
-        raise SystemExit(2)
+        raise SystemExit(2) from exc

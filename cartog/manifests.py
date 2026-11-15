@@ -13,16 +13,16 @@ from __future__ import annotations
 
 import json
 import os
-from pathlib import Path
 import re
 import sys
 import tomllib
+from pathlib import Path
 from typing import Any, Optional
 
-from cartog.jsonc import load_strict_json_file
+import pathspec
+
 from cartog.model import ManifestFacts
 from cartog.scan import _load_cartogignore, _load_gitignore
-import pathspec
 
 IGNORED_DIRS = {
     ".git",

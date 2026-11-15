@@ -1,0 +1,81 @@
+# R1 evidence - licence, metadata, lint, CI
+Date: 2026-11-15 15:39:15
+Branch: refactor/package-structure
+
+## Red: both tests fail before LICENSE and CI exist
+Command: venv\Scripts\python.exe -m pytest tests\test_repo_hygiene.py -q
+FF                                                                       [100%]
+================================== FAILURES ===================================
+______________________ test_pyproject_metadata_complete _______________________
+
+    def test_pyproject_metadata_complete() -> None:
+>       assert LICENSE.is_file(), "LICENSE is missing at the repository root"
+E       AssertionError: LICENSE is missing at the repository root
+E       assert False
+E        +  where False = is_file()
+E        +    where is_file = WindowsPath('C:/Users/rishi/OneDrive/Desktop/Dev/cartog/LICENSE').is_file
+
+tests\test_repo_hygiene.py:25: AssertionError
+____________________ test_ci_workflow_runs_tests_and_fetch ____________________
+
+    def test_ci_workflow_runs_tests_and_fetch() -> None:
+>       assert WORKFLOW.is_file(), f"missing CI workflow {WORKFLOW}"
+E       AssertionError: missing CI workflow C:\Users\rishi\OneDrive\Desktop\Dev\cartog\.github\workflows\ci.yml
+E       assert False
+E        +  where False = is_file()
+E        +    where is_file = WindowsPath('C:/Users/rishi/OneDrive/Desktop/Dev/cartog/.github/workflows/ci.yml').is_file
+
+tests\test_repo_hygiene.py:78: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_repo_hygiene.py::test_pyproject_metadata_complete - Asserti...
+FAILED tests/test_repo_hygiene.py::test_ci_workflow_runs_tests_and_fetch - As...
+2 failed in 0.10s
+
+## Green: the two repo-hygiene tests pass
+Command: venv\Scripts\python.exe -m pytest tests\test_repo_hygiene.py -q
+..                                                                       [100%]
+2 passed in 0.04s
+
+## User check: the linter is clean
+Command: venv\Scripts\python.exe -m ruff check .
+All checks passed!
+
+## Built metadata carries the licence
+# R1 evidence - built distribution metadata
+Command: python -c "from setuptools.build_meta import prepare_metadata_for_build_wheel as p; print(p('.scratch/meta3'))"
+Output: cartog-0.1.0.dist-info
+
+Name: cartog
+Version: 0.1.0
+License-Expression: MIT
+Project-URL: Homepage, https://github.com/rishi-0205/cartog
+Project-URL: Repository, https://github.com/rishi-0205/cartog
+Project-URL: Issues, https://github.com/rishi-0205/cartog/issues
+Keywords: code-graph,static-analysis,tree-sitter,scip,mermaid,code-visualization
+Classifier: Development Status :: 4 - Beta
+Classifier: Intended Audience :: Developers
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: 3.12
+Classifier: Programming Language :: Python :: 3.13
+Classifier: Topic :: Software Development :: Documentation
+Classifier: Topic :: Software Development :: Libraries :: Python Modules
+Requires-Python: >=3.11
+License-File: LICENSE
+
+License file in dist-info: licenses/LICENSE
+
+## Goldens unchanged by the mechanical fixes
+Command: venv\Scripts\python.exe scripts\golden.py --check
+click: 0 differences
+flask: 0 differences
+ky: 0 differences
+0 differences
+
+## Full suite after R1
+Command: venv\Scripts\python.exe -m pytest tests\ -q
+186 passed, 1 warning in 175.68s (0:02:55)
+
+## Test count
+Start of task: 184 passed. End of task: 186 passed (+2, the two R1 tests).

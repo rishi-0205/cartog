@@ -1,0 +1,26 @@
+﻿FF                                                                       [100%]
+================================== FAILURES ===================================
+______________________ test_pyproject_metadata_complete _______________________
+
+    def test_pyproject_metadata_complete() -> None:
+>       assert LICENSE.is_file(), "LICENSE is missing at the repository root"
+E       AssertionError: LICENSE is missing at the repository root
+E       assert False
+E        +  where False = is_file()
+E        +    where is_file = WindowsPath('C:/Users/rishi/OneDrive/Desktop/Dev/cartog/LICENSE').is_file
+
+tests\test_repo_hygiene.py:25: AssertionError
+____________________ test_ci_workflow_runs_tests_and_fetch ____________________
+
+    def test_ci_workflow_runs_tests_and_fetch() -> None:
+>       assert WORKFLOW.is_file(), f"missing CI workflow {WORKFLOW}"
+E       AssertionError: missing CI workflow C:\Users\rishi\OneDrive\Desktop\Dev\cartog\.github\workflows\ci.yml
+E       assert False
+E        +  where False = is_file()
+E        +    where is_file = WindowsPath('C:/Users/rishi/OneDrive/Desktop/Dev/cartog/.github/workflows/ci.yml').is_file
+
+tests\test_repo_hygiene.py:78: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_repo_hygiene.py::test_pyproject_metadata_complete - Asserti...
+FAILED tests/test_repo_hygiene.py::test_ci_workflow_runs_tests_and_fetch - As...
+2 failed in 0.10s
