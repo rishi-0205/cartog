@@ -302,7 +302,7 @@ At most three small tasks, or one large task, per session. Sessions marked **(ga
 - **Change log:**
   - 2026-11-15: Added `LICENSE` (MIT), switched `[project]` to PEP 639 (`license = "MIT"`, `license-files`, `setuptools>=77`), and added keywords, classifiers, three project URLs, and `ruff` to the dev extra. Added `[tool.ruff]` (`py311`, `line-length = 120`, select `E,F,I,UP,B`) with documented ignores (`E501`, `UP045`, `B008`) and test-only ignores; excluded generated protobuf, `tests/fixtures/`, and `docs/evidence/`. Fixed 104 findings mechanically and 13 by hand (unused loop variables, unused locals, `raise ... from`, `stacklevel`, `StrEnum`). Added `.github/workflows/ci.yml` (Python 3.11/3.13, editable dev install, fetch samples, `ruff check`, `pytest -q`). `ruff check .` clean; goldens `0 differences`; full suite 186 passed (+2).
 - **Lint debt:** 230 `E501` lines and 167 `UP045` annotations are deferred to R12/R11 and recorded in `docs/KNOWN_ISSUES.md`.
-  - 2026-11-15 (staging fix): the first commit omitted LICENSE, pyproject.toml and the CI workflow, so a fresh checkout would have failed the new tests. 1653772 adds exactly those files; the gap and the git ls-tree proof are recorded in docs/evidence/R1-staging-fix.txt.
+  - 2026-11-15 (staging fix): the first commit omitted `LICENSE`, `pyproject.toml` and the CI workflow, so a fresh checkout would have failed the new tests. `1653772` adds exactly those files; the gap and the `git ls-tree` proof are recorded in `docs/evidence/R1-staging-fix.txt`.
 
 ### R2: Remove absolute local paths
 
