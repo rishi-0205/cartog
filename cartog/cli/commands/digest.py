@@ -5,7 +5,6 @@ unchanged.
 """
 
 from pathlib import Path
-from typing import Optional
 
 import typer
 from rich.markdown import Markdown
@@ -19,11 +18,11 @@ from cartog.render.views import (
 @app.command("digest")
 def digest(
     path: str = typer.Argument(..., help="Path to project directory or graph.json."),
-    out: Optional[str] = typer.Option(None, "--out", help="Optional directory to save digest.md."),
+    out: str | None = typer.Option(None, "--out", help="Optional directory to save digest.md."),
     include_tests: bool = typer.Option(False, "--include-tests", help="Include test files in digest."),
     include_examples: bool = typer.Option(False, "--include-examples", help="Include example files in digest."),
     verbose: bool = typer.Option(False, "--verbose", "-V", help="Enable verbose logging."),
-):
+) -> None:
     """Generate a compact architectural digest (~2,000-4,000 tokens) for LLM prompts."""
     graph = _resolve_graph(path, out=out or "cartog-out")
     digest_text = generate_digest(graph, include_tests=include_tests, include_examples=include_examples)

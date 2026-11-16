@@ -4,7 +4,6 @@ Split out of cartog/cli.py in R11; every flag, help text and exit code is
 unchanged.
 """
 
-from typing import Optional
 
 import typer
 from rich.table import Table
@@ -24,18 +23,18 @@ from cartog.render.views import (
 def build(
     path: str = typer.Argument(..., help="Path to project directory."),
     out: str = typer.Option("cartog-out", "--out", help="Output directory."),
-    lang: Optional[str] = typer.Option(None, "--lang", help="Override language detection (e.g. py, js)."),
-    python: Optional[str] = typer.Option(None, "--python", help="Path to Python interpreter to use for Pyright indexing."),
-    max_file_size: Optional[float] = typer.Option(DEFAULT_MAX_FILE_SIZE_MB, "--max-file-size", help="Maximum file size in MB to parse (default: 1.0)."),
+    lang: str | None = typer.Option(None, "--lang", help="Override language detection (e.g. py, js)."),
+    python: str | None = typer.Option(None, "--python", help="Path to Python interpreter to use for Pyright indexing."),
+    max_file_size: float | None = typer.Option(DEFAULT_MAX_FILE_SIZE_MB, "--max-file-size", help="Maximum file size in MB to parse (default: 1.0)."),
     no_max_file_size: bool = typer.Option(False, "--no-max-file-size", help="Disable file size limit."),
     no_scip: bool = typer.Option(False, "--no-scip", help="Build graph without SCIP data."),
-    ignore: Optional[list[str]] = typer.Option(None, "--ignore", help="Additional ignore glob pattern (can be specified multiple times)."),
+    ignore: list[str] | None = typer.Option(None, "--ignore", help="Additional ignore glob pattern (can be specified multiple times)."),
     force: bool = typer.Option(False, "--force", "-f", help="Force rerun and bypass cache even if valid cache exists."),
     no_cache: bool = typer.Option(False, "--no-cache", help="Alias for --force: bypass cache and force rerun."),
     pretty: bool = typer.Option(False, "--pretty", help="Format graph.json with indentation (default is compact unindented JSON)."),
     emit_contains: bool = typer.Option(False, "--emit-contains", help="Emit redundant contains edges in graph.json (omitted by default in schema 2.0.0)."),
     verbose: bool = typer.Option(False, "--verbose", "-V", help="Enable verbose logging."),
-):
+) -> None:
     """Run Stage 3: Merge parse representations into graph.json."""
     force_rerun = force or no_cache
     target_path, out_dir, scan_result, parsed_files, _, _, _, _, manifest_facts = _execute_parse(

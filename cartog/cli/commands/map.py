@@ -5,7 +5,6 @@ unchanged.
 """
 
 from pathlib import Path
-from typing import Optional
 
 import typer
 
@@ -26,19 +25,19 @@ from cartog.render.views import (
 def map(
     path: str = typer.Argument(..., help="Path to project directory."),
     out: str = typer.Option("cartog-out", "--out", help="Output directory."),
-    lang: Optional[str] = typer.Option(None, "--lang", help="Override language detection."),
-    focus: Optional[str] = typer.Option(None, "--focus", help="Focus on specific subpath."),
+    lang: str | None = typer.Option(None, "--lang", help="Override language detection."),
+    focus: str | None = typer.Option(None, "--focus", help="Focus on specific subpath."),
     depth: int = typer.Option(3, "--depth", help="Folder depth for overview."),
     max_nodes: int = typer.Option(60, "--max-nodes", help="Maximum diagram nodes before collapsing."),
-    include: Optional[str] = typer.Option(None, "--include", help="Comma-separated categories to expand (e.g. tests,docs,examples,scripts)."),
+    include: str | None = typer.Option(None, "--include", help="Comma-separated categories to expand (e.g. tests,docs,examples,scripts)."),
     show_manifests: bool = typer.Option(False, "--show-manifests", help="Include manifest files (package.json, Dockerfile, etc.) in diagram views."),
-    python: Optional[str] = typer.Option(None, "--python", help="Path to Python interpreter to use for Pyright indexing."),
-    max_file_size: Optional[float] = typer.Option(DEFAULT_MAX_FILE_SIZE_MB, "--max-file-size", help="Maximum file size in MB to parse (default: 1.0)."),
+    python: str | None = typer.Option(None, "--python", help="Path to Python interpreter to use for Pyright indexing."),
+    max_file_size: float | None = typer.Option(DEFAULT_MAX_FILE_SIZE_MB, "--max-file-size", help="Maximum file size in MB to parse (default: 1.0)."),
     no_max_file_size: bool = typer.Option(False, "--no-max-file-size", help="Disable file size limit."),
     no_scip: bool = typer.Option(False, "--no-scip", help="Skip SCIP indexing."),
     include_heuristic: bool = typer.Option(False, "--include-heuristic", help="Include heuristic edges."),
     show_noise: bool = typer.Option(False, "--show-noise", help="Include noise files (re-export barrels, constants/type-only modules) in diagram views."),
-    ignore: Optional[list[str]] = typer.Option(None, "--ignore", help="Additional ignore glob pattern (can be specified multiple times)."),
+    ignore: list[str] | None = typer.Option(None, "--ignore", help="Additional ignore glob pattern (can be specified multiple times)."),
     force: bool = typer.Option(False, "--force", "-f", help="Force rerun and bypass cache even if valid cache exists."),
     no_cache: bool = typer.Option(False, "--no-cache", help="Alias for --force: bypass cache and force rerun."),
     pretty: bool = typer.Option(False, "--pretty", help="Format graph.json with indentation (default is compact unindented JSON)."),
@@ -46,9 +45,9 @@ def map(
     layout: str = typer.Option("dagre", "--layout", help="Mermaid layout engine ('dagre' or 'elk')."),
     show_references: bool = typer.Option(False, "--show-references", help="Show reference counts in overview diagram edge labels."),
     show_imports: bool = typer.Option(False, "--show-imports", help="Show import edges in diagram (hidden by default in function-level view)."),
-    level: Optional[str] = typer.Option(None, "--level", help="Diagram abstraction level: 'file' or 'function' (default: function if <= max_nodes, else file)."),
+    level: str | None = typer.Option(None, "--level", help="Diagram abstraction level: 'file' or 'function' (default: function if <= max_nodes, else file)."),
     verbose: bool = typer.Option(False, "--verbose", "-V", help="Enable verbose logging."),
-):
+) -> None:
     """Run full pipeline (parse -> build -> export) and produce Mermaid diagrams."""
     force_rerun = force or no_cache
     target_path, out_dir, scan_result, parsed_files, _, _, _, _, manifest_facts = _execute_parse(

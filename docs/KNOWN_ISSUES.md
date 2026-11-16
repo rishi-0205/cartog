@@ -136,17 +136,25 @@ All nine findings below were **reproduced on branch `docs/task-plan`** before th
 
 ---
 
-## Lint debt (deferred from R1)
+## Lint debt (deferred from R1, reviewed in R12)
 
-R1 turns on `ruff check .` (select `E,F,I,UP,B`) and the tree is clean. Four
-rule groups are explicitly ignored; they are debt, not fixes.
+R1 turned on `ruff check .` (select `E,F,I,UP,B`) and the tree is clean. One rule
+stays ignored on purpose; it is debt, not a fix.
 
 | Rule | Count | Why it is ignored | Owner |
 |---|---|---|---|
-| `E501` line-too-long | 230 | Reflowing 230 lines now would bury the E1 module moves in whitespace churn | R12 cleanup pass |
-| `UP045` `Optional[X]` | 167 | The PEP 604 conversion rewrites the same signatures the CLI split touches | R11 CLI split |
-| `E402` (tests) | 5 | `tests/test_interactive_view.py` imports after a mid-file section; harmless | R12 |
-| `F841`/`B023`/`B905` (tests) | 8 | Unused locals and `zip()` over parallel lists in diagnostic tests; fixing them risks changing test semantics | R12 |
+| `E501` line-too-long | 228 | Most hits are Typer `help=` strings, docstring examples and long assertions. Reflowing a help string changes `--help` output, which this epic keeps byte-identical; a blanket `ruff format` would also reflow code the evidence transcripts quote. | E2 (U1 rewrites the CLI surface) |
+| `B008` function-call-in-default | — | Typer commands must declare `typer.Option(...)`/`typer.Argument(...)` in the signature; this is the documented idiom, not a bug. | stays ignored by design |
+
+R12 cleared the rest:
+
+- `UP045` (`Optional[X]` → `X | None`): 165 annotations converted mechanically;
+  no runtime change because every module has `from __future__ import annotations`.
+- `E402`, `F841`, `B023`, `B905` in `tests/`: the mid-file imports moved to the
+  top, unused bindings removed (the calls they wrapped stay), the loop variable
+  in `find_calls` is bound as a default argument, and the two cache comparisons
+  now use `zip(..., strict=True)`. `[tool.ruff.lint.per-file-ignores]` no longer
+  exempts `tests/*.py`.
 
 
 ---

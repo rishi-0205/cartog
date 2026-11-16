@@ -3,11 +3,12 @@
 import ast
 import re
 from pathlib import Path
-from typing import Any, NamedTuple, Optional
+from typing import Any, NamedTuple
 
 import tree_sitter
 import tree_sitter_python
 
+from cartog.core.diagnostics import get_logger
 from cartog.parse.base import (
     ImportRecord,
     LanguageAdapter,
@@ -49,7 +50,7 @@ PATTERN_QUERY = """
 """
 
 
-def parse_route_decorator(dec_text: str) -> Optional[dict[str, Any]]:
+def parse_route_decorator(dec_text: str) -> dict[str, Any] | None:
     """Parse Flask or FastAPI route decorator to extract HTTP methods and URL path."""
     text = dec_text.lstrip("@").strip()
     route_match = re.search(r'\.(route|get|post|put|delete|patch)\s*\((.*)\)', text, re.DOTALL)
@@ -91,7 +92,7 @@ def parse_route_decorator(dec_text: str) -> Optional[dict[str, Any]]:
     }
 
 
-def parse_command_decorator(dec_text: str, default_name: str) -> Optional[dict[str, Any]]:
+def parse_command_decorator(dec_text: str, default_name: str) -> dict[str, Any] | None:
     """Parse Click command or group decorator to extract CLI command name and group status."""
     text = dec_text.lstrip("@").strip()
     is_group = ".group" in text or text.startswith("group")
@@ -121,6 +122,7 @@ def parse_command_decorator(dec_text: str, default_name: str) -> Optional[dict[s
 
 
 class ScopeEntry(NamedTuple):
+    """One lexical scope pushed while scanning Python source."""
     name: str
     end_byte: int
     is_class: bool
@@ -144,8 +146,8 @@ def get_enclosing_root(rel_path: str, roots: list[str]) -> str:
 
 def path_to_module_name(
     rel_path: str,
-    roots: Optional[list[str]] = None,
-    all_files: Optional[set[str]] = None,
+    roots: list[str] | None = None,
+    all_files: set[str] | None = None,
 ) -> str:
     """Convert a repo-relative path into a Python module name relative to its enclosing root and source folder."""
     p_str = rel_path.replace("\\", "/")
@@ -194,9 +196,11 @@ class PythonAdapter(LanguageAdapter):
         self._query_patterns = tree_sitter.Query(self._language, PATTERN_QUERY)
 
     def grammar_for(self, path: Path) -> tree_sitter.Language:
+        """Return the Python grammar."""
         return self._language
 
     def parse(self, source_bytes: bytes) -> tree_sitter.Tree:
+        """Parse Python source bytes into a tree-sitter tree."""
         return self._parser.parse(source_bytes)
 
     def extract_symbols(
@@ -239,7 +243,7 @@ class PythonAdapter(LanguageAdapter):
                 scope_stack.pop()
 
             # Immediate parent class for methods
-            parent_class: Optional[str] = None
+            parent_class: str | None = None
             if scope_stack and scope_stack[-1].is_class:
                 parent_class = scope_stack[-1].name
 
@@ -628,8 +632,7 @@ class PythonAdapter(LanguageAdapter):
                 break
 
         if matched:
-            import logging
-            logging.getLogger("cartog").warning(
+            get_logger().warning(
                 f"Import '{record.raw_text or record.specifier}' in '{from_file}' matches repo directory or file '{top_pkg}' but could not be resolved; treating as external."
             )
 

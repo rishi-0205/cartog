@@ -6,7 +6,6 @@ unchanged.
 
 import re
 from pathlib import Path
-from typing import Optional
 
 import typer
 from rich.table import Table
@@ -31,10 +30,10 @@ def flow(
     verbose: bool = typer.Option(False, "--verbose", "-V", help="Enable verbose logging."),
     include_tests: bool = typer.Option(False, "--include-tests", help="Include routes/functions from test files."),
     include_examples: bool = typer.Option(False, "--include-examples", help="Include routes/functions from example files."),
-    pick: Optional[str] = typer.Option(None, "--pick", help="Select candidate by 1-based index or name/path (e.g. --pick 2 or --pick blog.index)."),
+    pick: str | None = typer.Option(None, "--pick", help="Select candidate by 1-based index or name/path (e.g. --pick 2 or --pick blog.index)."),
     all_candidates: bool = typer.Option(False, "--all", help="Include all matched candidates."),
     max_nodes: int = typer.Option(60, "--max-nodes", help="Maximum diagram nodes."),
-):
+) -> None:
     """Trace call flow from entrypoints, routes, or functions across the codebase."""
     from cartog.render.export_mermaid import classify_path as _classify_path
     from cartog.render.views import find_flow_candidates

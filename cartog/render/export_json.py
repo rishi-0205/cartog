@@ -3,7 +3,7 @@
 import json
 from collections.abc import Sequence
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 from cartog.core.config import SCHEMA_VERSION
 from cartog.core.model import ManifestFacts
@@ -18,7 +18,7 @@ def write_parse_json(
     parsed_files: Sequence[ParseFileResult],
     skipped_files: Sequence[SkippedFile],
     out_file: str | Path,
-    manifests: Optional[ManifestFacts] = None,
+    manifests: ManifestFacts | None = None,
 ) -> dict[str, Any]:
     """Serialize Stage 1 tree-sitter parse results into parse.json deterministically."""
     out_path = Path(out_file)

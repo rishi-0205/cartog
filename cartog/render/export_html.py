@@ -6,7 +6,7 @@ dynamic compound expand/collapse, sidebar details, and vscode:// editor links.
 
 import json
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 from cartog.core.model import Edge, Graph, Node
 from cartog.render.views import ViewNode, build_universal_view_tree
@@ -24,9 +24,9 @@ def _load_asset(name: str) -> str:
 def convert_view_tree_to_cytoscape_elements(
     tree: ViewNode,
     graph: Graph,
-    flow_nodes: Optional[list[Node]] = None,
-    flow_edges: Optional[list[Edge]] = None,
-    stats: Optional[dict[str, int]] = None,
+    flow_nodes: list[Node] | None = None,
+    flow_edges: list[Edge] | None = None,
+    stats: dict[str, int] | None = None,
 ) -> list[dict[str, Any]]:
     """Convert Universal View Model hierarchy and semantic edges into Cytoscape element definitions.
 
@@ -41,7 +41,7 @@ def convert_view_tree_to_cytoscape_elements(
     flow_node_ids = {n.id for n in flow_nodes} if flow_nodes else None
     flow_edge_pairs = {(e.source, e.target) for e in flow_edges} if flow_edges else None
 
-    def _traverse(node: ViewNode, parent_id: Optional[str] = None):
+    def _traverse(node: ViewNode, parent_id: str | None = None):
         # In flow mode, if none of the descendants are in flow, skip
         if flow_node_ids is not None:
             descendant_ids = _collect_ids(node)
@@ -100,7 +100,7 @@ def convert_view_tree_to_cytoscape_elements(
             registered_node_ids.add(node.id)
 
     # Roll hidden endpoints up to their nearest visible ancestor (F3).
-    def _nearest_visible(nid: str) -> Optional[str]:
+    def _nearest_visible(nid: str) -> str | None:
         if nid in registered_node_ids:
             return nid
         node = graph.nodes.get(nid)
@@ -183,14 +183,14 @@ def convert_view_tree_to_cytoscape_elements(
 
 def generate_html_map(
     graph: Graph,
-    out_file: Optional[Path | str] = None,
+    out_file: Path | str | None = None,
     show_noise: bool = False,
     show_manifests: bool = False,
     max_nodes: int = 60,
-    flow_nodes: Optional[list[Node]] = None,
-    flow_edges: Optional[list[Edge]] = None,
+    flow_nodes: list[Node] | None = None,
+    flow_edges: list[Edge] | None = None,
     include_helpers: bool = True,
-    stats: Optional[dict[str, int]] = None,
+    stats: dict[str, int] | None = None,
 ) -> str:
     """Generate self-contained map.html with inlined Cytoscape stack, CSS, JS, and graph data."""
     rollup_stats: dict[str, int] = {} if stats is None else stats

@@ -1,7 +1,6 @@
 """Language adapter registry and source file parsing coordinator."""
 
 from pathlib import Path
-from typing import Optional
 
 from cartog.parse.base import LanguageAdapter, ParseFileResult
 from cartog.parse.js_adapter import JsAdapter
@@ -22,13 +21,13 @@ def _init_adapters():
         _ADAPTERS["typescript"] = js_adapter
 
 
-def get_adapter(name: str) -> Optional[LanguageAdapter]:
+def get_adapter(name: str) -> LanguageAdapter | None:
     """Retrieve an adapter by language name."""
     _init_adapters()
     return _ADAPTERS.get(name.lower())
 
 
-def get_adapter_for_path(path: str | Path) -> Optional[LanguageAdapter]:
+def get_adapter_for_path(path: str | Path) -> LanguageAdapter | None:
     """Retrieve the appropriate adapter for a file path based on its extension."""
     _init_adapters()
     p = Path(path)
@@ -40,7 +39,7 @@ def get_adapter_for_path(path: str | Path) -> Optional[LanguageAdapter]:
 
 
 def parse_source_file(
-    file_info: FileInfo, cache: Optional[ParseCache] = None
+    file_info: FileInfo, cache: ParseCache | None = None
 ) -> ParseFileResult:
     """Parse a source file with tree-sitter, using the cache when available."""
     adapter = get_adapter(file_info.language)

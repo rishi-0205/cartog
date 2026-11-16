@@ -5,7 +5,7 @@ Merges AST parsed files, symbols, and resolved imports into a unified Graph mode
 
 from collections import defaultdict
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 from cartog.core.model import SCHEMA_VERSION, Edge, Graph, ManifestFacts, Node, SourceRange, make_node_id
 from cartog.parse import get_adapter
@@ -14,11 +14,11 @@ from cartog.parse.python_adapter import get_enclosing_root, path_to_module_name
 
 
 def _pick_handler(
-    name: Optional[str],
+    name: str | None,
     dec_end_line: int,
     by_name_list: dict[str, list[Node]],
-    by_name: Optional[dict[str, Node]] = None,
-) -> Optional[Node]:
+    by_name: dict[str, Node] | None = None,
+) -> Node | None:
     """Pick the handler node closest to the route definition line.
 
     If candidates exist:
@@ -48,13 +48,13 @@ def _pick_handler(
 def build_graph(
     parsed_files: list[ParseFileResult],
     target_path: str = ".",
-    roots: Optional[list[str]] = None,
-    skipped_files: Optional[list[dict[str, Any]]] = None,
-    languages: Optional[list[str]] = None,
-    manifests: Optional[ManifestFacts] = None,
-    scip_result: Optional[Any] = None,
-    ignore_metrics: Optional[Any] = None,
-    ignored_paths: Optional[set[str]] = None,
+    roots: list[str] | None = None,
+    skipped_files: list[dict[str, Any]] | None = None,
+    languages: list[str] | None = None,
+    manifests: ManifestFacts | None = None,
+    scip_result: Any | None = None,
+    ignore_metrics: Any | None = None,
+    ignored_paths: set[str] | None = None,
     emit_contains_edges: bool = True,
 ) -> Graph:
     """Build a complete structural graph from parsed file results."""
@@ -439,7 +439,7 @@ def build_graph(
 
     # 4. Manifest processing (entrypoints, services, ci_jobs, dependencies)
     if manifests:
-        def _ensure_manifest_file(file_path: str) -> Optional[str]:
+        def _ensure_manifest_file(file_path: str) -> str | None:
             if ignored_paths and (file_path in ignored_paths):
                 return None
             fid = make_node_id("file", file_path, file_path)

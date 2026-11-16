@@ -2,7 +2,7 @@
 
 import json
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 from cartog import __version__ as CARTOG_VERSION
 
@@ -17,8 +17,8 @@ class ParseCache:
     def __init__(
         self,
         cache_dir: str | Path,
-        schema_version: Optional[str] = None,
-        ignore_hash: Optional[str] = None,
+        schema_version: str | None = None,
+        ignore_hash: str | None = None,
         force: bool = False,
     ):
         self.cache_dir = Path(cache_dir)
@@ -59,7 +59,7 @@ class ParseCache:
             except Exception:
                 pass
 
-    def get(self, file_sha1: str, adapter_version: str) -> Optional[dict[str, Any]]:
+    def get(self, file_sha1: str, adapter_version: str) -> dict[str, Any] | None:
         """Retrieve cached parse result for a file hash and adapter version."""
         if self.force:
             self.misses += 1

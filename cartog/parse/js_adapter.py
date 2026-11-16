@@ -3,7 +3,7 @@
 import os
 import re
 from pathlib import Path
-from typing import Any, NamedTuple, Optional
+from typing import Any, NamedTuple
 
 import tree_sitter
 import tree_sitter_javascript
@@ -30,6 +30,7 @@ CANDIDATE_INDEX_FILES = (
 
 
 class ScopeEntry(NamedTuple):
+    """One lexical scope pushed while scanning JavaScript/TypeScript source."""
     name: str
     end_byte: int
     is_class: bool
@@ -45,11 +46,6 @@ def clean_string_literal(text: str) -> str:
     if text.startswith("`") and text.endswith("`"):
         return text[1:-1]
     return text
-
-
-def load_json_with_comments(path: Path, project_context: Optional[Any] = None) -> Optional[dict[str, Any]]:
-    """Load JSON file tolerating single-line comments, block comments, and trailing commas."""
-    return load_jsonc_file(path, project_context=project_context)
 
 
 def get_enclosing_root(rel_path: str, roots: list[str]) -> str:
@@ -68,7 +64,7 @@ def get_enclosing_root(rel_path: str, roots: list[str]) -> str:
     return best_root
 
 
-def path_to_js_module_name(rel_path: str, roots: Optional[list[str]] = None) -> str:
+def path_to_js_module_name(rel_path: str, roots: list[str] | None = None) -> str:
     """Convert a repo-relative path into a JS/TS module name relative to its enclosing root and source folder."""
     p_str = rel_path.replace("\\", "/")
     roots_list = roots or ["."]
@@ -100,7 +96,7 @@ def path_to_js_module_name(rel_path: str, roots: Optional[list[str]] = None) -> 
     return ".".join(parts)
 
 
-def extract_nextjs_route_path(file_path: str) -> tuple[Optional[str], Optional[str]]:
+def extract_nextjs_route_path(file_path: str) -> tuple[str | None, str | None]:
     """Derive Next.js route URL and router kind ('app' or 'pages') from file path."""
     p_str = file_path.replace("\\", "/")
     parts = p_str.split("/")
@@ -147,10 +143,11 @@ class JsAdapter(LanguageAdapter):
         self._parser_tsx = tree_sitter.Parser(self._lang_tsx)
 
         # Caches for project configurations
-        self._tsconfig_cache: dict[str, Optional[dict[str, Any]]] = {}
-        self._workspaces_cache: Optional[dict[str, dict[str, str]]] = None
+        self._tsconfig_cache: dict[str, dict[str, Any] | None] = {}
+        self._workspaces_cache: dict[str, dict[str, str]] | None = None
 
     def grammar_for(self, path: Path) -> tree_sitter.Language:
+        """Return the JavaScript, TypeScript or TSX grammar matching the file suffix."""
         suffix = path.suffix.lower()
         if suffix == ".tsx":
             return self._lang_tsx
@@ -159,8 +156,9 @@ class JsAdapter(LanguageAdapter):
         return self._lang_js
 
     def parse(
-        self, source_bytes: bytes, path: Optional[Path | str] = None
+        self, source_bytes: bytes, path: Path | str | None = None
     ) -> tree_sitter.Tree:
+        """Parse source bytes with the grammar implied by ``path`` (default JavaScript)."""
         if path is not None:
             suffix = Path(path).suffix.lower()
             if suffix == ".tsx":
@@ -205,7 +203,7 @@ class JsAdapter(LanguageAdapter):
             )
             is_method = node.type == "method_definition"
             is_var_func = False
-            var_name: Optional[str] = None
+            var_name: str | None = None
 
             if node.type == "variable_declarator":
                 val = node.child_by_field_name("value")
@@ -226,7 +224,7 @@ class JsAdapter(LanguageAdapter):
                 )
 
                 # Determine immediate parent class
-                parent_class: Optional[str] = None
+                parent_class: str | None = None
                 if scope_stack and scope_stack[-1].is_class:
                     parent_class = scope_stack[-1].name
 
@@ -457,8 +455,8 @@ class JsAdapter(LanguageAdapter):
         return imports
 
     def _get_tsconfig(
-        self, root_dir: str, target_path: str = ".", project_context: Optional[ProjectContext] = None
-    ) -> Optional[dict[str, Any]]:
+        self, root_dir: str, target_path: str = ".", project_context: ProjectContext | None = None
+    ) -> dict[str, Any] | None:
         """Load and cache tsconfig.json or jsconfig.json for a given directory."""
         cache_key = f"{target_path}::{root_dir}"
         if cache_key in self._tsconfig_cache:
@@ -577,7 +575,7 @@ class JsAdapter(LanguageAdapter):
         return packages
 
     def _get_tsconfig_build_dirs(
-        self, pkg_dir: str, target_path: str = ".", project_context: Optional[ProjectContext] = None
+        self, pkg_dir: str, target_path: str = ".", project_context: ProjectContext | None = None
     ) -> list[tuple[str, str]]:
         """Return list of (outDir, rootDir) mappings from tsconfig files in pkg_dir."""
         target_p = Path(target_path) if target_path != "." else Path("")
@@ -603,12 +601,12 @@ class JsAdapter(LanguageAdapter):
     def _resolve_package_entry(
         self,
         pkg_name: str,
-        subpath: Optional[str],
+        subpath: str | None,
         pkg_info: dict[str, Any],
         all_files: set[str],
         target_path: str = ".",
-        project_context: Optional[ProjectContext] = None,
-    ) -> Optional[str]:
+        project_context: ProjectContext | None = None,
+    ) -> str | None:
         """Resolve a self-referencing package entrypoint or subpath to a repo source file."""
         pkg_dir = pkg_info.get("dir", ".")
         pkg_data = pkg_info.get("data", {})
@@ -743,7 +741,7 @@ class JsAdapter(LanguageAdapter):
 
     def _resolve_relative(
         self, specifier: str, from_file: str, all_files: set[str]
-    ) -> Optional[str]:
+    ) -> str | None:
         """Resolve a relative import specifier with JS/TS extension rewriting and index probing."""
         from_dir = Path(from_file).parent
         # Remove leading ./ for clean joining
@@ -751,7 +749,7 @@ class JsAdapter(LanguageAdapter):
         target_base = (from_dir / clean_spec)
 
         # Probing helper
-        def _probe(base_path: Path) -> Optional[str]:
+        def _probe(base_path: Path) -> str | None:
             # Normalize path relative to repo root
             # Normalize away .. and .
             try:
@@ -893,7 +891,7 @@ class JsAdapter(LanguageAdapter):
 
         return f"external:{top_pkg}"
 
-    def _probe_candidate(self, cand_base: Path, all_files: set[str]) -> Optional[str]:
+    def _probe_candidate(self, cand_base: Path, all_files: set[str]) -> str | None:
         """Probe a candidate file path with standard extensions and directory indexes."""
         try:
             norm = os.path.normpath(cand_base.as_posix()).replace("\\", "/")

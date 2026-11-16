@@ -5,7 +5,6 @@ unchanged.
 """
 
 from pathlib import Path
-from typing import Optional
 
 import typer
 
@@ -21,18 +20,18 @@ def view(
     path: str = typer.Argument(..., help="Path to project directory or graph.json."),
     out: str = typer.Option("cartog-out", "--out", help="Output directory for generated viewer."),
     no_open: bool = typer.Option(False, "--no-open", help="Do not automatically open browser."),
-    flow: Optional[str] = typer.Option(None, "--flow", help="Target symbol or route to trace in flow view."),
+    flow: str | None = typer.Option(None, "--flow", help="Target symbol or route to trace in flow view."),
     depth: int = typer.Option(3, "--depth", help="Maximum traversal depth for flow mode."),
     show_noise: bool = typer.Option(False, "--show-noise", help="Include noise files (e.g. typing, re-exports) in overview."),
     show_manifests: bool = typer.Option(False, "--show-manifests", help="Include manifest files (e.g. pyproject.toml, package.json)."),
     max_nodes: int = typer.Option(60, "--max-nodes", help="Max nodes budget for visualization."),
     include_tests: bool = typer.Option(False, "--include-tests", help="Include routes/functions from test files in flow mode."),
     include_examples: bool = typer.Option(False, "--include-examples", help="Include routes/functions from example files in flow mode."),
-    pick: Optional[str] = typer.Option(None, "--pick", help="Select candidate in flow mode."),
+    pick: str | None = typer.Option(None, "--pick", help="Select candidate in flow mode."),
     all_candidates: bool = typer.Option(False, "--all", help="Include all candidate matches in flow mode."),
     include_helpers: bool = typer.Option(True, "--include-helpers/--no-helpers", help="Include internal helper functions in interactive map."),
     verbose: bool = typer.Option(False, "--verbose", "-V", help="Enable verbose logging."),
-):
+) -> None:
     """Launch or export the interactive Cytoscape codebase architecture viewer."""
     from cartog.render.export_html import generate_html_map
     from cartog.render.export_mermaid import classify_path as _classify_path
@@ -46,7 +45,7 @@ def view(
         out_p.mkdir(parents=True, exist_ok=True)
         out_file = out_p / "map.html"
 
-    flow_nodes: Optional[list[Node]] = None
+    flow_nodes: list[Node] | None = None
     flow_edges = None
 
     if flow:

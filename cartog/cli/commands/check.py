@@ -5,7 +5,6 @@ unchanged.
 """
 
 from pathlib import Path
-from typing import Optional
 
 import typer
 from rich.table import Table
@@ -25,8 +24,8 @@ def check(
     out: str = typer.Option("cartog-out", "--out", help="Output directory containing graph.json."),
     no_scip: bool = typer.Option(False, "--no-scip", help="Opt out of requiring SCIP call graph resolution."),
     strict: bool = typer.Option(False, "--strict", help="Additionally fail on validation warnings and unexplained mismatches."),
-    ignore: Optional[list[str]] = typer.Option(None, "--ignore", help="Additional ignore glob pattern (can be specified multiple times)."),
-):
+    ignore: list[str] | None = typer.Option(None, "--ignore", help="Additional ignore glob pattern (can be specified multiple times)."),
+) -> None:
     """Validate graph integrity and report findings."""
     p = Path(path)
     if p.is_file() and p.suffix == ".json":
@@ -41,7 +40,7 @@ def check(
         raise typer.Exit(code=1)
 
     graph = Graph.load(graph_file)
-    target_repo_path: Optional[str] = None
+    target_repo_path: str | None = None
     if graph.meta.get("target_path") and Path(graph.meta["target_path"]).is_dir():
         target_repo_path = str(Path(graph.meta["target_path"]).resolve())
     elif p.is_dir() and not (p / "graph.json").is_file():

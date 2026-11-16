@@ -12,12 +12,13 @@ from collections import defaultdict, deque
 from dataclasses import dataclass, field
 from enum import StrEnum
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 from cartog.core.model import Edge, Graph, Node
 
 
 class NoiseCategory(StrEnum):
+    """Why a file was classified as architectural noise."""
     REEXPORT = "reexport"
     CONSTANTS_OR_TYPES = "constants_or_types"
 
@@ -30,6 +31,7 @@ class NoiseClassification:
     reason: str
 
     def to_dict(self) -> dict[str, Any]:
+        """Return the JSON form of the classification record."""
         return {
             "path": self.path,
             "category": self.category,
@@ -285,7 +287,7 @@ def _is_ts_js_constants_or_types(
 
 def detect_noise_files(
     graph: Graph,
-    target_path: Optional[str | Path] = None,
+    target_path: str | Path | None = None,
 ) -> dict[str, NoiseClassification]:
     """Detect architectural noise files in the graph using deterministic AST heuristics.
 
@@ -311,7 +313,7 @@ def detect_noise_files(
         symbols = nodes_by_file.get(rel_path, [])
 
         # Read source bytes if target_path is available on disk
-        source_bytes: Optional[bytes] = None
+        source_bytes: bytes | None = None
         if root_p:
             disk_file = root_p / rel_path
             if disk_file.is_file():
@@ -550,9 +552,9 @@ class CallCounts:
 
 def get_call_counts(
     graph: Graph,
-    excluded_categories: Optional[set[str]] = None,
-    node_to_scope: Optional[dict[str, str]] = None,
-    edges: Optional[list[Edge]] = None,
+    excluded_categories: set[str] | None = None,
+    node_to_scope: dict[str, str] | None = None,
+    edges: list[Edge] | None = None,
 ) -> CallCounts:
     """Single source of truth for computing and aggregating call counts across all view and digest presentations.
 
@@ -645,13 +647,14 @@ class ViewNode:
     id: str
     name: str
     kind: str  # "subsystem", "folder", "file", "class", "function", "method", "route", "command", "entrypoint", "helper_group"
-    path: Optional[str] = None
-    parent_id: Optional[str] = None
+    path: str | None = None
+    parent_id: str | None = None
     children: list[ViewNode] = field(default_factory=list)
     attrs: dict[str, Any] = field(default_factory=dict)
     visible: bool = True
 
     def to_dict(self) -> dict[str, Any]:
+        """Return the JSON form of this view node."""
         return {
             "id": self.id,
             "name": self.name,
@@ -664,6 +667,7 @@ class ViewNode:
         }
 
     def count_nodes(self) -> int:
+        """Count this node and every descendant."""
         return 1 + sum(c.count_nodes() for c in self.children)
 
 
@@ -886,7 +890,7 @@ def build_universal_view_tree(
     return root
 
 
-def _path_category(path: Optional[str]) -> str:
+def _path_category(path: str | None) -> str:
     """Inline path category check to avoid circular import with export_mermaid."""
     if not path:
         return "source"
@@ -1049,11 +1053,11 @@ def find_flow_candidates(
 
 def trace_call_flow(
     graph: Graph,
-    target: Optional[str] = None,
+    target: str | None = None,
     max_depth: int = 3,
     include_tests: bool = False,
     include_examples: bool = False,
-    starts: Optional[list[Node]] = None,
+    starts: list[Node] | None = None,
 ) -> tuple[list[Node], list[Edge]]:
     """Perform BFS call-flow tracing starting from entrypoints, routes, or named functions.
 

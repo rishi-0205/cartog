@@ -4,7 +4,6 @@ Split out of cartog/cli.py in R11; behaviour is unchanged.
 """
 
 from pathlib import Path
-from typing import Optional
 
 import typer
 from rich.console import Console
@@ -33,7 +32,8 @@ app = typer.Typer(
 console = Console()
 
 
-def version_callback(value: bool):
+def version_callback(value: bool) -> None:
+    """Print the version and exit when ``--version`` is passed."""
     if value:
         console.print(f"cartog, version {__version__}")
         raise typer.Exit()
@@ -41,7 +41,7 @@ def version_callback(value: bool):
 
 @app.callback()
 def main(
-    version: Optional[bool] = typer.Option(
+    version: bool | None = typer.Option(
         None,
         "--version",
         "-v",
@@ -49,7 +49,7 @@ def main(
         callback=version_callback,
         is_eager=True,
     ),
-):
+) -> None:
     """Cartog: Cartography for codebases."""
     pass
 
@@ -58,10 +58,10 @@ def main(
 def _execute_parse(
     path: str,
     out: str,
-    lang: Optional[str] = None,
-    max_file_size: Optional[float] = DEFAULT_MAX_FILE_SIZE_MB,
+    lang: str | None = None,
+    max_file_size: float | None = DEFAULT_MAX_FILE_SIZE_MB,
     no_max_file_size: bool = False,
-    ignore: Optional[list[str]] = None,
+    ignore: list[str] | None = None,
     force: bool = False,
     verbose: bool = False,
 ):
@@ -75,7 +75,7 @@ def _execute_parse(
     out_dir.mkdir(parents=True, exist_ok=True)
     cache_dir = out_dir / ".cartog"
 
-    max_bytes: Optional[int] = None if no_max_file_size else (int(max_file_size * 1024 * 1024) if max_file_size else None)
+    max_bytes: int | None = None if no_max_file_size else (int(max_file_size * 1024 * 1024) if max_file_size else None)
 
     target_langs = None
     if lang:
@@ -145,12 +145,12 @@ def _execute_parse(
 def _resolve_scip(
     target_path: Path,
     out_dir: Path,
-    lang: Optional[str] = None,
+    lang: str | None = None,
     no_scip: bool = False,
-    python_path: Optional[str] = None,
-    roots: Optional[list[str]] = None,
+    python_path: str | None = None,
+    roots: list[str] | None = None,
     verbose: bool = False,
-) -> Optional[ScipIndexResult]:
+) -> ScipIndexResult | None:
     """Resolve SCIP data via existing index.scip, or by executing external indexer with fallback."""
     if no_scip:
         return None
@@ -182,7 +182,7 @@ def _resolve_scip(
     return res
 
 
-def _format_scip_fail_line(error: Optional[str]) -> str:
+def _format_scip_fail_line(error: str | None) -> str:
     if not error:
         reason = "SCIP indexer did not run"
     else:

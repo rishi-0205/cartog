@@ -9,7 +9,7 @@ import hashlib
 import json
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 from cartog.core.config import SCHEMA_VERSION
 
@@ -23,10 +23,12 @@ class SourceRange:
     end_col: int
 
     def to_list(self) -> list[int]:
+        """Return the coordinates as ``[start_line, start_col, end_line, end_col]``."""
         return [self.start_line, self.start_col, self.end_line, self.end_col]
 
     @classmethod
     def from_list(cls, coords: list[int]) -> SourceRange:
+        """Build a range from four integers; raise ``ValueError`` for any other length."""
         if len(coords) != 4:
             raise ValueError(f"SourceRange requires 4 integers, got {coords}")
         return cls(start_line=coords[0], start_col=coords[1], end_line=coords[2], end_col=coords[3])
@@ -36,9 +38,10 @@ class SourceRange:
 class Location:
     """A file path and optional range in the repository."""
     path: str
-    range: Optional[SourceRange] = None
+    range: SourceRange | None = None
 
     def to_dict(self) -> dict[str, Any]:
+        """Return the JSON form of the location."""
         return {
             "path": self.path,
             "range": self.range.to_list() if self.range else None,
@@ -46,6 +49,7 @@ class Location:
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Location:
+        """Rebuild a location from its JSON form."""
         rng = SourceRange.from_list(data["range"]) if data.get("range") else None
         return cls(path=data["path"], range=rng)
 
@@ -60,6 +64,7 @@ class ManifestFacts:
     warnings: list[dict[str, str]] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, Any]:
+        """Return the manifest facts as they are written to graph.json."""
         return {
             "dependencies": self.dependencies,
             "entrypoints": self.entrypoints,
@@ -70,6 +75,7 @@ class ManifestFacts:
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> ManifestFacts:
+        """Rebuild manifest facts, defaulting every missing list to empty."""
         return cls(
             dependencies=data.get("dependencies", []),
             entrypoints=data.get("entrypoints", []),
@@ -79,7 +85,7 @@ class ManifestFacts:
         )
 
 
-def make_node_id(kind: str, path: Optional[str], qualified_name: str) -> str:
+def make_node_id(kind: str, path: str | None, qualified_name: str) -> str:
     """Generate a stable 10-char SHA-1 prefix node ID."""
     key = f"{kind}:{path or ''}:{qualified_name}"
     return hashlib.sha1(key.encode("utf-8")).hexdigest()[:10]
@@ -98,12 +104,12 @@ class Node:
     kind: str
     name: str
     qualified_name: str
-    path: Optional[str] = None
-    range: Optional[SourceRange] = None
-    language: Optional[str] = None
+    path: str | None = None
+    range: SourceRange | None = None
+    language: str | None = None
     root: str = "."
     attrs: dict[str, Any] = field(default_factory=dict)
-    parent: Optional[str] = None
+    parent: str | None = None
 
     @classmethod
     def create(
@@ -111,13 +117,14 @@ class Node:
         kind: str,
         name: str,
         qualified_name: str,
-        path: Optional[str] = None,
-        range: Optional[SourceRange] = None,
-        language: Optional[str] = None,
+        path: str | None = None,
+        range: SourceRange | None = None,
+        language: str | None = None,
         root: str = ".",
-        attrs: Optional[dict[str, Any]] = None,
-        parent: Optional[str] = None,
+        attrs: dict[str, Any] | None = None,
+        parent: str | None = None,
     ) -> Node:
+        """Build a node, deriving its id from kind, path and qualified name."""
         nid = make_node_id(kind, path, qualified_name)
         return cls(
             id=nid,
@@ -133,6 +140,7 @@ class Node:
         )
 
     def to_dict(self) -> dict[str, Any]:
+        """Return the JSON form of the node; omit ``parent`` when it is unset."""
         d: dict[str, Any] = {
             "id": self.id,
             "kind": self.kind,
@@ -150,6 +158,7 @@ class Node:
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Node:
+        """Rebuild a node from its JSON form."""
         rng = SourceRange.from_list(data["range"]) if data.get("range") else None
         return cls(
             id=data["id"],
@@ -174,14 +183,16 @@ class Edge:
     confidence: str
     count: int = 1
     evidence: list[str] = field(default_factory=list)
-    ref_kind: Optional[str] = None
+    ref_kind: str | None = None
     attrs: dict[str, Any] = field(default_factory=dict)
 
     @property
     def id(self) -> str:
+        """Derive the stable edge id from source, target and kind."""
         return make_edge_id(self.source, self.target, self.kind)
 
     def to_dict(self) -> dict[str, Any]:
+        """Return the JSON form of the edge, keeping at most three evidence refs."""
         d: dict[str, Any] = {
             "source": self.source,
             "target": self.target,
@@ -198,6 +209,7 @@ class Edge:
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Edge:
+        """Rebuild an edge from its JSON form."""
         return cls(
             source=data["source"],
             target=data["target"],
@@ -227,11 +239,13 @@ class Graph:
     _edge_index: dict[tuple[str, str, str], Edge] = field(default_factory=dict, repr=False, compare=False)
 
     def add_node(self, node: Node) -> None:
+        """Add a node, recording a duplicate-id collision when the id is already used."""
         if node.id in self.nodes:
             self.duplicate_node_ids.append(node.id)
         self.nodes[node.id] = node
 
-    def get_node(self, node_id: str) -> Optional[Node]:
+    def get_node(self, node_id: str) -> Node | None:
+        """Return the node with this id, or ``None`` when it is absent."""
         return self.nodes.get(node_id)
 
     def _ensure_edge_index(self) -> None:
@@ -244,6 +258,7 @@ class Graph:
         self._edge_index = index
 
     def add_edge(self, edge: Edge) -> None:
+        """Add an edge, merging count and evidence into an existing source/target/kind pair."""
         self._ensure_edge_index()
         key = (edge.source, edge.target, edge.kind)
         existing = self._edge_index.get(key)
@@ -262,6 +277,7 @@ class Graph:
         self._edge_index[key] = edge
 
     def compute_stats(self) -> dict[str, int]:
+        """Recount nodes and edges by kind and store the result on the graph."""
         stats: dict[str, int] = {}
         for n in self.nodes.values():
             key = f"nodes_{n.kind}"
@@ -278,6 +294,7 @@ class Graph:
         return stats
 
     def to_dict(self) -> dict[str, Any]:
+        """Return the stable JSON form, with nodes and edges in id/key order."""
         self.compute_stats()
         return {
             "schema_version": self.schema_version,
@@ -295,6 +312,7 @@ class Graph:
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Graph:
+        """Rebuild a graph from its JSON form, recording any duplicate node ids."""
         g = cls(
             schema_version=data.get("schema_version", SCHEMA_VERSION),
             meta=data.get("meta", {}),
@@ -316,13 +334,15 @@ class Graph:
             g._edge_index.setdefault((edge.source, edge.target, edge.kind), edge)
         return g
 
-    def to_json(self, indent: Optional[int] = None) -> str:
+    def to_json(self, indent: int | None = None) -> str:
+        """Serialise the graph compactly, or pretty-printed when ``indent`` is set."""
         d = self.to_dict()
         if indent is not None:
             return json.dumps(d, indent=indent)
         return json.dumps(d, separators=(",", ":"))
 
     def save(self, path: Path | str, pretty: bool = False) -> None:
+        """Write the graph to ``path``, pretty-printed when ``pretty`` is true."""
         p = Path(path)
         p.parent.mkdir(parents=True, exist_ok=True)
         indent = 2 if pretty else None
@@ -330,6 +350,7 @@ class Graph:
 
     @classmethod
     def load(cls, path: Path | str) -> Graph:
+        """Read a graph from a JSON file."""
         p = Path(path)
         data = json.loads(p.read_text(encoding="utf-8"))
         return cls.from_dict(data)

@@ -92,18 +92,17 @@ extend-exclude = [
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B"]
 ignore = [
-    # 230 lines are longer than 120 columns. Reflowing them now would bury the
-    # E1 module moves in whitespace churn; the cleanup pass (R12) reflows them.
+    # 228 lines are longer than 120 columns, mostly Typer help strings, docstring
+    # examples and long assertions. Reflowing a help string changes `--help`
+    # output, which is part of the CLI contract this epic keeps stable; the
+    # unified-command epic (E2) rewrites those strings anyway. Tracked in
+    # docs/KNOWN_ISSUES.md.
     "E501",
-    # 167 `Optional[X]` annotations. The conversion lands with the CLI split
-    # (R11), which rewrites those signatures anyway.
-    "UP045",
     # Typer commands must declare `typer.Option(...)`/`typer.Argument(...)` in
     # the function signature; this is the documented Typer idiom, not a bug.
     "B008",
 ]
 
 [tool.ruff.lint.per-file-ignores]
-# Test scaffolding: module-level imports after fixtures, unused locals kept for
-# readability, and `zip()` over parallel lists. Revisit in the R12 cleanup pass.
-"tests/*.py" = ["E402", "F841", "B023", "B905"]
+# Tests are linted like the package. Nothing is exempted here: if a test needs an
+# exemption, fix the test or record why in docs/KNOWN_ISSUES.md first.

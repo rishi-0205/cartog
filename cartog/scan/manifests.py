@@ -17,7 +17,7 @@ import re
 import sys
 import tomllib
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import pathspec
 
@@ -301,7 +301,7 @@ def parse_docker_compose(file_path: Path, rel_path: str, facts: ManifestFacts) -
     lines = content.splitlines()
     in_services = False
     services_indent = 0
-    current_svc: Optional[str] = None
+    current_svc: str | None = None
     current_data: dict[str, Any] = {}
     svc_indent = 0
 
@@ -369,8 +369,8 @@ def parse_github_workflow(file_path: Path, rel_path: str, facts: ManifestFacts) 
     workflow_name = file_path.stem
     in_jobs = False
     jobs_indent = 0
-    current_job_id: Optional[str] = None
-    current_job_name: Optional[str] = None
+    current_job_id: str | None = None
+    current_job_name: str | None = None
     job_indent = 0
 
     for line in lines:
@@ -431,8 +431,8 @@ def parse_github_workflow(file_path: Path, rel_path: str, facts: ManifestFacts) 
 
 def parse_manifests(
     target_dir: str | Path,
-    cli_ignores: Optional[list[str]] = None,
-    ignored_paths: Optional[set[str]] = None,
+    cli_ignores: list[str] | None = None,
+    ignored_paths: set[str] | None = None,
 ) -> ManifestFacts:
     """Discover and parse all manifest files in the target directory."""
     root_path = Path(target_dir).resolve()
@@ -521,7 +521,7 @@ def parse_manifests(
                 parse_github_workflow(file_path, rel_file, facts)
 
     # Deduplicate dependencies by (name.lower(), file, group)
-    seen_deps: set[tuple[str, str, Optional[str]]] = set()
+    seen_deps: set[tuple[str, str, str | None]] = set()
     unique_deps = []
     for dep in facts.dependencies:
         key = (dep["name"].lower(), dep.get("file", ""), dep.get("group"))

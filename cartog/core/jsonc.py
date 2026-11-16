@@ -13,7 +13,9 @@ Handles:
 import json
 import sys
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
+
+from cartog.core.diagnostics import warn
 
 
 class JsoncParseError(ValueError):
@@ -77,9 +79,8 @@ def strip_jsonc_comments_and_trailing_commas(text: str, filename: str = "<string
                         out.append("\n")  # Preserve newline count
                     i += 1
                 if not terminated:
-                    import warnings
                     msg = f"Unterminated block comment in '{filename}' starting at line {comment_start_line}"
-                    warnings.warn(msg, UserWarning, stacklevel=2)
+                    warn(msg, stacklevel=3)
                     raise JsoncParseError(msg)
             elif c == ",":
                 # Check for trailing comma before } or ]
@@ -116,8 +117,8 @@ def strip_jsonc_comments_and_trailing_commas(text: str, filename: str = "<string
 
 def load_jsonc_file(
     path: Path | str,
-    project_context: Optional[Any] = None,
-) -> Optional[dict[str, Any]]:
+    project_context: Any | None = None,
+) -> dict[str, Any] | None:
     """Load and parse a JSONC file (tsconfig.json, jsconfig.json) tolerating comments and trailing commas.
     
     Reads file using utf-8-sig encoding.
@@ -150,8 +151,8 @@ def load_jsonc_file(
 
 def load_strict_json_file(
     path: Path | str,
-    project_context: Optional[Any] = None,
-) -> Optional[dict[str, Any]]:
+    project_context: Any | None = None,
+) -> dict[str, Any] | None:
     """Load and parse strict JSON file (package.json) using standard json.loads and utf-8-sig.
     
     Never fails silently: on error, records a warning in project_context if provided,

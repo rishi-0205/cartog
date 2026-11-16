@@ -9,7 +9,7 @@ import subprocess
 import sys
 from collections import Counter, defaultdict
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 from cartog.core.model import Edge, Graph, Node
 from cartog.render.views import classify_boundary_functions, detect_noise_files, get_call_counts, rewire_view_edges
@@ -139,7 +139,7 @@ def _generate_function_level_overview(
     graph: Graph,
     direction: str = "TD",
     max_nodes: int = 60,
-    include: Optional[set[str] | list[str]] = None,
+    include: set[str] | list[str] | None = None,
     show_manifests: bool = False,
     show_noise: bool = False,
     layout: str = "dagre",
@@ -458,7 +458,7 @@ def generate_overview_mermaid(
     graph: Graph,
     direction: str = "TD",
     max_nodes: int = 60,
-    include: Optional[set[str] | list[str]] = None,
+    include: set[str] | list[str] | None = None,
     show_manifests: bool = False,
     show_noise: bool = False,
     layout: str = "dagre",
@@ -533,7 +533,7 @@ def generate_overview_mermaid(
                     root_files.append(f)
 
     # 4. Identify main source folder (highest priority to keep expanded)
-    main_source_folder: Optional[str] = None
+    main_source_folder: str | None = None
     if expanded_folder_to_files:
         src_candidates = [f for f in expanded_folder_to_files if f.startswith("src/")]
         if src_candidates:
@@ -942,8 +942,8 @@ def generate_flow_mermaid(
     edges: list[Edge],
     target_name: str,
     direction: str = "LR",
-    start_node_ids: Optional[list[str]] = None,
-    summary_info: Optional[dict[str, Any]] = None,
+    start_node_ids: list[str] | None = None,
+    summary_info: dict[str, Any] | None = None,
 ) -> str:
     """Generate a focused call-flow diagram tracing from starting symbols through callees.
 

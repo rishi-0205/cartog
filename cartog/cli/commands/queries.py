@@ -19,7 +19,7 @@ def callers_of(
     symbol: str = typer.Argument(..., help="Symbol name or substring to find callers for."),
     path: str = typer.Argument(".", help="Path to project directory or graph.json."),
     out: str = typer.Option("cartog-out", "--out", help="Output directory containing graph.json."),
-):
+) -> None:
     """Find all functions, methods, or entrypoints that call the specified symbol."""
     graph = _resolve_graph(path, out=out)
     sym_clean = symbol.strip().lower()
@@ -57,7 +57,7 @@ def callees_of(
     symbol: str = typer.Argument(..., help="Symbol name or substring to find callees for."),
     path: str = typer.Argument(".", help="Path to project directory or graph.json."),
     out: str = typer.Option("cartog-out", "--out", help="Output directory containing graph.json."),
-):
+) -> None:
     """Find all functions, methods, or external symbols called by the specified symbol."""
     graph = _resolve_graph(path, out=out)
     sym_clean = symbol.strip().lower()

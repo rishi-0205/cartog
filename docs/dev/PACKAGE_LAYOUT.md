@@ -18,6 +18,7 @@ cartog/
     model.py               Node, Edge, Graph, SourceRange, id helpers
     config.py              DEFAULT_MAX_FILE_SIZE_MB and friends
     jsonc.py               JSONC tokenizer + strict JSON loader
+    diagnostics.py         get_logger() / warn(): the one place logging and warnings enter
   scan/
     __init__.py            re-exports walk_files, hash_file, IgnoreMetrics, ...
     walk.py                file walking, root detection, ignore rules
@@ -99,6 +100,7 @@ real one. Rows are never deleted, so the document doubles as the migration log.
 | `(new)` | `cartog/graph/__init__.py` | R9 |
 | `(new)` | `cartog/render/__init__.py` | R10 |
 | `(new)` | `cartog/cli/shared.py` | R11 |
+| `(new)` | `cartog/core/diagnostics.py` | R12 |
 | `(new)` | `cartog/cli/commands/__init__.py` | R11 |
 | `(new)` | `cartog/cli/commands/doctor.py` | R11 |
 | `(new)` | `cartog/cli/commands/parse.py` | R11 |
@@ -134,6 +136,10 @@ Data files that ship in the wheel: `cartog/render/assets/*` (JS, CSS, TXT),
    the old names, so those two paths cannot have a separate shim file.
 5. A shim is never a place for logic. If a shim grows code, the code belongs in
    the new module.
+6. Diagnostics go through `cartog.core.diagnostics`: `get_logger()` for loggers
+   and `warn()` for `UserWarning`. No other module imports `logging` or
+   `warnings`, so the logger name (`cartog`) and the warning attribution stay
+   consistent. `tests/test_public_api_type_hints.py` enforces this.
 
 ## 4. Package-data risks
 

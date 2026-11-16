@@ -3,7 +3,7 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import tree_sitter
 
@@ -18,10 +18,11 @@ class SymbolRecord:
     start_col: int               # 0-based character offset
     end_line: int                # 1-based line
     end_col: int                 # 0-based character offset
-    parent: Optional[str] = None # Name of parent symbol (e.g. class name for methods)
+    parent: str | None = None # Name of parent symbol (e.g. class name for methods)
     attrs: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
+        """Return the JSON form of the symbol."""
         return {
             "kind": self.kind,
             "name": self.name,
@@ -45,6 +46,7 @@ class ImportRecord:
     is_type_only: bool = False
 
     def to_dict(self) -> dict[str, Any]:
+        """Return the JSON form of the import."""
         return {
             "specifier": self.specifier,
             "names": self.names,
@@ -69,6 +71,7 @@ class ParseFileResult:
     has_error: bool = False
 
     def to_dict(self) -> dict[str, Any]:
+        """Return the JSON form of the parse result."""
         return {
             "path": self.path,
             "language": self.language,

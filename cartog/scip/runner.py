@@ -2,7 +2,6 @@
 
 import hashlib
 import json
-import logging
 import os
 import re
 import shutil
@@ -10,14 +9,15 @@ import subprocess
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 from cartog.core.config import SCHEMA_VERSION
+from cartog.core.diagnostics import get_logger
 from cartog.core.model import SourceRange
 from cartog.parse.base import SymbolRecord
 from cartog.scip.scip_pb2 import Index
 
-logger = logging.getLogger("cartog")
+logger = get_logger()
 
 
 @dataclass
@@ -27,9 +27,10 @@ class ScipOccurrence:
     range: SourceRange
     is_definition: bool
     roles: int = 0
-    syntax_kind: Optional[str] = None
+    syntax_kind: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
+        """Return the JSON form of the occurrence."""
         return {
             "symbol": self.symbol,
             "range": self.range.to_list(),
@@ -48,6 +49,7 @@ class ScipDocument:
     references: list[ScipOccurrence] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, Any]:
+        """Return the JSON form of the document."""
         return {
             "relative_path": self.relative_path,
             "language": self.language,
@@ -67,6 +69,7 @@ class ScipRelationship:
     is_definition: bool = False
 
     def to_dict(self) -> dict[str, Any]:
+        """Return the JSON form of the relationship."""
         return {
             "symbol": self.symbol,
             "target_symbol": self.target_symbol,
@@ -81,16 +84,17 @@ class ScipRelationship:
 class ScipIndexResult:
     """Aggregated SCIP indexing and decoding result."""
     ran: bool
-    indexer: Optional[str] = None
+    indexer: str | None = None
     documents: list[ScipDocument] = field(default_factory=list)
-    error: Optional[str] = None
+    error: str | None = None
     definitions_by_symbol: dict[str, tuple[str, SourceRange]] = field(default_factory=dict)
     relationships: list[ScipRelationship] = field(default_factory=list)
-    interpreter_path: Optional[str] = None
-    python_version: Optional[str] = None
+    interpreter_path: str | None = None
+    python_version: str | None = None
     warnings: list[str] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, Any]:
+        """Return the JSON form of the decoded index result."""
         return {
             "schema_version": SCHEMA_VERSION,
             "meta": {
@@ -111,15 +115,15 @@ class ScipIndexResult:
 class CallEdgeCandidate:
     """Resolved call/reference/override candidate from caller to callee."""
     caller_path: str
-    caller_symbol: Optional[str]
+    caller_symbol: str | None
     callee_path: str
     callee_symbol: str
     evidence: list[str] = field(default_factory=list)
     count: int = 1
-    caller_qualified_name: Optional[str] = None
-    callee_qualified_name: Optional[str] = None
+    caller_qualified_name: str | None = None
+    callee_qualified_name: str | None = None
     kind: str = "calls"
-    ref_kind: Optional[str] = None
+    ref_kind: str | None = None
     confidence: str = "resolved"
 
 
@@ -138,7 +142,7 @@ def normalize_scip_range(raw_range: list[int]) -> SourceRange:
     return SourceRange(start_line=1, start_col=0, end_line=1, end_col=0)
 
 
-def decode_scip_index(scip_path: str | Path, target_path: Optional[str | Path] = None) -> ScipIndexResult:
+def decode_scip_index(scip_path: str | Path, target_path: str | Path | None = None) -> ScipIndexResult:
     """Read a binary index.scip file and extract structured documents, definitions, and references."""
     p = Path(scip_path)
     if not p.is_file():
@@ -160,7 +164,7 @@ def decode_scip_index(scip_path: str | Path, target_path: Optional[str | Path] =
         rel_path = doc.relative_path.replace("\\", "/")
         scip_doc = ScipDocument(relative_path=rel_path, language=doc.language)
 
-        doc_lines: Optional[list[str]] = None
+        doc_lines: list[str] | None = None
         if target_p:
             src_f = target_p / rel_path
             if src_f.is_file():
@@ -262,9 +266,9 @@ def decode_scip_index(scip_path: str | Path, target_path: Optional[str | Path] =
 
 def get_indexer_env(
     indexer_name: str,
-    target_p: Optional[Path] = None,
-    python_path: Optional[str] = None,
-    roots: Optional[list[str]] = None,
+    target_p: Path | None = None,
+    python_path: str | None = None,
+    roots: list[str] | None = None,
 ) -> dict[str, str]:
     """Return subprocess environment with Windows Node compatibility shims, interpreter on PATH, and PYTHONPATH."""
     env = os.environ.copy()
@@ -303,10 +307,10 @@ def run_scip_indexer(
     target_path: str | Path,
     out_dir: str | Path,
     language: str = "python",
-    project_name: Optional[str] = None,
+    project_name: str | None = None,
     timeout_sec: int = 120,
-    python_path: Optional[str] = None,
-    roots: Optional[list[str]] = None,
+    python_path: str | None = None,
+    roots: list[str] | None = None,
 ) -> ScipIndexResult:
     """Run external SCIP indexer with pre-checks, timeouts, and graceful error handling."""
     target_p = Path(target_path).resolve()
@@ -330,8 +334,8 @@ def run_scip_indexer(
         logger.warning(reason)
         return _fail(reason)
 
-    resolved_python: Optional[str] = None
-    python_version: Optional[str] = None
+    resolved_python: str | None = None
+    python_version: str | None = None
     if language == "python":
         if python_path:
             resolved_python = str(Path(python_path).resolve())
@@ -483,10 +487,10 @@ def run_scip_indexer(
 
 def find_enclosing_symbol(
     range_target: SourceRange, symbols: list[SymbolRecord]
-) -> Optional[SymbolRecord]:
+) -> SymbolRecord | None:
     """Find innermost function, method, or class enclosing the given range."""
-    best_match: Optional[SymbolRecord] = None
-    best_span: Optional[int] = None
+    best_match: SymbolRecord | None = None
+    best_span: int | None = None
 
     t_start = (range_target.start_line, range_target.start_col)
     t_end = (range_target.end_line, range_target.end_col)
@@ -504,7 +508,7 @@ def find_enclosing_symbol(
     return best_match
 
 
-def classify_occurrence(tree: Any, line: int, col: int, language: str = "python") -> tuple[str, Optional[str]]:
+def classify_occurrence(tree: Any, line: int, col: int, language: str = "python") -> tuple[str, str | None]:
     """Determine (edge_kind, ref_kind) for an AST occurrence at 1-based (line, col)."""
     if not tree:
         return ("calls", None)
@@ -560,13 +564,13 @@ def link_calls(
     scip_result: ScipIndexResult,
     symbols_by_file: dict[str, list[SymbolRecord]],
     target_path: str = ".",
-    roots: Optional[list[str]] = None,
+    roots: list[str] | None = None,
     language: str = "python",
-    ignored_paths: Optional[set[str]] = None,
-    ignore_metrics: Optional[Any] = None,
+    ignored_paths: set[str] | None = None,
+    ignore_metrics: Any | None = None,
 ) -> list[CallEdgeCandidate]:
     """Map reference occurrences to caller and callee functions, constructing CallEdgeCandidates."""
-    candidates_map: dict[tuple[str, Optional[str], str, Optional[str], str, Optional[str]], CallEdgeCandidate] = {}
+    candidates_map: dict[tuple[str, str | None, str, str | None, str, str | None], CallEdgeCandidate] = {}
 
     target_p = Path(target_path).resolve() if target_path != "." else Path("")
     resolved_roots = roots or ["."]
@@ -589,7 +593,7 @@ def link_calls(
     except Exception as e:
         logger.debug(f"Could not initialize tree-sitter parser: {e}")
 
-    def _get_tree(doc_path: str) -> Optional[Any]:
+    def _get_tree(doc_path: str) -> Any | None:
         if not parser:
             return None
         if doc_path not in trees:

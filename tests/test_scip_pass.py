@@ -371,8 +371,6 @@ def test_audit_scip_calls_and_relationships():
             # Find all nodes covering this line
             # Let's find if there is a call node on this line that calls the callee
             # Or find the node at the specific identifier
-            # Let's find the occurrence in scip for this line
-            occs_on_line = [o for o in doc_occs.get(fp, []) if o["range"][0] == row]
             
             # Check for decorator first
             if line_txt.startswith("@") or line_txt.startswith("def ") or line_txt.startswith("class "):
@@ -446,9 +444,8 @@ def test_audit_scip_calls_and_relationships():
                     continue
 
             # Check if there is a call expression on this line
-            has_call = False
             # Find all call nodes overlapping this line
-            def find_calls(n):
+            def find_calls(n, row=row):
                 res = []
                 if n.start_point.row <= row <= n.end_point.row:
                     if n.type == "call":

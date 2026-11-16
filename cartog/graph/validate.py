@@ -6,7 +6,7 @@ Validates node IDs, edge endpoints, self-loops, and structural consistency.
 from collections import defaultdict
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 from cartog.core.model import Edge, Graph
 
@@ -31,6 +31,7 @@ class MismatchRecord:
     evidence: list[str] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, Any]:
+        """Return the JSON form of the mismatch record."""
         return {
             "caller_file": self.caller_file,
             "callee_file": self.callee_file,
@@ -52,9 +53,11 @@ class CrossCheckResult:
 
     @property
     def is_clean(self) -> bool:
+        """Return True when no mismatch is left unexplained."""
         return len(self.unexplained_mismatches) == 0
 
     def to_dict(self) -> dict[str, Any]:
+        """Return the JSON form of the cross-check summary."""
         return {
             "total_cross_file_calls": self.total_cross_file_calls,
             "matched_calls": self.matched_calls,
@@ -157,7 +160,7 @@ def validate_graph(graph: Graph) -> ValidationResult:
 
     # 3. Edge validation
     valid_ref_kinds = {"decorator", "exception", "isinstance", "inheritance", "type", "callback", "other"}
-    seen_edge_keys: set[tuple[str, str, str, Optional[str]]] = set()
+    seen_edge_keys: set[tuple[str, str, str, str | None]] = set()
 
     for edge in graph.edges:
         if edge.source not in graph.nodes:
@@ -273,7 +276,7 @@ def validate_graph(graph: Graph) -> ValidationResult:
     return ValidationResult(is_valid=is_valid, errors=errors, warnings=warnings)
 
 
-def validate_ranges_and_containment(graph: Graph, target_path: Optional[str] = None) -> ValidationResult:
+def validate_ranges_and_containment(graph: Graph, target_path: str | None = None) -> ValidationResult:
     """Validate 1-based coordinate bounds, physical file lengths, caller bounds, and child containment."""
     errors: list[str] = []
     warnings: list[str] = []
@@ -281,7 +284,7 @@ def validate_ranges_and_containment(graph: Graph, target_path: Optional[str] = N
     # Cache for physical file line counts
     file_line_counts: dict[str, int] = {}
 
-    def _get_line_count(rel_path: str) -> Optional[int]:
+    def _get_line_count(rel_path: str) -> int | None:
         if rel_path in file_line_counts:
             return file_line_counts[rel_path]
         candidates = []
@@ -375,7 +378,7 @@ def validate_ranges_and_containment(graph: Graph, target_path: Optional[str] = N
     return ValidationResult(is_valid=is_valid, errors=errors, warnings=warnings)
 
 
-def cross_check_imports_and_calls(graph: Graph, target_path: Optional[str] = None) -> CrossCheckResult:
+def cross_check_imports_and_calls(graph: Graph, target_path: str | None = None) -> CrossCheckResult:
     """Cross-reference tree-sitter imports against SCIP call references and categorize mismatches."""
     # 1. Map direct import edges between files
     direct_imports: set[tuple[str, str]] = set()

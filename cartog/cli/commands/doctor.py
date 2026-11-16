@@ -14,7 +14,7 @@ from cartog.cli.shared import app, console
 
 
 @app.command()
-def doctor():
+def doctor() -> None:
     """Check the local environment for required and optional tools."""
     console.print("\n[bold cyan]Cartog Doctor: Environment & Tool Diagnostics[/bold cyan]\n")
 

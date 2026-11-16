@@ -5,7 +5,6 @@ unchanged.
 """
 
 from pathlib import Path
-from typing import Optional
 
 import typer
 from rich.table import Table
@@ -17,11 +16,11 @@ from cartog.cli.shared import _format_scip_fail_line, _resolve_scip, app, consol
 def scip(
     path: str = typer.Argument(..., help="Path to project directory or index.scip file."),
     out: str = typer.Option("cartog-out", "--out", help="Output directory."),
-    lang: Optional[str] = typer.Option(None, "--lang", help="Override language detection (e.g. py, js, ts)."),
-    python: Optional[str] = typer.Option(None, "--python", help="Path to Python interpreter to use for Pyright indexing."),
-    ignore: Optional[list[str]] = typer.Option(None, "--ignore", help="Additional ignore glob pattern (can be specified multiple times)."),
+    lang: str | None = typer.Option(None, "--lang", help="Override language detection (e.g. py, js, ts)."),
+    python: str | None = typer.Option(None, "--python", help="Path to Python interpreter to use for Pyright indexing."),
+    ignore: list[str] | None = typer.Option(None, "--ignore", help="Additional ignore glob pattern (can be specified multiple times)."),
     verbose: bool = typer.Option(False, "--verbose", "-V", help="Enable verbose logging."),
-):
+) -> None:
     """Run Stage 2: SCIP indexer execution and decoding into scip.json."""
     target_path = Path(path).resolve()
     if not target_path.exists():
