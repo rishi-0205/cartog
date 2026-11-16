@@ -9,7 +9,7 @@ import cartog
 def test_view_assets_packaged_and_loadable():
     """Verify that all required offline Cytoscape assets exist, are non-empty, and are declared in pyproject.toml."""
     cartog_pkg_dir = Path(cartog.__file__).parent
-    assets_dir = cartog_pkg_dir / "view_assets"
+    assets_dir = cartog_pkg_dir / "render" / "assets"
     
     assert assets_dir.is_dir(), f"view_assets directory not found at {assets_dir}"
     
@@ -39,7 +39,7 @@ def test_view_assets_packaged_and_loadable():
         pyproject_data = tomllib.load(f)
     
     pkg_data = pyproject_data.get("tool", {}).get("setuptools", {}).get("package-data", {}).get("cartog", [])
-    assert any("view_assets" in p for p in pkg_data), f"pyproject.toml package-data for cartog must include view_assets/*, found: {pkg_data}"
+    assert any("render/assets" in p for p in pkg_data), f"pyproject.toml package-data for cartog must include render/assets/*, found: {pkg_data}"
 
 
 

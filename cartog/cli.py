@@ -15,13 +15,6 @@ from rich.table import Table
 from cartog import __version__
 from cartog.core.config import DEFAULT_MAX_FILE_SIZE_MB
 from cartog.core.model import Graph, Node
-from cartog.export_json import write_parse_json
-from cartog.export_mermaid import (
-    generate_flow_mermaid,
-    generate_folder_mermaid,
-    generate_overview_mermaid,
-    render_mermaid,
-)
 from cartog.graph.merge import build_graph
 from cartog.graph.validate import (
     cross_check_imports_and_calls,
@@ -29,6 +22,18 @@ from cartog.graph.validate import (
     validate_ranges_and_containment,
 )
 from cartog.parse import parse_source_file
+from cartog.render.export_json import write_parse_json
+from cartog.render.export_mermaid import (
+    generate_flow_mermaid,
+    generate_folder_mermaid,
+    generate_overview_mermaid,
+    render_mermaid,
+)
+from cartog.render.views import (
+    detect_noise_files,
+    generate_digest,
+    trace_call_flow,
+)
 from cartog.scan import walk_files
 from cartog.scan.cache import ParseCache
 from cartog.scan.manifests import parse_manifests
@@ -37,11 +42,6 @@ from cartog.scip.runner import (
     decode_scip_index,
     run_scip_indexer,
     write_scip_json,
-)
-from cartog.views import (
-    detect_noise_files,
-    generate_digest,
-    trace_call_flow,
 )
 
 app = typer.Typer(
@@ -943,8 +943,8 @@ def flow(
     max_nodes: int = typer.Option(60, "--max-nodes", help="Maximum diagram nodes."),
 ):
     """Trace call flow from entrypoints, routes, or functions across the codebase."""
-    from cartog.export_mermaid import classify_path as _classify_path
-    from cartog.views import find_flow_candidates
+    from cartog.render.export_mermaid import classify_path as _classify_path
+    from cartog.render.views import find_flow_candidates
 
     graph = _resolve_graph(path, out=out)
     scoped_cands, excluded_cands = find_flow_candidates(
@@ -1150,9 +1150,9 @@ def view(
     verbose: bool = typer.Option(False, "--verbose", "-V", help="Enable verbose logging."),
 ):
     """Launch or export the interactive Cytoscape codebase architecture viewer."""
-    from cartog.export_html import generate_html_map
-    from cartog.export_mermaid import classify_path as _classify_path
-    from cartog.views import find_flow_candidates
+    from cartog.render.export_html import generate_html_map
+    from cartog.render.export_mermaid import classify_path as _classify_path
+    from cartog.render.views import find_flow_candidates
 
     graph = _resolve_graph(path, out=out)
     out_p = Path(out)

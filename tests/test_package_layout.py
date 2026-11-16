@@ -108,6 +108,10 @@ COMPLETED_MOVES: dict[str, str] = {
     "cartog.scip_pb2": "cartog.scip.scip_pb2",
     "cartog.merge": "cartog.graph.merge",
     "cartog.validate": "cartog.graph.validate",
+    "cartog.views": "cartog.render.views",
+    "cartog.export_json": "cartog.render.export_json",
+    "cartog.export_mermaid": "cartog.render.export_mermaid",
+    "cartog.export_html": "cartog.render.export_html",
 }
 
 
