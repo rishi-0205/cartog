@@ -115,6 +115,49 @@ COMPLETED_MOVES: dict[str, str] = {
 }
 
 
+def test_cli_package_layout() -> None:
+    """R11: the CLI is a package with shared helpers and one module per command."""
+    import importlib
+
+    import typer.main
+
+    shared = importlib.import_module("cartog.cli.shared")
+    cli = importlib.import_module("cartog.cli")
+
+    assert isinstance(shared.app, typer.Typer), "cartog.cli.shared must own the Typer app"
+    assert cli.app is shared.app, "cartog.cli must re-export the same app object"
+    assert callable(shared._resolve_graph), "helpers live in cartog.cli.shared"
+
+    for name in (
+        "doctor",
+        "parse",
+        "scip",
+        "build",
+        "map",
+        "check",
+        "flow",
+        "digest",
+        "view",
+        "queries",
+    ):
+        assert importlib.import_module(f"cartog.cli.commands.{name}"), f"missing command module {name}"
+
+    command = typer.main.get_command(cli.app)
+    assert sorted(command.commands) == [
+        "build",
+        "check",
+        "digest",
+        "doctor",
+        "flow",
+        "map",
+        "parse",
+        "query",
+        "scip",
+        "view",
+    ], f"CLI surface changed: {sorted(command.commands)}"
+    assert sorted(command.commands["query"].commands) == ["callees-of", "callers-of"]
+
+
 def test_public_imports_after_move() -> None:
     import importlib
     import types

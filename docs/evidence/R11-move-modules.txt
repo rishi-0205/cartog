@@ -1,0 +1,165 @@
+# R11 evidence - split the CLI into modules
+Date: 2026-11-16
+Branch: refactor/package-structure
+
+## Before: goldens
+Command: venv\Scripts\python.exe scripts\golden.py --check
+click: 0 differences
+flask: 0 differences
+ky: 0 differences
+0 differences
+
+## Red: the layout test fails while cartog.cli is still a single module
+Command: venv\Scripts\python.exe -m pytest tests\test_package_layout.py -q
+.F.                                                                      [100%]
+================================== FAILURES ===================================
+___________________________ test_cli_package_layout ___________________________
+
+    def test_cli_package_layout() -> None:
+        """R11: the CLI is a package with shared helpers and one module per command."""
+        import importlib
+    
+        import typer.main
+    
+>       shared = importlib.import_module("cartog.cli.shared")
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_package_layout.py:124: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+C:\Python313\Lib\importlib\__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+<frozen importlib._bootstrap>:1387: in _gcd_import
+    ???
+<frozen importlib._bootstrap>:1360: in _find_and_load
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+name = 'cartog.cli.shared'
+import_ = <function _gcd_import at 0x00000233F97D04A0>
+
+>   ???
+E   ModuleNotFoundError: No module named 'cartog.cli.shared'; 'cartog.cli' is not a package
+
+<frozen importlib._bootstrap>:1319: ModuleNotFoundError
+=========================== short test summary info ===========================
+FAILED tests/test_package_layout.py::test_cli_package_layout - ModuleNotFound...
+1 failed, 2 passed in 0.49s
+
+## Split
+git mv cartog/cli.py cartog/cli/__init__.py, then the body moved out:
+- cartog/cli/shared.py: app, console, version_callback, main callback, _execute_parse,
+  _resolve_scip, _format_scip_fail_line, _resolve_graph
+- cartog/cli/commands/{doctor,parse,scip,build,map,check,flow,digest,view,queries}.py:
+  one module per command; queries.py owns the query sub-app and callers-of/callees-of
+- cartog/cli/__init__.py: re-exports app, console and the helpers, then imports the
+  command modules for their registration side effects
+The console entry point stays cartog.cli:app (verified in the built entry_points.txt).
+
+## Behaviour fixes found by the suite
+Two tests patched cartog.cli._resolve_scip. The command modules now bind that helper in
+their own namespace, so the patches targeted attributes nothing reads. The tests patch
+cartog.cli.commands.scip._resolve_scip and cartog.cli.shared._resolve_scip instead; every
+assertion and expected output is unchanged.
+
+## Green
+Command: venv\Scripts\python.exe -m pytest tests\test_cli.py tests\test_package_layout.py -q
+19 passed in 68.91s
+
+The CLI surface check (test_cli_package_layout) compares the registered command names:
+build, check, digest, doctor, flow, map, parse, query, scip, view; query exposes
+callees-of and callers-of — identical to the pre-split app.
+
+## After: goldens
+Command: venv\Scripts\python.exe scripts\golden.py --check
+click: 0 differences
+flask: 0 differences
+ky: 0 differences
+0 differences
+
+## Lint
+Command: venv\Scripts\python.exe -m ruff check .
+All checks passed!
+
+## Full suite
+Command: venv\Scripts\python.exe -m pytest tests\ -q
+189 passed, 1 warning in 174.55s (0:02:54)
+
+## Wheel contents
+Command: Remove-Item -Recurse -Force build, cartog.egg-info; python -m pip wheel . -w .scratch/wheel --no-deps
+wheel: .scratch/wheel\cartog-0.1.0-py3-none-any.whl files: 70
+cartog-0.1.0.dist-info/entry_points.txt
+cartog-0.1.0.dist-info/top_level.txt
+cartog/__init__.py
+cartog/__main__.py
+cartog/cache.py
+cartog/cli/__init__.py
+cartog/cli/commands/__init__.py
+cartog/cli/commands/build.py
+cartog/cli/commands/check.py
+cartog/cli/commands/digest.py
+cartog/cli/commands/doctor.py
+cartog/cli/commands/flow.py
+cartog/cli/commands/map.py
+cartog/cli/commands/parse.py
+cartog/cli/commands/queries.py
+cartog/cli/commands/scip.py
+cartog/cli/commands/view.py
+cartog/cli/shared.py
+cartog/config.py
+cartog/core/__init__.py
+cartog/core/config.py
+cartog/core/jsonc.py
+cartog/core/model.py
+cartog/export_html.py
+cartog/export_json.py
+cartog/export_mermaid.py
+cartog/graph/__init__.py
+cartog/graph/merge.py
+cartog/graph/validate.py
+cartog/jsonc.py
+cartog/langs/__init__.py
+cartog/langs/base.py
+cartog/langs/js_adapter.py
+cartog/langs/python_adapter.py
+cartog/manifests.py
+cartog/merge.py
+cartog/model.py
+cartog/parse/__init__.py
+cartog/parse/base.py
+cartog/parse/js_adapter.py
+cartog/parse/python_adapter.py
+cartog/render/__init__.py
+cartog/render/assets/VENDOR_LICENSES.txt
+cartog/render/assets/cose-base.js
+cartog/render/assets/cytoscape-expand-collapse.js
+cartog/render/assets/cytoscape-fcose.js
+cartog/render/assets/cytoscape.min.js
+cartog/render/assets/layout-base.js
+cartog/render/assets/viewer.css
+cartog/render/assets/viewer.js
+cartog/render/export_html.py
+cartog/render/export_json.py
+cartog/render/export_mermaid.py
+cartog/render/views.py
+cartog/scan/__init__.py
+cartog/scan/cache.py
+cartog/scan/manifests.py
+cartog/scan/walk.py
+cartog/scip/__init__.py
+cartog/scip/runner.py
+cartog/scip/scip_pb2.py
+cartog/scip/windows_shim.js
+cartog/scip_pass.py
+cartog/scip_pb2.py
+cartog/validate.py
+cartog/views.py
+
+## Manual smoke check
+Command: venv\Scripts\python.exe -m cartog --help
+Shows the same usage, --version/-v option, and the ten commands; doctor still exits 1 on a
+machine without the SCIP toolchain, as before.
+
+## Test count
+Start of task: 188 passed. End of task: 189 passed (+1, test_cli_package_layout).
+The two monkeypatch targets changed; no assertion or expected output changed.

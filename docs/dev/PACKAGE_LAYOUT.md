@@ -46,8 +46,8 @@ cartog/
     export_html.py
     assets/                viewer.css, viewer.js, Cytoscape stack, licences
   cli/
-    __init__.py            Typer app object (console entry point)
-    shared.py              console, _execute_parse, _resolve_graph, _resolve_scip
+    __init__.py            re-exports app and the helpers (console entry point)
+    shared.py              Typer app, console, _execute_parse, _resolve_graph, _resolve_scip
     commands/
       __init__.py
       doctor.py
