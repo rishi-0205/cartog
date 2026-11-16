@@ -18,7 +18,7 @@ The roadmap narrative is [`docs/IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.m
 | R3 | Move agent-process docs to docs/dev/ | E1 | `refactor/package-structure` | R0 | S | E1-S1 | DONE | d303f32 |
 | R4 | Package layout design | E1 | `refactor/package-structure` | R0 | S | E1-S3 | DONE | 4b51925 |
 | R5 | Move core modules | E1 | `refactor/package-structure` | R4 | M | E1-S4 | DONE | 6d30909 |
-| R6 | Move scanning | E1 | `refactor/package-structure` | R5 | M | E1-S5 | TODO | — |
+| R6 | Move scanning | E1 | `refactor/package-structure` | R5 | M | E1-S5 | DONE | 5c9b70f |
 | R7 | Move language adapters | E1 | `refactor/package-structure` | R5 | M | E1-S6 | TODO | — |
 | R8 | Move SCIP code | E1 | `refactor/package-structure` | R7 | M | E1-S7 | TODO | — |
 | R9 | Move graph build and validate | E1 | `refactor/package-structure` | R6, R7 | M | E1-S8 | TODO | — |
@@ -76,7 +76,7 @@ The roadmap narrative is [`docs/IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.m
 | epic | branch | depends on | tasks done / total | status | accepted by author |
 |---|---|---|---|---|---|
 | E0 | `fix/baseline-correctness` | — | 5 / 5 | ACCEPTED | 2026-11-15 |
-| E1 | `refactor/package-structure` | E0 | 6 / 13 | IN PROGRESS | no |
+| E1 | `refactor/package-structure` | E0 | 7 / 13 | IN PROGRESS | no |
 | E2 | `feature/unified-command-and-output` | E1 | 0 / 6 | NOT STARTED | no |
 | E3 | `feature/security-baseline` | E2 | 0 / 9 | NOT STARTED | no |
 | E4 | `feature/verification` | E2 | 0 / 5 | NOT STARTED | no |
@@ -414,10 +414,11 @@ At most three small tasks, or one large task, per session. Sessions marked **(ga
 - **User check (epic review):** `python scripts/golden.py --check` → `0 differences`; `pytest -q`.
 - **Evidence files:** `docs/evidence/R6-move-modules.txt`
 - **Planned commit message:** `R6: move move scanning`
-- **Status:** TODO
-- **Commit hash:** —
-- **Failure log:** —
-- **Change log:** —
+- **Status:** DONE
+- **Commit hash:** `5c9b70f`
+- **Failure log:** After the move the layout guard failed on `cartog/scan.py` as "stale" — correct, because the mapping's first column is the R4 path and it is historical after a move. The guard now requires at least one side of a row to exist; the document states this. The first wheel still contained `cartog/scan.py` from the stale `build/` tree, so wheels are now built after deleting `build/` and `cartog.egg-info`.
+- **Change log:**
+  - 2026-11-16: `scan.py` → `scan/walk.py`, `cache.py` → `scan/cache.py`, `manifests.py` → `scan/manifests.py`; `cartog/scan/__init__.py` is the facade. `__all__` added to all three so `test_public_imports_after_move` compares a declared API. Goldens `0 differences` before and after, ruff clean, suite 188, wheel 43 files with no stale `scan.py`.
 
 ### R7: Move language adapters
 
