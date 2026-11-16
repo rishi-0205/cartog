@@ -27,7 +27,7 @@ from cartog.parse import parse_source_file
 from cartog.scan import walk_files
 from cartog.scan.cache import ParseCache
 from cartog.scan.manifests import parse_manifests
-from cartog.scip_pass import (
+from cartog.scip.runner import (
     ScipIndexResult,
     decode_scip_index,
     run_scip_indexer,
@@ -148,7 +148,7 @@ def doctor():
 
     # 4. SCIP protobuf bindings
     try:
-        from cartog import scip_pb2  # noqa: F401  (the import itself is the probe)
+        from cartog.scip import scip_pb2  # noqa: F401  (the import itself is the probe)
         table.add_row("scip_pb2 bindings", "[green]PASS[/green]", "Bindings loaded", "-")
     except ImportError:
         table.add_row(
@@ -175,7 +175,7 @@ def doctor():
     scip_py_path = shutil.which("scip-python")
     if scip_py_path:
         try:
-            from cartog.scip_pass import get_indexer_env
+            from cartog.scip.runner import get_indexer_env
             env = get_indexer_env("scip-python")
             res = subprocess.run(["scip-python", "--version"], capture_output=True, text=True, timeout=5, shell=is_win, env=env)
             if res.returncode == 0:

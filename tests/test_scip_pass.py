@@ -524,7 +524,7 @@ def test_diagnose_python_and_scip_env():
         print(f"  text_document_encoding: {meta.text_document_encoding}")
 
     # 3. Check scip-python index --help using the Node shim
-    shim_path = (Path("cartog/scip_windows_shim.js")).resolve()
+    shim_path = (Path("cartog/scip/windows_shim.js")).resolve()
     env = os.environ.copy()
     env["NODE_OPTIONS"] = f'-r "{shim_path.as_posix()}"'
     try:

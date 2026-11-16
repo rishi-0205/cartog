@@ -359,14 +359,14 @@ def test_symbol_mapping_no_flat_name_collisions():
         relationships=[],
     )
 
-    # Monkeypatch link_calls in cartog.scip_pass to return our candidate
-    import cartog.scip_pass as scip_pass_mod
-    orig_link = scip_pass_mod.link_calls
+    # Monkeypatch link_calls where merge imports it: cartog.scip.runner
+    import cartog.scip.runner as scip_runner_mod
+    orig_link = scip_runner_mod.link_calls
     try:
-        scip_pass_mod.link_calls = lambda *args, **kwargs: [cand]
+        scip_runner_mod.link_calls = lambda *args, **kwargs: [cand]
         graph = build_graph([parsed_app, parsed_core], target_path=".", scip_result=scip_res)
     finally:
-        scip_pass_mod.link_calls = orig_link
+        scip_runner_mod.link_calls = orig_link
 
     call_edges = [e for e in graph.edges if e.kind == "calls"]
     assert len(call_edges) == 1

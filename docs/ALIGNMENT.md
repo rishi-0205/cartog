@@ -46,10 +46,10 @@
 
 | Deliverable | Status | Evidence |
 |---|---|---|
-| scip.proto + cartog/scip_pb2.py bindings | DONE | cartog/scip_pb2.py (16842 bytes) |
-| scip_pass.py: run_scip(), decode_scip() | DONE | cartog/scip_pass.py, tests/test_scip_pass.py:41 |
-| SCIP range conversion (0-based to 1-based) | DONE | cartog/scip_pass.py, tests/test_scip_pass.py:20-38 |
-| Enclosing-function mapping | DONE | cartog/scip_pass.py, tests/test_scip_pass.py:68 |
+| scip.proto + cartog/scip/scip_pb2.py bindings | DONE | cartog/scip/scip_pb2.py (16842 bytes) |
+| scip_pass.py: run_scip(), decode_scip() | DONE | cartog/scip/runner.py, tests/test_scip_pass.py:41 |
+| SCIP range conversion (0-based to 1-based) | DONE | cartog/scip/runner.py, tests/test_scip_pass.py:20-38 |
+| Enclosing-function mapping | DONE | cartog/scip/runner.py, tests/test_scip_pass.py:68 |
 | Reference to definition linking (confidence: "resolved") | DONE | cartog/merge.py, tests/test_scip_pass.py |
 | Graceful fallback on SCIP failure | DONE | cartog/cli.py:559-562, cartog/cli.py:634-636 |
 | cartog scip command writing scip.json | DONE | cartog/cli.py:400-540 |
@@ -60,10 +60,10 @@
 
 | Deliverable | Status | Evidence |
 |---|---|---|
-| scip-typescript indexer runner + environment pre-checks | DONE | cartog/scip_pass.py, cartog/cli.py |
+| scip-typescript indexer runner + environment pre-checks | DONE | cartog/scip/runner.py, cartog/cli.py |
 | JS/TS reference to definition linking in merge.py | DONE | cartog/merge.py |
-| Windows path normalization (--cwd flag to scip-python) | DONE | cartog/scip_pass.py, BUILD_LOG Entry 14 section 2 |
-| --python <path> to control Pyright interpreter | DONE | cartog/cli.py:576, cartog/scip_pass.py |
+| Windows path normalization (--cwd flag to scip-python) | DONE | cartog/scip/runner.py, BUILD_LOG Entry 14 section 2 |
+| --python <path> to control Pyright interpreter | DONE | cartog/cli.py:576, cartog/scip/runner.py |
 
 ---
 
@@ -71,7 +71,7 @@
 
 | Deliverable | Status | Evidence |
 |---|---|---|
-| Win32 platform guard in scip_windows_shim.js | DONE | cartog/scip_windows_shim.js:2 - `if (process.platform === 'win32')` |
+| Win32 platform guard in scip_windows_shim.js | DONE | cartog/scip/windows_shim.js:2 - `if (process.platform === 'win32')` |
 | Fresh venv pip install . + cartog doctor + cartog map | PARTIAL | BUILD_LOG Entry 14 claims verified; no command output in this audit session |
 | ISSUES_AND_DECISIONS.md Issue 12 updated with shim trace | DONE | docs/ISSUES_AND_DECISIONS.md:395-434 (Issue 12 section 3, shim source embedded) |
 | Command.main + Group.invoke call inventory | DONE | docs/ISSUES_AND_DECISIONS.md:520-560 (Issue 15 section 1) |
@@ -126,7 +126,7 @@
 | .gitignore evaluated first (immutable base) | DONE | cartog/scan.py:262-272, tests/test_ignore.py:20-36 (`test_gitignore_precedence_over_cartogignore`) |
 | .cartogignore additive-only (internal ! negation only) | DONE | cartog/scan.py:274-279, tests/test_ignore.py:38-59 (`test_cartogignore_additive_and_internal_negation`) |
 | Repeatable `--ignore <pattern>` CLI flag across all commands | DONE | cartog/cli.py:633, cartog/scan.py:280-285, tests/test_ignore.py:61-77 (`test_cli_repeatable_ignore_flags`) |
-| SCIP index filtering & dropped crossing edge accounting | DONE | cartog/scip_pass.py:621-624, cartog/merge.py:674, tests/test_ignore.py:109-170 (`test_dropped_edge_accounting_in_build_graph`) |
+| SCIP index filtering & dropped crossing edge accounting | DONE | cartog/scip/runner.py:621-624, cartog/merge.py:674, tests/test_ignore.py:109-170 (`test_dropped_edge_accounting_in_build_graph`) |
 | Ignore rules hash & automatic cache invalidation | DONE | cartog/cache.py:34-35 (`{schema_version}:{ignore_hash}:{file_sha1}:{adapter_version}`), cartog/scan.py:166-188, tests/test_ignore.py:79-107 |
 | Auditable `meta.ignores` in `graph.json` | DONE | cartog/merge.py:674, cartog/validate.py:230-245 |
 | `cartog check` ignore breakdown summary table | DONE | cartog/cli.py:840-865, tests/test_ignore.py:172-205 |

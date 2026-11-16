@@ -636,7 +636,7 @@ def build_graph(
 
     # 5. SCIP call graph integration
     if scip_result is not None and getattr(scip_result, "documents", None) is not None:
-        from cartog.scip_pass import link_calls
+        from cartog.scip.runner import link_calls
         symbols_by_file = {f.path: f.symbols for f in parsed_files}
         candidates = link_calls(
             scip_result,
