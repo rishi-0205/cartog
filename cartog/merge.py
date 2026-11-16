@@ -8,9 +8,9 @@ from pathlib import Path
 from typing import Any, Optional
 
 from cartog.core.model import SCHEMA_VERSION, Edge, Graph, ManifestFacts, Node, SourceRange, make_node_id
-from cartog.langs import get_adapter
-from cartog.langs.base import ParseFileResult, ProjectContext
-from cartog.langs.python_adapter import get_enclosing_root, path_to_module_name
+from cartog.parse import get_adapter
+from cartog.parse.base import ParseFileResult, ProjectContext
+from cartog.parse.python_adapter import get_enclosing_root, path_to_module_name
 
 
 def _pick_handler(
@@ -114,7 +114,7 @@ def build_graph(
                 enc_root = get_enclosing_root(f.path, resolved_roots)
                 root_to_modules.setdefault(enc_root, {})[mod] = f.path
         elif f.language in ("javascript", "typescript"):
-            from cartog.langs.js_adapter import path_to_js_module_name
+            from cartog.parse.js_adapter import path_to_js_module_name
             mod = path_to_js_module_name(f.path, roots=resolved_roots)
             if mod:
                 module_to_file[mod] = f.path

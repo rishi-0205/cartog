@@ -100,6 +100,10 @@ COMPLETED_MOVES: dict[str, str] = {
     "cartog.scan": "cartog.scan.walk",
     "cartog.cache": "cartog.scan.cache",
     "cartog.manifests": "cartog.scan.manifests",
+    "cartog.langs": "cartog.parse",
+    "cartog.langs.base": "cartog.parse.base",
+    "cartog.langs.python_adapter": "cartog.parse.python_adapter",
+    "cartog.langs.js_adapter": "cartog.parse.js_adapter",
 }
 
 

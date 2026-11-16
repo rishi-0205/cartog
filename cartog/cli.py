@@ -22,8 +22,8 @@ from cartog.export_mermaid import (
     generate_overview_mermaid,
     render_mermaid,
 )
-from cartog.langs import parse_source_file
 from cartog.merge import build_graph
+from cartog.parse import parse_source_file
 from cartog.scan import walk_files
 from cartog.scan.cache import ParseCache
 from cartog.scan.manifests import parse_manifests

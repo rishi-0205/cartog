@@ -14,7 +14,7 @@ from typing import Any, Optional
 
 from cartog.core.config import SCHEMA_VERSION
 from cartog.core.model import SourceRange
-from cartog.langs.base import SymbolRecord
+from cartog.parse.base import SymbolRecord
 from cartog.scip_pb2 import Index
 
 logger = logging.getLogger("cartog")
