@@ -22,7 +22,12 @@ from cartog.export_mermaid import (
     generate_overview_mermaid,
     render_mermaid,
 )
-from cartog.merge import build_graph
+from cartog.graph.merge import build_graph
+from cartog.graph.validate import (
+    cross_check_imports_and_calls,
+    validate_graph,
+    validate_ranges_and_containment,
+)
 from cartog.parse import parse_source_file
 from cartog.scan import walk_files
 from cartog.scan.cache import ParseCache
@@ -32,11 +37,6 @@ from cartog.scip.runner import (
     decode_scip_index,
     run_scip_indexer,
     write_scip_json,
-)
-from cartog.validate import (
-    cross_check_imports_and_calls,
-    validate_graph,
-    validate_ranges_and_containment,
 )
 from cartog.views import (
     detect_noise_files,

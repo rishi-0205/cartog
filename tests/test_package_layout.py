@@ -106,6 +106,8 @@ COMPLETED_MOVES: dict[str, str] = {
     "cartog.langs.js_adapter": "cartog.parse.js_adapter",
     "cartog.scip_pass": "cartog.scip.runner",
     "cartog.scip_pb2": "cartog.scip.scip_pb2",
+    "cartog.merge": "cartog.graph.merge",
+    "cartog.validate": "cartog.graph.validate",
 }
 
 
