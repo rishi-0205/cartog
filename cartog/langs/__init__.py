@@ -3,11 +3,11 @@
 from pathlib import Path
 from typing import Optional
 
-from cartog.cache import ParseCache
 from cartog.langs.base import LanguageAdapter, ParseFileResult
 from cartog.langs.js_adapter import JsAdapter
 from cartog.langs.python_adapter import PythonAdapter
 from cartog.scan import FileInfo
+from cartog.scan.cache import ParseCache
 
 _ADAPTERS: dict[str, LanguageAdapter] = {}
 

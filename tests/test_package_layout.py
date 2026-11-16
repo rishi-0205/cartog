@@ -63,10 +63,19 @@ def test_layout_doc_covers_every_module() -> None:
             )
         return (REPO_ROOT / entry).exists()
 
-    stale = sorted(src for src in current if not _exists(src))
+    # The table is the R4 plan. After a move, the "current path" cell is the
+    # historical path and the "new path" cell is the real one; a row is spelled
+    # correctly when at least one of the two exists.
+    def _row_exists(src: str, dst: str) -> bool:
+        return _exists(src) or _exists(dst)
+
+    by_source = {src: dst for src, dst, _ in rows if src != "(new)"}
+    stale = sorted(
+        src for src, dst in by_source.items() if not _row_exists(src, dst)
+    )
     assert not stale, (
-        "docs/dev/PACKAGE_LAYOUT.md lists paths that do not exist (update the table):\n"
-        + "\n".join(stale)
+        "docs/dev/PACKAGE_LAYOUT.md lists paths that exist on neither side "
+        "(fix the table):\n" + "\n".join(stale)
     )
 
     tasks = {task for _, _, task in rows}
@@ -88,6 +97,9 @@ COMPLETED_MOVES: dict[str, str] = {
     "cartog.model": "cartog.core.model",
     "cartog.config": "cartog.core.config",
     "cartog.jsonc": "cartog.core.jsonc",
+    "cartog.scan": "cartog.scan.walk",
+    "cartog.cache": "cartog.scan.cache",
+    "cartog.manifests": "cartog.scan.manifests",
 }
 
 
@@ -96,7 +108,12 @@ def test_public_imports_after_move() -> None:
     import types
 
     def public_api(module: types.ModuleType, module_name: str) -> list[str]:
-        """Names the module owns: its constants plus classes/functions defined there."""
+        """The module's declared API, falling back to what it appears to own."""
+        declared = getattr(module, "__all__", None)
+        if declared is not None:
+            assert all(isinstance(n, str) for n in declared), f"{module_name}.__all__ is malformed"
+            return list(declared)
+
         names: list[str] = []
         for name in dir(module):
             if name.startswith("_"):

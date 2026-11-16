@@ -1,0 +1,147 @@
+# R6 evidence - move scanning (walk, cache, manifests)
+Date: 2026-11-16
+Branch: refactor/package-structure
+
+## Before: goldens
+Command: venv\Scripts\python.exe scripts\golden.py --check
+click: 0 differences
+flask: 0 differences
+ky: 0 differences
+0 differences
+
+## Red: the compatibility guard fails before the package exists
+Command: venv\Scripts\python.exe -m pytest tests\test_package_layout.py::test_public_imports_after_move -q
+F                                                                        [100%]
+================================== FAILURES ===================================
+_______________________ test_public_imports_after_move ________________________
+
+    def test_public_imports_after_move() -> None:
+        import importlib
+        import types
+    
+        def public_api(module: types.ModuleType, module_name: str) -> list[str]:
+            """Names the module owns: its constants plus classes/functions defined there."""
+            names: list[str] = []
+            for name in dir(module):
+                if name.startswith("_"):
+                    continue
+                obj = getattr(module, name)
+                if isinstance(obj, types.ModuleType):
+                    continue
+                if name.isupper() or getattr(obj, "__module__", None) == module_name:
+                    names.append(name)
+            return names
+    
+        for old_name, new_name in COMPLETED_MOVES.items():
+            old = importlib.import_module(old_name)
+>           new = importlib.import_module(new_name)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_package_layout.py:116: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+C:\Python313\Lib\importlib\__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+<frozen importlib._bootstrap>:1387: in _gcd_import
+    ???
+<frozen importlib._bootstrap>:1360: in _find_and_load
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+name = 'cartog.scan.walk'
+import_ = <function _gcd_import at 0x0000016F7DF404A0>
+
+>   ???
+E   ModuleNotFoundError: No module named 'cartog.scan.walk'; 'cartog.scan' is not a package
+
+<frozen importlib._bootstrap>:1319: ModuleNotFoundError
+=========================== short test summary info ===========================
+FAILED tests/test_package_layout.py::test_public_imports_after_move - ModuleN...
+1 failed in 0.15s
+
+## Move
+git mv cartog/scan.py cartog/scan/walk.py
+git mv cartog/cache.py cartog/scan/cache.py
+git mv cartog/manifests.py cartog/scan/manifests.py
+New: cartog/scan/__init__.py (package facade, re-exports the walker API) and shims at
+cartog/cache.py and cartog/manifests.py. cartog/scan itself is now the package.
+Imports updated: cli and langs use cartog.scan.cache / cartog.scan.manifests;
+manifests imports the private ignore helpers from cartog.scan.walk.
+
+## Guard change (recorded)
+The layout guard rejected `cartog/scan.py` as stale, which is expected after a move: the
+mapping is the R4 plan and its first column is historical. The guard now accepts a row when
+either side exists, so it still catches a path that exists on neither side. The document
+says the same in section 2.
+
+## Green: old and new paths resolve to the same objects
+Command: venv\Scripts\python.exe -m pytest tests\test_package_layout.py -q
+..                                                                       [100%]
+2 passed in 0.10s
+
+## After: goldens
+Command: venv\Scripts\python.exe scripts\golden.py --check
+click: 0 differences
+flask: 0 differences
+ky: 0 differences
+0 differences
+
+## Lint
+Command: venv\Scripts\python.exe -m ruff check .
+All checks passed!
+
+## Full suite
+Command: venv\Scripts\python.exe -m pytest tests\ -q
+188 passed, 1 warning in 172.65s (0:02:52)
+
+## Wheel contents
+Command: Remove-Item -Recurse -Force build, cartog.egg-info; python -m pip wheel . -w .scratch/wheel --no-deps
+wheel: .scratch/wheel\cartog-0.1.0-py3-none-any.whl files: 43
+cartog-0.1.0.dist-info/entry_points.txt
+cartog-0.1.0.dist-info/top_level.txt
+cartog/__init__.py
+cartog/__main__.py
+cartog/cache.py
+cartog/cli.py
+cartog/config.py
+cartog/core/__init__.py
+cartog/core/config.py
+cartog/core/jsonc.py
+cartog/core/model.py
+cartog/export_html.py
+cartog/export_json.py
+cartog/export_mermaid.py
+cartog/jsonc.py
+cartog/langs/__init__.py
+cartog/langs/base.py
+cartog/langs/js_adapter.py
+cartog/langs/python_adapter.py
+cartog/manifests.py
+cartog/merge.py
+cartog/model.py
+cartog/scan/__init__.py
+cartog/scan/cache.py
+cartog/scan/manifests.py
+cartog/scan/walk.py
+cartog/scip_pass.py
+cartog/scip_pb2.py
+cartog/scip_windows_shim.js
+cartog/validate.py
+cartog/view_assets/VENDOR_LICENSES.txt
+cartog/view_assets/cose-base.js
+cartog/view_assets/cytoscape-expand-collapse.js
+cartog/view_assets/cytoscape-fcose.js
+cartog/view_assets/cytoscape.min.js
+cartog/view_assets/layout-base.js
+cartog/view_assets/viewer.css
+cartog/view_assets/viewer.js
+cartog/views.py
+
+The first wheel built here still contained cartog/scan.py because setuptools reused the
+stale build/ tree from R5; deleting build/ and cartog.egg-info before the build fixed it.
+The rebuilt wheel has no cartog/scan.py and does contain scan/__init__.py, scan/walk.py,
+scan/cache.py and scan/manifests.py.
+
+## Test count
+Start of task: 188 passed. End of task: 188 passed (no new test; the R5 compatibility
+guard now covers three more moves and the layout guard was corrected).

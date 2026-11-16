@@ -64,6 +64,9 @@ cartog/
 
 ## 2. Module mapping (every current file has a destination)
 
+The first column is the path at R4 time; after a move the second column is the
+real one. Rows are never deleted, so the document doubles as the migration log.
+
 | Current path | New path | Moved by |
 |---|---|---|
 | `cartog/__init__.py` | `cartog/__init__.py` | — |

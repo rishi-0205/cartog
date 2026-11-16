@@ -14,6 +14,20 @@ from cartog.core.config import (
     DEFAULT_MAX_FILE_SIZE_BYTES,
 )
 
+__all__ = [
+    "LANG_EXTENSIONS",
+    "FileInfo",
+    "IgnoreMetrics",
+    "ScanResult",
+    "SkippedFile",
+    "compute_ignore_hash",
+    "detect_language",
+    "detect_roots",
+    "hash_file",
+    "is_binary_file",
+    "walk_files",
+]
+
 LANG_EXTENSIONS = {
     ".py": "python",
     ".pyi": "python",
