@@ -76,7 +76,7 @@ The roadmap narrative is [`docs/IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.m
 | epic | branch | depends on | tasks done / total | status | accepted by author |
 |---|---|---|---|---|---|
 | E0 | `fix/baseline-correctness` | — | 5 / 5 | ACCEPTED | 2026-11-15 |
-| E1 | `refactor/package-structure` | E0 | 5 / 13 | IN PROGRESS | no |
+| E1 | `refactor/package-structure` | E0 | 6 / 13 | IN PROGRESS | no |
 | E2 | `feature/unified-command-and-output` | E1 | 0 / 6 | NOT STARTED | no |
 | E3 | `feature/security-baseline` | E2 | 0 / 9 | NOT STARTED | no |
 | E4 | `feature/verification` | E2 | 0 / 5 | NOT STARTED | no |
