@@ -1,6 +1,6 @@
 # Cartog — Handoff Document
 
-**Last updated:** 2026-11-16 (E1 in progress on `refactor/package-structure`: R0–R4 DONE; next is R5, the core-module move; suite is 187 tests passing)  
+**Last updated:** 2026-11-16 (E1 complete on `refactor/package-structure`: R0–R12 DONE, awaiting the author's `Accept E1`; suite is 194 tests passing; next epic is E2, starting at the U1 design gate)  
 **Role:** Single entry point for any model or developer picking up this project.  
 **Active Working Tasks:** See [`docs/WORKING_TASKS.md`](./WORKING_TASKS.md) for the live epic board and command loop. The historical T0–T21 board is [`docs/archive/WORKING_TASKS_T0-T21.md`](./archive/WORKING_TASKS_T0-T21.md).  
 **Git rules:** [`docs/dev/GIT_WORKFLOW.md`](./dev/GIT_WORKFLOW.md) — one branch per epic, commit per task, never push, merge only after `Accept <epic id>`.
@@ -73,15 +73,15 @@ Epic order is **E0 → E1 → E2 → E3 → E4 → E5 → E6 → E7 → E8**. An
 | **Phase E: Polish** | T13, T14, T15, T16 | Added visible legends and summary subgraphs in Mermaid; ranked digest files by connectivity and attributed constructors to enclosing classes; completed noise filtering with `if t.TYPE_CHECKING:` guard support; benchmarked compact serialization (44–50% reduction) and token budgets (<2,000 tokens). |
 | **Milestone 11: Interactive Viewer** | T11 | Packaged offline Cytoscape stack in `cartog/view_assets/`; implemented `cartog view` generating offline `map.html`; implemented orthogonal Manhattan edge routing (`taxi`), edge rollup (`N calls`), reference filter toggle (`References: Off / On`), compound padding (35-50px) & layout physics, and internal helper expansion & linking with toggle. |
 
-**Test suite:** 187 passed, 1 warning (2026-11-16, `pytest tests/` in venv; E1 R0 added 2 golden tests, R1 added 2 repo-hygiene tests, R2 added 2 path tests, R3 added 2 doc-link tests, R4 added the layout guard, 0 regressions).
+**Test suite:** 194 passed, 1 warning (2026-11-16, `pytest tests/` in venv; E1 added 2 golden tests, 2 repo-hygiene tests, 2 path tests, 2 doc-link tests, the layout and compatibility guards, the CLI-surface test and 5 cleanup tests, 0 regressions).
 
 ---
 
-## 3. Next Tasks (E1 — `refactor/package-structure`)
+## 3. Next Tasks (E1 ready for review; E2 is next)
 
 E0 (`fix/baseline-correctness`) was **ACCEPTED by the author on 2026-11-15** and merged into `main` with `git merge --no-ff`. H1–H5 are all DONE; the branch was deleted after the merge. E0 was built from `docs/task-plan` HEAD (`fcb11f2`), so that merge also brought the T22 documentation restructure into `main` (Decision 29 in `docs/ISSUES_AND_DECISIONS.md`).
 
-The branch is `refactor/package-structure`, created from a clean `main` per [`docs/dev/GIT_WORKFLOW.md`](./dev/GIT_WORKFLOW.md). R0 (golden baseline), R1 (licence, lint, CI), R2 (absolute paths), R3 (agent-process docs), and R4 (package-layout design) are DONE. The author approved the layout on 2026-11-16 ("proceed with remaining E1 in this session"), so R5–R11 move one module group at a time without a further stop; each move keeps the old import paths working through thin re-export shims and checks the goldens. Full task fields, tests, acceptance criteria, and user checks are in [`docs/WORKING_TASKS.md`](./WORKING_TASKS.md).
+The branch is `refactor/package-structure`, created from a clean `main` per [`docs/dev/GIT_WORKFLOW.md`](./dev/GIT_WORKFLOW.md). All thirteen tasks are DONE: R0 (golden baseline), R1 (licence, lint, CI), R2 (absolute paths), R3 (agent-process docs), R4 (package-layout design), R5–R11 (one package move per task: `core`, `scan`, `parse`, `scip`, `graph`, `render`, `cli`), and R12 (cleanup). Every old module path still imports through a thin re-export shim, the goldens report `0 differences` after each move, and the wheel ships the same data files. **E1 is READY FOR EPIC REVIEW** and merges only after `Accept E1`; the next epic is E2 (unified command and output), which starts at the U1 design gate. Full task fields, tests, acceptance criteria, and user checks are in [`docs/WORKING_TASKS.md`](./WORKING_TASKS.md).
 
 ---
 

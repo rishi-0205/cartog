@@ -24,7 +24,7 @@ The roadmap narrative is [`docs/IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.m
 | R9 | Move graph build and validate | E1 | `refactor/package-structure` | R6, R7 | M | E1-S8 | DONE | f0efa6d |
 | R10 | Move views and exporters | E1 | `refactor/package-structure` | R8, R9 | M | E1-S9 | DONE | cbc3cfd |
 | R11 | Split the CLI into modules | E1 | `refactor/package-structure` | R10 | M | E1-S10 | DONE | d88a8b8 |
-| R12 | Cleanup pass | E1 | `refactor/package-structure` | R5–R11 | M | E1-S11 | TODO | — |
+| R12 | Cleanup pass | E1 | `refactor/package-structure` | R5-R11 | M | E1-S11 | DONE | 2461a3b |
 | U1 | Unified command design | E2 | `feature/unified-command-and-output` | E1 | S | E2-S1 | TODO | — |
 | U2 | Default output location | E2 | `feature/unified-command-and-output` | U1 | M | E2-S2 | TODO | — |
 | U3 | Output layout writer | E2 | `feature/unified-command-and-output` | U2 | M | E2-S3 | TODO | — |
@@ -76,7 +76,7 @@ The roadmap narrative is [`docs/IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.m
 | epic | branch | depends on | tasks done / total | status | accepted by author |
 |---|---|---|---|---|---|
 | E0 | `fix/baseline-correctness` | — | 5 / 5 | ACCEPTED | 2026-11-15 |
-| E1 | `refactor/package-structure` | E0 | 12 / 13 | IN PROGRESS | no |
+| E1 | `refactor/package-structure` | E0 | 13 / 13 | READY FOR EPIC REVIEW | no |
 | E2 | `feature/unified-command-and-output` | E1 | 0 / 6 | NOT STARTED | no |
 | E3 | `feature/security-baseline` | E2 | 0 / 9 | NOT STARTED | no |
 | E4 | `feature/verification` | E2 | 0 / 5 | NOT STARTED | no |
@@ -557,10 +557,11 @@ At most three small tasks, or one large task, per session. Sessions marked **(ga
 - **User check (epic review):** `ruff check .`; `pytest -q`; `python scripts/golden.py --check`.
 - **Evidence files:** `docs/evidence/R12-cleanup.txt`
 - **Planned commit message:** `R12: cleanup dead code and public interfaces`
-- **Status:** TODO
-- **Commit hash:** —
-- **Failure log:** —
-- **Change log:** —
+- **Status:** DONE
+- **Commit hash:** `2461a3b`
+- **Failure log:** The first red run named all 55 gaps as designed, but two self-inflicted lint regressions followed the mechanical fixes: the unused-local cleanup stripped `res1`/`res2` where a later step still used them (`F821`), and the new `cartog/core/diagnostics.py` had no destination in the layout table (the R4 guard caught it). Both fixed before green; the layout table gained the `(new)` row.
+- **Change log:**
+  - 2026-11-16: Added `cartog/core/diagnostics.py` (`get_logger`, `warn`) and converted the only three direct `logging`/`warnings` users. Added 42 docstrings and the missing return annotations; `tests/test_public_api_type_hints.py` enforces them and fails if a module bypasses the helper. Removed the dead `load_json_with_comments` wrapper plus unused test locals. Cleared `UP045` (167 findings) and the four test-only rule groups (13 findings), removing the `tests/*.py` lint exemption. `E501` stays ignored and moves to E2/U1 with a written reason (Decision 33). Goldens `0 differences`, ruff clean, suite 194 passed (+5), wheel 71 files with the new module and all data files, `python -m cartog --help` exits 0.
 
 ### U1: Unified command design
 
