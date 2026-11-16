@@ -11,7 +11,7 @@ from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any, Optional
 
-from cartog.model import Edge, Graph, Node
+from cartog.core.model import Edge, Graph, Node
 from cartog.views import classify_boundary_functions, detect_noise_files, get_call_counts, rewire_view_edges
 
 CATEGORIES = ("tests", "docs", "examples", "scripts")

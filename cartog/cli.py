@@ -14,7 +14,8 @@ from rich.table import Table
 
 from cartog import __version__
 from cartog.cache import ParseCache
-from cartog.config import DEFAULT_MAX_FILE_SIZE_MB
+from cartog.core.config import DEFAULT_MAX_FILE_SIZE_MB
+from cartog.core.model import Graph, Node
 from cartog.export_json import write_parse_json
 from cartog.export_mermaid import (
     generate_flow_mermaid,
@@ -25,7 +26,6 @@ from cartog.export_mermaid import (
 from cartog.langs import parse_source_file
 from cartog.manifests import parse_manifests
 from cartog.merge import build_graph
-from cartog.model import Graph, Node
 from cartog.scan import walk_files
 from cartog.scip_pass import (
     ScipIndexResult,

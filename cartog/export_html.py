@@ -8,7 +8,7 @@ import json
 from pathlib import Path
 from typing import Any, Optional
 
-from cartog.model import Edge, Graph, Node
+from cartog.core.model import Edge, Graph, Node
 from cartog.views import ViewNode, build_universal_view_tree
 
 

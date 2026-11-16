@@ -21,7 +21,7 @@ from typing import Any, Optional
 
 import pathspec
 
-from cartog.model import ManifestFacts
+from cartog.core.model import ManifestFacts
 from cartog.scan import _load_cartogignore, _load_gitignore
 
 IGNORED_DIRS = {

@@ -7,10 +7,10 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Any, Optional
 
+from cartog.core.model import SCHEMA_VERSION, Edge, Graph, ManifestFacts, Node, SourceRange, make_node_id
 from cartog.langs import get_adapter
 from cartog.langs.base import ParseFileResult, ProjectContext
 from cartog.langs.python_adapter import get_enclosing_root, path_to_module_name
-from cartog.model import SCHEMA_VERSION, Edge, Graph, ManifestFacts, Node, SourceRange, make_node_id
 
 
 def _pick_handler(

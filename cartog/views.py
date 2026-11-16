@@ -14,7 +14,7 @@ from enum import StrEnum
 from pathlib import Path
 from typing import Any, Optional
 
-from cartog.model import Edge, Graph, Node
+from cartog.core.model import Edge, Graph, Node
 
 
 class NoiseCategory(StrEnum):

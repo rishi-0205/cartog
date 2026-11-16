@@ -9,7 +9,7 @@ import tree_sitter
 import tree_sitter_javascript
 import tree_sitter_typescript
 
-from cartog.jsonc import load_jsonc_file, load_strict_json_file
+from cartog.core.jsonc import load_jsonc_file, load_strict_json_file
 from cartog.langs.base import (
     ImportRecord,
     LanguageAdapter,

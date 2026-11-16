@@ -80,3 +80,48 @@ def test_layout_doc_covers_every_module() -> None:
     assert "test_public_imports_after_move" in text, (
         "the compatibility-shim rule must name the test that enforces it"
     )
+
+
+# Every completed move: the old flat path must stay importable and expose the
+# same objects as the new home. Extended by each migration task (R5-R11).
+COMPLETED_MOVES: dict[str, str] = {
+    "cartog.model": "cartog.core.model",
+    "cartog.config": "cartog.core.config",
+    "cartog.jsonc": "cartog.core.jsonc",
+}
+
+
+def test_public_imports_after_move() -> None:
+    import importlib
+    import types
+
+    def public_api(module: types.ModuleType, module_name: str) -> list[str]:
+        """Names the module owns: its constants plus classes/functions defined there."""
+        names: list[str] = []
+        for name in dir(module):
+            if name.startswith("_"):
+                continue
+            obj = getattr(module, name)
+            if isinstance(obj, types.ModuleType):
+                continue
+            if name.isupper() or getattr(obj, "__module__", None) == module_name:
+                names.append(name)
+        return names
+
+    for old_name, new_name in COMPLETED_MOVES.items():
+        old = importlib.import_module(old_name)
+        new = importlib.import_module(new_name)
+
+        public = public_api(new, new_name)
+        assert public, f"{new_name} exports nothing public"
+
+        missing = [n for n in public if not hasattr(old, n)]
+        assert not missing, f"{old_name} no longer re-exports {missing} from {new_name}"
+
+        differing = [
+            n for n in public if getattr(old, n, None) is not getattr(new, n, None)
+        ]
+        assert not differing, (
+            f"{old_name} and {new_name} disagree on {differing}; the old path must be "
+            "a re-export shim, not a copy"
+        )

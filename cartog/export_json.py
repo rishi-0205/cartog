@@ -5,9 +5,9 @@ from collections.abc import Sequence
 from pathlib import Path
 from typing import Any, Optional
 
-from cartog.config import SCHEMA_VERSION
+from cartog.core.config import SCHEMA_VERSION
+from cartog.core.model import ManifestFacts
 from cartog.langs.base import ParseFileResult
-from cartog.model import ManifestFacts
 from cartog.scan import SkippedFile
 
 

@@ -8,7 +8,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Optional
 
-from cartog.model import Edge, Graph
+from cartog.core.model import Edge, Graph
 
 
 @dataclass

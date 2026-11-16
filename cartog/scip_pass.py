@@ -12,9 +12,9 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Optional
 
-from cartog.config import SCHEMA_VERSION
+from cartog.core.config import SCHEMA_VERSION
+from cartog.core.model import SourceRange
 from cartog.langs.base import SymbolRecord
-from cartog.model import SourceRange
 from cartog.scip_pb2 import Index
 
 logger = logging.getLogger("cartog")

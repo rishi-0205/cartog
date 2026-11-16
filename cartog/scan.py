@@ -8,7 +8,7 @@ from typing import Optional
 
 import pathspec
 
-from cartog.config import (
+from cartog.core.config import (
     DEFAULT_IGNORED_DIRS,
     DEFAULT_IGNORED_GLOBS,
     DEFAULT_MAX_FILE_SIZE_BYTES,
