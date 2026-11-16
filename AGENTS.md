@@ -16,6 +16,7 @@ commands) and [`docs/WORKING_TASKS.md`](docs/WORKING_TASKS.md) (the live board).
 | Status vocabulary, board updates, report format | [`docs/dev/REPORTING.md`](docs/dev/REPORTING.md) |
 | Branches, commits, merges, history safety | [`docs/dev/GIT_WORKFLOW.md`](docs/dev/GIT_WORKFLOW.md) |
 | Code standards, repository map, key invariants | [`docs/dev/CODE_STANDARDS.md`](docs/dev/CODE_STANDARDS.md) |
+| Package layout: every module's destination, import rules, migration order | [`docs/dev/PACKAGE_LAYOUT.md`](docs/dev/PACKAGE_LAYOUT.md) |
 
 ## Non-negotiables
 

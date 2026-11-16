@@ -1,0 +1,24 @@
+﻿F                                                                        [100%]
+================================== FAILURES ===================================
+_____________________ test_layout_doc_covers_every_module _____________________
+
+    def test_layout_doc_covers_every_module() -> None:
+        rows = _rows()
+        assert rows, f"no mapping table found in {LAYOUT}"
+    
+        current = {src for src, _, _ in rows if src != "(new)"}
+        targets = {dst for _, dst, _ in rows}
+    
+        missing_source = [p for p in _package_files() if not _covered(p, current | targets)]
+>       assert not missing_source, (
+            "these files under cartog/ have no destination in docs/dev/PACKAGE_LAYOUT.md:\n"
+            + "\n".join(missing_source)
+        )
+E       AssertionError: these files under cartog/ have no destination in docs/dev/PACKAGE_LAYOUT.md:
+E         cartog/config.py
+E       assert not ['cartog/config.py']
+
+tests\test_package_layout.py:54: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_package_layout.py::test_layout_doc_covers_every_module - As...
+1 failed in 0.09s
