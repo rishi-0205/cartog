@@ -19,7 +19,7 @@ The roadmap narrative is [`docs/IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.m
 | R4 | Package layout design | E1 | `refactor/package-structure` | R0 | S | E1-S3 | DONE | 4b51925 |
 | R5 | Move core modules | E1 | `refactor/package-structure` | R4 | M | E1-S4 | DONE | 6d30909 |
 | R6 | Move scanning | E1 | `refactor/package-structure` | R5 | M | E1-S5 | DONE | 5c9b70f |
-| R7 | Move language adapters | E1 | `refactor/package-structure` | R5 | M | E1-S6 | TODO | — |
+| R7 | Move language adapters | E1 | `refactor/package-structure` | R5 | M | E1-S6 | DONE | 527affd |
 | R8 | Move SCIP code | E1 | `refactor/package-structure` | R7 | M | E1-S7 | TODO | — |
 | R9 | Move graph build and validate | E1 | `refactor/package-structure` | R6, R7 | M | E1-S8 | TODO | — |
 | R10 | Move views and exporters | E1 | `refactor/package-structure` | R8, R9 | M | E1-S9 | TODO | — |
@@ -76,7 +76,7 @@ The roadmap narrative is [`docs/IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.m
 | epic | branch | depends on | tasks done / total | status | accepted by author |
 |---|---|---|---|---|---|
 | E0 | `fix/baseline-correctness` | — | 5 / 5 | ACCEPTED | 2026-11-15 |
-| E1 | `refactor/package-structure` | E0 | 7 / 13 | IN PROGRESS | no |
+| E1 | `refactor/package-structure` | E0 | 8 / 13 | IN PROGRESS | no |
 | E2 | `feature/unified-command-and-output` | E1 | 0 / 6 | NOT STARTED | no |
 | E3 | `feature/security-baseline` | E2 | 0 / 9 | NOT STARTED | no |
 | E4 | `feature/verification` | E2 | 0 / 5 | NOT STARTED | no |
@@ -438,10 +438,11 @@ At most three small tasks, or one large task, per session. Sessions marked **(ga
 - **User check (epic review):** `python scripts/golden.py --check` → `0 differences`; `pytest -q`.
 - **Evidence files:** `docs/evidence/R7-move-modules.txt`
 - **Planned commit message:** `R7: move move language adapters`
-- **Status:** TODO
-- **Commit hash:** —
-- **Failure log:** —
-- **Change log:** —
+- **Status:** DONE
+- **Commit hash:** `527affd`
+- **Failure log:** None beyond the expected red run (cartog.parse did not exist). The compatibility guard passed on the first green run because the shims re-export the same class objects, which matters for the `isinstance(adapter, LanguageAdapter)` checks.
+- **Change log:**
+  - 2026-11-16: `cartog/langs/` moved to `cartog/parse/`; the four old paths are now shims (`__init__`, `base`, `python_adapter`, `js_adapter`). `cartog.parse.__init__` declares its three-function `__all__`; internal and lazy imports updated. Goldens `0 differences` before and after, ruff clean, suite 188, wheel 47 files with `parse/*` and the shims plus unchanged data files.
 
 ### R8: Move SCIP code
 
