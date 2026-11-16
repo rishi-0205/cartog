@@ -16,7 +16,7 @@ The roadmap narrative is [`docs/IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.m
 | R1 | Repo hygiene, licence, lint, CI | E1 | `refactor/package-structure` | R0 | M | E1-S2 | DONE | eff6c74 |
 | R2 | Remove absolute local paths | E1 | `refactor/package-structure` | R0 | S | E1-S1 | DONE | 57c5900 |
 | R3 | Move agent-process docs to docs/dev/ | E1 | `refactor/package-structure` | R0 | S | E1-S1 | DONE | d303f32 |
-| R4 | Package layout design | E1 | `refactor/package-structure` | R0 | S | E1-S3 | TODO | — |
+| R4 | Package layout design | E1 | `refactor/package-structure` | R0 | S | E1-S3 | DONE | PENDING |
 | R5 | Move core modules | E1 | `refactor/package-structure` | R4 | M | E1-S4 | TODO | — |
 | R6 | Move scanning | E1 | `refactor/package-structure` | R5 | M | E1-S5 | TODO | — |
 | R7 | Move language adapters | E1 | `refactor/package-structure` | R5 | M | E1-S6 | TODO | — |
@@ -76,7 +76,7 @@ The roadmap narrative is [`docs/IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.m
 | epic | branch | depends on | tasks done / total | status | accepted by author |
 |---|---|---|---|---|---|
 | E0 | `fix/baseline-correctness` | — | 5 / 5 | ACCEPTED | 2026-11-15 |
-| E1 | `refactor/package-structure` | E0 | 4 / 13 | IN PROGRESS | no |
+| E1 | `refactor/package-structure` | E0 | 5 / 13 | IN PROGRESS | no |
 | E2 | `feature/unified-command-and-output` | E1 | 0 / 6 | NOT STARTED | no |
 | E3 | `feature/security-baseline` | E2 | 0 / 9 | NOT STARTED | no |
 | E4 | `feature/verification` | E2 | 0 / 5 | NOT STARTED | no |
@@ -365,10 +365,12 @@ At most three small tasks, or one large task, per session. Sessions marked **(ga
 - **User check (epic review):** Open `docs/dev/PACKAGE_LAYOUT.md` and confirm the mapping is complete.
 - **Evidence files:** `docs/evidence/R4-package-layout.txt`
 - **Planned commit message:** `R4: document proposed package layout`
-- **Status:** TODO
-- **Commit hash:** —
-- **Failure log:** —
-- **Change log:** —
+- **Status:** DONE
+- **Commit hash:** PENDING
+- **Gate resolution:** the author said "proceed with remaining E1 in this session" on 2026-11-16, which approves the proposed layout in `docs/dev/PACKAGE_LAYOUT.md` and lets R5–R11 run without a further stop (Decision 32).
+- **Failure log:** First red attempt no-oped: the deletion script matched the row followed by CRLF, but the file uses LF, so nothing was removed and the guard passed. Re-run with an assertion that the row exists and an LF-aware delete: the guard failed naming `cartog/config.py`, as designed.
+- **Change log:**
+  - 2026-11-16: Added `docs/dev/PACKAGE_LAYOUT.md` (target tree, 41-row mapping table including the `(new)` rows for the `cli/` split, import rules, package-data risks, migration order). Added `tests/test_package_layout.py`, which fails if any file under `cartog/` has no destination, if a listed path no longer exists, if a migration task loses its rows, or if the entry point or shim test is not called out. `AGENTS.md` links the new document (the docs-link guard caught that). Goldens `0 differences`; full suite 187 passed (+1).
 
 ### R5: Move core modules
 
