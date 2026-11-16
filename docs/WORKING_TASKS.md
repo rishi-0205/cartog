@@ -20,7 +20,7 @@ The roadmap narrative is [`docs/IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.m
 | R5 | Move core modules | E1 | `refactor/package-structure` | R4 | M | E1-S4 | DONE | 6d30909 |
 | R6 | Move scanning | E1 | `refactor/package-structure` | R5 | M | E1-S5 | DONE | 5c9b70f |
 | R7 | Move language adapters | E1 | `refactor/package-structure` | R5 | M | E1-S6 | DONE | 527affd |
-| R8 | Move SCIP code | E1 | `refactor/package-structure` | R7 | M | E1-S7 | TODO | — |
+| R8 | Move SCIP code | E1 | `refactor/package-structure` | R7 | M | E1-S7 | DONE | 5883b2f |
 | R9 | Move graph build and validate | E1 | `refactor/package-structure` | R6, R7 | M | E1-S8 | TODO | — |
 | R10 | Move views and exporters | E1 | `refactor/package-structure` | R8, R9 | M | E1-S9 | TODO | — |
 | R11 | Split the CLI into modules | E1 | `refactor/package-structure` | R10 | M | E1-S10 | TODO | — |
@@ -76,7 +76,7 @@ The roadmap narrative is [`docs/IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.m
 | epic | branch | depends on | tasks done / total | status | accepted by author |
 |---|---|---|---|---|---|
 | E0 | `fix/baseline-correctness` | — | 5 / 5 | ACCEPTED | 2026-11-15 |
-| E1 | `refactor/package-structure` | E0 | 8 / 13 | IN PROGRESS | no |
+| E1 | `refactor/package-structure` | E0 | 9 / 13 | IN PROGRESS | no |
 | E2 | `feature/unified-command-and-output` | E1 | 0 / 6 | NOT STARTED | no |
 | E3 | `feature/security-baseline` | E2 | 0 / 9 | NOT STARTED | no |
 | E4 | `feature/verification` | E2 | 0 / 5 | NOT STARTED | no |
@@ -462,10 +462,11 @@ At most three small tasks, or one large task, per session. Sessions marked **(ga
 - **User check (epic review):** `python scripts/golden.py --check` → `0 differences`; `pytest -q`.
 - **Evidence files:** `docs/evidence/R8-move-modules.txt`
 - **Planned commit message:** `R8: move move scip code`
-- **Status:** TODO
-- **Commit hash:** —
-- **Failure log:** —
-- **Change log:** —
+- **Status:** DONE
+- **Commit hash:** `5883b2f`
+- **Failure log:** The full suite failed once: `test_symbol_mapping_no_flat_name_collisions` patched `cartog.scip_pass.link_calls`, but merge now imports `link_calls` from `cartog.scip.runner`, so the patch had no effect and the test saw 0 call edges instead of 1. The test patches the runner module now; the assertion is unchanged.
+- **Change log:**
+  - 2026-11-16: `scip_pass.py` → `scip/runner.py`, `scip_pb2.py` → `scip/scip_pb2.py`, `scip.proto` → `scip/scip.proto`, and the JS shim → `scip/windows_shim.js`. `cartog/scip/__init__.py` re-exports the pipeline; `scip_pass`/`scip_pb2` stay as shims. Package-data gained `scip/*.js` (verified in the wheel), the ruff exclude followed the generated bindings, and README/ALIGNMENT name the new paths. Goldens `0 differences` before and after, ruff clean, suite 188.
 
 ### R9: Move graph build and validate
 
