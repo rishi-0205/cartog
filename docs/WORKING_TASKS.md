@@ -23,7 +23,7 @@ The roadmap narrative is [`docs/IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.m
 | R8 | Move SCIP code | E1 | `refactor/package-structure` | R7 | M | E1-S7 | DONE | 5883b2f |
 | R9 | Move graph build and validate | E1 | `refactor/package-structure` | R6, R7 | M | E1-S8 | DONE | f0efa6d |
 | R10 | Move views and exporters | E1 | `refactor/package-structure` | R8, R9 | M | E1-S9 | DONE | cbc3cfd |
-| R11 | Split the CLI into modules | E1 | `refactor/package-structure` | R10 | M | E1-S10 | TODO | — |
+| R11 | Split the CLI into modules | E1 | `refactor/package-structure` | R10 | M | E1-S10 | DONE | d88a8b8 |
 | R12 | Cleanup pass | E1 | `refactor/package-structure` | R5–R11 | M | E1-S11 | TODO | — |
 | U1 | Unified command design | E2 | `feature/unified-command-and-output` | E1 | S | E2-S1 | TODO | — |
 | U2 | Default output location | E2 | `feature/unified-command-and-output` | U1 | M | E2-S2 | TODO | — |
@@ -76,7 +76,7 @@ The roadmap narrative is [`docs/IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.m
 | epic | branch | depends on | tasks done / total | status | accepted by author |
 |---|---|---|---|---|---|
 | E0 | `fix/baseline-correctness` | — | 5 / 5 | ACCEPTED | 2026-11-15 |
-| E1 | `refactor/package-structure` | E0 | 11 / 13 | IN PROGRESS | no |
+| E1 | `refactor/package-structure` | E0 | 12 / 13 | IN PROGRESS | no |
 | E2 | `feature/unified-command-and-output` | E1 | 0 / 6 | NOT STARTED | no |
 | E3 | `feature/security-baseline` | E2 | 0 / 9 | NOT STARTED | no |
 | E4 | `feature/verification` | E2 | 0 / 5 | NOT STARTED | no |
@@ -534,10 +534,11 @@ At most three small tasks, or one large task, per session. Sessions marked **(ga
 - **User check (epic review):** `python scripts/golden.py --check` → `0 differences`; `pytest -q`.
 - **Evidence files:** `docs/evidence/R11-move-modules.txt`
 - **Planned commit message:** `R11: move split the cli into modules`
-- **Status:** TODO
-- **Commit hash:** —
-- **Failure log:** —
-- **Change log:** —
+- **Status:** DONE
+- **Commit hash:** `d88a8b8`
+- **Failure log:** `test_cli_scip_loud_failure_output` and `test_flow_works_from_graph_json_without_cache` patched `cartog.cli._resolve_scip`; after the split the command module and `shared` hold their own binding, so the patches stopped taking effect. Both tests now patch `cartog.cli.commands.scip._resolve_scip` / `cartog.cli.shared._resolve_scip`; assertions and expected output are unchanged.
+- **Change log:**
+  - 2026-11-16: Split `cartog/cli.py` into `cartog/cli/{__init__,shared}.py` + `commands/{doctor,parse,scip,build,map,check,flow,digest,view,queries}.py`. Added `test_cli_package_layout`, which asserts the shared app object, the module list, and the exact registered command surface (`build, check, digest, doctor, flow, map, parse, query, scip, view`). Goldens `0 differences` before and after, ruff clean, suite 189 (+1), wheel ships the package and entry point, `python -m cartog --help` smoke-checked.
 
 ### R12: Cleanup pass
 
