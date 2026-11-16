@@ -17,7 +17,7 @@ The roadmap narrative is [`docs/IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.m
 | R2 | Remove absolute local paths | E1 | `refactor/package-structure` | R0 | S | E1-S1 | DONE | 57c5900 |
 | R3 | Move agent-process docs to docs/dev/ | E1 | `refactor/package-structure` | R0 | S | E1-S1 | DONE | d303f32 |
 | R4 | Package layout design | E1 | `refactor/package-structure` | R0 | S | E1-S3 | DONE | 4b51925 |
-| R5 | Move core modules | E1 | `refactor/package-structure` | R4 | M | E1-S4 | TODO | — |
+| R5 | Move core modules | E1 | `refactor/package-structure` | R4 | M | E1-S4 | DONE | 6d30909 |
 | R6 | Move scanning | E1 | `refactor/package-structure` | R5 | M | E1-S5 | TODO | — |
 | R7 | Move language adapters | E1 | `refactor/package-structure` | R5 | M | E1-S6 | TODO | — |
 | R8 | Move SCIP code | E1 | `refactor/package-structure` | R7 | M | E1-S7 | TODO | — |
@@ -390,10 +390,11 @@ At most three small tasks, or one large task, per session. Sessions marked **(ga
 - **User check (epic review):** `python scripts/golden.py --check` → `0 differences`; `pytest -q`.
 - **Evidence files:** `docs/evidence/R5-move-modules.txt`
 - **Planned commit message:** `R5: move move core modules`
-- **Status:** TODO
-- **Commit hash:** —
-- **Failure log:** —
-- **Change log:** —
+- **Status:** DONE
+- **Commit hash:** `6d30909`
+- **Failure log:** `test_public_imports_after_move` failed first because `cartog.core` did not exist (red transcript). The first green attempt then failed twice for real reasons: the guard compared every name `dir()` returns, so incidental imports (`hashlib`, `Any`) were treated as API; the guard was narrowed to names the module owns (uppercase constants and objects whose `__module__` matches). That narrowed guard then caught a genuine compatibility break: `cartog.model.SCHEMA_VERSION` (imported by `merge.py`) was not re-exported by the shim. Both fixed before green.
+- **Change log:**
+  - 2026-11-16: `git mv cartog/{model,config,jsonc}.py cartog/core/`; added `cartog/core/__init__.py` and shims at the three old paths. Rewrote imports under `cartog/` and `scripts/` to `cartog.core.*`; `tests/` untouched. Goldens `0 differences` before and after, `ruff check .` clean, suite 188 passed (+1), wheel 40 files with all seven `view_assets/` assets and `scip_windows_shim.js`.
 
 ### R6: Move scanning
 
