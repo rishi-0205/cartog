@@ -84,8 +84,8 @@ tests/test_interactive_view.py checks the new location and the new package-data 
 
 ## Green: old and new paths resolve to the same objects
 Command: venv\Scripts\python.exe -m pytest tests\test_package_layout.py tests\test_interactive_view.py -q
-Result: 17 passed (compatibility guard plus the packaged-asset and embedded-view tests).
-
+.................                                                        [100%]
+17 passed in 0.88s
 ## After: goldens
 Command: venv\Scripts\python.exe scripts\golden.py --check
 click: 0 differences
