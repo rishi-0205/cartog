@@ -16,7 +16,7 @@ The roadmap narrative is [`docs/IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.m
 | R1 | Repo hygiene, licence, lint, CI | E1 | `refactor/package-structure` | R0 | M | E1-S2 | DONE | eff6c74 |
 | R2 | Remove absolute local paths | E1 | `refactor/package-structure` | R0 | S | E1-S1 | DONE | 57c5900 |
 | R3 | Move agent-process docs to docs/dev/ | E1 | `refactor/package-structure` | R0 | S | E1-S1 | DONE | d303f32 |
-| R4 | Package layout design | E1 | `refactor/package-structure` | R0 | S | E1-S3 | DONE | PENDING |
+| R4 | Package layout design | E1 | `refactor/package-structure` | R0 | S | E1-S3 | DONE | 4b51925 |
 | R5 | Move core modules | E1 | `refactor/package-structure` | R4 | M | E1-S4 | TODO | — |
 | R6 | Move scanning | E1 | `refactor/package-structure` | R5 | M | E1-S5 | TODO | — |
 | R7 | Move language adapters | E1 | `refactor/package-structure` | R5 | M | E1-S6 | TODO | — |
@@ -366,7 +366,7 @@ At most three small tasks, or one large task, per session. Sessions marked **(ga
 - **Evidence files:** `docs/evidence/R4-package-layout.txt`
 - **Planned commit message:** `R4: document proposed package layout`
 - **Status:** DONE
-- **Commit hash:** PENDING
+- **Commit hash:** `4b51925`
 - **Gate resolution:** the author said "proceed with remaining E1 in this session" on 2026-11-16, which approves the proposed layout in `docs/dev/PACKAGE_LAYOUT.md` and lets R5–R11 run without a further stop (Decision 32).
 - **Failure log:** First red attempt no-oped: the deletion script matched the row followed by CRLF, but the file uses LF, so nothing was removed and the guard passed. Re-run with an assertion that the row exists and an LF-aware delete: the guard failed naming `cartog/config.py`, as designed.
 - **Change log:**
