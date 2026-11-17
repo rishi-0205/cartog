@@ -1,6 +1,6 @@
 # Cartog — Handoff Document
 
-**Last updated:** 2026-11-17 (E1 ACCEPTED and merged; E1b shim cleanup is the next session; suite is 194 tests passing; E2 follows E1b)  
+**Last updated:** 2026-11-17 (E1b C1 DONE and the epic is READY FOR EPIC REVIEW; suite is 194 tests passing; E2 starts after `Accept E1b`)  
 **Role:** Single entry point for any model or developer picking up this project.  
 **Active Working Tasks:** See [`docs/WORKING_TASKS.md`](./WORKING_TASKS.md) for the live epic board and command loop. The historical T0–T21 board is [`docs/archive/WORKING_TASKS_T0-T21.md`](./archive/WORKING_TASKS_T0-T21.md).  
 **Git rules:** [`docs/dev/GIT_WORKFLOW.md`](./dev/GIT_WORKFLOW.md) — one branch per epic, commit per task, never push, merge only after `Accept <epic id>`.
@@ -74,17 +74,19 @@ Epic order is **E0 → E1 → E1b → E2 → E3 → E4 → E5 → E6 → E7 → 
 | **Phase E: Polish** | T13, T14, T15, T16 | Added visible legends and summary subgraphs in Mermaid; ranked digest files by connectivity and attributed constructors to enclosing classes; completed noise filtering with `if t.TYPE_CHECKING:` guard support; benchmarked compact serialization (44–50% reduction) and token budgets (<2,000 tokens). |
 | **Milestone 11: Interactive Viewer** | T11 | Packaged offline Cytoscape stack in `cartog/view_assets/`; implemented `cartog view` generating offline `map.html`; implemented orthogonal Manhattan edge routing (`taxi`), edge rollup (`N calls`), reference filter toggle (`References: Off / On`), compound padding (35-50px) & layout physics, and internal helper expansion & linking with toggle. |
 
-**Test suite:** 194 passed, 1 warning (2026-11-16, `pytest tests/` in venv; E1 added 2 golden tests, 2 repo-hygiene tests, 2 path tests, 2 doc-link tests, the layout and compatibility guards, the CLI-surface test and 5 cleanup tests, 0 regressions).
+**Test suite:** 194 passed, 1 warning (2026-11-17, `pytest tests/` in venv; E1b replaced the compatibility-shim test with `test_shims_are_gone` one-for-one, so the count is unchanged, 0 regressions).
 
 ---
 
-## 3. Next Tasks (E1b shim cleanup; then E2)
+## 3. Next Tasks (E1b ready for epic review; then E2)
 
 E0 (`fix/baseline-correctness`) was **ACCEPTED by the author on 2026-11-15** and merged into `main` with `git merge --no-ff`. H1–H5 are all DONE; the branch was deleted after the merge. E0 was built from `docs/task-plan` HEAD (`fcb11f2`), so that merge also brought the T22 documentation restructure into `main` (Decision 29 in `docs/ISSUES_AND_DECISIONS.md`).
 
-E1 (`refactor/package-structure`) was **ACCEPTED by the author on 2026-11-17** and merged into `main` with `git merge --no-ff`; that branch was deleted too. All thirteen tasks are DONE: R0 (golden baseline), R1 (licence, lint, CI), R2 (absolute paths), R3 (agent-process docs), R4 (package-layout design), R5–R11 (one package move per task: `core`, `scan`, `parse`, `scip`, `graph`, `render`, `cli`), and R12 (cleanup). Every old module path still imports through a thin re-export shim, the goldens report `0 differences`, and the wheel ships the same data files.
+E1 (`refactor/package-structure`) was **ACCEPTED by the author on 2026-11-17** and merged into `main` with `git merge --no-ff`; that branch was deleted too. All thirteen tasks are DONE: R0 (golden baseline), R1 (licence, lint, CI), R2 (absolute paths), R3 (agent-process docs), R4 (package-layout design), R5–R11 (one package move per task: `core`, `scan`, `parse`, `scip`, `graph`, `render`, `cli`), and R12 (cleanup). During E1 every old module path stayed importable through a thin re-export shim so each move landed green.
 
-The next epic is **E1b** (`refactor/drop-compat-shims`), created from `main` after the E1 merge. Its single task, C1, removes the 13 shims and `cartog/langs/`, rewrites the test imports to the new homes (`cartog.core.*`, `cartog.scan.*`, `cartog.parse.*`, `cartog.scip.*`, `cartog.graph.*`, `cartog.render.*`), replaces `test_public_imports_after_move` with `test_shims_are_gone`, and updates `docs/dev/PACKAGE_LAYOUT.md`. **E2** (unified command and output) starts at the U1 design gate only after E1b is accepted. Full task fields, tests, acceptance criteria, and user checks are in [`docs/WORKING_TASKS.md`](./WORKING_TASKS.md).
+**E1b** (`refactor/drop-compat-shims`) is built and waiting on the author: its single task, C1, is DONE (`2f2a0b5`) and the epic row reads **READY FOR EPIC REVIEW**. C1 deleted the 13 shims and `cartog/langs/`, rewrote every test import to the new homes (`cartog.core.*`, `cartog.scan.*`, `cartog.parse.*`, `cartog.scip.*`, `cartog.graph.*`, `cartog.render.*`), replaced `test_public_imports_after_move` with `test_shims_are_gone`, and updated `docs/dev/PACKAGE_LAYOUT.md`. The old flat paths are now gone from the tree and from the wheel; the suite is 194 passed and the goldens report `0 differences`.
+
+The next command is `Accept E1b`: that sets the epic row to ACCEPTED, merges `refactor/drop-compat-shims` into `main` with `git merge --no-ff`, and deletes the branch. **E2** (unified command and output) then starts at the U1 design gate, which is `BLOCKED` until the author approves the design. Full task fields, tests, acceptance criteria, and user checks are in [`docs/WORKING_TASKS.md`](./WORKING_TASKS.md).
 
 ---
 
@@ -128,12 +130,12 @@ On Windows, always use `venv\Scripts\python.exe` inside the repo venv. Cartog's 
 |---|---|---|
 | 1 | Tree-sitter native queries replace manual AST traversal to avoid GC crashes | `docs/ISSUES_AND_DECISIONS.md` Decision 1 |
 | 2 | Pin `tree-sitter<0.26` due to upstream refcount bug (#500) | `docs/ISSUES_AND_DECISIONS.md` Issue 3 |
-| 3 | SHA-1 prefix of `kind:path:qualified_name` as stable node ID | `cartog/model.py:Node.create` |
+| 3 | SHA-1 prefix of `kind:path:qualified_name` as stable node ID | `cartog/core/model.py:Node.create` |
 | 4 | `scip_windows_shim.js` preloaded via `NODE_OPTIONS` to fix Win32 regex crash | `docs/ISSUES_AND_DECISIONS.md` Issue 12 |
 | 5 | Cross-root SCIP reconciliation via anchored prefix matching | `docs/ISSUES_AND_DECISIONS.md` Issue 14 |
 | 6 | All line numbers 1-based in `graph.json`; columns 0-based | `docs/ISSUES_AND_DECISIONS.md` Issue 13 |
-| 7 | JSONC string-aware tokenizer replaces regex stripping | `cartog/jsonc.py`, `docs/ISSUES_AND_DECISIONS.md` |
-| 8 | `cartog check` non-zero by default on unrun SCIP; `--no-scip` to opt out | `cartog/cli.py:679-681` |
+| 7 | JSONC string-aware tokenizer replaces regex stripping | `cartog/core/jsonc.py`, `docs/ISSUES_AND_DECISIONS.md` |
+| 8 | `cartog check` non-zero by default on unrun SCIP; `--no-scip` to opt out | `cartog/cli/commands/check.py:59-65` |
 | 9 | Interactive Viewer (M11) replaces Mermaid as primary view; Mermaid is static export only | `docs/ISSUES_AND_DECISIONS.md` Issue 15 §1 |
 | 10 | `graph.json` must NEVER be fed directly to an LLM; use `cartog digest` | `docs/ISSUES_AND_DECISIONS.md` Issue 15 §2 |
 
@@ -166,7 +168,7 @@ On Windows, always use `venv\Scripts\python.exe` inside the repo venv. Cartog's 
 | `docs/ISSUES_AND_DECISIONS.md` | Technical issue archive: root cause, options, decision rationale |
 | `docs/KNOWN_ISSUES.md` | Ranked issues, review findings F1–F9, and architectural limits |
 | `docs/AUDIT_SUMMARY.md` | Takeover audit findings, fixes made, top risks |
-| `docs/pytest_report.txt` | Archived pytest session (152 passed, 1 warning); current baseline is 178 passed (`docs/evidence/H3-full-suite.txt`) |
+| `docs/pytest_report.txt` | Archived pytest session (152 passed, 1 warning); current baseline is 194 passed (`docs/evidence/C1-suite.txt`) |
 | `AGENTS.md` | Root entry point for any model/agent: links to the process docs in `docs/dev/` |
 | `docs/dev/EVIDENCE_PROTOCOL.md` | Proof for every claim: red-green, evidence files, test counts |
 | `docs/dev/COMMAND_LOOP.md` | Session loop: work unit, scope, decide-vs-ask, command surface |

@@ -25,7 +25,7 @@ The roadmap narrative is [`docs/IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.m
 | R10 | Move views and exporters | E1 | `refactor/package-structure` | R8, R9 | M | E1-S9 | DONE | cbc3cfd |
 | R11 | Split the CLI into modules | E1 | `refactor/package-structure` | R10 | M | E1-S10 | DONE | d88a8b8 |
 | R12 | Cleanup pass | E1 | `refactor/package-structure` | R5-R11 | M | E1-S11 | DONE | 2461a3b |
-| C1 | Drop the compatibility shims | E1b | `refactor/drop-compat-shims` | R12 | M | E1b-S1 | TODO | — |
+| C1 | Drop the compatibility shims | E1b | `refactor/drop-compat-shims` | R12 | M | E1b-S1 | DONE | 2f2a0b5 |
 | U1 | Unified command design | E2 | `feature/unified-command-and-output` | E1b | S | E2-S1 | TODO | — |
 | U2 | Default output location | E2 | `feature/unified-command-and-output` | U1 | M | E2-S2 | TODO | — |
 | U3 | Output layout writer | E2 | `feature/unified-command-and-output` | U2 | M | E2-S3 | TODO | — |
@@ -78,7 +78,7 @@ The roadmap narrative is [`docs/IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.m
 |---|---|---|---|---|---|
 | E0 | `fix/baseline-correctness` | — | 5 / 5 | ACCEPTED | 2026-11-15 |
 | E1 | `refactor/package-structure` | E0 | 13 / 13 | ACCEPTED | 2026-11-17 |
-| E1b | `refactor/drop-compat-shims` | E1 | 0 / 1 | NOT STARTED | no |
+| E1b | `refactor/drop-compat-shims` | E1 | 1 / 1 | READY FOR EPIC REVIEW | no |
 | E2 | `feature/unified-command-and-output` | E1b | 0 / 6 | NOT STARTED | no |
 | E3 | `feature/security-baseline` | E2 | 0 / 9 | NOT STARTED | no |
 | E4 | `feature/verification` | E2 | 0 / 5 | NOT STARTED | no |
@@ -585,10 +585,11 @@ At most one epic per session; within that epic, finish and commit each task befo
 - **User check (epic review):** `git grep -nE "^\s*(from|import) cartog\.(model|config|jsonc|cache|manifests|langs|scip_pass|scip_pb2|views|export_json|export_mermaid|export_html|merge|validate)\b" -- cartog scripts tests` prints nothing (the `test_shims_are_gone` list of removed names is not an import); `pytest -q`; `python scripts/golden.py --check`.
 - **Evidence files:** `docs/evidence/C1-drop-shims.txt`
 - **Planned commit message:** `C1: drop the E1 compatibility shims`
-- **Status:** TODO
-- **Commit hash:** —
-- **Failure log:** —
-- **Change log:** —
+- **Status:** DONE
+- **Commit hash:** `2f2a0b5`
+- **Failure log:** The first full suite after the deletion was `2 failed, 192 passed`: `test_docs_dev_links_resolve` found three relative links in `docs/ISSUES_AND_DECISIONS.md` pointing at `cartog/langs/base.py`, `cartog/merge.py`, and `cartog/langs/js_adapter.py`, and `test_validation_no_hardcoded_paths` read `cartog/validate.py` by path. Both were repaired by retargeting the reference at the new home; no assertion changed. The first lint run also reported 13 `I001` findings in the rewritten test imports, cleared with `ruff check . --fix`.
+- **Change log:**
+  - 2026-11-17: Rewrote every test import to the new homes (`cartog.core.*`, `cartog.scan.*`, `cartog.parse.*`, `cartog.scip.*`, `cartog.graph.*`, `cartog.render.*`); `from cartog.scan import ...` and `from cartog.cli import app` are unchanged because those packages stay. Deleted the 13 shim files and `cartog/langs/` with `git rm`. Replaced `COMPLETED_MOVES`/`test_public_imports_after_move` with `REMOVED_PATHS`/`REMOVED_MODULES`/`NEW_HOMES` and `test_shims_are_gone`; `test_layout_doc_covers_every_module` now asserts the document names the removed paths and no longer names the deleted compatibility test. `PACKAGE_LAYOUT.md` gained §6 "Removed by C1" plus updates to the status line, §2 note, §3 rules 4–5, §4 package-data row, and §5 migration order. Suite 194 passed → 194 passed (one test out, one in), goldens `0 differences`, ruff clean, wheel 54 files with no shim module and every data file, `python -m cartog --help` exits 0, and the acceptance grep finds no import of a removed path.
 
 ### U1: Unified command design
 
