@@ -25,7 +25,8 @@ The roadmap narrative is [`docs/IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.m
 | R10 | Move views and exporters | E1 | `refactor/package-structure` | R8, R9 | M | E1-S9 | DONE | cbc3cfd |
 | R11 | Split the CLI into modules | E1 | `refactor/package-structure` | R10 | M | E1-S10 | DONE | d88a8b8 |
 | R12 | Cleanup pass | E1 | `refactor/package-structure` | R5-R11 | M | E1-S11 | DONE | 2461a3b |
-| U1 | Unified command design | E2 | `feature/unified-command-and-output` | E1 | S | E2-S1 | TODO | — |
+| C1 | Drop the compatibility shims | E1b | `refactor/drop-compat-shims` | R12 | M | E1b-S1 | TODO | — |
+| U1 | Unified command design | E2 | `feature/unified-command-and-output` | E1b | S | E2-S1 | TODO | — |
 | U2 | Default output location | E2 | `feature/unified-command-and-output` | U1 | M | E2-S2 | TODO | — |
 | U3 | Output layout writer | E2 | `feature/unified-command-and-output` | U2 | M | E2-S3 | TODO | — |
 | U4 | Unified command | E2 | `feature/unified-command-and-output` | U3 | M | E2-S4 | TODO | — |
@@ -76,8 +77,9 @@ The roadmap narrative is [`docs/IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.m
 | epic | branch | depends on | tasks done / total | status | accepted by author |
 |---|---|---|---|---|---|
 | E0 | `fix/baseline-correctness` | — | 5 / 5 | ACCEPTED | 2026-11-15 |
-| E1 | `refactor/package-structure` | E0 | 13 / 13 | READY FOR EPIC REVIEW | no |
-| E2 | `feature/unified-command-and-output` | E1 | 0 / 6 | NOT STARTED | no |
+| E1 | `refactor/package-structure` | E0 | 13 / 13 | ACCEPTED | 2026-11-17 |
+| E1b | `refactor/drop-compat-shims` | E1 | 0 / 1 | NOT STARTED | no |
+| E2 | `feature/unified-command-and-output` | E1b | 0 / 6 | NOT STARTED | no |
 | E3 | `feature/security-baseline` | E2 | 0 / 9 | NOT STARTED | no |
 | E4 | `feature/verification` | E2 | 0 / 5 | NOT STARTED | no |
 | E5 | `feature/llm-layer` | E2, E3 | 0 / 11 | NOT STARTED | no |
@@ -101,7 +103,7 @@ There is no per-task acceptance. The agent may mark a task `DONE` once its tests
 
 ## Session grouping
 
-At most three small tasks, or one large task, per session. Sessions marked **(gate)** need author input before the dependent work can continue.
+At most one epic per session; within that epic, finish and commit each task before starting the next. Sessions marked **(gate)** need author input before the dependent work can continue.
 
 | Session | Tasks | Note |
 |---|---|---|
@@ -113,6 +115,7 @@ At most three small tasks, or one large task, per session. Sessions marked **(ga
 | E1-S3 | R4 | (gate) layout approval |
 | E1-S4 … E1-S10 | R5 … R11 | one module move per session |
 | E1-S11 | R12 | |
+| E1b-S1 | C1 | shim removal after E1; E2 depends on it |
 | E2-S1 | U1 | (gate) design approval |
 | E2-S2 … E2-S4 | U2, U3, U4 | one per session |
 | E2-S5 | U5, U6 | |
@@ -563,10 +566,34 @@ At most three small tasks, or one large task, per session. Sessions marked **(ga
 - **Change log:**
   - 2026-11-16: Added `cartog/core/diagnostics.py` (`get_logger`, `warn`) and converted the only three direct `logging`/`warnings` users. Added 42 docstrings and the missing return annotations; `tests/test_public_api_type_hints.py` enforces them and fails if a module bypasses the helper. Removed the dead `load_json_with_comments` wrapper plus unused test locals. Cleared `UP045` (167 findings) and the four test-only rule groups (13 findings), removing the `tests/*.py` lint exemption. `E501` stays ignored and moves to E2/U1 with a written reason (Decision 33). Goldens `0 differences`, ruff clean, suite 194 passed (+5), wheel 71 files with the new module and all data files, `python -m cartog --help` exits 0.
 
+### C1: Drop the compatibility shims
+
+- **Epic:** E1b — `refactor/drop-compat-shims`
+- **Depends on:** R12 (E1 accepted)
+- **Size:** M
+- **Session group:** E1b-S1
+- **Files to read:** `docs/dev/PACKAGE_LAYOUT.md`, `tests/test_package_layout.py`, `docs/ISSUES_AND_DECISIONS.md` Decision 32, `cartog/model.py` and `cartog/langs/__init__.py` (shim examples)
+- **Steps:**
+  1. Rewrite every import and module reference in `tests/` from a removed flat path to its new home: `cartog.model`/`config`/`jsonc` → `cartog.core.*`, `cartog.cache`/`manifests` → `cartog.scan.*`, `cartog.langs.*` → `cartog.parse.*`, `cartog.scip_pass`/`scip_pb2` → `cartog.scip.*`, `cartog.merge`/`validate` → `cartog.graph.*`, `cartog.views`/`export_*` → `cartog.render.*`. Keep the `from cartog.scan import ...` and `from cartog.cli import app` forms; those packages stay.
+  2. Delete the 13 shim files (`cache`, `config`, `export_html`, `export_json`, `export_mermaid`, `jsonc`, `manifests`, `merge`, `model`, `scip_pass`, `scip_pb2`, `validate`, `views`) and the `cartog/langs/` directory. Never delete `cartog/scan/`, `cartog/cli/`, or the new homes.
+  3. In `tests/test_package_layout.py`, replace `COMPLETED_MOVES` and `test_public_imports_after_move` with `test_shims_are_gone`: each removed path is absent from disk and `importlib.util.find_spec` returns `None`; `cartog.scan` still re-exports `walk_files`; `cartog.cli.app` is still the Typer app; every new home imports cleanly.
+  4. Keep the mapping table as the migration log (rows are never deleted; the first column is the R4 path). Add a "Removed by C1" list under the table naming every deleted path, and make `test_layout_doc_covers_every_module` assert each removed path is named there and that the document names `test_shims_are_gone` instead of `test_public_imports_after_move`.
+  5. Update `docs/dev/PACKAGE_LAYOUT.md`: §1 status, the §2 note, §3 rules 4–5 (shims → flat paths are gone), the §4 package-data risk row, and §5 migration order.
+  6. Prove no behaviour change: `ruff check .`, `python scripts/golden.py --check`, the full suite, a wheel build (no shim modules), and `python -m cartog --help`.
+- **Tests (red-green):** `test_shims_are_gone`, `test_layout_doc_covers_every_module`, `test_cli_package_layout`, `test_golden_check_reports_zero_differences`
+- **Acceptance criteria:** No shim file and no `cartog/langs/` remains; nothing in `cartog/`, `scripts/`, or `tests/` imports a removed path; every reference resolves to the new home; goldens `0 differences`; suite green with no test weakened (only the compatibility test is replaced, so the count may change by that one test); ruff clean; the wheel ships no shim modules.
+- **User check (epic review):** `git grep -nE "^\s*(from|import) cartog\.(model|config|jsonc|cache|manifests|langs|scip_pass|scip_pb2|views|export_json|export_mermaid|export_html|merge|validate)\b" -- cartog scripts tests` prints nothing (the `test_shims_are_gone` list of removed names is not an import); `pytest -q`; `python scripts/golden.py --check`.
+- **Evidence files:** `docs/evidence/C1-drop-shims.txt`
+- **Planned commit message:** `C1: drop the E1 compatibility shims`
+- **Status:** TODO
+- **Commit hash:** —
+- **Failure log:** —
+- **Change log:** —
+
 ### U1: Unified command design
 
 - **Epic:** E2 — `feature/unified-command-and-output`
-- **Depends on:** E1
+- **Depends on:** E1b
 - **Size:** S
 - **Session group:** E2-S1
 - **Gate:** author must approve the design before implementation. Set `BLOCKED` when reached until the author responds.

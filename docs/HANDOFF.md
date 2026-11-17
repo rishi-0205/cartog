@@ -1,6 +1,6 @@
 # Cartog — Handoff Document
 
-**Last updated:** 2026-11-16 (E1 complete on `refactor/package-structure`: R0–R12 DONE, awaiting the author's `Accept E1`; suite is 194 tests passing; next epic is E2, starting at the U1 design gate)  
+**Last updated:** 2026-11-17 (E1 ACCEPTED and merged; E1b shim cleanup is the next session; suite is 194 tests passing; E2 follows E1b)  
 **Role:** Single entry point for any model or developer picking up this project.  
 **Active Working Tasks:** See [`docs/WORKING_TASKS.md`](./WORKING_TASKS.md) for the live epic board and command loop. The historical T0–T21 board is [`docs/archive/WORKING_TASKS_T0-T21.md`](./archive/WORKING_TASKS_T0-T21.md).  
 **Git rules:** [`docs/dev/GIT_WORKFLOW.md`](./dev/GIT_WORKFLOW.md) — one branch per epic, commit per task, never push, merge only after `Accept <epic id>`.
@@ -46,13 +46,14 @@ Output: `cartog-out/` containing `parse.json`, `scip.json`, `graph.json`, `overv
 
 ### Epic Plan (E0–E8)
 
-The remaining work runs as nine epics, each on its own branch. The live board is [`docs/WORKING_TASKS.md`](./WORKING_TASKS.md).
+The remaining work runs as nine epics plus the E1b shim-removal follow-up, each on its own branch. The live board is [`docs/WORKING_TASKS.md`](./WORKING_TASKS.md).
 
 | Epic | Branch | Depends on | Tasks | Goal |
 |---|---|---|---|---|
 | **E0** | `fix/baseline-correctness` | — | H1–H5 | Make the baseline honest: hermetic tests, viewer correctness, edge index, doc drift |
 | **E1** | `refactor/package-structure` | E0 | R0–R12 | Golden baseline, hygiene, docs move, module refactor, cleanup |
-| **E2** | `feature/unified-command-and-output` | E1 | U1–U6 | One command, per-user output home, stable layout, stage commands |
+| **E1b** | `refactor/drop-compat-shims` | E1 | C1 | Delete the E1 compatibility shims and rewrite every test import to the new homes |
+| **E2** | `feature/unified-command-and-output` | E1b | U1–U6 | One command, per-user output home, stable layout, stage commands |
 | **E3** | `feature/security-baseline` | E2 | S1–S9 | Runner, hostile canary, escaping, path confinement, limits |
 | **E4** | `feature/verification` | E2 | V1–V5 | Timings/memory, SCIP invariant and study, grimp/madge, recall |
 | **E5** | `feature/llm-layer` | E2, E3 | L0–L10 | Narrator layer: spike, schema, plumbing, subsystems, eval |
@@ -60,7 +61,7 @@ The remaining work runs as nine epics, each on its own branch. The live board is
 | **E7** | `feature/analysis-service` | E3, E4 | W1–W9 | Sandboxed hosted analysis service |
 | **E8** | `docs/final` | E0–E7 | D1 | ARCHITECTURE, USAGE, README, CHANGELOG |
 
-Epic order is **E0 → E1 → E2 → E3 → E4 → E5 → E6 → E7 → E8**. An epic counts as done for dependency purposes only after the author issues `Accept <epic id>` and it is merged.
+Epic order is **E0 → E1 → E1b → E2 → E3 → E4 → E5 → E6 → E7 → E8**. An epic counts as done for dependency purposes only after the author issues `Accept <epic id>` and it is merged.
 
 ### Phases A–E Hardening & Polish Summary (T0–T16 Accepted)
 
@@ -77,11 +78,13 @@ Epic order is **E0 → E1 → E2 → E3 → E4 → E5 → E6 → E7 → E8**. An
 
 ---
 
-## 3. Next Tasks (E1 ready for review; E2 is next)
+## 3. Next Tasks (E1b shim cleanup; then E2)
 
 E0 (`fix/baseline-correctness`) was **ACCEPTED by the author on 2026-11-15** and merged into `main` with `git merge --no-ff`. H1–H5 are all DONE; the branch was deleted after the merge. E0 was built from `docs/task-plan` HEAD (`fcb11f2`), so that merge also brought the T22 documentation restructure into `main` (Decision 29 in `docs/ISSUES_AND_DECISIONS.md`).
 
-The branch is `refactor/package-structure`, created from a clean `main` per [`docs/dev/GIT_WORKFLOW.md`](./dev/GIT_WORKFLOW.md). All thirteen tasks are DONE: R0 (golden baseline), R1 (licence, lint, CI), R2 (absolute paths), R3 (agent-process docs), R4 (package-layout design), R5–R11 (one package move per task: `core`, `scan`, `parse`, `scip`, `graph`, `render`, `cli`), and R12 (cleanup). Every old module path still imports through a thin re-export shim, the goldens report `0 differences` after each move, and the wheel ships the same data files. **E1 is READY FOR EPIC REVIEW** and merges only after `Accept E1`; the next epic is E2 (unified command and output), which starts at the U1 design gate. Full task fields, tests, acceptance criteria, and user checks are in [`docs/WORKING_TASKS.md`](./WORKING_TASKS.md).
+E1 (`refactor/package-structure`) was **ACCEPTED by the author on 2026-11-17** and merged into `main` with `git merge --no-ff`; that branch was deleted too. All thirteen tasks are DONE: R0 (golden baseline), R1 (licence, lint, CI), R2 (absolute paths), R3 (agent-process docs), R4 (package-layout design), R5–R11 (one package move per task: `core`, `scan`, `parse`, `scip`, `graph`, `render`, `cli`), and R12 (cleanup). Every old module path still imports through a thin re-export shim, the goldens report `0 differences`, and the wheel ships the same data files.
+
+The next epic is **E1b** (`refactor/drop-compat-shims`), created from `main` after the E1 merge. Its single task, C1, removes the 13 shims and `cartog/langs/`, rewrites the test imports to the new homes (`cartog.core.*`, `cartog.scan.*`, `cartog.parse.*`, `cartog.scip.*`, `cartog.graph.*`, `cartog.render.*`), replaces `test_public_imports_after_move` with `test_shims_are_gone`, and updates `docs/dev/PACKAGE_LAYOUT.md`. **E2** (unified command and output) starts at the U1 design gate only after E1b is accepted. Full task fields, tests, acceptance criteria, and user checks are in [`docs/WORKING_TASKS.md`](./WORKING_TASKS.md).
 
 ---
 
@@ -153,7 +156,7 @@ On Windows, always use `venv\Scripts\python.exe` inside the repo venv. Cartog's 
 | Document | Purpose |
 |---|---|
 | `docs/HANDOFF.md` | **Start here** — status, next tasks, install commands |
-| `docs/WORKING_TASKS.md` | Live epic board E0–E8: per-task and per-epic status tables, command loop, 63 task sections |
+| `docs/WORKING_TASKS.md` | Live epic board E0–E8: per-task and per-epic status tables, command loop, 64 task sections |
 | `docs/archive/WORKING_TASKS_T0-T21.md` | Archived T0–T21 session board (all accepted) |
 | `docs/dev/GIT_WORKFLOW.md` | Branch, commit, merge, and history-safety rules |
 | `docs/evidence/` | Per-task command output proving every claim |

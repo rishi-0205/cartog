@@ -898,13 +898,14 @@ patterns = [
 
 ## 5.1 Epic Plan (E0–E8)
 
-The remaining work is organized as nine epics. The full task sections, status tables, session groups, and user checks live in [`docs/WORKING_TASKS.md`](./WORKING_TASKS.md). Epic order: **E0, E1, E2, E3, E4, E5, E6, E7, E8**. An epic counts as complete for dependency purposes only after the author has accepted it with `Accept <epic id>` and it is merged into `main`.
+The remaining work is organized as nine epics plus the E1b shim-removal follow-up. The full task sections, status tables, session groups, and user checks live in [`docs/WORKING_TASKS.md`](./WORKING_TASKS.md). Epic order: **E0, E1, E1b, E2, E3, E4, E5, E6, E7, E8**. An epic counts as complete for dependency purposes only after the author has accepted it with `Accept <epic id>` and it is merged into `main`.
 
 | Epic | Branch | Depends on | Tasks | Goal |
 |---|---|---|---|---|
 | **E0** | `fix/baseline-correctness` | — | H1–H5 (5) | Make the baseline honest: hermetic tests, viewer fallback and rollup fixes, edge index, doc drift |
 | **E1** | `refactor/package-structure` | E0 | R0–R12 (13) | Golden baseline, repo hygiene, docs move, module-by-module package refactor, cleanup |
-| **E2** | `feature/unified-command-and-output` | E1 | U1–U6 (6) | One command, per-user output home, stable output layout, legacy stage commands |
+| **E1b** | `refactor/drop-compat-shims` | E1 | C1 (1) | Delete the E1 compatibility shims and rewrite the test imports to the new homes |
+| **E2** | `feature/unified-command-and-output` | E1b | U1–U6 (6) | One command, per-user output home, stable output layout, legacy stage commands |
 | **E3** | `feature/security-baseline` | E2 | S1–S9 (9) | Subprocess runner, hostile-repo canary, HTML/Mermaid escaping, path confinement, limits |
 | **E4** | `feature/verification` | E2 | V1–V5 (5) | Timings/memory, `index.scip` invariant, SCIP environment study, grimp/madge comparison, recall |
 | **E5** | `feature/llm-layer` | E2, E3 | L0–L10 (11) | Narrator layer: spike, schema, plumbing, cache/redaction, verification, subsystems, roles, descriptions, eval |
@@ -916,6 +917,7 @@ The remaining work is organized as nine epics. The full task sections, status ta
 
 - **E0:** H1 hermetic tests (M), H2 raw-graph fallback (S), H3 real edge rollup (M), H4 keyed edge index (S), H5 doc and code drift (S).
 - **E1:** R0 golden baseline (S), R1 repo hygiene + licence (M, author gate), R2 remove absolute paths (S), R3 move agent docs (S), R4 layout design (S, author gate), R5 core modules (M), R6 scanning (M), R7 language adapters (M), R8 SCIP (M), R9 graph build/validate (M), R10 views/exporters (M), R11 split CLI (M), R12 cleanup (M).
+- **E1b:** C1 drop the compatibility shims (M).
 - **E2:** U1 design (S, author gate), U2 default output home (M), U3 output layout (M), U4 unified command (M), U5 stage commands and flags (M), U6 docs and tests (S).
 - **E3:** S1 subprocess runner (M), S2 hostile canary (S), S3 HTML escaping (M), S4 Mermaid sanitisation (S), S5 path confinement (M), S6 terminal control chars (S), S7 pin and checksum vendors (S), S8 configurable limits (S), S9 SECURITY.md (S).
 - **E4:** V1 timings and peak memory (S), V2 `index.scip` invariant (S), V3 SCIP environment study (M), V4 grimp/madge comparison (M), V5 call-edge recall sample (S).
