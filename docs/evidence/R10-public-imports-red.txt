@@ -1,0 +1,59 @@
+﻿F                                                                        [100%]
+================================== FAILURES ===================================
+_______________________ test_public_imports_after_move ________________________
+
+    def test_public_imports_after_move() -> None:
+        import importlib
+        import types
+    
+        def public_api(module: types.ModuleType, module_name: str) -> list[str]:
+            """The module's declared API, falling back to what it appears to own."""
+            declared = getattr(module, "__all__", None)
+            if declared is not None:
+                assert all(isinstance(n, str) for n in declared), f"{module_name}.__all__ is malformed"
+                return list(declared)
+    
+            names: list[str] = []
+            for name in dir(module):
+                if name.startswith("_"):
+                    continue
+                obj = getattr(module, name)
+                if isinstance(obj, types.ModuleType):
+                    continue
+                if name.isupper() or getattr(obj, "__module__", None) == module_name:
+                    names.append(name)
+            return names
+    
+        for old_name, new_name in COMPLETED_MOVES.items():
+            old = importlib.import_module(old_name)
+>           new = importlib.import_module(new_name)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_package_layout.py:142: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+C:\Python313\Lib\importlib\__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+<frozen importlib._bootstrap>:1387: in _gcd_import
+    ???
+<frozen importlib._bootstrap>:1360: in _find_and_load
+    ???
+<frozen importlib._bootstrap>:1310: in _find_and_load_unlocked
+    ???
+<frozen importlib._bootstrap>:488: in _call_with_frames_removed
+    ???
+<frozen importlib._bootstrap>:1387: in _gcd_import
+    ???
+<frozen importlib._bootstrap>:1360: in _find_and_load
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+name = 'cartog.render', import_ = <function _gcd_import at 0x00000236B5C004A0>
+
+>   ???
+E   ModuleNotFoundError: No module named 'cartog.render'
+
+<frozen importlib._bootstrap>:1324: ModuleNotFoundError
+=========================== short test summary info ===========================
+FAILED tests/test_package_layout.py::test_public_imports_after_move - ModuleN...
+1 failed in 0.25s

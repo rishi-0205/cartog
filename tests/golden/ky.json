@@ -1,0 +1,41 @@
+{
+  "digest": {
+    "approx_tokens": 664,
+    "chars": 2653,
+    "sha256": "c2e4b8b438f5d9acfdf0b4cc54979e19113906250820bcc4163b7296ac1b38fd"
+  },
+  "edges": {
+    "by_kind": {
+      "depends_on": 115,
+      "imports": 203,
+      "serves": 60
+    },
+    "total": 378
+  },
+  "mermaid": {
+    "overview_sha256": "dd8dae637a5c90f514dc26940ac30405d5cae72be55ad17befc7314c3a609cfd"
+  },
+  "nodes": {
+    "by_kind": {
+      "ci_job": 2,
+      "class": 14,
+      "dependency": 26,
+      "entrypoint": 5,
+      "file": 100,
+      "folder": 10,
+      "function": 189,
+      "method": 207,
+      "route": 789
+    },
+    "total": 1342
+  },
+  "repo": "ky",
+  "viewer": {
+    "dropped_self_edges": 0,
+    "edges": 225,
+    "elements": 1507,
+    "emitted_edges": 225,
+    "nodes": 1282,
+    "rolled_up_edges": 0
+  }
+}

@@ -132,7 +132,30 @@ All nine findings below were **reproduced on branch `docs/task-plan`** before th
 - **Reproduce:** `Test-Path LICENSE` and `git grep -n -E '^version|__version__' -- pyproject.toml cartog/__init__.py`.
 - **Proposed fix:** **R1** adds `LICENSE` after the author confirms MIT and the copyright name. **H5** makes the version single-source (`dynamic = ["version"]`).
 - **Fix task:** **R1** (E1, author gate) and **H5** (E0).
-- **Status:** PARTIALLY FIXED in H5 (`6b1f634`, 2026-11-13): the version is single-source (`dynamic = ["version"]`, setuptools `attr = "cartog.__version__"`) and `test_version_single_source` enforces it. `LICENSE` is still missing and remains open under R1.
+- **Status:** FIXED in R1 (`eff6c74`; staging fix `1653772`, 2026-11-15): `LICENSE` (MIT, `Copyright (c) 2026 Cartog Contributors`) exists, `[project]` carries the SPDX expression `license = "MIT"` plus `license-files = ["LICENSE"]`, and `tests/test_repo_hygiene.py::test_pyproject_metadata_complete` enforces both. The version was made single-source in H5 (`6b1f634`).
+
+---
+
+## Lint debt (deferred from R1, reviewed in R12)
+
+R1 turned on `ruff check .` (select `E,F,I,UP,B`) and the tree is clean. One rule
+stays ignored on purpose; it is debt, not a fix.
+
+| Rule | Count | Why it is ignored | Owner |
+|---|---|---|---|
+| `E501` line-too-long | 228 | Most hits are Typer `help=` strings, docstring examples and long assertions. Reflowing a help string changes `--help` output, which this epic keeps byte-identical; a blanket `ruff format` would also reflow code the evidence transcripts quote. | E2 (U1 rewrites the CLI surface) |
+| `B008` function-call-in-default | — | Typer commands must declare `typer.Option(...)`/`typer.Argument(...)` in the signature; this is the documented idiom, not a bug. | stays ignored by design |
+
+R12 cleared the rest:
+
+- `UP045` (`Optional[X]` → `X | None`): 165 annotations converted mechanically;
+  no runtime change because every module has `from __future__ import annotations`.
+- `E402`, `F841`, `B023`, `B905` in `tests/`: the mid-file imports moved to the
+  top, unused bindings removed (the calls they wrapped stay), the loop variable
+  in `find_calls` is bound as a default argument, and the two cache comparisons
+  now use `zip(..., strict=True)`. `[tool.ruff.lint.per-file-ignores]` no longer
+  exempts `tests/*.py`.
+
 
 ---
 

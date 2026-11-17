@@ -13,11 +13,10 @@ import subprocess
 import sys
 from pathlib import Path
 
-import pytest
-from typer.testing import CliRunner
-
 import conftest
+import pytest
 from conftest import requires_sample
+from typer.testing import CliRunner
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 runner = CliRunner()

@@ -404,9 +404,9 @@ In `tests/test_js_adapter.py`, `test_resolve_tsconfig_paths_and_workspaces` fail
 - Consequently, `_get_tsconfig()` returned `None`, path aliases like `@core/*` could not be matched, and imports fell back to external packages.
 
 ### 3. Solution & Decision
-- **Add `target_path` to `ProjectContext`:** Added `target_path: str = "."` to [cartog/langs/base.py](file:///c:/Users/rishi/OneDrive/Desktop/Dev/cartog/cartog/langs/base.py) `ProjectContext`.
-- **Pass `target_path` from `build_graph()`:** In [cartog/merge.py](file:///c:/Users/rishi/OneDrive/Desktop/Dev/cartog/cartog/merge.py), passed `target_path=target_path` when creating `ProjectContext`.
-- **Target-Relative Config Resolution:** Updated `_get_tsconfig()` and `_discover_workspace_packages()` in [cartog/langs/js_adapter.py](file:///c:/Users/rishi/OneDrive/Desktop/Dev/cartog/cartog/langs/js_adapter.py) to resolve `tsconfig.json` and `package.json` relative to `project_context.target_path / root_dir`.
+- **Add `target_path` to `ProjectContext`:** Added `target_path: str = "."` to [cartog/langs/base.py](../cartog/langs/base.py) `ProjectContext`.
+- **Pass `target_path` from `build_graph()`:** In [cartog/merge.py](../cartog/merge.py), passed `target_path=target_path` when creating `ProjectContext`.
+- **Target-Relative Config Resolution:** Updated `_get_tsconfig()` and `_discover_workspace_packages()` in [cartog/langs/js_adapter.py](../cartog/langs/js_adapter.py) to resolve `tsconfig.json` and `package.json` relative to `project_context.target_path / root_dir`.
 - **Test Alignment:** In `tests/test_js_adapter.py`, passed `target_path="tests/fixtures/ts_monorepo"` to `ProjectContext`. All 43 tests pass cleanly.
 
 ---
@@ -422,7 +422,7 @@ Invoking `@sourcegraph/scip-python` on Windows immediately crashes with exit cod
 ```text
 SyntaxError: Invalid regular expression: /\/: \ at end of pattern
     at new RegExp (<anonymous>)
-    at Object.<anonymous> (C:\Users\...\AppData\Roaming\npm\node_modules\@sourcegraph\scip-python\dist\scip-python\src\virtualFile.js:15:23)
+    at Object.<anonymous> (<npm-prefix>\node_modules\@sourcegraph\scip-python\dist\scip-python\src\virtualFile.js:15:23)
     at Module._compile (node:internal/modules/cjs/loader:1546:14)
     at Module._extensions..js (node:internal/modules/cjs/loader:1691:10)
     at Module.load (node:internal/modules/cjs/loader:1317:32)
@@ -653,13 +653,13 @@ In `scip-python` (Sourcegraph's Pyright-based SCIP indexer), `--environment` is 
 #### Command Diagnostics
 - `where.exe python`:
   1. `C:\Python313\python.exe` (`python -m pip show click` -> Version: 8.5.0 in User site-packages)
-  2. `C:\Users\rishi\AppData\Local\Programs\Python\Python310\python.exe` (`pip show click` -> WARNING: package(s) not found: click)
-  3. `C:\Users\rishi\AppData\Local\Microsoft\WindowsApps\python.exe` (Python 3.11 Windows Store; `pip show click` -> Version: 8.1.7)
-  4. `C:\msys64\mingw64\bin\python.exe` (`pip show click` -> WARNING: package(s) not found: click)
-  5. `C:\Users\rishi\OneDrive\Desktop\Dev\cartog\venv\Scripts\python.exe` (`pip show click` -> WARNING: package(s) not found: click)
+  2. `%LOCALAPPDATA%\Programs\Python\Python310\python.exe` (`pip show click` -> WARNING: package(s) not found: click)
+  3. `%LOCALAPPDATA%\Microsoft\WindowsApps\python.exe` (Python 3.11 Windows Store; `pip show click` -> Version: 8.1.7)
+  4. `<msys64>\mingw64\bin\python.exe` (`pip show click` -> WARNING: package(s) not found: click)
+  5. `<repo>\venv\Scripts\python.exe` (`pip show click` -> WARNING: package(s) not found: click)
 - `where.exe scip-python`:
-  1. `C:\Users\rishi\AppData\Roaming\npm\scip-python`
-  2. `C:\Users\rishi\AppData\Roaming\npm\scip-python.cmd`
+  1. `%APPDATA%\npm\scip-python`
+  2. `%APPDATA%\npm\scip-python.cmd`
 
 #### Empirical Behavior: Reference Symbols Across Environments
 1. **When indexed with Windows Store Python 3.11 (Click 8.1.7 installed):**
@@ -1071,3 +1071,35 @@ Following the initial orthogonal routing updates, user testing identified two re
 - **Rationale:** branching from `main` would produce an epic branch without `docs/WORKING_TASKS.md` or `docs/dev/GIT_WORKFLOW.md`, making the workflow self-inconsistent. Merging T22 into `main` first would itself be an unaccepted merge.
 - **Consequence:** when E0 is accepted, `git merge --no-ff fix/baseline-correctness` into `main` brings the T22 commits with it. If the author prefers the T22 docs reviewed separately, merge `docs/task-plan` first; the E0 branch is then a strict descendant.
 - **Date:** 2026-11-13
+
+## Decision 30: A fourth process doc, `docs/dev/CODE_STANDARDS.md`, and the one rule that stays in `AGENTS.md`
+
+- **Context:** R3 moves the process material out of `AGENTS.md` into `docs/dev/EVIDENCE_PROTOCOL.md`, `COMMAND_LOOP.md`, and `REPORTING.md`, and shrinks `AGENTS.md` to a pointer. The old `AGENTS.md` also carried project facts (code standards, repository map, key invariants) that are not process rules but must remain one click away, and `tests/test_docs_consistency.py::test_agents_id_length_matches_code` reads the node-ID rule **from `AGENTS.md`** and must not be edited.
+- **Decision:** put the code standards, repository map, and key invariants in `docs/dev/CODE_STANDARDS.md` (a fourth document, linked from the `AGENTS.md` table), and keep the single node-ID line in `AGENTS.md` under "Stable identifiers".
+- **Rationale:** the alternative — leaving ~30 lines of project facts in `AGENTS.md` — keeps it from being a pointer. Moving them without a destination would lose them. Editing the existing drift test to read a new file would change a test to fit a refactor, which the evidence protocol forbids; keeping the line in `AGENTS.md` leaves the test untouched and still meaningful.
+- **Consequence:** `AGENTS.md` is under 45 lines and every rule has exactly one home. The node-ID rule is deliberately duplicated in `AGENTS.md` and `CODE_STANDARDS.md`; if it changes, both must change, and the drift test fails until `AGENTS.md` is fixed.
+- **Date:** 2026-11-15
+
+## Decision 31: MIT licence under "Cartog Contributors", and the scope of `ruff check .`
+
+- **Context:** R1 is gated on the licence choice and the copyright holder's name. The repository already advertised MIT (`pyproject.toml` and the README badge) with no `LICENSE` file, and the linter had never been run: `ruff check` with `E,F,I,UP,B` reported 1012 findings, 709 of them line length.
+- **Decision:** (1) add the standard MIT text as `Copyright (c) 2026 Cartog Contributors` and switch `[project]` to the PEP 639 form (`license = "MIT"`, `license-files = ["LICENSE"]`, `setuptools>=77`); (2) lint `cartog/`, `scripts/`, and `tests/` with `line-length = 120`, fixing every finding except `E501`, `UP045`, and `B008`, plus four test-only rule groups.
+- **Rationale:** the author asked for MIT and named no individual, and `authors` already said "Cartog Contributors", so the licence matches the existing metadata without inventing a person. For the linter: `B008` is the documented Typer idiom (`typer.Option(...)` in signatures); reflowing 230 long lines and rewriting 167 `Optional[...]` annotations inside a hygiene task would bury the module moves that follow, so both are recorded as debt in `KNOWN_ISSUES.md` and deferred to R12/R11.
+- **Consequence:** `ruff check .` is clean and CI enforces it; `License-Expression: MIT` and `License-File: LICENSE` appear in the built metadata. Generated protobuf (`cartog/scip_pb2.py`), `tests/fixtures/`, and `docs/evidence/` are excluded from lint so a formatter can never rewrite evidence or fixture line numbers.
+- **Date:** 2026-11-15
+
+## Decision 32: Package layout for E1, and how the old module paths stay importable
+
+- **Context:** R4 is an author gate: no module may move until the destination of every file under `cartog/` is agreed. The flat package mixes three concerns (data types, pipeline stages, presentation) and `cli.py` is 1,200+ lines. Moving files also breaks every `from cartog.model import ...` in `tests/` and `scripts/`.
+- **Decision:** the author said "proceed with remaining E1 in this session" on 2026-11-16, which is taken as approval of the proposed layout in `docs/dev/PACKAGE_LAYOUT.md`. The target tree is `core/`, `scan/`, `parse/` (from `langs/`), `scip/`, `graph/`, `render/` (views + exporters + `view_assets/` → `assets/`), and a `cli/` package split into `shared.py` + `commands/*`. **Every old module path stays importable** as a thin re-export shim (or, for `cartog.scan` and `cartog.cli`, as a package `__init__.py`, because a file and a package cannot share a name). `tests/` are not edited to chase imports.
+- **Rationale:** a green suite after every one of R5–R11 requires that nothing outside the moved package changes behaviour; shims give that for free and let each move be one commit with a golden check. Importing downward only (`cli → render/graph/scip/scan/parse/core`) makes the dependency direction explicit and testable.
+- **Consequence:** `tests/test_package_layout.py` fails if any file under `cartog/` has no destination in the mapping table, if the table lists a path that no longer exists, or if a migration task loses its rows; `test_public_imports_after_move` (added in R5) asserts old and new paths resolve to the same objects. Shims are deleted only when nothing imports them, which is not part of E1.
+- **Date:** 2026-11-16
+
+## Decision 33: R12 cleans the API and finishes the lint debt, but leaves `E501` for E2
+
+- **Context:** R12 is the last E1 task and owns the lint debt table in `docs/KNOWN_ISSUES.md`. The tree has 228 `E501` and 167 `UP045` findings, 13 findings in test-only rule groups, three modules that import `logging`/`warnings` directly, one dead wrapper, and 42 public classes/methods without docstrings.
+- **Decision:** (1) route diagnostics through one new module, `cartog/core/diagnostics.py` (`get_logger()`, `warn()`), and make a test fail if any other module imports `logging`/`warnings`; (2) add the missing docstrings and the missing return annotations (Typer commands return `None`), and enforce module/class/function/method docstrings plus parameter and return annotations with `tests/test_public_api_type_hints.py`; (3) fix `UP045` and the test-only findings and delete the `tests/*.py` lint exemption; (4) delete the dead `load_json_with_comments` wrapper; (5) keep `E501` ignored, but re-own it to E2/U1.
+- **Rationale:** `UP045` and the test-only findings are mechanical and provably behaviour-free (the suite and the goldens verify that). `E501` is not mechanical: most hits are Typer `help=` strings, and reflowing them changes `--help` output, which R11's acceptance criterion explicitly freezes. A blanket reflow would also churn lines that evidence transcripts quote. E2 rewrites the CLI surface anyway, so it is the honest owner.
+- **Consequence:** `ruff check .` still reports clean with only `E501` and `B008` ignored; the two exceptions are documented in `pyproject.toml` and `docs/KNOWN_ISSUES.md`. The new diagnostics helper is part of the public API and follows the same docstring/type-hint rule as everything else.
+- **Date:** 2026-11-16

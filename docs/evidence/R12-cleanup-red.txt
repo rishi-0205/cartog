@@ -1,0 +1,128 @@
+﻿FFF..                                                                    [100%]
+================================== FAILURES ===================================
+_________________________ test_public_api_type_hints __________________________
+
+    def test_public_api_type_hints() -> None:
+        missing: list[str] = []
+    
+        for path in _modules():
+            rel = path.relative_to(REPO_ROOT).as_posix()
+            tree = ast.parse(path.read_text(encoding="utf-8"), filename=rel)
+    
+            if ast.get_docstring(tree) is None:
+                missing.append(f"{rel}: module has no docstring")
+    
+            for name, node in _public_defs(tree):
+                if ast.get_docstring(node) is None:
+                    kind = "class" if isinstance(node, ast.ClassDef) else "def"
+                    missing.append(f"{rel}: {kind} {name} has no docstring")
+                if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                    for gap in _annotated(node):
+                        missing.append(f"{rel}: {name}({gap}) has no annotation")
+    
+>       assert not missing, (
+            "public API is missing docstrings or type hints:\n" + "\n".join(missing)
+        )
+E       AssertionError: public API is missing docstrings or type hints:
+E         cartog/cli/commands/build.py: build(return) has no annotation
+E         cartog/cli/commands/check.py: check(return) has no annotation
+E         cartog/cli/commands/digest.py: digest(return) has no annotation
+E         cartog/cli/commands/doctor.py: doctor(return) has no annotation
+E         cartog/cli/commands/flow.py: flow(return) has no annotation
+E         cartog/cli/commands/map.py: map(return) has no annotation
+E         cartog/cli/commands/parse.py: parse(return) has no annotation
+E         cartog/cli/commands/queries.py: callers_of(return) has no annotation
+E         cartog/cli/commands/queries.py: callees_of(return) has no annotation
+E         cartog/cli/commands/scip.py: scip(return) has no annotation
+E         cartog/cli/commands/view.py: view(return) has no annotation
+E         cartog/cli/shared.py: def version_callback has no docstring
+E         cartog/cli/shared.py: version_callback(return) has no annotation
+E         cartog/cli/shared.py: main(return) has no annotation
+E         cartog/core/model.py: def SourceRange.to_list has no docstring
+E         cartog/core/model.py: def SourceRange.from_list has no docstring
+E         cartog/core/model.py: def Location.to_dict has no docstring
+E         cartog/core/model.py: def Location.from_dict has no docstring
+E         cartog/core/model.py: def ManifestFacts.to_dict has no docstring
+E         cartog/core/model.py: def ManifestFacts.from_dict has no docstring
+E         cartog/core/model.py: def Node.create has no docstring
+E         cartog/core/model.py: def Node.to_dict has no docstring
+E         cartog/core/model.py: def Node.from_dict has no docstring
+E         cartog/core/model.py: def Edge.id has no docstring
+E         cartog/core/model.py: def Edge.to_dict has no docstring
+E         cartog/core/model.py: def Edge.from_dict has no docstring
+E         cartog/core/model.py: def Graph.add_node has no docstring
+E         cartog/core/model.py: def Graph.get_node has no docstring
+E         cartog/core/model.py: def Graph.add_edge has no docstring
+E         cartog/core/model.py: def Graph.compute_stats has no docstring
+E         cartog/core/model.py: def Graph.to_dict has no docstring
+E         cartog/core/model.py: def Graph.from_dict has no docstring
+E         cartog/core/model.py: def Graph.to_json has no docstring
+E         cartog/core/model.py: def Graph.save has no docstring
+E         cartog/core/model.py: def Graph.load has no docstring
+E         cartog/graph/validate.py: def MismatchRecord.to_dict has no docstring
+E         cartog/graph/validate.py: def CrossCheckResult.is_clean has no docstring
+E         cartog/graph/validate.py: def CrossCheckResult.to_dict has no docstring
+E         cartog/parse/base.py: def SymbolRecord.to_dict has no docstring
+E         cartog/parse/base.py: def ImportRecord.to_dict has no docstring
+E         cartog/parse/base.py: def ParseFileResult.to_dict has no docstring
+E         cartog/parse/js_adapter.py: class ScopeEntry has no docstring
+E         cartog/parse/js_adapter.py: def JsAdapter.grammar_for has no docstring
+E         cartog/parse/js_adapter.py: def JsAdapter.parse has no docstring
+E         cartog/parse/python_adapter.py: class ScopeEntry has no docstring
+E         cartog/parse/python_adapter.py: def PythonAdapter.grammar_for has no docstring
+E         cartog/parse/python_adapter.py: def PythonAdapter.parse has no docstring
+E         cartog/render/views.py: class NoiseCategory has no docstring
+E         cartog/render/views.py: def NoiseClassification.to_dict has no docstring
+E         cartog/render/views.py: def ViewNode.to_dict has no docstring
+E         cartog/render/views.py: def ViewNode.count_nodes has no docstring
+E         cartog/scan/walk.py: def IgnoreMetrics.to_dict has no docstring
+E         cartog/scip/runner.py: def ScipOccurrence.to_dict has no docstring
+E         cartog/scip/runner.py: def ScipDocument.to_dict has no docstring
+E         cartog/scip/runner.py: def ScipRelationship.to_dict has no docstring
+E         cartog/scip/runner.py: def ScipIndexResult.to_dict has no docstring
+E       assert not ['cartog/cli/commands/build.py: build(return) has no annotation', 'cartog/cli/commands/check.py: check(return) has no ...li/commands/flow.py: flow(return) has no annotation', 'cartog/cli/commands/map.py: map(return) has no annotation', ...]
+
+tests\test_public_api_type_hints.py:79: AssertionError
+___________________ test_diagnostics_go_through_one_helper ____________________
+
+    def test_diagnostics_go_through_one_helper() -> None:
+        """Loggers and warnings come from cartog.core.diagnostics, not ad hoc imports."""
+        helper = PACKAGE / "core" / "diagnostics.py"
+        offenders: list[str] = []
+    
+        for path in _modules():
+            if path == helper:
+                continue
+            rel = path.relative_to(REPO_ROOT).as_posix()
+            for number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+                if "import logging" in line or "import warnings" in line:
+                    offenders.append(f"{rel}:{number}: imports logging/warnings directly")
+                if "logging.getLogger(" in line or "warnings.warn(" in line:
+                    offenders.append(f"{rel}:{number}: bypasses the diagnostics helper")
+    
+>       assert not offenders, (
+            "route logging and warnings through cartog.core.diagnostics:\n"
+            + "\n".join(offenders)
+        )
+E       AssertionError: route logging and warnings through cartog.core.diagnostics:
+E         cartog/core/jsonc.py:80: imports logging/warnings directly
+E         cartog/core/jsonc.py:82: bypasses the diagnostics helper
+E         cartog/parse/python_adapter.py:631: imports logging/warnings directly
+E         cartog/parse/python_adapter.py:632: bypasses the diagnostics helper
+E         cartog/scip/runner.py:5: imports logging/warnings directly
+E         cartog/scip/runner.py:20: bypasses the diagnostics helper
+E       assert not ['cartog/core/jsonc.py:80: imports logging/warnings directly', 'cartog/core/jsonc.py:82: bypasses the diagnostics help...rtog/scip/runner.py:5: imports logging/warnings directly', 'cartog/scip/runner.py:20: bypasses the diagnostics helper']
+
+tests\test_public_api_type_hints.py:99: AssertionError
+______________________ test_diagnostics_helper_contract _______________________
+
+    def test_diagnostics_helper_contract() -> None:
+>       from cartog.core.diagnostics import get_logger, warn
+E       ModuleNotFoundError: No module named 'cartog.core.diagnostics'
+
+tests\test_public_api_type_hints.py:106: ModuleNotFoundError
+=========================== short test summary info ===========================
+FAILED tests/test_public_api_type_hints.py::test_public_api_type_hints - Asse...
+FAILED tests/test_public_api_type_hints.py::test_diagnostics_go_through_one_helper
+FAILED tests/test_public_api_type_hints.py::test_diagnostics_helper_contract
+3 failed, 2 passed in 0.52s

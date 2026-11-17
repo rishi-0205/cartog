@@ -741,7 +741,7 @@ This is an append-only log tracking the construction, verification, and decision
 ## Entry 14: Milestone 6.5 - Hardening, Untouched Repo Proof, SCIP Environment & Reconciliation Integration
 
 - **Step:** Implemented all Milestone 6.5 requirements, guaranteed analyzed repositories remain completely untouched, confirmed the `--cwd` change, resolved the SCIP environment and `--environment` schema, integrated anchored cross-root reconciliation, and validated the complete test suite.
-- **Full Pytest Test Report:** [docs/pytest_report.txt](file:///c:/Users/rishi/OneDrive/Desktop/Dev/cartog/docs/pytest_report.txt) (79 passed, 1 warning in 13.84s).
+- **Full Pytest Test Report:** [docs/pytest_report.txt](pytest_report.txt) (79 passed, 1 warning in 13.84s).
 
 ### 1. Guarantee Analyzed Repository is Untouched
 - **Snapshot Verification on `samples/click`:**
@@ -776,7 +776,7 @@ This is an append-only log tracking the construction, verification, and decision
 - **PATH/VIRTUAL_ENV Hypothesis Empirical Proof:**
   - System diagnostics:
     - `where.exe python` detected 5 Python installations: Python 3.13 (`C:\Python313\python.exe`, Click 8.5.0 in User site-packages), Python 3.10 (no Click), Windows Store Python 3.11 (Click 8.1.7 installed), MSYS2 Python (no Click), and Cartog Virtualenv (Click not installed).
-    - `where.exe scip-python`: `C:\Users\rishi\AppData\Roaming\npm\scip-python`.
+    - `where.exe scip-python`: `%APPDATA%\npm\scip-python`.
   - When indexed with Python 3.11 on PATH: references in tests resolved to Click 8.1.7 package symbols (`scip-python python click 8.1.7 click/__init__:`, `click.decorators/command().`, `click.utils/echo().`).
   - When indexed with clean Virtualenv on PATH (`VIRTUAL_ENV` set): Pyright could not locate Click in site-packages and (because Click's modern TOML table syntax caused Pyright's TOML parser to fail) fell back to commit-hash local symbols (`scip-python python click 2247b35ea1c47c727d7a06e51fa280e12a863ff6 click._utils/__init__:`).
 - **`--python <path>` Implementation:**

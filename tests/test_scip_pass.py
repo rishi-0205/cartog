@@ -1,7 +1,9 @@
 """Unit tests for SCIP decoding, range translation, occurrence extraction, and call linking."""
 
 from pathlib import Path
+
 import pytest
+from conftest import requires_sample
 
 from cartog.langs import parse_source_file
 from cartog.langs.base import SymbolRecord
@@ -15,8 +17,6 @@ from cartog.scip_pass import (
     normalize_scip_range,
     run_scip_indexer,
 )
-
-from conftest import requires_sample
 
 
 def test_normalize_scip_range():
@@ -236,6 +236,7 @@ def test_known_call_evidence_line_against_source():
 def test_audit_scip_calls_and_relationships():
     """Diagnostic audit: inspect SCIP evidence, node/edge records, and call edge breakdown."""
     import json
+
     from cartog.scip_pb2 import Index
 
     requires_sample("click")
@@ -246,7 +247,7 @@ def test_audit_scip_calls_and_relationships():
         idx = Index()
         with open(click_scip_file, "rb") as f:
             idx.ParseFromString(f.read())
-        print(f"\n--- SCIP Documents & Symbols Evidence ---")
+        print("\n--- SCIP Documents & Symbols Evidence ---")
         src_docs = []
         test_docs = []
         for d in idx.documents:
@@ -290,7 +291,7 @@ def test_audit_scip_calls_and_relationships():
     # 2. Check Node Records for ca1921bcb6, 38a54a4bad, d50a1e47c9
     graph_path = Path("cartog-out/click-map-scip/graph.json")
     if graph_path.is_file():
-        with open(graph_path, "r", encoding="utf-8") as f:
+        with open(graph_path, encoding="utf-8") as f:
             graph = json.load(f)
         
         target_ids = {"ca1921bcb6", "38a54a4bad", "d50a1e47c9"}
@@ -340,7 +341,7 @@ def test_audit_scip_calls_and_relationships():
         scip_json_path = Path("cartog-out/click-map-scip/scip.json")
         scip_data = {}
         if scip_json_path.is_file():
-            with open(scip_json_path, "r", encoding="utf-8") as f:
+            with open(scip_json_path, encoding="utf-8") as f:
                 scip_data = json.load(f)
 
         # Build map of (doc_path, line) -> occurrence ranges
@@ -370,8 +371,6 @@ def test_audit_scip_calls_and_relationships():
             # Find all nodes covering this line
             # Let's find if there is a call node on this line that calls the callee
             # Or find the node at the specific identifier
-            # Let's find the occurrence in scip for this line
-            occs_on_line = [o for o in doc_occs.get(fp, []) if o["range"][0] == row]
             
             # Check for decorator first
             if line_txt.startswith("@") or line_txt.startswith("def ") or line_txt.startswith("class "):
@@ -445,9 +444,8 @@ def test_audit_scip_calls_and_relationships():
                     continue
 
             # Check if there is a call expression on this line
-            has_call = False
             # Find all call nodes overlapping this line
-            def find_calls(n):
+            def find_calls(n, row=row):
                 res = []
                 if n.start_point.row <= row <= n.end_point.row:
                     if n.type == "call":
@@ -480,6 +478,7 @@ def test_diagnose_python_and_scip_env():
     import os
     import subprocess
     import sys
+
     from cartog.scip_pb2 import Index
 
     print("\n--- Diagnostic: Python Interpreters & Pip Show Click ---")
@@ -514,7 +513,7 @@ def test_diagnose_python_and_scip_env():
         idx = Index()
         with open(scip_file, "rb") as f:
             idx.ParseFromString(f.read())
-        print(f"\nSCIP Index Metadata for click-map-scip:")
+        print("\nSCIP Index Metadata for click-map-scip:")
         meta = idx.metadata
         print(f"  version: {meta.version}")
         print(f"  tool_info: name={meta.tool_info.name}, version={meta.tool_info.version}, arguments={list(meta.tool_info.arguments)}")
@@ -522,7 +521,7 @@ def test_diagnose_python_and_scip_env():
         print(f"  text_document_encoding: {meta.text_document_encoding}")
 
     # 3. Check scip-python index --help using the Node shim
-    shim_path = (Path("cartog/scip_windows_shim.js")).resolve()
+    shim_path = (Path("cartog/scip/windows_shim.js")).resolve()
     env = os.environ.copy()
     env["NODE_OPTIONS"] = f'-r "{shim_path.as_posix()}"'
     try:
@@ -587,8 +586,8 @@ class CustomService(BaseService):
 
 def test_reconciliation_fallback_linking():
     """Verify reconciliation fallback creates candidates with confidence='reconciled' when roots match and file exists."""
-    from cartog.scip_pass import ScipDocument, ScipIndexResult, ScipOccurrence, link_calls
     from cartog.langs.base import SymbolRecord
+    from cartog.scip_pass import ScipDocument, ScipOccurrence, link_calls
 
     # Definition in src/click/core.py with prefix `src.click.core/Command#`
     def_sym = "scip-python python click 8.1.7 `src.click.core`/Command#"
@@ -642,8 +641,8 @@ def test_reconciliation_fallback_linking():
 
 def test_scip_reconciled_calls_through_reexport_chain(tmp_path):
     """Verify that calls through package __init__.py re-exports resolve to the defining submodule."""
-    from cartog.scip_pass import ScipDocument, ScipIndexResult, ScipOccurrence, link_calls
     from cartog.langs.base import SymbolRecord
+    from cartog.scip_pass import ScipDocument, ScipOccurrence, link_calls
 
     # Create directory structure in tmp_path
     src_dir = tmp_path / "src" / "mypkg"
@@ -716,8 +715,8 @@ def test_scip_reconciled_calls_through_reexport_chain(tmp_path):
 
 def test_reconciliation_strict_prefix_matching(tmp_path):
     """Verify that reconciliation rejects mismatched package names and non-existent files without speculative bare matching."""
-    from cartog.scip_pass import ScipDocument, ScipIndexResult, ScipOccurrence, link_calls
     from cartog.langs.base import SymbolRecord
+    from cartog.scip_pass import ScipDocument, ScipOccurrence, link_calls
 
     # Valid definition in mypkg
     def_sym = "scip-python python mypkg 1.0.0 `src.mypkg.core`/serve()."

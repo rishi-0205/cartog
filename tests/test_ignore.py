@@ -1,17 +1,17 @@
 """Unit and integration tests for .cartogignore support and precedence rules."""
 
-from pathlib import Path
 import json
-from typer.testing import CliRunner
-import pytest
+from pathlib import Path
 
-from cartog.cli import app
-from cartog.scan import walk_files, compute_ignore_hash, IgnoreMetrics
+from typer.testing import CliRunner
+
 from cartog.cache import ParseCache
-from cartog.model import SourceRange
-from cartog.langs.base import ParseFileResult, SymbolRecord, ImportRecord
+from cartog.cli import app
+from cartog.langs.base import ImportRecord, ParseFileResult, SymbolRecord
 from cartog.merge import build_graph
-from cartog.scip_pass import ScipDocument, ScipIndexResult, ScipOccurrence, link_calls
+from cartog.model import SourceRange
+from cartog.scan import IgnoreMetrics, compute_ignore_hash, walk_files
+from cartog.scip_pass import ScipDocument, ScipIndexResult, ScipOccurrence
 from cartog.validate import validate_graph
 
 runner = CliRunner()

@@ -1,0 +1,143 @@
+# R7 evidence - move language adapters (langs -> parse)
+Date: 2026-11-16
+Branch: refactor/package-structure
+
+## Before: goldens
+Command: venv\Scripts\python.exe scripts\golden.py --check
+click: 0 differences
+flask: 0 differences
+ky: 0 differences
+0 differences
+
+## Red: the compatibility guard fails before cartog.parse exists
+Command: venv\Scripts\python.exe -m pytest tests\test_package_layout.py::test_public_imports_after_move -q
+F                                                                        [100%]
+================================== FAILURES ===================================
+_______________________ test_public_imports_after_move ________________________
+
+    def test_public_imports_after_move() -> None:
+        import importlib
+        import types
+    
+        def public_api(module: types.ModuleType, module_name: str) -> list[str]:
+            """The module's declared API, falling back to what it appears to own."""
+            declared = getattr(module, "__all__", None)
+            if declared is not None:
+                assert all(isinstance(n, str) for n in declared), f"{module_name}.__all__ is malformed"
+                return list(declared)
+    
+            names: list[str] = []
+            for name in dir(module):
+                if name.startswith("_"):
+                    continue
+                obj = getattr(module, name)
+                if isinstance(obj, types.ModuleType):
+                    continue
+                if name.isupper() or getattr(obj, "__module__", None) == module_name:
+                    names.append(name)
+            return names
+    
+        for old_name, new_name in COMPLETED_MOVES.items():
+            old = importlib.import_module(old_name)
+>           new = importlib.import_module(new_name)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_package_layout.py:134: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+C:\Python313\Lib\importlib\__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+<frozen importlib._bootstrap>:1387: in _gcd_import
+    ???
+<frozen importlib._bootstrap>:1360: in _find_and_load
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+name = 'cartog.parse', import_ = <function _gcd_import at 0x000002E38BEC04A0>
+
+>   ???
+E   ModuleNotFoundError: No module named 'cartog.parse'
+
+<frozen importlib._bootstrap>:1324: ModuleNotFoundError
+=========================== short test summary info ===========================
+FAILED tests/test_package_layout.py::test_public_imports_after_move - ModuleN...
+1 failed in 0.17s
+
+## Move
+git mv cartog/langs/{__init__,base,python_adapter,js_adapter}.py cartog/parse/
+cartog/langs/ keeps four thin shims at the same names (the package, base, python_adapter,
+js_adapter), so every existing import path still resolves.
+
+## Green: old and new paths resolve to the same objects
+Command: venv\Scripts\python.exe -m pytest tests\test_package_layout.py -q
+..                                                                       [100%]
+2 passed in 0.12s
+
+## After: goldens
+Command: venv\Scripts\python.exe scripts\golden.py --check
+click: 0 differences
+flask: 0 differences
+ky: 0 differences
+0 differences
+
+## Lint
+Command: venv\Scripts\python.exe -m ruff check .
+All checks passed!
+
+## Full suite
+Command: venv\Scripts\python.exe -m pytest tests\ -q
+188 passed, 1 warning in 173.21s (0:02:53)
+
+## Wheel contents
+Command: Remove-Item -Recurse -Force build, cartog.egg-info; python -m pip wheel . -w .scratch/wheel --no-deps
+wheel: .scratch/wheel\cartog-0.1.0-py3-none-any.whl files: 47
+cartog-0.1.0.dist-info/entry_points.txt
+cartog-0.1.0.dist-info/top_level.txt
+cartog/__init__.py
+cartog/__main__.py
+cartog/cache.py
+cartog/cli.py
+cartog/config.py
+cartog/core/__init__.py
+cartog/core/config.py
+cartog/core/jsonc.py
+cartog/core/model.py
+cartog/export_html.py
+cartog/export_json.py
+cartog/export_mermaid.py
+cartog/jsonc.py
+cartog/langs/__init__.py
+cartog/langs/base.py
+cartog/langs/js_adapter.py
+cartog/langs/python_adapter.py
+cartog/manifests.py
+cartog/merge.py
+cartog/model.py
+cartog/parse/__init__.py
+cartog/parse/base.py
+cartog/parse/js_adapter.py
+cartog/parse/python_adapter.py
+cartog/scan/__init__.py
+cartog/scan/cache.py
+cartog/scan/manifests.py
+cartog/scan/walk.py
+cartog/scip_pass.py
+cartog/scip_pb2.py
+cartog/scip_windows_shim.js
+cartog/validate.py
+cartog/view_assets/VENDOR_LICENSES.txt
+cartog/view_assets/cose-base.js
+cartog/view_assets/cytoscape-expand-collapse.js
+cartog/view_assets/cytoscape-fcose.js
+cartog/view_assets/cytoscape.min.js
+cartog/view_assets/layout-base.js
+cartog/view_assets/viewer.css
+cartog/view_assets/viewer.js
+cartog/views.py
+
+The wheel now ships both cartog/parse/* and the cartog/langs/* shims, plus the same seven
+view_assets files and scip_windows_shim.js.
+
+## Test count
+Start of task: 188 passed. End of task: 188 passed (the compatibility guard gained
+four moves; no new test was needed).

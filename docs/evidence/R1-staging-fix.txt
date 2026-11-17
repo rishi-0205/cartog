@@ -1,0 +1,5 @@
+﻿State of HEAD (eff6c74) after the first R1 commit:
+  git ls-tree -r --name-only HEAD | Select-String LICENSE -> 0 match(es)
+  git ls-tree -r --name-only HEAD | Select-String .github -> 0 match(es)
+  git show HEAD:pyproject.toml | Select-String ruff -> 0 match(es)
+So the first commit omitted LICENSE, .github/workflows/ci.yml and the pyproject changes; they were staged in the follow-up commit.

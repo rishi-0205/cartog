@@ -1,0 +1,4 @@
+﻿wheel: .scratch/wheel\cartog-0.1.0-py3-none-any.whl files: 71
+diagnostics: ['cartog/core/diagnostics.py']
+assets: 8
+stale shims: ['cartog/model.py']

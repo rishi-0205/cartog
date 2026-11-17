@@ -46,7 +46,7 @@ Key deliverables confirmed by code inspection:
 
 ### 2.3 Scratch Files
 
-Previous session left 60 scratch scripts in `C:\Users\rishi\.gemini\antigravity-ide\brain\e01d385b-9ebc-4b42-851d-b574ef675f55\scratch\`. These are in the artifact directory, not in the repository. No `.scratch/` directory exists in the workspace. **No cleanup needed in the repo.**
+Previous session left 60 scratch scripts in an external agent artifact directory (`<external-scratch-dir>`). These are in the artifact directory, not in the repository. No `.scratch/` directory exists in the workspace. **No cleanup needed in the repo.**
 
 ---
 

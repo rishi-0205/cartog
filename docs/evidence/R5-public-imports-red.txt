@@ -1,0 +1,40 @@
+﻿.F                                                                       [100%]
+================================== FAILURES ===================================
+_______________________ test_public_imports_after_move ________________________
+
+    def test_public_imports_after_move() -> None:
+        import importlib
+    
+        for old_name, new_name in COMPLETED_MOVES.items():
+            old = importlib.import_module(old_name)
+>           new = importlib.import_module(new_name)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_package_layout.py:99: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+C:\Python313\Lib\importlib\__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+<frozen importlib._bootstrap>:1387: in _gcd_import
+    ???
+<frozen importlib._bootstrap>:1360: in _find_and_load
+    ???
+<frozen importlib._bootstrap>:1310: in _find_and_load_unlocked
+    ???
+<frozen importlib._bootstrap>:488: in _call_with_frames_removed
+    ???
+<frozen importlib._bootstrap>:1387: in _gcd_import
+    ???
+<frozen importlib._bootstrap>:1360: in _find_and_load
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+name = 'cartog.core', import_ = <function _gcd_import at 0x00000245996204A0>
+
+>   ???
+E   ModuleNotFoundError: No module named 'cartog.core'
+
+<frozen importlib._bootstrap>:1324: ModuleNotFoundError
+=========================== short test summary info ===========================
+FAILED tests/test_package_layout.py::test_public_imports_after_move - ModuleN...
+1 failed, 1 passed in 0.12s

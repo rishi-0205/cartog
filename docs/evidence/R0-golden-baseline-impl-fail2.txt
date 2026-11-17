@@ -1,0 +1,105 @@
+﻿FF                                                                       [100%]
+================================== FAILURES ===================================
+_____________________ test_golden_files_are_deterministic _____________________
+
+tmp_path = WindowsPath('C:/Users/rishi/AppData/Local/Temp/pytest-of-rishi/pytest-255/test_golden_files_are_determin0')
+
+    def test_golden_files_are_deterministic(tmp_path: Path) -> None:
+        first = tmp_path / "golden-first"
+        second = tmp_path / "golden-second"
+    
+>       assert _write_goldens(first) == 0
+               ^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_golden.py:39: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_golden.py:30: in _write_goldens
+    return golden.main(
+scripts\golden.py:256: in main
+    _write_one(repo, golden_dir)
+scripts\golden.py:213: in _write_one
+    print(f"wrote {path.relative_to(REPO_ROOT)} ({data['nodes']['total']} nodes, {data['edges']['total']} edges)")
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/Users/rishi/AppData/Local/Temp/pytest-of-rishi/pytest-255/test_golden_files_are_determin0/golden-first/mixed_repo.json')
+other = WindowsPath('C:/Users/rishi/OneDrive/Desktop/Dev/cartog')
+walk_up = False, _deprecated = ()
+
+    def relative_to(self, other, /, *_deprecated, walk_up=False):
+        """Return the relative path to another path identified by the passed
+        arguments.  If the operation is not possible (because this is not
+        related to the other path), raise ValueError.
+    
+        The *walk_up* parameter controls whether `..` may be used to resolve
+        the path.
+        """
+        if _deprecated:
+            msg = ("support for supplying more than one positional argument "
+                   "to pathlib.PurePath.relative_to() is deprecated and "
+                   "scheduled for removal in Python 3.14")
+            warnings.warn(msg, DeprecationWarning, stacklevel=2)
+            other = self.with_segments(other, *_deprecated)
+        elif not isinstance(other, PurePath):
+            other = self.with_segments(other)
+        for step, path in enumerate(chain([other], other.parents)):
+            if path == self or path in self.parents:
+                break
+            elif not walk_up:
+>               raise ValueError(f"{str(self)!r} is not in the subpath of {str(other)!r}")
+E               ValueError: 'C:\\Users\\rishi\\AppData\\Local\\Temp\\pytest-of-rishi\\pytest-255\\test_golden_files_are_determin0\\golden-first\\mixed_repo.json' is not in the subpath of 'C:\\Users\\rishi\\OneDrive\\Desktop\\Dev\\cartog'
+
+C:\Python313\Lib\pathlib\_local.py:385: ValueError
+_________________ test_golden_check_reports_zero_differences __________________
+
+tmp_path = WindowsPath('C:/Users/rishi/AppData/Local/Temp/pytest-of-rishi/pytest-255/test_golden_check_reports_zero0')
+capsys = <_pytest.capture.CaptureFixture object at 0x00000210B6392A50>
+
+    def test_golden_check_reports_zero_differences(tmp_path: Path, capsys) -> None:
+        golden_dir = tmp_path / "golden"
+>       assert _write_goldens(golden_dir) == 0
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_golden.py:53: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_golden.py:30: in _write_goldens
+    return golden.main(
+scripts\golden.py:256: in main
+    _write_one(repo, golden_dir)
+scripts\golden.py:213: in _write_one
+    print(f"wrote {path.relative_to(REPO_ROOT)} ({data['nodes']['total']} nodes, {data['edges']['total']} edges)")
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/Users/rishi/AppData/Local/Temp/pytest-of-rishi/pytest-255/test_golden_check_reports_zero0/golden/mixed_repo.json')
+other = WindowsPath('C:/Users/rishi/OneDrive/Desktop/Dev/cartog')
+walk_up = False, _deprecated = ()
+
+    def relative_to(self, other, /, *_deprecated, walk_up=False):
+        """Return the relative path to another path identified by the passed
+        arguments.  If the operation is not possible (because this is not
+        related to the other path), raise ValueError.
+    
+        The *walk_up* parameter controls whether `..` may be used to resolve
+        the path.
+        """
+        if _deprecated:
+            msg = ("support for supplying more than one positional argument "
+                   "to pathlib.PurePath.relative_to() is deprecated and "
+                   "scheduled for removal in Python 3.14")
+            warnings.warn(msg, DeprecationWarning, stacklevel=2)
+            other = self.with_segments(other, *_deprecated)
+        elif not isinstance(other, PurePath):
+            other = self.with_segments(other)
+        for step, path in enumerate(chain([other], other.parents)):
+            if path == self or path in self.parents:
+                break
+            elif not walk_up:
+>               raise ValueError(f"{str(self)!r} is not in the subpath of {str(other)!r}")
+E               ValueError: 'C:\\Users\\rishi\\AppData\\Local\\Temp\\pytest-of-rishi\\pytest-255\\test_golden_check_reports_zero0\\golden\\mixed_repo.json' is not in the subpath of 'C:\\Users\\rishi\\OneDrive\\Desktop\\Dev\\cartog'
+
+C:\Python313\Lib\pathlib\_local.py:385: ValueError
+=========================== short test summary info ===========================
+FAILED tests/test_golden.py::test_golden_files_are_deterministic - ValueError...
+FAILED tests/test_golden.py::test_golden_check_reports_zero_differences - Val...
+2 failed in 9.11s

@@ -1,0 +1,24 @@
+# R1 evidence - built distribution metadata
+Command: python -c "from setuptools.build_meta import prepare_metadata_for_build_wheel as p; print(p('.scratch/meta3'))"
+Output: cartog-0.1.0.dist-info
+
+Name: cartog
+Version: 0.1.0
+License-Expression: MIT
+Project-URL: Homepage, https://github.com/rishi-0205/cartog
+Project-URL: Repository, https://github.com/rishi-0205/cartog
+Project-URL: Issues, https://github.com/rishi-0205/cartog/issues
+Keywords: code-graph,static-analysis,tree-sitter,scip,mermaid,code-visualization
+Classifier: Development Status :: 4 - Beta
+Classifier: Intended Audience :: Developers
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: 3.12
+Classifier: Programming Language :: Python :: 3.13
+Classifier: Topic :: Software Development :: Documentation
+Classifier: Topic :: Software Development :: Libraries :: Python Modules
+Requires-Python: >=3.11
+License-File: LICENSE
+
+License file in dist-info: licenses/LICENSE

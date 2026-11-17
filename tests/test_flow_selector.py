@@ -1,16 +1,16 @@
 """Tests for route collision handling, flow selector scoping, and container validation."""
 
 from pathlib import Path
-import pytest
+
 from typer.testing import CliRunner
 
 from cartog.cli import app
 from cartog.langs import get_adapter
 from cartog.langs.base import ParseFileResult
 from cartog.merge import build_graph
-from cartog.model import Edge, Graph, Node, SourceRange
+from cartog.model import Graph, Node, SourceRange
 from cartog.validate import validate_graph
-from cartog.views import find_flow_candidates, trace_call_flow
+from cartog.views import find_flow_candidates
 
 runner = CliRunner()
 

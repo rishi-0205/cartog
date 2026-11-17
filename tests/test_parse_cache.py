@@ -1,14 +1,12 @@
 """Unit tests for AST parse caching and fidelity preservation."""
 
-from pathlib import Path
 import hashlib
-import pytest
+from pathlib import Path
 
-from cartog.langs import parse_source_file
-from cartog.langs.base import ParseFileResult, SymbolRecord, ImportRecord
 from cartog.cache import ParseCache
-from cartog.scan import FileInfo
+from cartog.langs import parse_source_file
 from cartog.merge import build_graph
+from cartog.scan import FileInfo
 
 
 def test_cache_preserves_is_type_only_cold_vs_warm(tmp_path: Path):
@@ -91,7 +89,7 @@ def test_cache_roundtrip_all_record_fields(tmp_path: Path):
     assert len(res_cached.imports) == len(res_orig.imports)
 
     # Compare SymbolRecord fields
-    for s_orig, s_cached in zip(res_orig.symbols, res_cached.symbols):
+    for s_orig, s_cached in zip(res_orig.symbols, res_cached.symbols, strict=True):
         assert s_cached.kind == s_orig.kind
         assert s_cached.name == s_orig.name
         assert s_cached.qualified_name == s_orig.qualified_name
@@ -103,7 +101,7 @@ def test_cache_roundtrip_all_record_fields(tmp_path: Path):
         assert s_cached.attrs == s_orig.attrs
 
     # Compare ImportRecord fields
-    for i_orig, i_cached in zip(res_orig.imports, res_cached.imports):
+    for i_orig, i_cached in zip(res_orig.imports, res_cached.imports, strict=True):
         assert i_cached.specifier == i_orig.specifier
         assert i_cached.names == i_orig.names
         assert i_cached.aliases == i_orig.aliases

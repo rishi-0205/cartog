@@ -1,16 +1,25 @@
 """Tests for Milestone 11: Interactive Cytoscape Viewer (cartog view)."""
 
-from pathlib import Path
+import json
+import re
 import tomllib
+from pathlib import Path
+
+from typer.testing import CliRunner
+
 import cartog
+from cartog.cli import app
+from cartog.model import Edge, Graph, Node, SourceRange
+
+runner = CliRunner()
 
 
 def test_view_assets_packaged_and_loadable():
     """Verify that all required offline Cytoscape assets exist, are non-empty, and are declared in pyproject.toml."""
     cartog_pkg_dir = Path(cartog.__file__).parent
-    assets_dir = cartog_pkg_dir / "view_assets"
+    assets_dir = cartog_pkg_dir / "render" / "assets"
     
-    assert assets_dir.is_dir(), f"view_assets directory not found at {assets_dir}"
+    assert assets_dir.is_dir(), f"render/assets directory not found at {assets_dir}"
     
     required_assets = [
         "cytoscape.min.js",
@@ -29,7 +38,7 @@ def test_view_assets_packaged_and_loadable():
         content = asset_file.read_text(encoding="utf-8")
         assert len(content.strip()) > 50, f"Asset '{asset_name}' is unexpectedly small or empty"
 
-    # Verify pyproject.toml includes view_assets/* in package-data
+    # Verify pyproject.toml includes render/assets/* in package-data
     repo_root = cartog_pkg_dir.parent
     pyproject_file = repo_root / "pyproject.toml"
     assert pyproject_file.is_file()
@@ -38,13 +47,10 @@ def test_view_assets_packaged_and_loadable():
         pyproject_data = tomllib.load(f)
     
     pkg_data = pyproject_data.get("tool", {}).get("setuptools", {}).get("package-data", {}).get("cartog", [])
-    assert any("view_assets" in p for p in pkg_data), f"pyproject.toml package-data for cartog must include view_assets/*, found: {pkg_data}"
+    assert any("render/assets" in p for p in pkg_data), f"pyproject.toml package-data for cartog must include render/assets/*, found: {pkg_data}"
 
 
 
-import json
-import re
-from cartog.model import Graph, Node, Edge, SourceRange
 
 
 def _build_test_graph() -> Graph:
@@ -132,10 +138,6 @@ def test_export_html_no_external_network_tags(tmp_path: Path):
     assert not external_links, f"Found external stylesheet dependencies: {external_links}"
 
 
-from typer.testing import CliRunner
-from cartog.cli import app
-
-runner = CliRunner()
 
 
 def test_cli_view_command_default(tmp_path: Path):
@@ -229,8 +231,8 @@ def test_export_html_includes_routing_and_filter_controls(tmp_path: Path):
 
 def test_universal_view_tree_expand_internal_helpers():
     """Verify that build_universal_view_tree with include_helpers=True retains individual helper symbols and their edges."""
-    from cartog.views import build_universal_view_tree
     from cartog.export_html import convert_view_tree_to_cytoscape_elements
+    from cartog.views import build_universal_view_tree
 
     g = Graph()
     g.meta = {"target_path": "helper_test"}

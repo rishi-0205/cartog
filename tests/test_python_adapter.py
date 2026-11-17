@@ -1,15 +1,14 @@
 """Unit tests for cartog.langs.python_adapter."""
 
 from pathlib import Path
-import pytest
-
-from cartog.langs.python_adapter import PythonAdapter, path_to_module_name
-from cartog.langs import parse_source_file
-from cartog.cache import ParseCache
-from cartog.scan import FileInfo
-from cartog.export_json import write_parse_json
 
 from conftest import requires_sample
+
+from cartog.cache import ParseCache
+from cartog.export_json import write_parse_json
+from cartog.langs import parse_source_file
+from cartog.langs.python_adapter import PythonAdapter, path_to_module_name
+from cartog.scan import FileInfo
 
 
 def test_path_to_module_name():
@@ -189,20 +188,20 @@ def test_cache_invalidation_on_schema_version_change(tmp_path):
 
     cache_dir = tmp_path / ".cartog"
     cache_v1 = ParseCache(cache_dir, schema_version="v1.0.0")
-    res1 = parse_source_file(file_info, cache=cache_v1)
+    parse_source_file(file_info, cache=cache_v1)
     assert cache_v1.misses == 1
     assert cache_v1.hits == 0
     cache_v1.save()
 
     # Re-reading with same schema version hits the cache
     cache_v1_reload = ParseCache(cache_dir, schema_version="v1.0.0")
-    res2 = parse_source_file(file_info, cache=cache_v1_reload)
+    parse_source_file(file_info, cache=cache_v1_reload)
     assert cache_v1_reload.hits == 1
     assert cache_v1_reload.misses == 0
 
     # Reading with bumped schema version (e.g. upgraded extractor / cartog version) automatically invalidates and misses
     cache_v2 = ParseCache(cache_dir, schema_version="v2.0.0")
-    res3 = parse_source_file(file_info, cache=cache_v2)
+    parse_source_file(file_info, cache=cache_v2)
     assert cache_v2.hits == 0
     assert cache_v2.misses == 1
 

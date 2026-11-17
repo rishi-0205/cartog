@@ -123,7 +123,7 @@ flowchart TD
    - Invokes `@sourcegraph/scip-python` and `@sourcegraph/scip-typescript` with `--output` isolation to guarantee zero side-effects in target repos.
    - Decodes SCIP protobuf occurrence streams, splitting definitions from references.
    - Attributes call sites to their tightest enclosing symbol using 1-based source coordinate intervals.
-   - Employs `cartog/scip_windows_shim.js` to dynamically patch upstream Node.js V8 regular expression bugs on Windows paths.
+   - Employs `cartog/scip/windows_shim.js` to dynamically patch upstream Node.js V8 regular expression bugs on Windows paths.
 
 3. **Stage 3 — Graph Merging & Integrity Checking (`cartog build`, `cartog check`):**
    - Combines structural AST declarations and semantic SCIP relationships into a unified property graph (`graph.json`).
@@ -146,7 +146,7 @@ Cartog's design is documented in [`docs/ISSUES_AND_DECISIONS.md`](./docs/ISSUES_
 | Issue & Decision | Problem | Resolution & Tradeoff |
 |---|---|---|
 | **C-Extension Memory Safety** ([#1, #2, #3](./docs/ISSUES_AND_DECISIONS.md#issue-1-tree-sitter-access-violation-c0000005-during-deep-ast-traversal)) | Upstream `py-tree-sitter` native C pointer garbage collection caused Windows access violations (`c0000005`) on deep AST traversals (>3,000 LOC). | Migrated entirely to top-level Tree-sitter Queries (`Query.matches`) with cursor recycling; pinned `tree-sitter==0.26.0`. |
-| **Windows V8 Regex Patch** ([#12](./docs/ISSUES_AND_DECISIONS.md#issue-12-windows-scip-python-regexp-bug-and-scip_windows_shimjs)) | `@sourcegraph/scip-python` crashed on Windows due to unescaped backslashes in regex path matching (`\U` interpreted as invalid unicode escape). | Injected `cartog/scip_windows_shim.js` pre-loader monkey-patching `RegExp.prototype` to normalize Windows backslashes transparently. |
+| **Windows V8 Regex Patch** ([#12](./docs/ISSUES_AND_DECISIONS.md#issue-12-windows-scip-python-regexp-bug-and-scip_windows_shimjs)) | `@sourcegraph/scip-python` crashed on Windows due to unescaped backslashes in regex path matching (`\U` interpreted as invalid unicode escape). | Injected `cartog/scip/windows_shim.js` pre-loader monkey-patching `RegExp.prototype` to normalize Windows backslashes transparently. |
 | **Re-Export Call Reconciliation** ([#14, #25](./docs/ISSUES_AND_DECISIONS.md#issue-14-second-cross-root-definition-reconciliation-rule)) | Re-exports through barrel files (`__init__.py`, `index.ts`) caused SCIP local-symbol call disconnects (`local 4`). | Implemented synthetic symbol derivation and transitive barrel definition matching (`confidence: "reconciled"`). |
 | **Deterministic Noise Filtering** ([#22](./docs/ISSUES_AND_DECISIONS.md#issue-22-deterministic-noise-file-filtering-and-view-import-rewiring)) | Constants modules, re-export barrels, and type-only files flooded diagrams with uninformative crossing lines. | Built AST/syntactic classifiers for barrel and typing files (`if t.TYPE_CHECKING:`); rewired imports to defining symbols while preserving call semantics. |
 | **Universal View Model & Schema 2.0.0** ([#23](./docs/ISSUES_AND_DECISIONS.md#issue-23-universal-view-model-hierarchy-boundary-function-rollup-schema-200-compact-serialization-and-flow-tracing)) | Large codebases produced 50MB+ JSON graphs and unrenderable Mermaid diagrams. | Designed `ViewNode` hierarchy, boundary symbol selection, and hierarchical `parent` serialization, slashing payload sizes by 44–50%. |

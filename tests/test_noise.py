@@ -5,18 +5,16 @@ import edge rewiring through noise modules, and --show-noise CLI toggle.
 """
 
 from pathlib import Path
-import json
+
 from typer.testing import CliRunner
 
 from cartog.cli import app
 from cartog.model import Edge, Graph, Node
 from cartog.views import (
     NoiseCategory,
-    NoiseClassification,
     detect_noise_files,
     rewire_view_edges,
 )
-from cartog.export_mermaid import generate_overview_mermaid
 
 runner = CliRunner()
 

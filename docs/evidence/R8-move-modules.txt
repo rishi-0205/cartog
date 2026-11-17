@@ -1,0 +1,170 @@
+# R8 evidence - move SCIP code
+Date: 2026-11-16
+Branch: refactor/package-structure
+
+## Before: goldens
+Command: venv\Scripts\python.exe scripts\golden.py --check
+click: 0 differences
+flask: 0 differences
+ky: 0 differences
+0 differences
+
+## Red: the compatibility guard fails before cartog.scip exists
+Command: venv\Scripts\python.exe -m pytest tests\test_package_layout.py::test_public_imports_after_move -q
+F                                                                        [100%]
+================================== FAILURES ===================================
+_______________________ test_public_imports_after_move ________________________
+
+    def test_public_imports_after_move() -> None:
+        import importlib
+        import types
+    
+        def public_api(module: types.ModuleType, module_name: str) -> list[str]:
+            """The module's declared API, falling back to what it appears to own."""
+            declared = getattr(module, "__all__", None)
+            if declared is not None:
+                assert all(isinstance(n, str) for n in declared), f"{module_name}.__all__ is malformed"
+                return list(declared)
+    
+            names: list[str] = []
+            for name in dir(module):
+                if name.startswith("_"):
+                    continue
+                obj = getattr(module, name)
+                if isinstance(obj, types.ModuleType):
+                    continue
+                if name.isupper() or getattr(obj, "__module__", None) == module_name:
+                    names.append(name)
+            return names
+    
+        for old_name, new_name in COMPLETED_MOVES.items():
+            old = importlib.import_module(old_name)
+>           new = importlib.import_module(new_name)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_package_layout.py:136: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+C:\Python313\Lib\importlib\__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+<frozen importlib._bootstrap>:1387: in _gcd_import
+    ???
+<frozen importlib._bootstrap>:1360: in _find_and_load
+    ???
+<frozen importlib._bootstrap>:1310: in _find_and_load_unlocked
+    ???
+<frozen importlib._bootstrap>:488: in _call_with_frames_removed
+    ???
+<frozen importlib._bootstrap>:1387: in _gcd_import
+    ???
+<frozen importlib._bootstrap>:1360: in _find_and_load
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+name = 'cartog.scip', import_ = <function _gcd_import at 0x00000250DC2E04A0>
+
+>   ???
+E   ModuleNotFoundError: No module named 'cartog.scip'
+
+<frozen importlib._bootstrap>:1324: ModuleNotFoundError
+=========================== short test summary info ===========================
+FAILED tests/test_package_layout.py::test_public_imports_after_move - ModuleN...
+1 failed in 0.23s
+
+## Move
+git mv cartog/scip_pass.py cartog/scip/runner.py
+git mv cartog/scip_pb2.py cartog/scip/scip_pb2.py
+git mv cartog/scip.proto cartog/scip/scip.proto
+git mv cartog/scip_windows_shim.js cartog/scip/windows_shim.js
+cartog/scip_pass.py and cartog/scip_pb2.py stay as shims. The bindings shim is a plain
+re-export (not a sys.modules alias), so the generated module executes exactly once.
+
+## Runtime fix found by the suite
+tests/test_merge.py monkeypatched cartog.scip_pass.link_calls, but merge imports link_calls
+from cartog.scip.runner now, so the patch no longer took effect (0 call edges instead of 1).
+The test now patches cartog.scip.runner, the module merge actually reads. The assertion is
+unchanged.
+
+## Path references updated
+- runner.py resolves windows_shim.js from its own directory (was scip_windows_shim.js)
+- cli doctor probes cartog.scip.scip_pb2; merge imports cartog.scip.runner
+- tests/test_scip_pass.py points at cartog/scip/windows_shim.js
+- pyproject package-data gains scip/*.js and the ruff exclude moves to cartog/scip/scip_pb2.py
+- README and docs/ALIGNMENT.md name the new paths (docs/BUILD_LOG.md is historical and left alone)
+
+## Green: old and new paths resolve to the same objects
+Command: venv\Scripts\python.exe -m pytest tests\test_package_layout.py -q
+..                                                                       [100%]
+2 passed in 0.17s
+
+## After: goldens
+Command: venv\Scripts\python.exe scripts\golden.py --check
+click: 0 differences
+flask: 0 differences
+ky: 0 differences
+0 differences
+
+## Lint
+Command: venv\Scripts\python.exe -m ruff check .
+All checks passed!
+
+## Full suite
+Command: venv\Scripts\python.exe -m pytest tests\ -q
+188 passed, 1 warning in 174.99s (0:02:54)
+
+## Wheel contents
+Command: Remove-Item -Recurse -Force build, cartog.egg-info; python -m pip wheel . -w .scratch/wheel --no-deps
+wheel: .scratch/wheel\cartog-0.1.0-py3-none-any.whl files: 50
+cartog-0.1.0.dist-info/entry_points.txt
+cartog-0.1.0.dist-info/top_level.txt
+cartog/__init__.py
+cartog/__main__.py
+cartog/cache.py
+cartog/cli.py
+cartog/config.py
+cartog/core/__init__.py
+cartog/core/config.py
+cartog/core/jsonc.py
+cartog/core/model.py
+cartog/export_html.py
+cartog/export_json.py
+cartog/export_mermaid.py
+cartog/jsonc.py
+cartog/langs/__init__.py
+cartog/langs/base.py
+cartog/langs/js_adapter.py
+cartog/langs/python_adapter.py
+cartog/manifests.py
+cartog/merge.py
+cartog/model.py
+cartog/parse/__init__.py
+cartog/parse/base.py
+cartog/parse/js_adapter.py
+cartog/parse/python_adapter.py
+cartog/scan/__init__.py
+cartog/scan/cache.py
+cartog/scan/manifests.py
+cartog/scan/walk.py
+cartog/scip/__init__.py
+cartog/scip/runner.py
+cartog/scip/scip_pb2.py
+cartog/scip/windows_shim.js
+cartog/scip_pass.py
+cartog/scip_pb2.py
+cartog/validate.py
+cartog/view_assets/VENDOR_LICENSES.txt
+cartog/view_assets/cose-base.js
+cartog/view_assets/cytoscape-expand-collapse.js
+cartog/view_assets/cytoscape-fcose.js
+cartog/view_assets/cytoscape.min.js
+cartog/view_assets/layout-base.js
+cartog/view_assets/viewer.css
+cartog/view_assets/viewer.js
+cartog/views.py
+
+cartog/scip/windows_shim.js is inside the wheel, so the new package-data entry works.
+cartog/scip.proto was not shipped before either; regeneration docs keep referring to it in-tree.
+
+## Test count
+Start of task: 188 passed. End of task: 188 passed (the compatibility guard gained two
+moves; test_merge.py changed its monkeypatch target, not its assertion).

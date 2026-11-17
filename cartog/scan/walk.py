@@ -1,17 +1,31 @@
 """File discovery, filtering, hashing, and project root detection."""
 
-from dataclasses import dataclass, field
 import hashlib
 import os
+from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Optional
+
 import pathspec
 
-from cartog.config import (
+from cartog.core.config import (
     DEFAULT_IGNORED_DIRS,
     DEFAULT_IGNORED_GLOBS,
     DEFAULT_MAX_FILE_SIZE_BYTES,
 )
+
+__all__ = [
+    "LANG_EXTENSIONS",
+    "FileInfo",
+    "IgnoreMetrics",
+    "ScanResult",
+    "SkippedFile",
+    "compute_ignore_hash",
+    "detect_language",
+    "detect_roots",
+    "hash_file",
+    "is_binary_file",
+    "walk_files",
+]
 
 LANG_EXTENSIONS = {
     ".py": "python",
@@ -53,6 +67,7 @@ class IgnoreMetrics:
     dropped_edges_count: int = 0
 
     def to_dict(self) -> dict[str, int]:
+        """Return the ignore counters as a plain dict."""
         return {
             "gitignore_files_excluded": self.gitignore_files_excluded,
             "cartogignore_files_excluded": self.cartogignore_files_excluded,
@@ -92,7 +107,7 @@ def is_binary_file(filepath: Path) -> bool:
         return True
 
 
-def detect_language(path: Path) -> Optional[str]:
+def detect_language(path: Path) -> str | None:
     """Detect language from file extension."""
     suffix = path.suffix.lower()
     return LANG_EXTENSIONS.get(suffix)
@@ -135,12 +150,12 @@ def detect_roots(repo_path: Path) -> list[str]:
     return sorted(roots)
 
 
-def _load_gitignore(dir_path: Path) -> Optional[pathspec.PathSpec]:
+def _load_gitignore(dir_path: Path) -> pathspec.PathSpec | None:
     """Load .gitignore in a directory if present."""
     gitignore_file = dir_path / ".gitignore"
     if gitignore_file.is_file():
         try:
-            with open(gitignore_file, "r", encoding="utf-8", errors="ignore") as f:
+            with open(gitignore_file, encoding="utf-8", errors="ignore") as f:
                 lines = [line.strip() for line in f if line.strip() and not line.startswith("#")]
                 if lines:
                     return pathspec.PathSpec.from_lines("gitignore", lines)
@@ -149,12 +164,12 @@ def _load_gitignore(dir_path: Path) -> Optional[pathspec.PathSpec]:
     return None
 
 
-def _load_cartogignore(dir_path: Path) -> Optional[pathspec.PathSpec]:
+def _load_cartogignore(dir_path: Path) -> pathspec.PathSpec | None:
     """Load .cartogignore in a directory if present, using gitwildmatch syntax."""
     cartogignore_file = dir_path / ".cartogignore"
     if cartogignore_file.is_file():
         try:
-            with open(cartogignore_file, "r", encoding="utf-8", errors="ignore") as f:
+            with open(cartogignore_file, encoding="utf-8", errors="ignore") as f:
                 lines = [line.strip() for line in f if line.strip() and not line.startswith("#")]
                 if lines:
                     return pathspec.PathSpec.from_lines("gitignore", lines)
@@ -163,7 +178,7 @@ def _load_cartogignore(dir_path: Path) -> Optional[pathspec.PathSpec]:
     return None
 
 
-def compute_ignore_hash(root_path: Path, cli_ignores: Optional[list[str]] = None) -> str:
+def compute_ignore_hash(root_path: Path, cli_ignores: list[str] | None = None) -> str:
     """Compute SHA-1 hash of combined active .gitignore, .cartogignore, and CLI patterns."""
     hasher = hashlib.sha1()
     gi_path = root_path / ".gitignore"
@@ -190,10 +205,10 @@ def compute_ignore_hash(root_path: Path, cli_ignores: Optional[list[str]] = None
 
 def walk_files(
     root_dir: str | Path,
-    max_size_bytes: Optional[int] = DEFAULT_MAX_FILE_SIZE_BYTES,
-    extra_ignore_globs: Optional[list[str]] = None,
-    target_langs: Optional[list[str]] = None,
-    cli_ignores: Optional[list[str]] = None,
+    max_size_bytes: int | None = DEFAULT_MAX_FILE_SIZE_BYTES,
+    extra_ignore_globs: list[str] | None = None,
+    target_langs: list[str] | None = None,
+    cli_ignores: list[str] | None = None,
 ) -> ScanResult:
     """Walk repository tree, applying gitignore, cartogignore, CLI ignores, and size limits.
 

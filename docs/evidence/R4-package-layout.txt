@@ -1,0 +1,90 @@
+# R4 evidence - package layout design
+Date: 2026-11-16
+Branch: refactor/package-structure
+
+## Red: the guard fails when a module loses its destination
+Operation: delete the cartog/config.py row from the mapping table in docs/dev/PACKAGE_LAYOUT.md,
+then run the guard.
+Command: venv\\Scripts\\python.exe -m pytest tests\\test_package_layout.py -q
+F                                                                        [100%]
+
+================================== FAILURES ===================================
+
+_____________________ test_layout_doc_covers_every_module _____________________
+
+
+
+    def test_layout_doc_covers_every_module() -> None:
+
+        rows = _rows()
+
+        assert rows, f"no mapping table found in {LAYOUT}"
+
+    
+
+        current = {src for src, _, _ in rows if src != "(new)"}
+
+        targets = {dst for _, dst, _ in rows}
+
+    
+
+        missing_source = [p for p in _package_files() if not _covered(p, current | targets)]
+
+>       assert not missing_source, (
+
+            "these files under cartog/ have no destination in docs/dev/PACKAGE_LAYOUT.md:\n"
+
+            + "\n".join(missing_source)
+
+        )
+
+E       AssertionError: these files under cartog/ have no destination in docs/dev/PACKAGE_LAYOUT.md:
+
+E         cartog/config.py
+
+E       assert not ['cartog/config.py']
+
+
+
+tests\test_package_layout.py:54: AssertionError
+
+=========================== short test summary info ===========================
+
+FAILED tests/test_package_layout.py::test_layout_doc_covers_every_module - As...
+
+1 failed in 0.09s
+
+## Green: restore the row, the guard passes
+Command: venv\\Scripts\\python.exe -m pytest tests\\test_package_layout.py -q
+.                                                                        [100%]
+
+1 passed in 0.04s
+
+## Note on the first attempt
+The first red attempt reported a pass. The deletion had silently no-oped: the script looked for
+the row followed by CRLF, and the file uses LF. The guard was never at fault; the edit was. The
+red transcript above is from a deletion that asserts the row is present first, and the failure
+names cartog/config.py as expected.
+
+## Docs guard: AGENTS.md must link every docs/dev document
+Command: venv\\Scripts\\python.exe -m pytest tests\\test_docs_links.py tests\\test_package_layout.py tests\\test_docs_consistency.py -q
+Result: 5 passed. The first full-suite run failed here because AGENTS.md did not yet link
+docs/dev/PACKAGE_LAYOUT.md; the link was added before the green run.
+
+## Untouched pipeline: goldens
+Command: venv\\Scripts\\python.exe scripts\\golden.py --check
+click: 0 differences
+flask: 0 differences
+ky: 0 differences
+0 differences
+
+## Lint
+Command: venv\\Scripts\\python.exe -m ruff check .
+All checks passed!
+
+## Full suite
+Command: venv\\Scripts\\python.exe -m pytest tests\\ -q
+187 passed, 1 warning in 172.89s (0:02:52)
+
+## Test count
+Start of task: 186 passed. End of task: 187 passed (+1, the layout guard).

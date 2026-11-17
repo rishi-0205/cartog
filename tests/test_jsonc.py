@@ -1,6 +1,7 @@
 """Unit tests for JSON and JSONC parsing with utf-8-sig, comment stripping, and warning handling."""
 
 from pathlib import Path
+
 import pytest
 
 from cartog.jsonc import (
