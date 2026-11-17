@@ -1,0 +1,16 @@
+Processing .\.
+  Installing build dependencies: started
+  Installing build dependencies: finished with status 'done'
+  Getting requirements to build wheel: started
+  Getting requirements to build wheel: finished with status 'done'
+  Preparing metadata (pyproject.toml): started
+  Preparing metadata (pyproject.toml): finished with status 'done'
+Building wheels for collected packages: cartog
+  Building wheel for cartog (pyproject.toml): started
+  Building wheel for cartog (pyproject.toml): finished with status 'done'
+  Created wheel for cartog: filename=cartog-0.1.0-py3-none-any.whl size=352597 sha256=414931706b1b4bde3f982026ec7e05e8383f2687600b7d2af84bbdc9130676c1
+  Stored in directory: C:\Users\rishi\AppData\Local\Temp\pip-ephem-wheel-cache-f7ygtv4f\wheels\47\ed\a4\4c3a7665d636a4aceb2212f250045bc1c162f58621e5743307
+Successfully built cartog
+
+[notice] A new release of pip is available: 26.2.1 -> 26.3
+[notice] To update, run: C:\Users\rishi\OneDrive\Desktop\Dev\cartog\venv\Scripts\python.exe -m pip install --upgrade pip

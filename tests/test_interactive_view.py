@@ -9,7 +9,7 @@ from typer.testing import CliRunner
 
 import cartog
 from cartog.cli import app
-from cartog.model import Edge, Graph, Node, SourceRange
+from cartog.core.model import Edge, Graph, Node, SourceRange
 
 runner = CliRunner()
 
@@ -92,7 +92,7 @@ def _build_test_graph() -> Graph:
 
 def test_export_html_generates_valid_offline_file(tmp_path: Path):
     """Verify that generate_html_map creates a complete offline map.html with valid embedded data."""
-    from cartog.export_html import generate_html_map
+    from cartog.render.export_html import generate_html_map
 
     graph = _build_test_graph()
     out_file = tmp_path / "map.html"
@@ -123,7 +123,7 @@ def test_export_html_generates_valid_offline_file(tmp_path: Path):
 
 def test_export_html_no_external_network_tags(tmp_path: Path):
     """Verify that map.html is 100% self-contained with ZERO external network references."""
-    from cartog.export_html import generate_html_map
+    from cartog.render.export_html import generate_html_map
 
     graph = _build_test_graph()
     out_file = tmp_path / "map.html"
@@ -179,8 +179,8 @@ def test_cli_view_command_flow_mode(tmp_path: Path):
 
 def test_convert_view_tree_edge_rollup():
     """Verify that multiple edges between the same (source, target, kind) are rolled up into one edge with aggregated counts and labels."""
-    from cartog.export_html import convert_view_tree_to_cytoscape_elements
-    from cartog.views import build_universal_view_tree
+    from cartog.render.export_html import convert_view_tree_to_cytoscape_elements
+    from cartog.render.views import build_universal_view_tree
 
     g = Graph()
     g.meta = {"target_path": "rollup_project"}
@@ -214,7 +214,7 @@ def test_convert_view_tree_edge_rollup():
 
 def test_export_html_includes_routing_and_filter_controls(tmp_path: Path):
     """Verify that map.html includes orthogonal routing, layout selector, and references toggle controls."""
-    from cartog.export_html import generate_html_map
+    from cartog.render.export_html import generate_html_map
 
     graph = _build_test_graph()
     out_file = tmp_path / "map.html"
@@ -231,8 +231,8 @@ def test_export_html_includes_routing_and_filter_controls(tmp_path: Path):
 
 def test_universal_view_tree_expand_internal_helpers():
     """Verify that build_universal_view_tree with include_helpers=True retains individual helper symbols and their edges."""
-    from cartog.export_html import convert_view_tree_to_cytoscape_elements
-    from cartog.views import build_universal_view_tree
+    from cartog.render.export_html import convert_view_tree_to_cytoscape_elements
+    from cartog.render.views import build_universal_view_tree
 
     g = Graph()
     g.meta = {"target_path": "helper_test"}
@@ -282,7 +282,7 @@ def test_universal_view_tree_expand_internal_helpers():
 
 def test_viewer_expanded_spacing_and_helper_toggle(tmp_path: Path):
     """Verify that map.html includes generous compound padding (>=30px), helper toggle, and spacious layout physics."""
-    from cartog.export_html import generate_html_map
+    from cartog.render.export_html import generate_html_map
 
     graph = _build_test_graph()
     out_file = tmp_path / "map.html"
@@ -304,9 +304,9 @@ def test_viewer_expanded_spacing_and_helper_toggle(tmp_path: Path):
 
 def test_export_html_raw_graph_fallback_reads_range():
     """F4: the raw-graph fallback must read ``SourceRange.start_line``, not ``range[0]``."""
-    from cartog.export_html import convert_view_tree_to_cytoscape_elements
-    from cartog.model import Graph, Node, SourceRange
-    from cartog.views import build_universal_view_tree
+    from cartog.core.model import Graph, Node, SourceRange
+    from cartog.render.export_html import convert_view_tree_to_cytoscape_elements
+    from cartog.render.views import build_universal_view_tree
 
     graph = Graph(meta={"target_path": "fallback"})
     graph.add_node(
@@ -331,9 +331,9 @@ def test_export_html_raw_graph_fallback_reads_range():
 
 def test_export_html_raw_graph_fallback_parent():
     """F4: the raw-graph fallback must read ``node.parent``, not ``attrs["parent"]``."""
-    from cartog.export_html import convert_view_tree_to_cytoscape_elements
-    from cartog.model import Graph, Node, SourceRange
-    from cartog.views import build_universal_view_tree
+    from cartog.core.model import Graph, Node, SourceRange
+    from cartog.render.export_html import convert_view_tree_to_cytoscape_elements
+    from cartog.render.views import build_universal_view_tree
 
     graph = Graph(meta={"target_path": "fallback"})
     graph.add_node(
@@ -368,7 +368,7 @@ def test_export_html_raw_graph_fallback_parent():
 
 def _hidden_helper_graph():
     """F3 fixture: a route calls a collapsed helper and a visible boundary function."""
-    from cartog.model import Edge, Graph, Node
+    from cartog.core.model import Edge, Graph, Node
 
     g = Graph(meta={"target_path": "rollup"})
     f_core = Node(id="file_core", name="core.py", qualified_name="core.py", kind="file", path="core.py")
@@ -394,8 +394,8 @@ def _hidden_helper_graph():
 
 def test_hidden_endpoint_rolls_up_to_visible_ancestor():
     """F3: an edge to a collapsed helper must roll up to its nearest visible ancestor."""
-    from cartog.export_html import convert_view_tree_to_cytoscape_elements
-    from cartog.views import build_universal_view_tree
+    from cartog.render.export_html import convert_view_tree_to_cytoscape_elements
+    from cartog.render.views import build_universal_view_tree
 
     graph = _hidden_helper_graph()
     tree = build_universal_view_tree(graph, include_helpers=False)
@@ -416,9 +416,9 @@ def test_hidden_endpoint_rolls_up_to_visible_ancestor():
 
 def test_rollup_counts_sum_to_underlying_edges():
     """Rolled-up weights plus dropped self-edges must equal the underlying edge weights."""
-    from cartog.export_html import convert_view_tree_to_cytoscape_elements
-    from cartog.model import Edge, Node
-    from cartog.views import build_universal_view_tree
+    from cartog.core.model import Edge, Node
+    from cartog.render.export_html import convert_view_tree_to_cytoscape_elements
+    from cartog.render.views import build_universal_view_tree
 
     graph = _hidden_helper_graph()
     graph.add_node(
@@ -451,9 +451,9 @@ def test_rollup_counts_sum_to_underlying_edges():
 
 def test_mermaid_function_level_rollup_matches_viewer():
     """F3: the function-level Mermaid exporter rolls hidden helpers up the same way as the viewer."""
-    from cartog.export_html import convert_view_tree_to_cytoscape_elements
-    from cartog.export_mermaid import generate_overview_mermaid
-    from cartog.views import build_universal_view_tree
+    from cartog.render.export_html import convert_view_tree_to_cytoscape_elements
+    from cartog.render.export_mermaid import generate_overview_mermaid
+    from cartog.render.views import build_universal_view_tree
 
     graph = _hidden_helper_graph()
     tree = build_universal_view_tree(graph, include_helpers=False)
@@ -472,7 +472,7 @@ def test_mermaid_function_level_rollup_matches_viewer():
 
 def test_html_payload_reports_rolled_up_edges(tmp_path):
     """The viewer payload and header note must surface the rolled-up edge count."""
-    from cartog.export_html import generate_html_map
+    from cartog.render.export_html import generate_html_map
 
     graph = _hidden_helper_graph()
     stats: dict[str, int] = {}

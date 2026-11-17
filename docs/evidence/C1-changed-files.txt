@@ -1,0 +1,54 @@
+﻿Command: git status --porcelain
+D  cartog/cache.py
+D  cartog/config.py
+D  cartog/export_html.py
+D  cartog/export_json.py
+D  cartog/export_mermaid.py
+D  cartog/jsonc.py
+D  cartog/langs/__init__.py
+D  cartog/langs/base.py
+D  cartog/langs/js_adapter.py
+D  cartog/langs/python_adapter.py
+D  cartog/manifests.py
+D  cartog/merge.py
+D  cartog/model.py
+D  cartog/scip_pass.py
+D  cartog/scip_pb2.py
+D  cartog/validate.py
+D  cartog/views.py
+ M docs/ISSUES_AND_DECISIONS.md
+ M docs/dev/PACKAGE_LAYOUT.md
+ M tests/test_cli.py
+ M tests/test_docs_consistency.py
+ M tests/test_flow_selector.py
+ M tests/test_ignore.py
+ M tests/test_import_resolution.py
+ M tests/test_interactive_view.py
+ M tests/test_js_adapter.py
+ M tests/test_jsonc.py
+ M tests/test_manifests.py
+ M tests/test_merge.py
+ M tests/test_merge_validate.py
+ M tests/test_mermaid.py
+ M tests/test_model.py
+ M tests/test_no_absolute_paths.py
+ M tests/test_noise.py
+ M tests/test_package_layout.py
+ M tests/test_parse_cache.py
+ M tests/test_patterns.py
+ M tests/test_python_adapter.py
+ M tests/test_scip_pass.py
+ M tests/test_views_mermaid.py
+?? .scratch/
+?? docs/evidence/C1-changed-files.txt
+?? docs/evidence/C1-drop-shims-green.txt
+?? docs/evidence/C1-drop-shims-red.txt
+?? docs/evidence/C1-golden.txt
+?? docs/evidence/C1-help.txt
+?? docs/evidence/C1-other-checks-green.txt
+?? docs/evidence/C1-ruff.txt
+?? docs/evidence/C1-start-suite.txt
+?? docs/evidence/C1-suite-impl-fail.txt
+?? docs/evidence/C1-suite.txt
+?? docs/evidence/C1-wheel-build.txt
+?? docs/evidence/C1-wheel-contents.txt

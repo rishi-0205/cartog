@@ -1,6 +1,6 @@
 # Cartog Package Layout
 
-**Status:** proposed in R4, executed by R5–R11, cleaned up by R12.
+**Status:** proposed in R4, executed by R5–R11, cleaned up by R12, shims removed by C1.
 **Audience:** every agent or developer working on the package structure.
 **Rule:** this document is the plan. If a move needs a different destination, the
 task change log records why and this table is updated in the same commit.
@@ -65,8 +65,10 @@ cartog/
 
 ## 2. Module mapping (every current file has a destination)
 
-The first column is the path at R4 time; after a move the second column is the
-real one. Rows are never deleted, so the document doubles as the migration log.
+The first column is the path at R4 time; the second column is the real one after
+the move. Rows are never deleted, so the document doubles as the migration log.
+The flat paths listed in the first column no longer exist: C1 deleted them, and
+the list is preserved in [§6](#6-removed-by-c1).
 
 | Current path | New path | Moved by |
 |---|---|---|
@@ -126,16 +128,12 @@ Data files that ship in the wheel: `cartog/render/assets/*` (JS, CSS, TXT),
    writes `from cartog.scan import walk_files`, not
    `from cartog.scan.walk import walk_files`.
 3. No module outside `cartog/cli/` may import `typer`.
-4. **Compatibility shims.** The old flat module paths keep working after the
-   move. Each one is a thin module that re-exports from the new home and says so
-   in its docstring: `cartog/model.py`, `cartog/config.py`, `cartog/jsonc.py`,
-   `cartog/cache.py`, `cartog/manifests.py`, `cartog/langs/*`, `cartog/scip_pass.py`,
-   `cartog/scip_pb2.py`, `cartog/views.py`, `cartog/export_json.py`,
-   `cartog/export_mermaid.py`, `cartog/export_html.py`.
-   `cartog.scan` and `cartog.cli` become packages whose `__init__.py` re-exports
-   the old names, so those two paths cannot have a separate shim file.
-5. A shim is never a place for logic. If a shim grows code, the code belongs in
-   the new module.
+4. **Old flat paths are gone.** C1 deleted the compatibility shims and
+   `cartog/langs/`; the removed paths are listed in [§6](#6-removed-by-c1).
+   Nothing in `cartog/`, `scripts/`, or `tests/` imports them. `cartog.scan` and
+   `cartog.cli` stay packages because they are the real homes, not shims.
+5. `tests/test_package_layout.py::test_shims_are_gone` enforces that the removed
+   paths stay absent and that every new home imports cleanly.
 6. Diagnostics go through `cartog.core.diagnostics`: `get_logger()` for loggers
    and `warn()` for `UserWarning`. No other module imports `logging` or
    `warnings`, so the logger name (`cartog`) and the warning attribution stay
@@ -149,14 +147,37 @@ Data files that ship in the wheel: `cartog/render/assets/*` (JS, CSS, TXT),
 | `cartog/scip_windows_shim.js` is resolved from `Path(__file__).parent` | R8 points the runner at `Path(__file__).parent / "windows_shim.js"`; package-data gains `scip/*.js` |
 | `cartog/scip_pb2.py` is generated from `scip.proto` | R8 moves both together. `scip.proto` stays next to the bindings so the documented regeneration command keeps working |
 | The console entry point is `cartog.cli:app` | R11 turns `cartog/cli.py` into `cartog/cli/__init__.py` exporting `app`; `pyproject.toml` needs no change |
-| `tests/` import the old module paths | shims keep every old path importable; `test_public_imports_after_move` asserts old and new paths resolve to the same objects |
+| `tests/` import the old module paths | C1 rewrote every test import to the new homes; `test_shims_are_gone` asserts the old paths are neither on disk nor importable |
 
 ## 5. Migration order
 
 R5 `core` → R6 `scan` → R7 `parse` → R8 `scip` → R9 `graph` → R10 `render` →
-R11 `cli` → R12 cleanup. Dependencies only ever point at packages moved earlier,
-so every commit is independently green.
+R11 `cli` → R12 cleanup → C1 shim removal. Dependencies only ever point at
+packages moved earlier, so every commit is independently green.
 
 Each move ends with: `ruff check .`, `python scripts/golden.py --check` →
 `0 differences`, `pytest tests/ -q`, and a wheel build proving the data files
 still ship.
+
+## 6. Removed by C1
+
+C1 deleted every compatibility shim and the `cartog/langs/` package. These paths
+must not come back; `test_shims_are_gone` fails if any of them exists or imports:
+
+- `cartog/cache.py`
+- `cartog/config.py`
+- `cartog/export_html.py`
+- `cartog/export_json.py`
+- `cartog/export_mermaid.py`
+- `cartog/jsonc.py`
+- `cartog/manifests.py`
+- `cartog/merge.py`
+- `cartog/model.py`
+- `cartog/scip_pass.py`
+- `cartog/scip_pb2.py`
+- `cartog/validate.py`
+- `cartog/views.py`
+- `cartog/langs`
+
+Their new homes are `cartog/core/*`, `cartog/scan/*`, `cartog/parse/*`,
+`cartog/scip/*`, `cartog/graph/*`, and `cartog/render/*`.

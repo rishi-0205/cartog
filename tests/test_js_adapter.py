@@ -4,9 +4,9 @@ from pathlib import Path
 
 from conftest import requires_sample
 
-from cartog.langs import get_adapter, get_adapter_for_path
-from cartog.langs.base import ImportRecord, ProjectContext
-from cartog.langs.js_adapter import (
+from cartog.parse import get_adapter, get_adapter_for_path
+from cartog.parse.base import ImportRecord, ProjectContext
+from cartog.parse.js_adapter import (
     JsAdapter,
     path_to_js_module_name,
 )

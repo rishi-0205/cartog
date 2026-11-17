@@ -4,10 +4,10 @@ from pathlib import Path
 
 import tree_sitter
 
-from cartog.langs.base import ParseFileResult
-from cartog.langs.python_adapter import PythonAdapter
-from cartog.merge import build_graph
-from cartog.validate import validate_graph
+from cartog.graph.merge import build_graph
+from cartog.graph.validate import validate_graph
+from cartog.parse.base import ParseFileResult
+from cartog.parse.python_adapter import PythonAdapter
 
 
 def test_flask_and_fastapi_patterns():

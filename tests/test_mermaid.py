@@ -1,9 +1,9 @@
-"""Unit tests for Mermaid diagram generation in cartog.export_mermaid."""
+"""Unit tests for Mermaid diagram generation in cartog.render.export_mermaid."""
 
 from pathlib import Path
 
-from cartog.export_mermaid import generate_flow_mermaid, generate_overview_mermaid, sanitize_id, sanitize_label
-from cartog.model import Edge, Graph, Node
+from cartog.core.model import Edge, Graph, Node
+from cartog.render.export_mermaid import generate_flow_mermaid, generate_overview_mermaid, sanitize_id, sanitize_label
 
 
 def test_sanitize_helpers():
@@ -183,7 +183,7 @@ def test_mermaid_function_level_calls_attributed_to_files():
 
 def test_classify_path_comprehensive():
     """Verify classify_path classifies test directories, test filenames, and avoids misclassifying bare spec/specs."""
-    from cartog.export_mermaid import classify_path
+    from cartog.render.export_mermaid import classify_path
 
     # Directory segment matches
     assert classify_path("tests/test_core.py") == "tests"

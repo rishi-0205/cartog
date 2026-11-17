@@ -1,0 +1,65 @@
+..................F..................................................... [ 37%]
+............................F........................................... [ 74%]
+..................................................                       [100%]
+================================== FAILURES ===================================
+_________________________ test_docs_dev_links_resolve _________________________
+
+    def test_docs_dev_links_resolve() -> None:
+        missing_docs = [name for name in REQUIRED_DEV_DOCS if not (DEV_DIR / name).is_file()]
+        assert not missing_docs, f"missing process document(s) in docs/dev: {missing_docs}"
+    
+        problems: list[str] = []
+        for md_file in _markdown_files():
+            problems.extend(_unresolved(md_file))
+>       assert not problems, "broken relative markdown link(s):\n" + "\n".join(problems)
+E       AssertionError: broken relative markdown link(s):
+E         docs/ISSUES_AND_DECISIONS.md:407: ../cartog/langs/base.py -> C:\Users\rishi\OneDrive\Desktop\Dev\cartog\docs\..\cartog\langs\base.py
+E         docs/ISSUES_AND_DECISIONS.md:408: ../cartog/merge.py -> C:\Users\rishi\OneDrive\Desktop\Dev\cartog\docs\..\cartog\merge.py
+E         docs/ISSUES_AND_DECISIONS.md:409: ../cartog/langs/js_adapter.py -> C:\Users\rishi\OneDrive\Desktop\Dev\cartog\docs\..\cartog\langs\js_adapter.py
+E       assert not ['docs/ISSUES_AND_DECISIONS.md:407: ../cartog/langs/base.py -> C:\\Users\\rishi\\OneDrive\\Desktop\\Dev\\cartog\\docs\...artog/langs/js_adapter.py -> C:\\Users\\rishi\\OneDrive\\Desktop\\Dev\\cartog\\docs\\..\\cartog\\langs\\js_adapter.py']
+
+tests\test_docs_links.py:94: AssertionError
+_____________________ test_validation_no_hardcoded_paths ______________________
+
+    def test_validation_no_hardcoded_paths():
+        """Verify cartog/validate.py contains no hardcoded absolute or sample repo paths."""
+        val_file = Path(__file__).resolve().parent.parent / "cartog" / "validate.py"
+>       text = val_file.read_text(encoding="utf-8")
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_merge_validate.py:386: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+C:\Python313\Lib\pathlib\_local.py:546: in read_text
+    return PathBase.read_text(self, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Python313\Lib\pathlib\_abc.py:632: in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/Users/rishi/OneDrive/Desktop/Dev/cartog/cartog/validate.py')
+mode = 'r', buffering = -1, encoding = 'utf-8', errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\rishi\\OneDrive\\Desktop\\Dev\\cartog\\cartog\\validate.py'
+
+C:\Python313\Lib\pathlib\_local.py:537: FileNotFoundError
+============================== warnings summary ===============================
+tests/test_jsonc.py::test_jsonc_unterminated_block_comment
+  C:\Users\rishi\OneDrive\Desktop\Dev\cartog\cartog\core\jsonc.py:142: UserWarning: Unterminated block comment in 'C:/Users/rishi/AppData/Local/Temp/pytest-of-rishi/pytest-310/test_jsonc_unterminated_block_0/tsconfig.json' starting at line 3
+    clean = strip_jsonc_comments_and_trailing_commas(raw, filename=p.as_posix())
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/test_docs_links.py::test_docs_dev_links_resolve - AssertionError...
+FAILED tests/test_merge_validate.py::test_validation_no_hardcoded_paths - Fil...
+2 failed, 192 passed, 1 warning in 172.99s (0:02:52)

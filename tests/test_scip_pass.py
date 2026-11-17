@@ -5,11 +5,11 @@ from pathlib import Path
 import pytest
 from conftest import requires_sample
 
-from cartog.langs import parse_source_file
-from cartog.langs.base import SymbolRecord
-from cartog.model import SourceRange
+from cartog.core.model import SourceRange
+from cartog.parse import parse_source_file
+from cartog.parse.base import SymbolRecord
 from cartog.scan import walk_files
-from cartog.scip_pass import (
+from cartog.scip.runner import (
     ScipIndexResult,
     decode_scip_index,
     find_enclosing_symbol,
@@ -237,7 +237,7 @@ def test_audit_scip_calls_and_relationships():
     """Diagnostic audit: inspect SCIP evidence, node/edge records, and call edge breakdown."""
     import json
 
-    from cartog.scip_pb2 import Index
+    from cartog.scip.scip_pb2 import Index
 
     requires_sample("click")
 
@@ -479,7 +479,7 @@ def test_diagnose_python_and_scip_env():
     import subprocess
     import sys
 
-    from cartog.scip_pb2 import Index
+    from cartog.scip.scip_pb2 import Index
 
     print("\n--- Diagnostic: Python Interpreters & Pip Show Click ---")
     print(f"Current sys.executable: {sys.executable}")
@@ -536,8 +536,8 @@ def test_diagnose_python_and_scip_env():
 
 def test_classify_occurrence_ref_kinds():
     """Verify tree-sitter AST classification of occurrences into ref_kinds (callback, inheritance, type, decorator, etc.)."""
-    from cartog.langs import get_adapter
-    from cartog.scip_pass import classify_occurrence
+    from cartog.parse import get_adapter
+    from cartog.scip.runner import classify_occurrence
 
     code = b"""
 @my_decorator
@@ -586,8 +586,8 @@ class CustomService(BaseService):
 
 def test_reconciliation_fallback_linking():
     """Verify reconciliation fallback creates candidates with confidence='reconciled' when roots match and file exists."""
-    from cartog.langs.base import SymbolRecord
-    from cartog.scip_pass import ScipDocument, ScipOccurrence, link_calls
+    from cartog.parse.base import SymbolRecord
+    from cartog.scip.runner import ScipDocument, ScipOccurrence, link_calls
 
     # Definition in src/click/core.py with prefix `src.click.core/Command#`
     def_sym = "scip-python python click 8.1.7 `src.click.core`/Command#"
@@ -641,8 +641,8 @@ def test_reconciliation_fallback_linking():
 
 def test_scip_reconciled_calls_through_reexport_chain(tmp_path):
     """Verify that calls through package __init__.py re-exports resolve to the defining submodule."""
-    from cartog.langs.base import SymbolRecord
-    from cartog.scip_pass import ScipDocument, ScipOccurrence, link_calls
+    from cartog.parse.base import SymbolRecord
+    from cartog.scip.runner import ScipDocument, ScipOccurrence, link_calls
 
     # Create directory structure in tmp_path
     src_dir = tmp_path / "src" / "mypkg"
@@ -715,8 +715,8 @@ def test_scip_reconciled_calls_through_reexport_chain(tmp_path):
 
 def test_reconciliation_strict_prefix_matching(tmp_path):
     """Verify that reconciliation rejects mismatched package names and non-existent files without speculative bare matching."""
-    from cartog.langs.base import SymbolRecord
-    from cartog.scip_pass import ScipDocument, ScipOccurrence, link_calls
+    from cartog.parse.base import SymbolRecord
+    from cartog.scip.runner import ScipDocument, ScipOccurrence, link_calls
 
     # Valid definition in mypkg
     def_sym = "scip-python python mypkg 1.0.0 `src.mypkg.core`/serve()."

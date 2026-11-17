@@ -11,7 +11,7 @@ import tomllib
 from pathlib import Path
 
 from cartog import __version__
-from cartog.model import make_node_id
+from cartog.core.model import make_node_id
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 

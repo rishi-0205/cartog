@@ -4,14 +4,14 @@ from pathlib import Path
 
 import pytest
 
-from cartog.jsonc import (
+from cartog.core.jsonc import (
     JsoncParseError,
     load_jsonc_file,
     load_strict_json_file,
     strip_jsonc_comments_and_trailing_commas,
 )
-from cartog.langs.base import ProjectContext
-from cartog.manifests import parse_manifests
+from cartog.parse.base import ProjectContext
+from cartog.scan.manifests import parse_manifests
 
 
 def test_package_json_with_urls_and_utf8_sig(tmp_path: Path):
