@@ -1,6 +1,6 @@
 # Cartog — Handoff Document
 
-**Last updated:** 2026-11-17 (E1b C1 DONE and the epic is READY FOR EPIC REVIEW; suite is 194 tests passing; E2 starts after `Accept E1b`)  
+**Last updated:** 2026-11-17 (E1b ACCEPTED and merged; E2 starts at the U1 design gate; suite is 194 tests passing)  
 **Role:** Single entry point for any model or developer picking up this project.  
 **Active Working Tasks:** See [`docs/WORKING_TASKS.md`](./WORKING_TASKS.md) for the live epic board and command loop. The historical T0–T21 board is [`docs/archive/WORKING_TASKS_T0-T21.md`](./archive/WORKING_TASKS_T0-T21.md).  
 **Git rules:** [`docs/dev/GIT_WORKFLOW.md`](./dev/GIT_WORKFLOW.md) — one branch per epic, commit per task, never push, merge only after `Accept <epic id>`.
@@ -78,15 +78,15 @@ Epic order is **E0 → E1 → E1b → E2 → E3 → E4 → E5 → E6 → E7 → 
 
 ---
 
-## 3. Next Tasks (E1b ready for epic review; then E2)
+## 3. Next Tasks (E2 starts at the U1 design gate)
 
 E0 (`fix/baseline-correctness`) was **ACCEPTED by the author on 2026-11-15** and merged into `main` with `git merge --no-ff`. H1–H5 are all DONE; the branch was deleted after the merge. E0 was built from `docs/task-plan` HEAD (`fcb11f2`), so that merge also brought the T22 documentation restructure into `main` (Decision 29 in `docs/ISSUES_AND_DECISIONS.md`).
 
 E1 (`refactor/package-structure`) was **ACCEPTED by the author on 2026-11-17** and merged into `main` with `git merge --no-ff`; that branch was deleted too. All thirteen tasks are DONE: R0 (golden baseline), R1 (licence, lint, CI), R2 (absolute paths), R3 (agent-process docs), R4 (package-layout design), R5–R11 (one package move per task: `core`, `scan`, `parse`, `scip`, `graph`, `render`, `cli`), and R12 (cleanup). During E1 every old module path stayed importable through a thin re-export shim so each move landed green.
 
-**E1b** (`refactor/drop-compat-shims`) is built and waiting on the author: its single task, C1, is DONE (`2f2a0b5`) and the epic row reads **READY FOR EPIC REVIEW**. C1 deleted the 13 shims and `cartog/langs/`, rewrote every test import to the new homes (`cartog.core.*`, `cartog.scan.*`, `cartog.parse.*`, `cartog.scip.*`, `cartog.graph.*`, `cartog.render.*`), replaced `test_public_imports_after_move` with `test_shims_are_gone`, and updated `docs/dev/PACKAGE_LAYOUT.md`. The old flat paths are now gone from the tree and from the wheel; the suite is 194 passed and the goldens report `0 differences`.
+**E1b** (`refactor/drop-compat-shims`) was **ACCEPTED by the author on 2026-11-17** and merged into `main` with `git merge --no-ff`; the branch was deleted. Its single task, C1 (`2f2a0b5`), deleted the 13 shims and `cartog/langs/`, rewrote every test import to the new homes (`cartog.core.*`, `cartog.scan.*`, `cartog.parse.*`, `cartog.scip.*`, `cartog.graph.*`, `cartog.render.*`), replaced `test_public_imports_after_move` with `test_shims_are_gone`, and updated `docs/dev/PACKAGE_LAYOUT.md`. The old flat paths are gone from the tree and from the wheel; the suite is 194 passed and the goldens report `0 differences`.
 
-The next command is `Accept E1b`: that sets the epic row to ACCEPTED, merges `refactor/drop-compat-shims` into `main` with `git merge --no-ff`, and deletes the branch. **E2** (unified command and output) then starts at the U1 design gate, which is `BLOCKED` until the author approves the design. Full task fields, tests, acceptance criteria, and user checks are in [`docs/WORKING_TASKS.md`](./WORKING_TASKS.md).
+The next epic is **E2** (`feature/unified-command-and-output`), created from `main`, and it starts with **U1**, the design gate: `Do U1` writes `docs/dev/UNIFIED_COMMAND.md` (command name, options, exit codes, output tree, migration notes) and then sets the task `BLOCKED` until the author approves the design. Implementation begins only after that approval, and with `E501` carried in from R12 (Decision 33). Full task fields, tests, acceptance criteria, and user checks are in [`docs/WORKING_TASKS.md`](./WORKING_TASKS.md).
 
 ---
 
