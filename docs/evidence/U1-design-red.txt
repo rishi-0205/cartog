@@ -1,0 +1,29 @@
+FF                                                                       [100%]
+================================== FAILURES ===================================
+_________________ test_design_doc_has_options_and_exit_codes __________________
+
+    def test_design_doc_has_options_and_exit_codes():
+        """The design must be complete before implementation starts."""
+>       assert DESIGN.is_file(), f"missing design document: {DESIGN.relative_to(REPO_ROOT)}"
+E       AssertionError: missing design document: docs\dev\UNIFIED_COMMAND.md
+E       assert False
+E        +  where False = is_file()
+E        +    where is_file = WindowsPath('C:/Users/rishi/OneDrive/Desktop/Dev/cartog/docs/dev/UNIFIED_COMMAND.md').is_file
+
+tests\test_unified_command_design.py:54: AssertionError
+____________________ test_design_doc_is_linked_from_agents ____________________
+
+    def test_design_doc_is_linked_from_agents():
+        """AGENTS.md must link every docs/dev document, including this one."""
+        text = AGENTS.read_text(encoding="utf-8")
+>       assert "docs/dev/UNIFIED_COMMAND.md" in text, (
+            "AGENTS.md does not link to docs/dev/UNIFIED_COMMAND.md"
+        )
+E       AssertionError: AGENTS.md does not link to docs/dev/UNIFIED_COMMAND.md
+E       assert 'docs/dev/UNIFIED_COMMAND.md' in '# Cartog — Standing Rules for Agents and Models\n\nThis is the entry point for every model, agent, or developer worki...NDARDS.md`](docs/dev/CODE_STANDARDS.md).)\n\nIf a summary above and the linked document disagree, the document wins.\n'
+
+tests\test_unified_command_design.py:77: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_unified_command_design.py::test_design_doc_has_options_and_exit_codes
+FAILED tests/test_unified_command_design.py::test_design_doc_is_linked_from_agents
+2 failed in 0.10s
