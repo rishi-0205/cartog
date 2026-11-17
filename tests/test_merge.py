@@ -1,8 +1,8 @@
-"""Unit tests for graph building and merging in cartog.merge."""
+"""Unit tests for graph building and merging in cartog.graph.merge."""
 
-from cartog.langs.base import ImportRecord, ParseFileResult, SymbolRecord
-from cartog.merge import build_graph
-from cartog.validate import validate_graph
+from cartog.graph.merge import build_graph
+from cartog.graph.validate import validate_graph
+from cartog.parse.base import ImportRecord, ParseFileResult, SymbolRecord
 
 
 def test_build_and_validate_graph():
@@ -114,7 +114,7 @@ def test_build_and_validate_graph():
 
 
 def test_validation_rejects_invalid_edge_endpoints():
-    from cartog.model import Edge, Graph, Node
+    from cartog.core.model import Edge, Graph, Node
 
     # Test 1: imports edge connecting to a dependency node must fail
     g1 = Graph(schema_version="1.0.0")
@@ -144,9 +144,9 @@ def test_build_graph_with_scip_calls():
 
     import pytest
 
-    from cartog.langs import parse_source_file
+    from cartog.parse import parse_source_file
     from cartog.scan import walk_files
-    from cartog.scip_pass import decode_scip_index
+    from cartog.scip.runner import decode_scip_index
 
     fixture_scip = Path("tests/fixtures/prebuilt_scip/index.scip")
     if not fixture_scip.is_file():
@@ -175,7 +175,7 @@ def test_build_graph_with_scip_calls():
 
 def test_route_handler_resolution_same_named_functions_different_scopes():
     """Verify that multiple same-named handlers in different scopes link to their respective routes and parents."""
-    from cartog.model import make_node_id
+    from cartog.core.model import make_node_id
 
     # Two handlers named 'handler' defined before their respective routes (common in JS/Express and Python)
     s_h1 = SymbolRecord(
@@ -293,8 +293,8 @@ def test_route_handler_resolution_same_named_functions_different_scopes():
 
 def test_symbol_mapping_no_flat_name_collisions():
     """Verify SCIP candidate caller/callee resolution uses line range and avoids flat name collisions."""
-    from cartog.model import make_node_id
-    from cartog.scip_pass import CallEdgeCandidate, ScipDocument, ScipIndexResult
+    from cartog.core.model import make_node_id
+    from cartog.scip.runner import CallEdgeCandidate, ScipDocument, ScipIndexResult
 
     s1 = SymbolRecord(
         kind="function",

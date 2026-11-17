@@ -146,7 +146,7 @@ def test_cli_check_warnings_fail_under_strict(tmp_path):
 
 def test_cli_scip_loud_failure_output(tmp_path, monkeypatch):
     """Verify scip command outputs loud failure line when indexer fails."""
-    from cartog.scip_pass import ScipIndexResult
+    from cartog.scip.runner import ScipIndexResult
     out_dir = tmp_path / "out"
     dummy_repo = tmp_path / "repo"
     dummy_repo.mkdir()
@@ -355,7 +355,7 @@ def test_flow_works_from_graph_json_without_cache(tmp_path):
     import json
 
     from cartog.cli import _resolve_graph
-    from cartog.scip_pass import ScipIndexResult
+    from cartog.scip.runner import ScipIndexResult
 
     # Part 1: Running flow on an isolated graph.json without any cache directory
     standalone_dir = tmp_path / "standalone"

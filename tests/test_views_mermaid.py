@@ -6,17 +6,17 @@ from pathlib import Path
 from typer.testing import CliRunner
 
 from cartog.cli import app
-from cartog.config import SCHEMA_VERSION
-from cartog.export_mermaid import (
+from cartog.core.config import SCHEMA_VERSION
+from cartog.core.model import Edge, Graph, Node, SourceRange
+from cartog.graph.merge import build_graph
+from cartog.graph.validate import validate_graph
+from cartog.parse.base import ImportRecord, ParseFileResult, SymbolRecord
+from cartog.render.export_mermaid import (
     generate_flow_mermaid,
     generate_folder_mermaid,
     generate_overview_mermaid,
 )
-from cartog.langs.base import ImportRecord, ParseFileResult, SymbolRecord
-from cartog.merge import build_graph
-from cartog.model import Edge, Graph, Node, SourceRange
-from cartog.validate import validate_graph
-from cartog.views import (
+from cartog.render.views import (
     build_universal_view_tree,
     classify_boundary_functions,
     generate_digest,

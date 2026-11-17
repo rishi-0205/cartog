@@ -404,9 +404,9 @@ In `tests/test_js_adapter.py`, `test_resolve_tsconfig_paths_and_workspaces` fail
 - Consequently, `_get_tsconfig()` returned `None`, path aliases like `@core/*` could not be matched, and imports fell back to external packages.
 
 ### 3. Solution & Decision
-- **Add `target_path` to `ProjectContext`:** Added `target_path: str = "."` to [cartog/langs/base.py](../cartog/langs/base.py) `ProjectContext`.
-- **Pass `target_path` from `build_graph()`:** In [cartog/merge.py](../cartog/merge.py), passed `target_path=target_path` when creating `ProjectContext`.
-- **Target-Relative Config Resolution:** Updated `_get_tsconfig()` and `_discover_workspace_packages()` in [cartog/langs/js_adapter.py](../cartog/langs/js_adapter.py) to resolve `tsconfig.json` and `package.json` relative to `project_context.target_path / root_dir`.
+- **Add `target_path` to `ProjectContext`:** Added `target_path: str = "."` to [cartog/parse/base.py](../cartog/parse/base.py) `ProjectContext`.
+- **Pass `target_path` from `build_graph()`:** In [cartog/graph/merge.py](../cartog/graph/merge.py), passed `target_path=target_path` when creating `ProjectContext`.
+- **Target-Relative Config Resolution:** Updated `_get_tsconfig()` and `_discover_workspace_packages()` in [cartog/parse/js_adapter.py](../cartog/parse/js_adapter.py) to resolve `tsconfig.json` and `package.json` relative to `project_context.target_path / root_dir`.
 - **Test Alignment:** In `tests/test_js_adapter.py`, passed `target_path="tests/fixtures/ts_monorepo"` to `ProjectContext`. All 43 tests pass cleanly.
 
 ---

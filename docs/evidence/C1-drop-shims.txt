@@ -1,0 +1,146 @@
+# C1 evidence - drop the E1 compatibility shims
+Date: 2026-11-17 11:10:27
+Branch: refactor/drop-compat-shims
+
+Raw transcripts (all kept next to this file):
+
+| file | what it is |
+|---|---|
+| `C1-start-suite.txt` | starting test count before any change |
+| `C1-drop-shims-red.txt` | red run of `tests/test_package_layout.py` |
+| `C1-drop-shims-green.txt` | green run of the same file |
+| `C1-suite-impl-fail.txt` | full suite after the deletion, 2 self-inflicted failures |
+| `C1-other-checks-green.txt` | the two named failures fixed |
+| `C1-suite.txt` | final full suite on the finished tree |
+| `C1-golden.txt` | golden check, final tree |
+| `C1-ruff.txt` | lint, final tree |
+| `C1-wheel-build.txt` | wheel build |
+| `C1-wheel-contents.txt` | wheel members, shim absence, data files |
+| `C1-help.txt` | `python -m cartog --help` smoke test |
+| `C1-no-old-imports.txt` | acceptance grep for imports of removed paths |
+| `C1-changed-files.txt` | what the task touches |
+
+## Start: the suite before any change
+Command: venv\Scripts\python.exe -m pytest tests\ -q
+194 passed, 1 warning in 176.97s (0:02:56)
+
+## Red: the shim guard and the layout-document guard fail first
+Command: venv\Scripts\python.exe -m pytest tests\test_package_layout.py -q
+E       AssertionError: the removal rule must name the test that enforces it
+_____________________________ test_shims_are_gone _____________________________
+>           assert not (REPO_ROOT / rel).exists(), f"{rel} still exists; C1 deletes it"
+E           AssertionError: cartog/cache.py still exists; C1 deletes it
+FAILED tests/test_package_layout.py::test_layout_doc_covers_every_module - As...
+FAILED tests/test_package_layout.py::test_shims_are_gone - AssertionError: ca...
+2 failed, 1 passed in 0.57s
+
+Both failures name the thing the task removes: the document still describes the
+shim rule, and `cartog/cache.py` is still on disk. Neither is a harness error.
+
+## Green: the new guard passes once the shims and the document are updated
+Command: venv\Scripts\python.exe -m pytest tests\test_package_layout.py -q
+...                                                                      [100%]
+3 passed in 0.49s
+
+The file holds three tests before and after: `test_layout_doc_covers_every_module`,
+`test_cli_package_layout`, and the new `test_shims_are_gone`, which replaces
+`test_public_imports_after_move` (the test that protected the shims). One test
+out, one test in, so the suite count does not change.
+
+## Intermediate failure: the deletion broke two tests that named old paths
+Command: venv\Scripts\python.exe -m pytest tests\ -q
+=========================== short test summary info ===========================
+FAILED tests/test_docs_links.py::test_docs_dev_links_resolve - AssertionError...
+FAILED tests/test_merge_validate.py::test_validation_no_hardcoded_paths - Fil...
+2 failed, 192 passed, 1 warning in 172.99s (0:02:52)
+
+`tests/test_docs_links.py` flagged three relative links in
+`docs/ISSUES_AND_DECISIONS.md` that pointed at `cartog/langs/base.py`,
+`cartog/merge.py`, and `cartog/langs/js_adapter.py`. `test_merge_validate.py`
+read `cartog/validate.py` by path. Both were repaired by pointing at the new
+homes; no assertion was weakened or removed.
+
+Command: venv\Scripts\python.exe -m pytest tests\test_docs_links.py::test_docs_dev_links_resolve tests\test_merge_validate.py::test_validation_no_hardcoded_paths -q
+..                                                                       [100%]
+2 passed in 0.14s
+
+## Full suite
+Command: venv\Scripts\python.exe -m pytest tests\ -q
+194 passed, 1 warning in 181.21s (0:03:01)
+
+## Golden check: pipeline output is unchanged
+Command: venv\Scripts\python.exe scripts\golden.py --check
+click: 0 differences
+flask: 0 differences
+ky: 0 differences
+0 differences
+
+## Lint
+Command: venv\Scripts\python.exe -m ruff check .
+All checks passed!
+
+The first lint run after the import rewrite reported 13 `I001` (unsorted import
+block) findings, all in test files whose import lines changed. `ruff check .
+--fix` sorted them; the final tree is clean.
+
+## Wheel: no shim ships, the data files still do
+Command: venv\Scripts\python.exe -m pip wheel . -w .scratch\wheel --no-deps
+Successfully built cartog
+
+Command: venv\Scripts\python.exe .scratch\wheel_check.py
+wheel: .scratch/wheel\cartog-0.1.0-py3-none-any.whl
+files: 54
+shim modules in wheel: []
+cartog/langs in wheel: []
+required data files missing: []
+top-level cartog modules: ['cartog/__init__.py', 'cartog/__main__.py']
+
+`cartog/render/assets/viewer.js`, `viewer.css`, `cytoscape.min.js` and
+`cartog/scip/windows_shim.js` are all present; `required data files missing: []`
+proves it.
+
+## CLI smoke test
+Command: venv\Scripts\python.exe -m cartog --help
+ Usage: python -m cartog [OPTIONS] COMMAND [ARGS]...
+
+ Cartography for codebases: maps source files with tree-sitter + SCIP into
+ JSON + Mermaid.
+
++- Options -------------------------------------------------------------------+
+| --version  -v        Show the Cartog version and exit.                      |
+| --help               Show this message and exit.                            |
++-----------------------------------------------------------------------------+
++- Commands ------------------------------------------------------------------+
+| build   Run Stage 3: Merge parse representations into graph.json.           |
+| check   Validate graph integrity and report findings.                       |
+| digest  Generate a compact architectural digest (~2,000-4,000 tokens) for   |
+|         LLM prompts.                                                        |
+| doctor  Check the local environment for required and optional tools.        |
+| flow    Trace call flow from entrypoints, routes, or functions across the   |
+|         codebase.                                                           |
+| map     Run full pipeline (parse -> build -> export) and produce Mermaid    |
+|         diagrams.                                                           |
+| parse   Run Stage 1: tree-sitter AST syntax, imports, and framework pattern |
+|         extraction.                                                         |
+| scip    Run Stage 2: SCIP indexer execution and decoding into scip.json.    |
+| view    Launch or export the interactive Cytoscape codebase architecture    |
+|         viewer.                                                             |
+| query   Fast single-question code graph queries (callers, callees).         |
++-----------------------------------------------------------------------------+
+
+exit code: 0
+
+Every line above is verbatim from `docs/evidence/C1-help.txt` (trailing padding
+trimmed). The CLI exposes the same ten commands after the shims are gone.
+
+## Acceptance grep: nothing imports a removed path
+Command: git grep -nE "^[[:space:]]*(from|import)[[:space:]]+cartog[.](model|config|jsonc|cache|manifests|langs|scip_pass|scip_pb2|views|export_json|export_mermaid|export_html|merge|validate)\b" -- cartog scripts tests
+exit code: 1
+
+`git grep` exits 1 when nothing matches, which is the result we want: no import
+of a deleted path remains in `cartog/`, `scripts/`, or `tests/`.
+
+## Test-count statement
+Start 194 passed -> end 194 passed, no decrease. `test_public_imports_after_move`
+was deleted with the shims it protected, and `test_shims_are_gone` was added in
+its place, so the count is unchanged and every other test is untouched.

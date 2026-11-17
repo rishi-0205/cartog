@@ -1,0 +1,2 @@
+﻿Command: git grep -nE "^[[:space:]]*(from|import)[[:space:]]+cartog[.](model|config|jsonc|cache|manifests|langs|scip_pass|scip_pb2|views|export_json|export_mermaid|export_html|merge|validate)\b" -- cartog scripts tests
+exit code: 1

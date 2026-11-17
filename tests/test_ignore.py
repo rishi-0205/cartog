@@ -5,14 +5,14 @@ from pathlib import Path
 
 from typer.testing import CliRunner
 
-from cartog.cache import ParseCache
 from cartog.cli import app
-from cartog.langs.base import ImportRecord, ParseFileResult, SymbolRecord
-from cartog.merge import build_graph
-from cartog.model import SourceRange
+from cartog.core.model import SourceRange
+from cartog.graph.merge import build_graph
+from cartog.graph.validate import validate_graph
+from cartog.parse.base import ImportRecord, ParseFileResult, SymbolRecord
 from cartog.scan import IgnoreMetrics, compute_ignore_hash, walk_files
-from cartog.scip_pass import ScipDocument, ScipIndexResult, ScipOccurrence
-from cartog.validate import validate_graph
+from cartog.scan.cache import ParseCache
+from cartog.scip.runner import ScipDocument, ScipIndexResult, ScipOccurrence
 
 runner = CliRunner()
 

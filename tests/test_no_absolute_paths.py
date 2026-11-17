@@ -10,8 +10,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from cartog.model import Graph, Node
-from cartog.views import generate_digest
+from cartog.core.model import Graph, Node
+from cartog.render.views import generate_digest
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SKIP_DIRS = {

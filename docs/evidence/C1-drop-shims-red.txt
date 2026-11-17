@@ -1,0 +1,84 @@
+F.F                                                                      [100%]
+================================== FAILURES ===================================
+_____________________ test_layout_doc_covers_every_module _____________________
+
+    def test_layout_doc_covers_every_module() -> None:
+        rows = _rows()
+        assert rows, f"no mapping table found in {LAYOUT}"
+    
+        current = {src for src, _, _ in rows if src != "(new)"}
+        targets = {dst for _, dst, _ in rows}
+    
+        missing_source = [p for p in _package_files() if not _covered(p, current | targets)]
+        assert not missing_source, (
+            "these files under cartog/ have no destination in docs/dev/PACKAGE_LAYOUT.md:\n"
+            + "\n".join(missing_source)
+        )
+    
+        def _exists(entry: str) -> bool:
+            if entry.endswith("/*"):
+                return any(
+                    p.startswith(entry[:-1]) for p in _package_files()
+                )
+            return (REPO_ROOT / entry).exists()
+    
+        # The table is the R4 plan. After a move, the "current path" cell is the
+        # historical path and the "new path" cell is the real one; a row is spelled
+        # correctly when at least one of the two exists.
+        def _row_exists(src: str, dst: str) -> bool:
+            return _exists(src) or _exists(dst)
+    
+        by_source = {src: dst for src, dst, _ in rows if src != "(new)"}
+        stale = sorted(
+            src for src, dst in by_source.items() if not _row_exists(src, dst)
+        )
+        assert not stale, (
+            "docs/dev/PACKAGE_LAYOUT.md lists paths that exist on neither side "
+            "(fix the table):\n" + "\n".join(stale)
+        )
+    
+        tasks = {task for _, _, task in rows}
+        for expected in ("R5", "R6", "R7", "R8", "R9", "R10", "R11"):
+            assert expected in tasks, f"the mapping table has no row owned by {expected}"
+    
+        text = LAYOUT.read_text(encoding="utf-8")
+        for heading in ("Import rules", "Package-data risks", "Migration order"):
+            assert heading in text, f"the layout document is missing the {heading!r} section"
+        assert "cartog.cli:app" in text, "the console entry point must be called out"
+>       assert "test_shims_are_gone" in text, (
+            "the removal rule must name the test that enforces it"
+        )
+E       AssertionError: the removal rule must name the test that enforces it
+E       assert 'test_shims_are_gone' in '# Cartog Package Layout\\n\\n**Status:** proposed in R4, executed by R5\u2013R11, cleaned up by R12.\\n**Audience:** every ag...pts/golden.py --check` \u2192\\n`0 differences`, `pytest tests/ -q`, and a wheel build proving the data files\\nstill ship.\\n'
+
+tests\test_package_layout.py:156: AssertionError
+_____________________________ test_shims_are_gone _____________________________
+
+    def test_shims_are_gone() -> None:
+        """C1: every compatibility shim and cartog.langs is deleted for good."""
+        import importlib
+        import importlib.util
+    
+        import typer
+    
+        import cartog.cli
+        import cartog.scan
+    
+        def spec_exists(name: str) -> bool:
+            try:
+                return importlib.util.find_spec(name) is not None
+            except ModuleNotFoundError:
+                return False
+    
+        for rel in REMOVED_PATHS:
+>           assert not (REPO_ROOT / rel).exists(), f"{rel} still exists; C1 deletes it"
+E           AssertionError: cartog/cache.py still exists; C1 deletes it
+E           assert not True
+E            +  where True = exists()
+E            +    where exists = (WindowsPath('C:/Users/rishi/OneDrive/Desktop/Dev/cartog') / 'cartog/cache.py').exists
+
+tests\test_package_layout.py:231: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_package_layout.py::test_layout_doc_covers_every_module - As...
+FAILED tests/test_package_layout.py::test_shims_are_gone - AssertionError: ca...
+2 failed, 1 passed in 0.57s

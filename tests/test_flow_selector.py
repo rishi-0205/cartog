@@ -5,12 +5,12 @@ from pathlib import Path
 from typer.testing import CliRunner
 
 from cartog.cli import app
-from cartog.langs import get_adapter
-from cartog.langs.base import ParseFileResult
-from cartog.merge import build_graph
-from cartog.model import Graph, Node, SourceRange
-from cartog.validate import validate_graph
-from cartog.views import find_flow_candidates
+from cartog.core.model import Graph, Node, SourceRange
+from cartog.graph.merge import build_graph
+from cartog.graph.validate import validate_graph
+from cartog.parse import get_adapter
+from cartog.parse.base import ParseFileResult
+from cartog.render.views import find_flow_candidates
 
 runner = CliRunner()
 

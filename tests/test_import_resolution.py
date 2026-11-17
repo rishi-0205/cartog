@@ -1,7 +1,7 @@
-"""Unit tests for Python import resolution in cartog.langs.python_adapter."""
+"""Unit tests for Python import resolution in cartog.parse.python_adapter."""
 
-from cartog.langs.base import ImportRecord, ProjectContext
-from cartog.langs.python_adapter import PythonAdapter
+from cartog.parse.base import ImportRecord, ProjectContext
+from cartog.parse.python_adapter import PythonAdapter
 
 
 def test_python_import_resolution():
@@ -70,7 +70,7 @@ def test_python_import_resolution():
 
 
 def test_nested_complex_import_resolution():
-    from cartog.langs.python_adapter import path_to_module_name
+    from cartog.parse.python_adapter import path_to_module_name
 
     adapter = PythonAdapter()
 

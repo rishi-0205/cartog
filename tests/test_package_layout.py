@@ -1,8 +1,8 @@
-"""R4: the package-layout document must cover every file under ``cartog/``.
+"""Package-layout guard: the document covers every file, and the shims are gone.
 
-R5-R11 move modules along the plan in ``docs/dev/PACKAGE_LAYOUT.md``. If a file
-appears that the plan does not mention, the plan is stale and the move will
-guess; this test fails instead.
+R4-R11 moved modules along the plan in ``docs/dev/PACKAGE_LAYOUT.md``. C1 then
+deleted the flat compatibility shims. The tests fail if the document is stale,
+if a removed path reappears, or if a new home stops importing.
 """
 
 from __future__ import annotations
@@ -13,6 +13,73 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[1]
 LAYOUT = REPO_ROOT / "docs" / "dev" / "PACKAGE_LAYOUT.md"
 PACKAGE = REPO_ROOT / "cartog"
+
+# C1 deletes the flat compatibility shims and the cartog.langs package.
+REMOVED_PATHS = (
+    "cartog/cache.py",
+    "cartog/config.py",
+    "cartog/export_html.py",
+    "cartog/export_json.py",
+    "cartog/export_mermaid.py",
+    "cartog/jsonc.py",
+    "cartog/manifests.py",
+    "cartog/merge.py",
+    "cartog/model.py",
+    "cartog/scip_pass.py",
+    "cartog/scip_pb2.py",
+    "cartog/validate.py",
+    "cartog/views.py",
+    "cartog/langs",
+)
+
+REMOVED_MODULES = (
+    "cartog.cache",
+    "cartog.config",
+    "cartog.export_html",
+    "cartog.export_json",
+    "cartog.export_mermaid",
+    "cartog.jsonc",
+    "cartog.manifests",
+    "cartog.merge",
+    "cartog.model",
+    "cartog.scip_pass",
+    "cartog.scip_pb2",
+    "cartog.validate",
+    "cartog.views",
+    "cartog.langs",
+    "cartog.langs.base",
+    "cartog.langs.python_adapter",
+    "cartog.langs.js_adapter",
+)
+
+NEW_HOMES = (
+    "cartog.core",
+    "cartog.core.model",
+    "cartog.core.config",
+    "cartog.core.jsonc",
+    "cartog.core.diagnostics",
+    "cartog.scan",
+    "cartog.scan.walk",
+    "cartog.scan.cache",
+    "cartog.scan.manifests",
+    "cartog.parse",
+    "cartog.parse.base",
+    "cartog.parse.python_adapter",
+    "cartog.parse.js_adapter",
+    "cartog.scip",
+    "cartog.scip.runner",
+    "cartog.scip.scip_pb2",
+    "cartog.graph",
+    "cartog.graph.merge",
+    "cartog.graph.validate",
+    "cartog.render",
+    "cartog.render.views",
+    "cartog.render.export_json",
+    "cartog.render.export_mermaid",
+    "cartog.render.export_html",
+    "cartog.cli",
+    "cartog.cli.shared",
+)
 
 ROW_RE = re.compile(r"^\|\s*`([^`]+)`\s*\|\s*`([^`]+)`\s*\|\s*(R\d+|—)\s*\|$", re.MULTILINE)
 
@@ -86,33 +153,19 @@ def test_layout_doc_covers_every_module() -> None:
     for heading in ("Import rules", "Package-data risks", "Migration order"):
         assert heading in text, f"the layout document is missing the {heading!r} section"
     assert "cartog.cli:app" in text, "the console entry point must be called out"
-    assert "test_public_imports_after_move" in text, (
-        "the compatibility-shim rule must name the test that enforces it"
+    assert "test_shims_are_gone" in text, (
+        "the removal rule must name the test that enforces it"
+    )
+    assert "test_public_imports_after_move" not in text, (
+        "the document must not name the compatibility test that C1 deletes"
     )
 
-
-# Every completed move: the old flat path must stay importable and expose the
-# same objects as the new home. Extended by each migration task (R5-R11).
-COMPLETED_MOVES: dict[str, str] = {
-    "cartog.model": "cartog.core.model",
-    "cartog.config": "cartog.core.config",
-    "cartog.jsonc": "cartog.core.jsonc",
-    "cartog.scan": "cartog.scan.walk",
-    "cartog.cache": "cartog.scan.cache",
-    "cartog.manifests": "cartog.scan.manifests",
-    "cartog.langs": "cartog.parse",
-    "cartog.langs.base": "cartog.parse.base",
-    "cartog.langs.python_adapter": "cartog.parse.python_adapter",
-    "cartog.langs.js_adapter": "cartog.parse.js_adapter",
-    "cartog.scip_pass": "cartog.scip.runner",
-    "cartog.scip_pb2": "cartog.scip.scip_pb2",
-    "cartog.merge": "cartog.graph.merge",
-    "cartog.validate": "cartog.graph.validate",
-    "cartog.views": "cartog.render.views",
-    "cartog.export_json": "cartog.render.export_json",
-    "cartog.export_mermaid": "cartog.render.export_mermaid",
-    "cartog.export_html": "cartog.render.export_html",
-}
+    removed_section = text.split("## 6. Removed by C1", 1)
+    assert len(removed_section) == 2, "the layout document needs a '## 6. Removed by C1' list"
+    for rel in REMOVED_PATHS:
+        assert f"`{rel}`" in removed_section[1], (
+            f"the 'Removed by C1' list does not name {rel}"
+        )
 
 
 def test_cli_package_layout() -> None:
@@ -158,42 +211,29 @@ def test_cli_package_layout() -> None:
     assert sorted(command.commands["query"].commands) == ["callees-of", "callers-of"]
 
 
-def test_public_imports_after_move() -> None:
+def test_shims_are_gone() -> None:
+    """C1: every compatibility shim and cartog.langs is deleted for good."""
     import importlib
-    import types
+    import importlib.util
 
-    def public_api(module: types.ModuleType, module_name: str) -> list[str]:
-        """The module's declared API, falling back to what it appears to own."""
-        declared = getattr(module, "__all__", None)
-        if declared is not None:
-            assert all(isinstance(n, str) for n in declared), f"{module_name}.__all__ is malformed"
-            return list(declared)
+    import typer
 
-        names: list[str] = []
-        for name in dir(module):
-            if name.startswith("_"):
-                continue
-            obj = getattr(module, name)
-            if isinstance(obj, types.ModuleType):
-                continue
-            if name.isupper() or getattr(obj, "__module__", None) == module_name:
-                names.append(name)
-        return names
+    import cartog.cli
+    import cartog.scan
 
-    for old_name, new_name in COMPLETED_MOVES.items():
-        old = importlib.import_module(old_name)
-        new = importlib.import_module(new_name)
+    def spec_exists(name: str) -> bool:
+        try:
+            return importlib.util.find_spec(name) is not None
+        except ModuleNotFoundError:
+            return False
 
-        public = public_api(new, new_name)
-        assert public, f"{new_name} exports nothing public"
+    for rel in REMOVED_PATHS:
+        assert not (REPO_ROOT / rel).exists(), f"{rel} still exists; C1 deletes it"
+    for name in REMOVED_MODULES:
+        assert not spec_exists(name), f"{name} is still importable; C1 deletes it"
 
-        missing = [n for n in public if not hasattr(old, n)]
-        assert not missing, f"{old_name} no longer re-exports {missing} from {new_name}"
+    for name in NEW_HOMES:
+        assert importlib.import_module(name), f"new home {name} does not import"
 
-        differing = [
-            n for n in public if getattr(old, n, None) is not getattr(new, n, None)
-        ]
-        assert not differing, (
-            f"{old_name} and {new_name} disagree on {differing}; the old path must be "
-            "a re-export shim, not a copy"
-        )
+    assert callable(cartog.scan.walk_files), "cartog.scan must keep re-exporting walk_files"
+    assert isinstance(cartog.cli.app, typer.Typer), "cartog.cli.app must stay the Typer app"

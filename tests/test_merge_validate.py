@@ -2,8 +2,8 @@
 
 from pathlib import Path
 
-from cartog.model import Edge, Graph, Node, SourceRange
-from cartog.validate import (
+from cartog.core.model import Edge, Graph, Node, SourceRange
+from cartog.graph.validate import (
     cross_check_imports_and_calls,
     validate_graph,
     validate_ranges_and_containment,
@@ -381,8 +381,8 @@ def test_validation_rejects_aggregated_edge_count_mismatch():
 
 
 def test_validation_no_hardcoded_paths():
-    """Verify cartog/validate.py contains no hardcoded absolute or sample repo paths."""
-    val_file = Path(__file__).resolve().parent.parent / "cartog" / "validate.py"
+    """Verify cartog/graph/validate.py contains no hardcoded absolute or sample repo paths."""
+    val_file = Path(__file__).resolve().parent.parent / "cartog" / "graph" / "validate.py"
     text = val_file.read_text(encoding="utf-8")
     assert "src/click/exceptions.py" not in text
     assert "src/click/types.py" not in text

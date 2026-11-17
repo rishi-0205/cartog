@@ -1,0 +1,30 @@
+﻿Command: venv\Scripts\python.exe -m cartog --help
+                                                                               
+ Usage: python -m cartog [OPTIONS] COMMAND [ARGS]...                           
+                                                                               
+ Cartography for codebases: maps source files with tree-sitter + SCIP into     
+ JSON + Mermaid.                                                               
+                                                                               
++- Options -------------------------------------------------------------------+
+| --version  -v        Show the Cartog version and exit.                      |
+| --help               Show this message and exit.                            |
++-----------------------------------------------------------------------------+
++- Commands ------------------------------------------------------------------+
+| build   Run Stage 3: Merge parse representations into graph.json.           |
+| check   Validate graph integrity and report findings.                       |
+| digest  Generate a compact architectural digest (~2,000-4,000 tokens) for   |
+|         LLM prompts.                                                        |
+| doctor  Check the local environment for required and optional tools.        |
+| flow    Trace call flow from entrypoints, routes, or functions across the   |
+|         codebase.                                                           |
+| map     Run full pipeline (parse -> build -> export) and produce Mermaid    |
+|         diagrams.                                                           |
+| parse   Run Stage 1: tree-sitter AST syntax, imports, and framework pattern |
+|         extraction.                                                         |
+| scip    Run Stage 2: SCIP indexer execution and decoding into scip.json.    |
+| view    Launch or export the interactive Cytoscape codebase architecture    |
+|         viewer.                                                             |
+| query   Fast single-question code graph queries (callers, callees).         |
++-----------------------------------------------------------------------------+
+
+exit code: 0

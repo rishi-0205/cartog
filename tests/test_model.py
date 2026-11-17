@@ -1,8 +1,8 @@
-"""Unit tests for cartog.model."""
+"""Unit tests for cartog.core.model."""
 
 from pathlib import Path
 
-from cartog.model import Edge, Graph, Node, SourceRange, make_edge_id, make_node_id
+from cartog.core.model import Edge, Graph, Node, SourceRange, make_edge_id, make_node_id
 
 
 def test_node_id_stability():

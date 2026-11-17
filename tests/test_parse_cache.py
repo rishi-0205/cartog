@@ -3,10 +3,10 @@
 import hashlib
 from pathlib import Path
 
-from cartog.cache import ParseCache
-from cartog.langs import parse_source_file
-from cartog.merge import build_graph
+from cartog.graph.merge import build_graph
+from cartog.parse import parse_source_file
 from cartog.scan import FileInfo
+from cartog.scan.cache import ParseCache
 
 
 def test_cache_preserves_is_type_only_cold_vs_warm(tmp_path: Path):

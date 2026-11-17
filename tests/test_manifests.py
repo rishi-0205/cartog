@@ -2,8 +2,11 @@
 
 from pathlib import Path
 
-from cartog.langs.base import ParseFileResult, SymbolRecord
-from cartog.manifests import (
+from cartog.core.model import ManifestFacts
+from cartog.graph.merge import build_graph
+from cartog.graph.validate import validate_graph
+from cartog.parse.base import ParseFileResult, SymbolRecord
+from cartog.scan.manifests import (
     parse_docker_compose,
     parse_dockerfile,
     parse_github_workflow,
@@ -11,9 +14,6 @@ from cartog.manifests import (
     parse_pyproject_toml,
     parse_requirements_file,
 )
-from cartog.merge import build_graph
-from cartog.model import ManifestFacts
-from cartog.validate import validate_graph
 
 
 def test_parse_pyproject_toml(tmp_path: Path):

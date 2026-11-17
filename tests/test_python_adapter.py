@@ -1,14 +1,14 @@
-"""Unit tests for cartog.langs.python_adapter."""
+"""Unit tests for cartog.parse.python_adapter."""
 
 from pathlib import Path
 
 from conftest import requires_sample
 
-from cartog.cache import ParseCache
-from cartog.export_json import write_parse_json
-from cartog.langs import parse_source_file
-from cartog.langs.python_adapter import PythonAdapter, path_to_module_name
+from cartog.parse import parse_source_file
+from cartog.parse.python_adapter import PythonAdapter, path_to_module_name
+from cartog.render.export_json import write_parse_json
 from cartog.scan import FileInfo
+from cartog.scan.cache import ParseCache
 
 
 def test_path_to_module_name():

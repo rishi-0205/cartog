@@ -9,8 +9,8 @@ from pathlib import Path
 from typer.testing import CliRunner
 
 from cartog.cli import app
-from cartog.model import Edge, Graph, Node
-from cartog.views import (
+from cartog.core.model import Edge, Graph, Node
+from cartog.render.views import (
     NoiseCategory,
     detect_noise_files,
     rewire_view_edges,
