@@ -19,19 +19,21 @@ Related: [`EVIDENCE_PROTOCOL.md`](EVIDENCE_PROTOCOL.md) (how to prove a claim),
 2. Read, in this order:
    - [`docs/HANDOFF.md`](../HANDOFF.md) — status and the next task,
    - [`docs/WORKING_TASKS.md`](../WORKING_TASKS.md) — the live epic board and the
-     work-unit limit for the session,
+     session rule,
    - the task section for the task you are about to start, including its
      **Files to read** list.
 3. Record the starting test count (`pytest tests\ -q`) before changing code.
 
 ## 2. Work unit
 
-Take **at most three small tasks, or one large task, per session**, as stated at
-the top of [`docs/WORKING_TASKS.md`](../WORKING_TASKS.md). Finish and commit
-each task before starting the next one.
+Take **at most one epic per session**, as stated at the top of
+[`docs/WORKING_TASKS.md`](../WORKING_TASKS.md). A session stays on one epic
+branch; the `session group` column records how that epic was split for review,
+not a cap. Finish and commit each task before starting the next one.
 
 Stop at any task marked `BLOCKED`, at an author gate (a task that needs a
-decision only the author can make), and when the work unit is used up.
+decision only the author can make), and when the epic is accepted, blocked, or
+out of tasks.
 
 ## 3. Task order
 
@@ -82,6 +84,6 @@ Stop, leave the tree committed and clean, and report when:
 
 1. the git state is unexpected (detached HEAD, conflicts, dirty tree),
 2. a task is `BLOCKED` on the author,
-3. the session's work unit is finished,
+3. the author accepts the epic (merge, branch deleted),
 4. every task of the epic is `DONE` — then set the epic to
    `READY FOR EPIC REVIEW` and wait for `Accept <epic id>`.
