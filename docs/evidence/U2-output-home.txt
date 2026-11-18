@@ -1,0 +1,62 @@
+# U2 evidence - per-user output home and project keys
+
+Date: 2026-11-18
+Branch: feature/unified-command-and-output
+Task: U2 (E2)
+
+## Red: cartog.core.output does not exist
+
+Command: venv\Scripts\python.exe -m pytest tests\test_output_home.py -q
+=================================== ERRORS ====================================
+_________________ ERROR collecting tests/test_output_home.py __________________
+ImportError while importing test module 'C:\Users\rishi\OneDrive\Desktop\Dev\cartog\tests\test_output_home.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+C:\Python313\Lib\importlib\__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_output_home.py:12: in <module>
+    from cartog.core import output
+E   ImportError: cannot import name 'output' from 'cartog.core' (C:\Users\rishi\OneDrive\Desktop\Dev\cartog\cartog\core\__init__.py)
+=========================== short test summary info ===========================
+ERROR tests/test_output_home.py
+!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!
+1 error in 0.25s
+
+## Green: home resolution, CARTOG_HOME, and project keys
+
+Command: venv\Scripts\python.exe -m pytest tests\test_output_home.py -q
+...                                                                      [100%]
+3 passed in 0.18s
+
+## Layout/API guards
+
+Command: venv\Scripts\python.exe -m pytest tests\test_output_home.py tests\test_package_layout.py tests\test_public_api_type_hints.py -q
+...........                                                              [100%]
+11 passed in 0.57s
+
+## Golden comparison
+
+Command: venv\Scripts\python.exe scripts\golden.py --check
+click: 0 differences
+flask: 0 differences
+ky: 0 differences
+0 differences
+
+## Full suite
+
+Command: venv\Scripts\python.exe -m pytest tests\ -q
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+199 passed, 1 warning in 175.50s (0:02:55)
+
+Count: 196 -> 199 (+3: `test_output_home_per_platform`,
+`test_cartog_home_override`, `test_project_folder_is_sanitized`). No existing
+test was edited, skipped, or weakened.
+
+## What changed
+
+- `cartog/core/output.py` (new): `default_data_root`, `resolve_home`,
+  `sanitize_project_name`, `normalize_target_path`, `project_folder_name`,
+  `utc_run_id`, `RunLocation`, and `resolve_run_location`.
+- `tests/test_output_home.py` (new): the three U2 tests.
+- `docs/dev/PACKAGE_LAYOUT.md`: the new module's destination and tree entry.

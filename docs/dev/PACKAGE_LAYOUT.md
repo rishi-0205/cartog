@@ -19,6 +19,7 @@ cartog/
     config.py              DEFAULT_MAX_FILE_SIZE_MB and friends
     jsonc.py               JSONC tokenizer + strict JSON loader
     diagnostics.py         get_logger() / warn(): the one place logging and warnings enter
+    output.py              output home, project keys, run layout (E2)
   scan/
     __init__.py            re-exports walk_files, hash_file, IgnoreMetrics, ...
     walk.py                file walking, root detection, ignore rules
@@ -103,6 +104,7 @@ the list is preserved in [§6](#6-removed-by-c1).
 | `(new)` | `cartog/render/__init__.py` | R10 |
 | `(new)` | `cartog/cli/shared.py` | R11 |
 | `(new)` | `cartog/core/diagnostics.py` | R12 |
+| `(new)` | `cartog/core/output.py` | — |
 | `(new)` | `cartog/cli/commands/__init__.py` | R11 |
 | `(new)` | `cartog/cli/commands/doctor.py` | R11 |
 | `(new)` | `cartog/cli/commands/parse.py` | R11 |
