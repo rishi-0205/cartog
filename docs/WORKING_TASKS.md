@@ -30,7 +30,7 @@ The roadmap narrative is [`docs/IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.m
 | U2 | Default output location | E2 | `feature/unified-command-and-output` | U1 | M | E2-S2 | DONE | 53c654a |
 | U3 | Output layout writer | E2 | `feature/unified-command-and-output` | U2 | M | E2-S3 | DONE | 402c988 |
 | U4 | Unified command | E2 | `feature/unified-command-and-output` | U3 | M | E2-S4 | DONE | 7991e3c |
-| U5 | Keep stage commands and consolidate flags | E2 | `feature/unified-command-and-output` | U4 | M | E2-S5 | TODO | — |
+| U5 | Keep stage commands and consolidate flags | E2 | `feature/unified-command-and-output` | U4 | M | E2-S5 | DONE | 4941894 |
 | U6 | Docs and tests for the new flow | E2 | `feature/unified-command-and-output` | U4, U5 | S | E2-S5 | TODO | — |
 | S1 | One subprocess runner | E3 | `feature/security-baseline` | U4 | M | E3-S1 | TODO | — |
 | S2 | Hostile canary repository | E3 | `feature/security-baseline` | S1 | S | E3-S1 | TODO | — |
@@ -79,7 +79,7 @@ The roadmap narrative is [`docs/IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.m
 | E0 | `fix/baseline-correctness` | — | 5 / 5 | ACCEPTED | 2026-11-15 |
 | E1 | `refactor/package-structure` | E0 | 13 / 13 | ACCEPTED | 2026-11-17 |
 | E1b | `refactor/drop-compat-shims` | E1 | 1 / 1 | ACCEPTED | 2026-11-17 |
-| E2 | `feature/unified-command-and-output` | E1b | 4 / 6 | IN PROGRESS | no |
+| E2 | `feature/unified-command-and-output` | E1b | 5 / 6 | IN PROGRESS | no |
 | E3 | `feature/security-baseline` | E2 | 0 / 9 | NOT STARTED | no |
 | E4 | `feature/verification` | E2 | 0 / 5 | NOT STARTED | no |
 | E5 | `feature/llm-layer` | E2, E3 | 0 / 11 | NOT STARTED | no |
@@ -697,10 +697,11 @@ At most one epic per session; within that epic, finish and commit each task befo
 - **User check (epic review):** `cartog --help` and each subcommand `--help`.
 - **Evidence files:** `docs/evidence/U5-stage-commands.txt`
 - **Planned commit message:** `U5: keep stage commands and consolidate view flags`
-- **Status:** TODO
-- **Commit hash:** —
-- **Failure log:** —
-- **Change log:** —
+- **Status:** DONE
+- **Commit hash:** `4941894`
+- **Failure log:** Red run (`docs/evidence/U5-stage-commands-red.txt`): `test_consolidated_flags_aliases` failed with `assert 2 == 0` because `map` rejected `--include-tests` as an unknown option. `test_all_legacy_commands_still_invokable` passed immediately because it guards against command removal; that is recorded rather than manufactured into a failure.
+- **Change log:**
+  - 2026-11-18: Added `--include-tests` / `--include-examples` to `map` as the canonical spellings; the comma-separated `--include` list remains a legacy alias feeding the same set. Labelled `--no-cache` a legacy alias in `map`, `parse`, and `build` help. Added `tests/test_stage_commands.py` (2 tests) covering the root help, every stage command's `--help`, and the three flags against a real tiny repo. Suite 212 → 214; golden 0 differences; ruff clean. No command was removed and no other flag changed.
 
 ### U6: Docs and tests for the new flow
 
