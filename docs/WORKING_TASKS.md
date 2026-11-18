@@ -26,7 +26,7 @@ The roadmap narrative is [`docs/IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.m
 | R11 | Split the CLI into modules | E1 | `refactor/package-structure` | R10 | M | E1-S10 | DONE | d88a8b8 |
 | R12 | Cleanup pass | E1 | `refactor/package-structure` | R5-R11 | M | E1-S11 | DONE | 2461a3b |
 | C1 | Drop the compatibility shims | E1b | `refactor/drop-compat-shims` | R12 | M | E1b-S1 | DONE | 2f2a0b5 |
-| U1 | Unified command design | E2 | `feature/unified-command-and-output` | E1b | S | E2-S1 | BLOCKED | f73f1b7 |
+| U1 | Unified command design | E2 | `feature/unified-command-and-output` | E1b | S | E2-S1 | DONE | cb6ce54 |
 | U2 | Default output location | E2 | `feature/unified-command-and-output` | U1 | M | E2-S2 | TODO | — |
 | U3 | Output layout writer | E2 | `feature/unified-command-and-output` | U2 | M | E2-S3 | TODO | — |
 | U4 | Unified command | E2 | `feature/unified-command-and-output` | U3 | M | E2-S4 | TODO | — |
@@ -79,7 +79,7 @@ The roadmap narrative is [`docs/IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.m
 | E0 | `fix/baseline-correctness` | — | 5 / 5 | ACCEPTED | 2026-11-15 |
 | E1 | `refactor/package-structure` | E0 | 13 / 13 | ACCEPTED | 2026-11-17 |
 | E1b | `refactor/drop-compat-shims` | E1 | 1 / 1 | ACCEPTED | 2026-11-17 |
-| E2 | `feature/unified-command-and-output` | E1b | 0 / 6 | IN PROGRESS | no |
+| E2 | `feature/unified-command-and-output` | E1b | 1 / 6 | IN PROGRESS | no |
 | E3 | `feature/security-baseline` | E2 | 0 / 9 | NOT STARTED | no |
 | E4 | `feature/verification` | E2 | 0 / 5 | NOT STARTED | no |
 | E5 | `feature/llm-layer` | E2, E3 | 0 / 11 | NOT STARTED | no |
@@ -608,11 +608,12 @@ At most one epic per session; within that epic, finish and commit each task befo
 - **User check (epic review):** Review the design doc.
 - **Evidence files:** `docs/evidence/U1-unified-command-design.txt`
 - **Planned commit message:** `U1: document unified command design`
-- **Status:** BLOCKED
-- **Commit hash:** `f73f1b7`
-- **Failure log:** Red run (`docs/evidence/U1-design-red.txt`): both design tests failed before the document existed — `test_design_doc_has_options_and_exit_codes` with `AssertionError: missing design document: docs\dev\UNIFIED_COMMAND.md`, and `test_design_doc_is_linked_from_agents` with `AGENTS.md does not link to docs/dev/UNIFIED_COMMAND.md`.
+- **Status:** DONE
+- **Commit hash:** `cb6ce54`
+- **Failure log:** Red run (`docs/evidence/U1-design-red.txt`): both design tests failed before the document existed — `test_design_doc_has_options_and_exit_codes` with `AssertionError: missing design document: docs\dev\UNIFIED_COMMAND.md`, and `test_design_doc_is_linked_from_agents` with `AGENTS.md does not link to docs/dev/UNIFIED_COMMAND.md`. Revision red run (`docs/evidence/U1-design-revision-red.txt`): the design still advertised the implicit form — `AssertionError: design must not advertise an implicit \`cartog <path>\` form`.
 - **Change log:**
   - 2026-11-17: Wrote `docs/dev/UNIFIED_COMMAND.md` (command, options, exit codes, output tree, migration, open questions), added `tests/test_unified_command_design.py` (2 tests), linked the doc from `AGENTS.md` (required by `tests/test_docs_links.py::test_agents_points_to_docs_dev`), and recorded Decision 34 in `docs/ISSUES_AND_DECISIONS.md`. Suite 194 → 196; golden check 0 differences; `ruff check .` clean. Note: this task's "Files to read" names `cartog/cli.py`, which R11 split into `cartog/cli/`; the design was written against the package. U1 is BLOCKED pending the author's approval of the design; U2–U6 must not start before it.
+  - 2026-11-18: Gate closed by the author. Revised the design to make `cartog analyze <path>` the only entry point, keep the viewer closed unless `--open`, and add `--keep N` with default `1` (no history kept, implemented in U3). Strengthened the design test (no assertion removed) and recorded the answers in Decision 34. Added Decision 35: `E501` stays ignored through E2 and moves to E3. Suite 196 → 196; `docs/evidence/U1-unified-command-design.txt` has the revision transcripts.
 
 ### U2: Default output location
 
