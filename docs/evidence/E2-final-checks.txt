@@ -1,0 +1,51 @@
+# E2 final checks - unified command and output
+
+Date: 2026-11-18
+Branch: feature/unified-command-and-output
+Epic: E2 (U1-U6)
+
+## Lint
+
+Command: venv\Scripts\python.exe -m ruff check .
+All checks passed!
+
+`E501` remains ignored by Decision 35 (deferred to E3); every other rule is clean.
+
+## Full suite
+
+Command: venv\Scripts\python.exe -m pytest tests\ -q
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+216 passed, 1 warning in 185.42s (0:03:05)
+
+216 passed, 1 warning. Start of epic: 194 passed (E1b). U1 added 2 tests,
+U2 3, U3 7, U4 6, U5 2, U6 2 = 216. No test was removed, skipped, or weakened.
+
+## Golden comparison
+
+Command: venv\Scripts\python.exe scripts\golden.py --check
+click: 0 differences
+flask: 0 differences
+ky: 0 differences
+0 differences
+
+## Commits on the epic branch
+
+67b1c4e U6: mark DONE and E2 ready for epic review
+7008403 U6: document the unified command flow
+f22ad21 U5: mark DONE on the task board
+4941894 U5: keep stage commands and consolidate view flags
+751aa81 U4: mark DONE on the task board
+7991e3c U4: add the unified analyze command
+fde4116 U3: mark DONE on the task board
+402c988 U3: add the stable output layout writer
+e8c54a7 U2: mark DONE on the task board
+53c654a U2: default output to a per-user data directory
+3a57018 U1: mark DONE on the task board
+cb6ce54 U1: make cartog analyze the entry point
+1400611 U1: record the design gate on the board
+f73f1b7 U1: document unified command design
+
+## Working tree before this evidence file was written
+
+?? .scratch/
