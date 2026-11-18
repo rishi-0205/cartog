@@ -3,7 +3,7 @@
 > **Cartography for codebases.**  
 > A compiler-grade static analysis and architectural mapping engine that turns complex codebases into deterministic property graphs, interactive offline blueprint maps, call-flow traces, and LLM context digests.
 
-[![Tests](https://img.shields.io/badge/tests-162%20passed-brightgreen.svg)]()
+[![Tests](https://img.shields.io/badge/tests-216%20passed-brightgreen.svg)]()
 [![Schema](https://img.shields.io/badge/schema-2.0.0-blue.svg)]()
 [![Python](https://img.shields.io/badge/python-3.11%20|%203.12%20|%203.13-blue.svg)]()
 [![License](https://img.shields.io/badge/license-MIT-green.svg)]()
@@ -325,6 +325,7 @@ Options:
   --help              Show this message and exit.
 
 Commands:
+  analyze             Run the whole pipeline and write the stable output tree.
   doctor              Inspect local environment for tree-sitter grammars and SCIP indexers.
   map                 Run full pipeline (parse -> scip -> build -> export) and emit Mermaid diagrams.
   view                Launch or export the 100% offline interactive Cytoscape codebase map.
@@ -337,28 +338,43 @@ Commands:
   query               Fast single-question code graph queries (callers, callees).
 ```
 
+`cartog analyze` is the unified entry point. It writes the complete run under
+the per-user data directory (`%LOCALAPPDATA%\cartog` on Windows,
+`~/Library/Application Support/cartog` on macOS, `$XDG_DATA_HOME/cartog` on
+Linux) as `projects/<name>-<sha1(path)[:8]>/runs/<run-id>/`, with a copied
+`latest/` beside it. It opens no browser unless `--open` is passed, and
+`--keep N` keeps the newest `N` complete runs (default `1`, so no history).
+The stage commands keep `cartog-out/` and their existing flags. See
+[`docs/USAGE.md`](./docs/USAGE.md) for the output tree and exit codes.
+
 ### Essential Workflows
 
 ```powershell
-# 1. Inspect environment tools and grammars
+# 1. Analyze a repository with one command (full layout, no browser)
+cartog analyze ./my-project
+
+# 2. Analyze and open the generated viewer
+cartog analyze ./my-project --open
+
+# 3. Inspect environment tools and grammars
 cartog doctor
 
-# 2. Map an entire codebase into Mermaid diagrams
-cartog map ./my-project --out cartog-out/my-map
+# 4. Map an entire codebase into Mermaid diagrams (stage command)
+cartog map ./my-project --out cartog-out/my-map --include-tests
 
-# 3. Generate and open the interactive Cytoscape HTML viewer
+# 5. Generate and open the interactive Cytoscape HTML viewer
 cartog view ./my-project --out cartog-out/my-view
 
-# 4. Trace execution flow from a route or entrypoint
+# 6. Trace execution flow from a route or entrypoint
 cartog flow ./my-project "GET /users" --depth 4
 
-# 5. Generate an interactive call flow trace in HTML
+# 7. Generate an interactive call flow trace in HTML
 cartog view ./my-project --flow "run" --out cartog-out/flow-view
 
-# 6. Generate an architectural digest for LLM prompt context
+# 8. Generate an architectural digest for LLM prompt context
 cartog digest ./my-project --out cartog-out/digest
 
-# 7. Validate graph integrity with strict checking
+# 9. Validate graph integrity with strict checking
 cartog check cartog-out/my-map/graph.json --strict
 ```
 
@@ -369,6 +385,7 @@ cartog check cartog-out/my-map/graph.json --strict
 Cartog adheres to a strict formal development protocol where every capability is backed by red-green tests, real execution evidence, and architectural decision records:
 
 - [`docs/HANDOFF.md`](./docs/HANDOFF.md): Project status, milestone index, and next active tasks.
+- [`docs/USAGE.md`](./docs/USAGE.md): Unified command, output tree, exit codes, stage commands, and examples.
 - [`docs/IMPLEMENTATION_PLAN.md`](./docs/IMPLEMENTATION_PLAN.md): Complete milestone checklists (M0 through M13).
 - [`docs/ISSUES_AND_DECISIONS.md`](./docs/ISSUES_AND_DECISIONS.md): Architectural problem archive with root-cause analyses and tradeoffs (Issues 1–28).
 - [`docs/BUILD_LOG.md`](./docs/BUILD_LOG.md): Append-only chronological engineering record (Entries 1–23).
@@ -425,8 +442,8 @@ pip install -e .
 ### Running the Test Suite
 
 ```powershell
-# Run the complete test suite (162 tests)
+# Run the complete test suite (216 tests)
 pytest tests/ -v
 ```
 
-All 162 unit and integration tests run deterministically without external network access.
+All 216 unit and integration tests run deterministically without external network access.

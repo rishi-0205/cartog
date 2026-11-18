@@ -1,0 +1,82 @@
+# U6 evidence - docs and tests for the unified flow
+
+Date: 2026-11-18
+Branch: feature/unified-command-and-output
+Task: U6 (E2)
+
+## Red: the usage guide did not exist
+
+Command: venv\Scripts\python.exe -m pytest tests\test_documented_commands.py -q
+F.                                                                       [100%]
+================================== FAILURES ===================================
+_______________________ test_documented_commands_exist ________________________
+
+    def test_documented_commands_exist():
+        """Every command named in the docs is a registered command."""
+        commands = set(get_command(app).commands)
+        assert "analyze" in commands, "the unified command is not registered"
+    
+        seen: set[str] = set()
+        for path in DOCS:
+>           assert path.is_file(), f"missing documented file: {path}"
+E           AssertionError: missing documented file: C:\Users\rishi\OneDrive\Desktop\Dev\cartog\docs\USAGE.md
+E           assert False
+E            +  where False = is_file()
+E            +    where is_file = WindowsPath('C:/Users/rishi/OneDrive/Desktop/Dev/cartog/docs/USAGE.md').is_file
+
+tests\test_documented_commands.py:35: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_documented_commands.py::test_documented_commands_exist - As...
+1 failed, 1 passed in 2.45s
+
+`test_documented_commands_exist` failed on the missing `docs/USAGE.md`.
+`test_documented_examples_run` already passed because `cartog analyze` and the
+stage commands existed by U4/U5; it is the executable guard for the documented
+examples, not a freshly introduced failure.
+
+## Green: every documented command exists and the example runs
+
+Command: venv\Scripts\python.exe -m pytest tests\test_documented_commands.py -q
+..                                                                       [100%]
+2 passed in 2.47s
+
+## Guards (docs links, docs consistency, CLI)
+
+Command: venv\Scripts\python.exe -m pytest tests\test_documented_commands.py tests\test_docs_links.py tests\test_docs_consistency.py tests\test_cli.py -q
+......................                                                   [100%]
+22 passed in 70.57s (0:01:10)
+
+## Golden comparison
+
+Command: venv\Scripts\python.exe scripts\golden.py --check
+click: 0 differences
+flask: 0 differences
+ky: 0 differences
+0 differences
+
+## Full suite
+
+Command: venv\Scripts\python.exe -m pytest tests\ -q
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+216 passed, 1 warning in 185.42s (0:03:05)
+
+Count: 214 -> 216 (+2: `test_documented_commands_exist`,
+`test_documented_examples_run`). No existing test or assertion was removed,
+skipped, or weakened.
+
+## What changed
+
+- `docs/USAGE.md` (new): quick start, the per-user output tree, retention,
+  `meta.json`, exit codes, common options, the stage-command table, the legacy
+  aliases, and runnable examples.
+- `README.md`: the test badge and Getting Started count are 216; `analyze` is
+  the first command in the CLI reference; the Essential Workflows start with
+  `cartog analyze` and keep the stage-command examples; a short paragraph
+  documents the per-user tree and links the usage guide.
+- `docs/HANDOFF.md`: the header, output description, test count, E2 status
+  section, install commands, and document index now describe the shipped E2
+  contract and point at `docs/USAGE.md`.
+- `tests/test_documented_commands.py` (new): extracts every `cartog <word>`
+  mention from `README.md` and `docs/USAGE.md` and checks it against the live
+  Typer registry; runs the quick-start example end to end and then validates
+  its `graph.json`, plus a stage-command `map --include-tests` run.

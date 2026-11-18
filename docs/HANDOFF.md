@@ -1,6 +1,6 @@
 # Cartog — Handoff Document
 
-**Last updated:** 2026-11-17 (E2 under way: U1 design written, task BLOCKED at the approval gate; suite is 196 tests passing)  
+**Last updated:** 2026-11-18 (E2 complete: U1–U6 DONE on `feature/unified-command-and-output`, awaiting epic review; suite is 216 tests passing)  
 **Role:** Single entry point for any model or developer picking up this project.  
 **Active Working Tasks:** See [`docs/WORKING_TASKS.md`](./WORKING_TASKS.md) for the live epic board and command loop. The historical T0–T21 board is [`docs/archive/WORKING_TASKS_T0-T21.md`](./archive/WORKING_TASKS_T0-T21.md).  
 **Git rules:** [`docs/dev/GIT_WORKFLOW.md`](./dev/GIT_WORKFLOW.md) — one branch per epic, commit per task, never push, merge only after `Accept <epic id>`.
@@ -17,7 +17,7 @@ Cartog is a **code-mapping CLI tool** that produces:
 5. Validation reports (`cartog check`) with configurable strictness.
 
 Input: any Python, JS, or TS project directory.  
-Output: `cartog-out/` containing `parse.json`, `scip.json`, `graph.json`, `overview.mmd`, `overview.png`, `flow.mmd`, `digest.md`, `map.html`.
+Output: `cartog analyze` writes a per-user run tree (see §3) with `graph.json`, `diagrams/`, `view/map.html`, `digest.md`, `check.json`, `meta.json`, `logs/`, and `stage/`; the stage commands keep `cartog-out/`.
 
 ---
 
@@ -74,11 +74,11 @@ Epic order is **E0 → E1 → E1b → E2 → E3 → E4 → E5 → E6 → E7 → 
 | **Phase E: Polish** | T13, T14, T15, T16 | Added visible legends and summary subgraphs in Mermaid; ranked digest files by connectivity and attributed constructors to enclosing classes; completed noise filtering with `if t.TYPE_CHECKING:` guard support; benchmarked compact serialization (44–50% reduction) and token budgets (<2,000 tokens). |
 | **Milestone 11: Interactive Viewer** | T11 | Packaged offline Cytoscape stack in `cartog/view_assets/`; implemented `cartog view` generating offline `map.html`; implemented orthogonal Manhattan edge routing (`taxi`), edge rollup (`N calls`), reference filter toggle (`References: Off / On`), compound padding (35-50px) & layout physics, and internal helper expansion & linking with toggle. |
 
-**Test suite:** 196 passed, 1 warning (2026-11-17, `pytest tests/` in venv; E2/U1 added two design-integrity tests, so the count moved from 194 to 196 with 0 regressions).
+**Test suite:** 216 passed, 1 warning (2026-11-18, `pytest tests/` in venv; E2 added 20 tests across output home, layout/retention, the unified command, stage-command aliases, and documented examples, moving the count from 196 to 216 with 0 regressions).
 
 ---
 
-## 3. Next Tasks (E2 U1 is blocked at the design gate)
+## 3. Next Tasks (E2 is complete; awaiting epic review)
 
 E0 (`fix/baseline-correctness`) was **ACCEPTED by the author on 2026-11-15** and merged into `main` with `git merge --no-ff`. H1–H5 are all DONE; the branch was deleted after the merge. E0 was built from `docs/task-plan` HEAD (`fcb11f2`), so that merge also brought the T22 documentation restructure into `main` (Decision 29 in `docs/ISSUES_AND_DECISIONS.md`).
 
@@ -86,7 +86,16 @@ E1 (`refactor/package-structure`) was **ACCEPTED by the author on 2026-11-17** a
 
 **E1b** (`refactor/drop-compat-shims`) was **ACCEPTED by the author on 2026-11-17** and merged into `main` with `git merge --no-ff`; the branch was deleted. Its single task, C1 (`2f2a0b5`), deleted the 13 shims and `cartog/langs/`, rewrote every test import to the new homes (`cartog.core.*`, `cartog.scan.*`, `cartog.parse.*`, `cartog.scip.*`, `cartog.graph.*`, `cartog.render.*`), replaced `test_public_imports_after_move` with `test_shims_are_gone`, and updated `docs/dev/PACKAGE_LAYOUT.md`. The old flat paths are gone from the tree and from the wheel; the suite is 194 passed and the goldens report `0 differences`.
 
-The current epic is **E2** (`feature/unified-command-and-output`), created from `main`. **U1**, the design gate, is written and committed (`f73f1b7`): `docs/dev/UNIFIED_COMMAND.md` fixes the proposed contract — `cartog <path>` (with `cartog analyze <path>` as the explicit alias), a per-user output home (`%LOCALAPPDATA%\cartog`, `~/Library/Application Support/cartog`, or `$XDG_DATA_HOME/cartog`, overridable with `CARTOG_HOME` or `--out`), a `projects/<name>-<sha1(path)[:8]>/runs/<run-id>/` tree with a copied `latest/`, and exit codes `0` success / `1` check failed / `2` input error / `3` stage failure for the unified command only. Every stage command and its flags and exit codes stay unchanged. U1 is **BLOCKED** until the author approves the design; U2–U6 must not start before that approval. `E501` remains carried in from R12 (Decision 33) and is reflowed in U4/U5. Full task fields, tests, acceptance criteria, and user checks are in [`docs/WORKING_TASKS.md`](./WORKING_TASKS.md); the design's three open questions are in section 6 of the design doc.
+The current epic is **E2** (`feature/unified-command-and-output`), created from `main`. All six tasks are DONE and committed: U1 (`cb6ce54`) approved the design in `docs/dev/UNIFIED_COMMAND.md` after the author closed the gate on 2026-11-18; U2 (`53c654a`) added the per-user output home and project keys; U3 (`402c988`) added the atomic layout writer, copied `latest/`, and `--keep N` retention; U4 (`7991e3c`) added `cartog analyze <path>`; U5 (`4941894`) kept every stage command and added the canonical `--include-tests` / `--include-examples` spellings; U6 adds `docs/USAGE.md` and the documented-command tests. The contract is:
+
+- `cartog analyze <path>` is the only unified entry point. Bare `cartog` prints help and exits `0`; an unknown top-level word exits `2`.
+- Default output is `<data-root>/projects/<name>-<sha1(path)[:8]>/runs/<run-id>/`, with a copied `latest/` and the parse cache in `<project>/cache`. `<data-root>` is `%LOCALAPPDATA%\cartog`, `~/Library/Application Support/cartog`, or `$XDG_DATA_HOME/cartog`; `CARTOG_HOME` overrides it, and `--out` writes directly with no `latest` and no pruning.
+- `--open` opts into the browser; the unified command never opens it by default. `--keep N` defaults to `1`, so only the newest complete run survives.
+- Exit codes for `cartog analyze`: `0` success, `1` check failed (outputs stay on disk), `2` input/usage error, `3` stage/output failure.
+- Every stage command (`parse`, `scip`, `build`, `map`, `check`, `flow`, `view`, `digest`, `query`, `doctor`) keeps its flags, help text, and exit codes; `cartog view` still opens by default.
+- `E501` stays ignored through E2 under Decision 35; the dedicated reflow moves to E3 and is tracked in `docs/KNOWN_ISSUES.md`.
+
+Next: the author reviews and accepts E2, then E3 (`feature/security-baseline`) starts. Full task fields, tests, and acceptance criteria are in [`docs/WORKING_TASKS.md`](./WORKING_TASKS.md); user-facing examples are in [`docs/USAGE.md`](./USAGE.md).
 
 ---
 
@@ -100,6 +109,12 @@ pip install -e .
 
 # Run all tests
 venv\Scripts\python.exe -m pytest tests\ -q
+
+# Analyze a repository with the unified command (no browser)
+cartog analyze samples/click --no-scip
+
+# Analyze and open the viewer
+cartog analyze samples/flask --open
 
 # Map a sample project (Python, with SCIP call graph)
 cartog map samples/click --out cartog-out/click --python <python>
@@ -158,6 +173,7 @@ On Windows, always use `venv\Scripts\python.exe` inside the repo venv. Cartog's 
 | Document | Purpose |
 |---|---|
 | `docs/HANDOFF.md` | **Start here** — status, next tasks, install commands |
+| `docs/USAGE.md` | User guide: unified command, output tree, exit codes, stage commands, aliases |
 | `docs/WORKING_TASKS.md` | Live epic board E0–E8: per-task and per-epic status tables, command loop, 64 task sections |
 | `docs/archive/WORKING_TASKS_T0-T21.md` | Archived T0–T21 session board (all accepted) |
 | `docs/dev/GIT_WORKFLOW.md` | Branch, commit, merge, and history-safety rules |
@@ -168,13 +184,13 @@ On Windows, always use `venv\Scripts\python.exe` inside the repo venv. Cartog's 
 | `docs/ISSUES_AND_DECISIONS.md` | Technical issue archive: root cause, options, decision rationale |
 | `docs/KNOWN_ISSUES.md` | Ranked issues, review findings F1–F9, and architectural limits |
 | `docs/AUDIT_SUMMARY.md` | Takeover audit findings, fixes made, top risks |
-| `docs/pytest_report.txt` | Archived pytest session (152 passed, 1 warning); current baseline is 196 passed (`docs/evidence/U1-suite.txt`) |
+| `docs/pytest_report.txt` | Archived pytest session (152 passed, 1 warning); current baseline is 216 passed (`docs/evidence/U6-suite.txt`) |
 | `AGENTS.md` | Root entry point for any model/agent: links to the process docs in `docs/dev/` |
 | `docs/dev/EVIDENCE_PROTOCOL.md` | Proof for every claim: red-green, evidence files, test counts |
 | `docs/dev/COMMAND_LOOP.md` | Session loop: work unit, scope, decide-vs-ask, command surface |
 | `docs/dev/REPORTING.md` | Status vocabulary, board updates, report format |
 | `docs/dev/CODE_STANDARDS.md` | Code standards, repository map, key invariants |
-| `docs/dev/UNIFIED_COMMAND.md` | E2 unified-command contract: command, options, exit codes, output tree, migration (proposed; awaiting author approval) |
+| `docs/dev/UNIFIED_COMMAND.md` | E2 unified-command contract: command, options, exit codes, output tree, migration (approved 2026-11-18) |
 | `opencode.jsonc` | Permission deny rules for destructive git commands |
 | `GEMINI.md` | Gemini entry point → AGENTS.md |
 | `CLAUDE.md` | Claude entry point → AGENTS.md |
