@@ -28,7 +28,7 @@ The roadmap narrative is [`docs/IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.m
 | C1 | Drop the compatibility shims | E1b | `refactor/drop-compat-shims` | R12 | M | E1b-S1 | DONE | 2f2a0b5 |
 | U1 | Unified command design | E2 | `feature/unified-command-and-output` | E1b | S | E2-S1 | DONE | cb6ce54 |
 | U2 | Default output location | E2 | `feature/unified-command-and-output` | U1 | M | E2-S2 | DONE | 53c654a |
-| U3 | Output layout writer | E2 | `feature/unified-command-and-output` | U2 | M | E2-S3 | TODO | — |
+| U3 | Output layout writer | E2 | `feature/unified-command-and-output` | U2 | M | E2-S3 | DONE | 402c988 |
 | U4 | Unified command | E2 | `feature/unified-command-and-output` | U3 | M | E2-S4 | TODO | — |
 | U5 | Keep stage commands and consolidate flags | E2 | `feature/unified-command-and-output` | U4 | M | E2-S5 | TODO | — |
 | U6 | Docs and tests for the new flow | E2 | `feature/unified-command-and-output` | U4, U5 | S | E2-S5 | TODO | — |
@@ -79,7 +79,7 @@ The roadmap narrative is [`docs/IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.m
 | E0 | `fix/baseline-correctness` | — | 5 / 5 | ACCEPTED | 2026-11-15 |
 | E1 | `refactor/package-structure` | E0 | 13 / 13 | ACCEPTED | 2026-11-17 |
 | E1b | `refactor/drop-compat-shims` | E1 | 1 / 1 | ACCEPTED | 2026-11-17 |
-| E2 | `feature/unified-command-and-output` | E1b | 2 / 6 | IN PROGRESS | no |
+| E2 | `feature/unified-command-and-output` | E1b | 3 / 6 | IN PROGRESS | no |
 | E3 | `feature/security-baseline` | E2 | 0 / 9 | NOT STARTED | no |
 | E4 | `feature/verification` | E2 | 0 / 5 | NOT STARTED | no |
 | E5 | `feature/llm-layer` | E2, E3 | 0 / 11 | NOT STARTED | no |
@@ -653,10 +653,11 @@ At most one epic per session; within that epic, finish and commit each task befo
 - **User check (epic review):** Inspect the generated tree and `meta.json`.
 - **Evidence files:** `docs/evidence/U3-output-layout.txt`
 - **Planned commit message:** `U3: add the stable output layout writer`
-- **Status:** TODO
-- **Commit hash:** —
-- **Failure log:** —
-- **Change log:** —
+- **Status:** DONE
+- **Commit hash:** `402c988`
+- **Failure log:** Red run (`docs/evidence/U3-output-layout-red.txt`): `AttributeError` because `RunLayout` did not exist. First green attempt (`docs/evidence/U3-output-layout-impl-fail.txt`) failed on a test arrangement error (finalize called on a non-newest run); the implementation was correct and the test was fixed before the recorded green run.
+- **Change log:**
+  - 2026-11-18: Added `RunLayout` (atomic writes, `.complete`, `latest` directory copy, retention), `build_meta`, and `utc_timestamp` to `cartog/core/output.py`. `--keep N` defaults to `1`; older complete runs and stale partials are pruned, `--out` is never pruned, and `latest/` is refreshed from the newest complete run. Added `tests/test_output_layout.py` (7 tests). Suite 199 → 206; golden 0 differences; ruff clean.
 
 ### U4: Unified command
 
