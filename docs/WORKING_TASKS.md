@@ -29,7 +29,7 @@ The roadmap narrative is [`docs/IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.m
 | U1 | Unified command design | E2 | `feature/unified-command-and-output` | E1b | S | E2-S1 | DONE | cb6ce54 |
 | U2 | Default output location | E2 | `feature/unified-command-and-output` | U1 | M | E2-S2 | DONE | 53c654a |
 | U3 | Output layout writer | E2 | `feature/unified-command-and-output` | U2 | M | E2-S3 | DONE | 402c988 |
-| U4 | Unified command | E2 | `feature/unified-command-and-output` | U3 | M | E2-S4 | TODO | — |
+| U4 | Unified command | E2 | `feature/unified-command-and-output` | U3 | M | E2-S4 | DONE | 7991e3c |
 | U5 | Keep stage commands and consolidate flags | E2 | `feature/unified-command-and-output` | U4 | M | E2-S5 | TODO | — |
 | U6 | Docs and tests for the new flow | E2 | `feature/unified-command-and-output` | U4, U5 | S | E2-S5 | TODO | — |
 | S1 | One subprocess runner | E3 | `feature/security-baseline` | U4 | M | E3-S1 | TODO | — |
@@ -79,7 +79,7 @@ The roadmap narrative is [`docs/IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.m
 | E0 | `fix/baseline-correctness` | — | 5 / 5 | ACCEPTED | 2026-11-15 |
 | E1 | `refactor/package-structure` | E0 | 13 / 13 | ACCEPTED | 2026-11-17 |
 | E1b | `refactor/drop-compat-shims` | E1 | 1 / 1 | ACCEPTED | 2026-11-17 |
-| E2 | `feature/unified-command-and-output` | E1b | 3 / 6 | IN PROGRESS | no |
+| E2 | `feature/unified-command-and-output` | E1b | 4 / 6 | IN PROGRESS | no |
 | E3 | `feature/security-baseline` | E2 | 0 / 9 | NOT STARTED | no |
 | E4 | `feature/verification` | E2 | 0 / 5 | NOT STARTED | no |
 | E5 | `feature/llm-layer` | E2, E3 | 0 / 11 | NOT STARTED | no |
@@ -674,11 +674,12 @@ At most one epic per session; within that epic, finish and commit each task befo
 - **Acceptance criteria:** One command produces the full layout; a check error still leaves the outputs on disk.
 - **User check (epic review):** Run on a fixture with a known check error; confirm outputs exist and exit code is non-zero.
 - **Evidence files:** `docs/evidence/U4-unified-command.txt`
-- **Planned commit message:** `U4: add the unified analysis command`
-- **Status:** TODO
-- **Commit hash:** —
-- **Failure log:** —
-- **Change log:** —
+- **Planned commit message:** `U4: add the unified analyze command`
+- **Status:** DONE
+- **Commit hash:** `7991e3c`
+- **Failure log:** Red run (`docs/evidence/U4-unified-command-red.txt`): the real-run test failed with `assert 2 == 0`, because `cartog/cli/commands/__init__.py` did not import `analyze` and Typer rejected the command as unknown.
+- **Change log:**
+  - 2026-11-18: Added `cartog/cli/commands/analyze.py` and registered it. One command now writes `graph.json`, `diagrams/`, `view/map.html`, `digest.md`, `check.json`, `meta.json`, `logs/`, `stage/`, and `.complete`; a failing check exits `1` without removing the run, invalid input exits `2`, and a stage/output failure exits `3` after writing a failed `meta.json`. `--open` is the only way the browser opens; `--keep` defaults to `1`; the parse cache moved to `<project>/cache` via a new `_execute_parse` hook. Bare `cartog` prints help and exits `0`; unknown tokens still exit `2`. Added `tests/test_unified_command.py` (6 tests) and listed `analyze` in the package-layout guard (that guard must enumerate every registered command). Suite 206 → 212; golden 0 differences; ruff clean. Note: the task row's `cartog/cli.py`/`cartog/outlayout.py` are pre-R11 names; the real homes are `cartog/cli/commands/analyze.py` and `cartog/core/output.py`.
 
 ### U5: Keep stage commands and consolidate flags
 
