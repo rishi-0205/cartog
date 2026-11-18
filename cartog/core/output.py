@@ -9,13 +9,19 @@ directory tree.
 from __future__ import annotations
 
 import hashlib
+import json
 import os
 import re
+import shutil
 import sys
+import tempfile
 from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import Any
+
+from cartog.core.config import SCHEMA_VERSION
 
 #: Windows device names that may not be used as a directory name.
 RESERVED_NAMES = frozenset(
@@ -123,6 +129,12 @@ def utc_run_id(now: datetime | None = None) -> str:
     return moment.strftime("%Y%m%dT%H%M%SZ")
 
 
+def utc_timestamp(now: datetime | None = None) -> str:
+    """Return an ISO 8601 UTC timestamp for ``meta.json``."""
+    moment = datetime.now(UTC) if now is None else now
+    return moment.isoformat()
+
+
 @dataclass(frozen=True)
 class RunLocation:
     """Where one run's files go, plus the project roots it belongs to."""
@@ -167,11 +179,173 @@ def resolve_run_location(
 
     root = resolve_home(platform_=platform_, env=env, home=home)
     project_dir = root / "projects" / project_folder_name(target_path, platform_=platform_)
+    run_dir = project_dir / "runs" / resolved_run_id
+    if run_id is None:
+        candidate = run_dir
+        suffix = 1
+        while candidate.exists():
+            suffix += 1
+            candidate = project_dir / "runs" / f"{resolved_run_id}-{suffix:02d}"
+        run_dir = candidate
+        resolved_run_id = run_dir.name
     return RunLocation(
-        run_dir=project_dir / "runs" / resolved_run_id,
+        run_dir=run_dir,
         project_dir=project_dir,
         latest_dir=project_dir / "latest",
         run_id=resolved_run_id,
         cache_dir=project_dir / "cache",
         uses_runs=True,
     )
+
+
+def _atomic_write(path: Path, data: bytes) -> None:
+    """Write ``data`` to ``path`` through a temporary file and an atomic rename."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    handle, tmp_name = tempfile.mkstemp(
+        dir=path.parent, prefix=f".{path.name}.", suffix=".tmp"
+    )
+    try:
+        with os.fdopen(handle, "wb") as stream:
+            stream.write(data)
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.replace(tmp_name, path)
+    except BaseException:
+        Path(tmp_name).unlink(missing_ok=True)
+        raise
+
+
+class RunLayout:
+    """Write one run's files atomically, then publish and prune the run history."""
+
+    def __init__(self, location: RunLocation) -> None:
+        """Wrap a resolved :class:`RunLocation`."""
+        self.location = location
+
+    @property
+    def run_dir(self) -> Path:
+        """The directory this run writes into."""
+        return self.location.run_dir
+
+    def write_text(self, relative_path: str, text: str) -> Path:
+        """Write UTF-8 text to ``relative_path`` inside the run, atomically."""
+        return self.write_bytes(relative_path, text.encode("utf-8"))
+
+    def write_bytes(self, relative_path: str, data: bytes) -> Path:
+        """Write bytes to ``relative_path`` inside the run, atomically."""
+        path = self.run_dir / relative_path
+        _atomic_write(path, data)
+        return path
+
+    def write_json(self, relative_path: str, payload: Any, *, pretty: bool = False) -> Path:
+        """Serialise ``payload`` as JSON inside the run, atomically."""
+        indent = 2 if pretty else None
+        return self.write_text(relative_path, json.dumps(payload, indent=indent))
+
+    def mark_complete(self) -> Path:
+        """Write the ``.complete`` marker last, which makes the run usable."""
+        return self.write_text(".complete", "")
+
+    def publish_latest(self) -> Path | None:
+        """Copy the newest complete run to ``latest/``.
+
+        Returns ``None`` for ``--out`` runs and when no complete run exists.
+        The copy is a real directory, never a symlink or junction.
+        """
+        latest = self.location.latest_dir
+        if latest is None:
+            return None
+        complete = self._complete_runs()
+        if not complete:
+            return None
+        newest = complete[-1]
+        staging = latest.parent / f".latest-tmp-{os.getpid()}"
+        if staging.exists():
+            shutil.rmtree(staging)
+        shutil.copytree(newest, staging)
+        if latest.exists():
+            if latest.is_symlink() or latest.is_file():
+                latest.unlink()
+            else:
+                shutil.rmtree(latest)
+        os.replace(staging, latest)
+        return latest
+
+    def prune(self, keep: int) -> list[Path]:
+        """Delete complete runs older than the newest ``keep`` and stale partial runs."""
+        if keep < 1:
+            raise ValueError("--keep must be at least 1")
+        if not self.location.uses_runs:
+            return []
+        runs_dir = self.run_dir.parent
+        if not runs_dir.is_dir():
+            return []
+        complete = self._complete_runs()
+        victims = (
+            [path for path in complete[:-keep] if path != self.run_dir]
+            if len(complete) > keep
+            else []
+        )
+        for victim in victims:
+            shutil.rmtree(victim)
+        if len(complete) >= keep:
+            cutoff = complete[-keep].name
+            for path in sorted(runs_dir.iterdir()):
+                if (
+                    path.is_dir()
+                    and path != self.run_dir
+                    and not (path / ".complete").is_file()
+                    and path.name < cutoff
+                ):
+                    shutil.rmtree(path)
+        return victims
+
+    def finalize(self, *, keep: int = 1) -> list[Path]:
+        """Mark the run complete, refresh ``latest/``, then apply retention."""
+        self.mark_complete()
+        self.publish_latest()
+        return self.prune(keep)
+
+    def _complete_runs(self) -> list[Path]:
+        runs_dir = self.run_dir.parent
+        if not runs_dir.is_dir():
+            return []
+        return sorted(
+            path
+            for path in runs_dir.iterdir()
+            if path.is_dir()
+            and not path.name.startswith(".")
+            and (path / ".complete").is_file()
+        )
+
+
+def build_meta(
+    *,
+    run_id: str,
+    status: str,
+    project: Mapping[str, str],
+    target: Mapping[str, Any],
+    options: Mapping[str, Any],
+    counts: Mapping[str, int],
+    tools: Mapping[str, str | None],
+    started_at: str,
+    finished_at: str,
+    cartog_version: str,
+    schema_version: str = SCHEMA_VERSION,
+    timings: Mapping[str, float] | None = None,
+) -> dict[str, Any]:
+    """Build the ``meta.json`` payload for one run."""
+    return {
+        "schema_version": schema_version,
+        "cartog_version": cartog_version,
+        "run_id": run_id,
+        "status": status,
+        "project": dict(project),
+        "target": dict(target),
+        "started_at": started_at,
+        "finished_at": finished_at,
+        "options": dict(options),
+        "counts": dict(counts),
+        "tools": dict(tools),
+        "timings": dict(timings or {}),
+    }
