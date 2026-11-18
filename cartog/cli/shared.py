@@ -39,8 +39,9 @@ def version_callback(value: bool) -> None:
         raise typer.Exit()
 
 
-@app.callback()
+@app.callback(invoke_without_command=True)
 def main(
+    ctx: typer.Context,
     version: bool | None = typer.Option(
         None,
         "--version",
@@ -51,7 +52,9 @@ def main(
     ),
 ) -> None:
     """Cartog: Cartography for codebases."""
-    pass
+    if ctx.invoked_subcommand is None and not ctx.resilient_parsing:
+        console.print(ctx.get_help())
+        raise typer.Exit(code=0)
 
 
 
@@ -64,6 +67,7 @@ def _execute_parse(
     ignore: list[str] | None = None,
     force: bool = False,
     verbose: bool = False,
+    cache_dir: str | Path | None = None,
 ):
     """Execute Stage 1 parsing pipeline and return (target_path, out_dir, scan_result, parsed_files)."""
     target_path = Path(path).resolve()
@@ -73,7 +77,7 @@ def _execute_parse(
 
     out_dir = Path(out).resolve()
     out_dir.mkdir(parents=True, exist_ok=True)
-    cache_dir = out_dir / ".cartog"
+    cache_path = Path(cache_dir) if cache_dir is not None else out_dir / ".cartog"
 
     max_bytes: int | None = None if no_max_file_size else (int(max_file_size * 1024 * 1024) if max_file_size else None)
 
@@ -109,7 +113,7 @@ def _execute_parse(
     if force:
         console.print("[yellow]Notice:[/yellow] Forcing rerun; cache bypassed.")
 
-    cache = ParseCache(cache_dir, ignore_hash=scan_result.ignore_metrics.rules_hash, force=force)
+    cache = ParseCache(cache_path, ignore_hash=scan_result.ignore_metrics.rules_hash, force=force)
     parsed_files = []
     symbol_kind_counts = {"function": 0, "class": 0, "method": 0}
     total_raw_imports = 0

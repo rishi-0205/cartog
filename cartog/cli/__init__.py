@@ -10,6 +10,7 @@ The command names, flags, help text, and exit codes are unchanged.
 from __future__ import annotations
 
 from cartog.cli.commands import (  # noqa: F401  (import registers the commands)
+    analyze,
     build,
     check,
     digest,

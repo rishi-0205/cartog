@@ -52,6 +52,7 @@ cartog/
     shared.py              Typer app, console, _execute_parse, _resolve_graph, _resolve_scip
     commands/
       __init__.py
+      analyze.py           unified analyze command (E2)
       doctor.py
       parse.py
       scip.py
@@ -106,6 +107,7 @@ the list is preserved in [§6](#6-removed-by-c1).
 | `(new)` | `cartog/core/diagnostics.py` | R12 |
 | `(new)` | `cartog/core/output.py` | — |
 | `(new)` | `cartog/cli/commands/__init__.py` | R11 |
+| `(new)` | `cartog/cli/commands/analyze.py` | — |
 | `(new)` | `cartog/cli/commands/doctor.py` | R11 |
 | `(new)` | `cartog/cli/commands/parse.py` | R11 |
 | `(new)` | `cartog/cli/commands/scip.py` | R11 |

@@ -1,0 +1,83 @@
+# U4 evidence - the unified `cartog analyze` command
+
+Date: 2026-11-18
+Branch: feature/unified-command-and-output
+Task: U4 (E2)
+
+## Red: `analyze` is not registered, so the CLI exits 2
+
+Command: venv\Scripts\python.exe -m pytest tests\test_unified_command.py::test_unified_command_real_run_writes_tree -q
+F                                                                        [100%]
+================================== FAILURES ===================================
+__________________ test_unified_command_real_run_writes_tree __________________
+
+tmp_path = WindowsPath('C:/Users/rishi/AppData/Local/Temp/pytest-of-rishi/pytest-339/test_unified_command_real_run_0')
+
+    def test_unified_command_real_run_writes_tree(tmp_path):
+        """The real pipeline (no SCIP, no PNG) produces the documented tree."""
+        out = tmp_path / "real"
+        result = _invoke(_repo(tmp_path), out)
+>       assert result.exit_code == 0, result.stdout
+E       AssertionError: 
+E       assert 2 == 0
+E        +  where 2 = <Result SystemExit(2)>.exit_code
+
+tests\test_unified_command.py:106: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_unified_command.py::test_unified_command_real_run_writes_tree
+1 failed in 0.64s
+
+The module existed but `cartog/cli/commands/__init__.py` did not import it, so
+Typer rejected `analyze` as an unknown command. That is the wiring this task
+adds.
+
+## Green: outputs before failure, exit codes, and the real tree
+
+Command: venv\Scripts\python.exe -m pytest tests\test_unified_command.py -q
+......                                                                   [100%]
+6 passed in 0.73s
+
+## Guards (layout, API, CLI help, design)
+
+Command: venv\Scripts\python.exe -m pytest tests\test_unified_command.py tests\test_package_layout.py tests\test_public_api_type_hints.py tests\test_cli.py tests\test_unified_command_design.py -q
+................................                                         [100%]
+32 passed in 81.33s (0:01:21)
+
+## Golden comparison
+
+Command: venv\Scripts\python.exe scripts\golden.py --check
+click: 0 differences
+flask: 0 differences
+ky: 0 differences
+0 differences
+
+## Full suite
+
+Command: venv\Scripts\python.exe -m pytest tests\ -q
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+212 passed, 1 warning in 206.74s (0:03:26)
+
+Count: 206 -> 212 (+6: `test_unified_command_writes_outputs_before_check_failure`,
+`test_unified_command_exit_code_follows_check`,
+`test_unified_command_real_run_writes_tree`,
+`test_bare_cartog_prints_help_and_exits_zero`,
+`test_unknown_top_level_token_is_a_usage_error`,
+`test_analyze_rejects_missing_target_and_bad_keep`). No assertion was removed
+or skipped. `tests/test_package_layout.py` gained `analyze` in the expected
+command list and the module table; that guard must list every registered
+command, so the addition is required by the new command, not a relaxation.
+
+## What changed
+
+- `cartog/cli/commands/analyze.py` (new): composes parse, SCIP, build, noise
+  detection, Mermaid, digest, viewer, check, and the U3 layout; writes
+  `view/map.html` without opening a browser unless `--open`; `--keep` defaults
+  to 1; check pass/fail decides exit 0/1; invalid input exits 2; stage or
+  output failure exits 3 after writing a failed `meta.json`.
+- `cartog/cli/shared.py`: `_execute_parse` takes an optional `cache_dir` so the
+  parse cache lives in `<project>/cache`, outside `runs/`; the root callback
+  prints help and exits 0 when no subcommand is given, while unknown tokens
+  still exit 2.
+- `cartog/cli/commands/__init__.py`, `cartog/cli/__init__.py`: register the
+  command.
+- `docs/dev/PACKAGE_LAYOUT.md`: destination for the new module.

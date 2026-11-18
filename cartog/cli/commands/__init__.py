@@ -1,6 +1,7 @@
 """One module per CLI command; importing the package registers them all."""
 
 from cartog.cli.commands import (  # noqa: F401  (registration side effects)
+    analyze,
     build,
     check,
     digest,
@@ -14,6 +15,7 @@ from cartog.cli.commands import (  # noqa: F401  (registration side effects)
 )
 
 __all__ = [
+    "analyze",
     "build",
     "check",
     "digest",
