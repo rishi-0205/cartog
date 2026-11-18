@@ -1,8 +1,8 @@
 # Cartog Unified Command — Design
 
 **Task:** E2 / U1 (design gate)
-**Status:** DRAFT — awaiting the author's approval. U2–U6 are blocked until then.
-**Date:** 2026-11-17
+**Status:** APPROVED by the author on 2026-11-18. Implemented by U2–U6.
+**Date:** 2026-11-17 (revised 2026-11-18)
 **Decision record:** `docs/ISSUES_AND_DECISIONS.md` Decision 34
 **Related:** [`GIT_WORKFLOW.md`](GIT_WORKFLOW.md), [`COMMAND_LOOP.md`](COMMAND_LOOP.md)
 
@@ -43,51 +43,42 @@ does not change the `graph.json` schema or the analysis pipeline itself.
 
 ## 1. Command
 
-The primary entry point is the bare positional form:
-
-```text
-cartog <path> [options]
-```
-
-`cartog <path>` runs the whole pipeline: scan, parse, SCIP (unless disabled),
-build, validate, render Mermaid and the viewer, write the digest, write the
-check report, then print a short summary.
-
-An explicit alias exists for scripts that should not depend on the implicit
-form:
+The unified entry point is an explicit named command:
 
 ```text
 cartog analyze <path> [options]
 ```
 
-`cartog <path>` and `cartog analyze <path>` are the same function and write the
-same output tree.
+`cartog analyze` runs the whole pipeline: scan, parse, SCIP (unless disabled),
+build, validate, render Mermaid and the viewer, write the digest, write the
+check report, then print a short summary.
 
 ```powershell
-cartog samples/click                     # full run, per-user output home
-cartog samples/click --no-scip --no-open # structural graph only, no browser
+cartog analyze samples/click                    # full run, per-user output home
+cartog analyze samples/click --no-scip          # structural graph only
 cartog analyze samples/ky --out .scratch/ky-run --strict
 ```
 
 Rules:
 
-1. A bare `cartog` prints help and exits `0`. It does not analyze the current
-   directory implicitly.
-2. If the first token is a known subcommand (`parse`, `scip`, `build`, `map`,
-   `check`, `flow`, `view`, `digest`, `query`, `doctor`, `analyze`), Typer
-   dispatches that command. A directory whose name collides with a subcommand is
-   passed with an explicit path form, for example `cartog ./map`.
+1. `analyze` is the only unified entry point. There is no implicit
+   `cartog <path>` form: a top-level token that is not a known subcommand is a
+   usage error (`2`), so a typo cannot start a long scan.
+2. A bare `cartog` prints help and exits `0`. It does not analyze the current
+   directory.
 3. `cartog --version` / `-v` is unchanged and eager.
 4. The unified command writes the complete output tree **before** it computes a
    failing check exit code. A failed check never deletes or truncates a run.
 5. The stage commands remain available and unchanged in behaviour (see §5); the
    unified command composes their library functions, not their CLI handlers.
+6. The name mirrors `git add`: a named verb makes the action explicit and keeps
+   the command line self-describing.
 
 ---
 
 ## 2. Options
 
-All options below apply to `cartog <path>` and `cartog analyze <path>`.
+All options below apply to `cartog analyze <path>`.
 Defaults are the proposed contract; the implementation task may add aliases but
 may not change a default without updating this document.
 
@@ -96,8 +87,9 @@ may not change a default without updating this document.
 | Option | Default | Meaning |
 |---|---|---|
 | `PATH` | required | Repository directory to analyze. A file named `*.scip` is accepted only by `cartog scip`, not by the unified command. |
-| `--out DIR` | unset | Write the run layout directly into `DIR`. Disables the per-user home and the `latest` copy. |
-| `--open` / `--no-open` | `--no-open` | Open `view/map.html` in the browser after a successful run. A full analysis must not launch a browser unless asked. |
+| `--out DIR` | unset | Write the run layout directly into `DIR`. Disables the per-user home, the `latest` copy, and retention. |
+| `--open` | off | Open `view/map.html` in the browser after a successful analysis. A full analysis must not launch a browser unless asked. |
+| `--keep N` | `1` | Keep the newest `N` complete runs per project and delete older complete runs after a successful run. `N` must be at least 1, so the default `1` keeps no history: only the run that just finished survives. Ignored when `--out` is set. |
 | `CARTOG_HOME` (env) | per-user data dir | Root for project folders and runs. See §4.1. |
 
 ### 2.2 Pipeline
@@ -259,9 +251,11 @@ Rules:
    The cost is disk space; `--out` avoids it when the caller does not want it.
 4. `--out DIR` writes the same layout without the `runs/<run-id>/` wrapper and
    without `latest/`. `meta.json` still records the run id and the target.
-5. Runs accumulate in E2; there is no automatic deletion. `--out` and manual
-   cleanup are the escape hatches. Retention is recorded as an open question in
-   §6, not implemented here.
+5. Retention is on by default: after a run is marked complete, `--keep N`
+   (default `1`) keeps the newest `N` complete runs for the project and deletes
+   the older complete runs. Incomplete runs older than the oldest kept complete
+   run are deleted too. `--keep 1` is therefore the "no history" setting: only
+   the run that just finished survives. `--out` directories are never pruned.
 6. Nothing is written into the analyzed repository. The only exception is the
    SCIP indexer's own working file, which V2 (E4) proves is removed before the
    command returns.
@@ -323,7 +317,7 @@ Every existing command stays. Nothing is removed in E2.
 | `cartog digest` | unchanged | The unified command writes `digest.md` by default. |
 | `cartog query callers-of` / `callees-of` | unchanged | Single-question fast path. |
 | `cartog doctor` | unchanged | Environment diagnostics. |
-| (new) | `cartog <path>` / `cartog analyze <path>` | Unified pipeline and layout. |
+| (new) | `cartog analyze <path>` | Unified pipeline and layout. |
 
 ### 5.2 Default output
 
@@ -342,11 +336,12 @@ old examples remain valid because the commands are unchanged.
 
 ### 5.4 Lint debt carried from R12
 
-R12 (Decision 33) left 228 `E501` findings, mostly Typer `help=` strings, and
-re-owned them to E2/U1. This design task does not reflow code: U4 and U5 rewrite
-the help text for the unified command and the consolidated flags, so they own
-the reflow, and U5 removes the `E501` ignore from `pyproject.toml`. The entry in
-`docs/KNOWN_ISSUES.md` is updated when that lands.
+R12 (Decision 33) left 224 `E501` findings, mostly Typer `help=` strings, and
+re-owned them to E2/U1. Decision 35 keeps the `E501` ignore through E2: the
+unified command adds a new CLI surface, and a 224-line mechanical reflow across
+30 files would obscure that diff without changing behaviour. U5 still rewrites
+the unified command's help text to the option names in §2; the repo-wide reflow
+is deferred to E3 and stays tracked in `docs/KNOWN_ISSUES.md`.
 
 ### 5.5 Rollout order
 
@@ -365,33 +360,32 @@ throughout.
 
 Decisions taken in this design (recorded as Decision 34):
 
-1. The implicit form `cartog <path>` is the primary entry point; `analyze` is
-   the explicit alias.
-2. The unified command does not open a browser by default.
+1. The unified entry point is `cartog analyze <path>`; there is no implicit
+   positional form.
+2. The unified command does not open a browser by default; `--open` opts in.
 3. Exit codes `0`/`1`/`2`/`3` apply to the unified command only; stage commands
    keep their current codes.
 4. `latest/` is a copy on every platform.
-5. Runs are not deleted automatically in E2.
+5. Runs are pruned to the newest `--keep N` complete runs (default `1`, no
+   history kept) after a successful run; `--out` is never pruned.
+6. The `E501` ignore stays through E2 (Decision 35).
 
-Open questions for the author at the gate:
+Resolved at the gate (author, 2026-11-18):
 
-1. Is the implicit `cartog <path>` form acceptable, or should `cartog analyze`
-   be the only entry point? The design prefers both.
-2. Should the unified command open the viewer by default on a desktop (with
-   `--no-open` to opt out), matching `cartog view`? The design says no.
-3. Should E2 add a `--keep N` retention flag now, or defer it? The design defers
-   it and documents the disk cost.
+1. `cartog analyze` is the entry point; the implicit form is dropped.
+2. Follow the design: write `view/map.html`, do not open a browser by default,
+   and let `--open` opt in.
+3. Add `--keep N` in E2 with default `1`; U3 implements it.
 
 ---
 
 ## 7. Approval
 
-The gate closes when the author approves this document. On approval:
+The gate closed on 2026-11-18 when the author approved this document. On
+approval:
 
-1. Record the approval (date and wording) in `docs/ISSUES_AND_DECISIONS.md`
+1. The approval (date and wording) is recorded in `docs/ISSUES_AND_DECISIONS.md`
    Decision 34 and in the U1 change log.
-2. Set U1 `DONE`; its evidence file is
+2. U1 is `DONE`; its evidence file is
    `docs/evidence/U1-unified-command-design.txt`.
-3. Start U2 on the same branch, `feature/unified-command-and-output`.
-
-Until then U1 is `BLOCKED` and U2–U6 stay `TODO`.
+3. U2–U6 run on the same branch, `feature/unified-command-and-output`.

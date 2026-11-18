@@ -8,40 +8,69 @@ Outcome: design written and committed; U1 set BLOCKED pending author approval
 ## Red: the design document and its AGENTS.md link do not exist
 
 Command: venv\Scripts\python.exe -m pytest tests\test_unified_command_design.py -q
-FF                                                                       [100%]
-================================== FAILURES ===================================
-_________________ test_design_doc_has_options_and_exit_codes __________________
-
-    def test_design_doc_has_options_and_exit_codes():
-        """The design must be complete before implementation starts."""
->       assert DESIGN.is_file(), f"missing design document: {DESIGN.relative_to(REPO_ROOT)}"
-E       AssertionError: missing design document: docs\dev\UNIFIED_COMMAND.md
-E       assert False
-E        +  where False = is_file()
-E        +    where is_file = WindowsPath('C:/Users/rishi/OneDrive/Desktop/Dev/cartog/docs/dev/UNIFIED_COMMAND.md').is_file
-
-tests\test_unified_command_design.py:54: AssertionError
-____________________ test_design_doc_is_linked_from_agents ____________________
-
-    def test_design_doc_is_linked_from_agents():
-        """AGENTS.md must link every docs/dev document, including this one."""
-        text = AGENTS.read_text(encoding="utf-8")
->       assert "docs/dev/UNIFIED_COMMAND.md" in text, (
-            "AGENTS.md does not link to docs/dev/UNIFIED_COMMAND.md"
-        )
-E       AssertionError: AGENTS.md does not link to docs/dev/UNIFIED_COMMAND.md
-E       assert 'docs/dev/UNIFIED_COMMAND.md' in '# Cartog — Standing Rules for Agents and Models\n\nThis is the entry point for every model, agent, or developer worki...NDARDS.md`](docs/dev/CODE_STANDARDS.md).)\n\nIf a summary above and the linked document disagree, the document wins.\n'
-
-tests\test_unified_command_design.py:77: AssertionError
-=========================== short test summary info ===========================
-FAILED tests/test_unified_command_design.py::test_design_doc_has_options_and_exit_codes
-FAILED tests/test_unified_command_design.py::test_design_doc_is_linked_from_agents
+FF                                                                       [100%]
+
+================================== FAILURES ===================================
+
+_________________ test_design_doc_has_options_and_exit_codes __________________
+
+
+
+    def test_design_doc_has_options_and_exit_codes():
+
+        """The design must be complete before implementation starts."""
+
+>       assert DESIGN.is_file(), f"missing design document: {DESIGN.relative_to(REPO_ROOT)}"
+
+E       AssertionError: missing design document: docs\dev\UNIFIED_COMMAND.md
+
+E       assert False
+
+E        +  where False = is_file()
+
+E        +    where is_file = WindowsPath('C:/Users/rishi/OneDrive/Desktop/Dev/cartog/docs/dev/UNIFIED_COMMAND.md').is_file
+
+
+
+tests\test_unified_command_design.py:54: AssertionError
+
+____________________ test_design_doc_is_linked_from_agents ____________________
+
+
+
+    def test_design_doc_is_linked_from_agents():
+
+        """AGENTS.md must link every docs/dev document, including this one."""
+
+        text = AGENTS.read_text(encoding="utf-8")
+
+>       assert "docs/dev/UNIFIED_COMMAND.md" in text, (
+
+            "AGENTS.md does not link to docs/dev/UNIFIED_COMMAND.md"
+
+        )
+
+E       AssertionError: AGENTS.md does not link to docs/dev/UNIFIED_COMMAND.md
+
+E       assert 'docs/dev/UNIFIED_COMMAND.md' in '# Cartog — Standing Rules for Agents and Models\n\nThis is the entry point for every model, agent, or developer worki...NDARDS.md`](docs/dev/CODE_STANDARDS.md).)\n\nIf a summary above and the linked document disagree, the document wins.\n'
+
+
+
+tests\test_unified_command_design.py:77: AssertionError
+
+=========================== short test summary info ===========================
+
+FAILED tests/test_unified_command_design.py::test_design_doc_has_options_and_exit_codes
+
+FAILED tests/test_unified_command_design.py::test_design_doc_is_linked_from_agents
+
 2 failed in 0.10s
 
 ## Green: the design tests and the R3 docs-link tests pass
 
 Command: venv\Scripts\python.exe -m pytest tests\test_unified_command_design.py tests\test_docs_links.py -q
-....                                                                     [100%]
+....                                                                     [100%]
+
 4 passed in 0.07s
 
 ## Test counts
@@ -68,9 +97,12 @@ was added and that test still passes.
 ## Golden comparison
 
 Command: venv\Scripts\python.exe scripts\golden.py --check
-click: 0 differences
-flask: 0 differences
-ky: 0 differences
+click: 0 differences
+
+flask: 0 differences
+
+ky: 0 differences
+
 0 differences
 
 ## Lint
@@ -91,3 +123,75 @@ All checks passed!
 U1 is BLOCKED until the author approves `docs/dev/UNIFIED_COMMAND.md`. U2-U6
 remain TODO and must not start before that approval. The three open questions
 are listed in the design doc section 6 and repeated in the session report.
+
+---
+
+## Revision (2026-11-18): gate closed
+
+Author answers: `cartog analyze` is the entry point (implicit form dropped);
+follow the design for the viewer (no browser by default, `--open` opts in);
+add `--keep N` now with default `1` (no history kept).
+
+### Red: the design still advertised an implicit `cartog <path>` form
+
+Command: venv\Scripts\python.exe -m pytest tests\test_unified_command_design.py -q
+F.                                                                       [100%]
+================================== FAILURES ===================================
+_________________ test_design_doc_has_options_and_exit_codes __________________
+
+    def test_design_doc_has_options_and_exit_codes():
+        """The design must be complete before implementation starts."""
+        assert DESIGN.is_file(), f"missing design document: {DESIGN.relative_to(REPO_ROOT)}"
+        text = DESIGN.read_text(encoding="utf-8")
+    
+        missing_sections = [section for section in REQUIRED_SECTIONS if section not in text]
+        assert not missing_sections, f"design is missing section(s): {missing_sections}"
+    
+        missing_commands = [cmd for cmd in REQUIRED_STAGE_COMMANDS if cmd not in text]
+        assert not missing_commands, f"design does not keep stage command(s): {missing_commands}"
+    
+        missing_tokens = [token for token in REQUIRED_OUTPUT_TOKENS if token not in text]
+        assert not missing_tokens, f"design does not describe output token(s): {missing_tokens}"
+    
+        exit_section = text.split("## 3. Exit codes", 1)[1].split("## 4.", 1)[0]
+        for code in ("`0`", "`1`", "`2`", "`3`"):
+            assert code in exit_section, f"exit code {code} is not defined"
+    
+        assert "--out" in text, "design must define --out"
+        assert "analyze" in text, "design must name the explicit unified entry point"
+        assert "cartog analyze <path>" in text, "design must document `cartog analyze <path>`"
+>       assert (
+            "The primary entry point is the bare positional form" not in text
+        ), "design must not advertise an implicit `cartog <path>` form"
+E       AssertionError: design must not advertise an implicit `cartog <path>` form
+E       assert 'The primary...itional form' not in '# Cartog Un...ay `TODO`.\n'
+E         
+E         'The primary entry ...are positional form' is contained here:
+E            Command
+E           
+E           The primary entry point is the bare positional form:
+E           
+E           ```text...
+E         
+E         ...Full output truncated (349 lines hidden), use '-vv' to show
+
+tests\test_unified_command_design.py:73: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_unified_command_design.py::test_design_doc_has_options_and_exit_codes
+1 failed, 1 passed in 0.10s
+
+### Green: the revised design and its tests pass
+
+Command: venv\Scripts\python.exe -m pytest tests\test_unified_command_design.py tests\test_docs_links.py -q
+....                                                                     [100%]
+4 passed in 0.07s
+
+### Full suite
+
+Command: venv\Scripts\python.exe -m pytest tests\ -q
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+196 passed, 1 warning in 198.82s (0:03:18)
+
+Count: 196 -> 196 (assertions strengthened inside the existing design test; no
+test or assertion removed). Decision 34 records the approved contract;
+Decision 35 keeps `E501` ignored through E2 and moves the reflow to E3.

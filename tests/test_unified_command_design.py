@@ -68,7 +68,13 @@ def test_design_doc_has_options_and_exit_codes():
         assert code in exit_section, f"exit code {code} is not defined"
 
     assert "--out" in text, "design must define --out"
-    assert "analyze" in text, "design must name the explicit unified alias"
+    assert "analyze" in text, "design must name the explicit unified entry point"
+    assert "cartog analyze <path>" in text, "design must document `cartog analyze <path>`"
+    assert (
+        "The primary entry point is the bare positional form" not in text
+    ), "design must not advertise an implicit `cartog <path>` form"
+    assert "--keep N" in text, "design must define --keep N"
+    assert "default `1`" in text, "design must default --keep to 1 (no history kept)"
 
 
 def test_design_doc_is_linked_from_agents():

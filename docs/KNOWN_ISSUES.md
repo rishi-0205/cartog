@@ -143,7 +143,7 @@ stays ignored on purpose; it is debt, not a fix.
 
 | Rule | Count | Why it is ignored | Owner |
 |---|---|---|---|
-| `E501` line-too-long | 228 | Most hits are Typer `help=` strings, docstring examples and long assertions. Reflowing a help string changes `--help` output, which this epic keeps byte-identical; a blanket `ruff format` would also reflow code the evidence transcripts quote. | E2 (U1 rewrites the CLI surface) |
+| `E501` line-too-long | 224 | Most hits are Typer `help=` strings, docstring examples and long assertions. Reflowing a help string changes `--help` output, and a blanket `ruff format` would churn lines the evidence transcripts quote. E2 adds a new CLI surface but does not rewrite the existing 224 hits. | E3 (dedicated lint pass; Decision 35) |
 | `B008` function-call-in-default | — | Typer commands must declare `typer.Option(...)`/`typer.Argument(...)` in the signature; this is the documented idiom, not a bug. | stays ignored by design |
 
 R12 cleared the rest:
