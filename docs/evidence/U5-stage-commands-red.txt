@@ -1,0 +1,37 @@
+.F                                                                       [100%]
+================================== FAILURES ===================================
+_______________________ test_consolidated_flags_aliases _______________________
+
+tmp_path = WindowsPath('C:/Users/rishi/AppData/Local/Temp/pytest-of-rishi/pytest-347/test_consolidated_flags_aliase0')
+
+    def test_consolidated_flags_aliases(tmp_path):
+        """`--include-tests` expands tests; legacy `--include` and `--no-cache` work."""
+        repo = _repo(tmp_path)
+        plain = runner.invoke(
+            app, ["map", str(repo), "--out", str(tmp_path / "plain"), "--no-scip"]
+        )
+        assert plain.exit_code == 0, plain.stdout
+        plain_mmd = (tmp_path / "plain" / "overview.mmd").read_text(encoding="utf-8")
+        assert "test_app" not in plain_mmd
+    
+        included = runner.invoke(
+            app,
+            [
+                "map",
+                str(repo),
+                "--out",
+                str(tmp_path / "included"),
+                "--no-scip",
+                "--include-tests",
+                "--no-cache",
+            ],
+        )
+>       assert included.exit_code == 0, included.stdout
+E       AssertionError: 
+E       assert 2 == 0
+E        +  where 2 = <Result SystemExit(2)>.exit_code
+
+tests\test_stage_commands.py:80: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_stage_commands.py::test_consolidated_flags_aliases - Assert...
+1 failed, 1 passed in 2.69s

@@ -1,0 +1,98 @@
+# U5 evidence - stage commands kept and consolidated flags
+
+Date: 2026-11-18
+Branch: feature/unified-command-and-output
+Task: U5 (E2)
+
+## Red: `map` rejects the canonical `--include-tests` spelling
+
+Command: venv\Scripts\python.exe -m pytest tests\test_stage_commands.py -q
+.F                                                                       [100%]
+================================== FAILURES ===================================
+_______________________ test_consolidated_flags_aliases _______________________
+
+tmp_path = WindowsPath('C:/Users/rishi/AppData/Local/Temp/pytest-of-rishi/pytest-347/test_consolidated_flags_aliase0')
+
+    def test_consolidated_flags_aliases(tmp_path):
+        """`--include-tests` expands tests; legacy `--include` and `--no-cache` work."""
+        repo = _repo(tmp_path)
+        plain = runner.invoke(
+            app, ["map", str(repo), "--out", str(tmp_path / "plain"), "--no-scip"]
+        )
+        assert plain.exit_code == 0, plain.stdout
+        plain_mmd = (tmp_path / "plain" / "overview.mmd").read_text(encoding="utf-8")
+        assert "test_app" not in plain_mmd
+    
+        included = runner.invoke(
+            app,
+            [
+                "map",
+                str(repo),
+                "--out",
+                str(tmp_path / "included"),
+                "--no-scip",
+                "--include-tests",
+                "--no-cache",
+            ],
+        )
+>       assert included.exit_code == 0, included.stdout
+E       AssertionError: 
+E       assert 2 == 0
+E        +  where 2 = <Result SystemExit(2)>.exit_code
+
+tests\test_stage_commands.py:80: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_stage_commands.py::test_consolidated_flags_aliases - Assert...
+1 failed, 1 passed in 2.69s
+
+The legacy-command guard passed from the start (it guards against removal and
+therefore has no failing state on this branch). The alias test failed with exit
+2 because `map` did not define `--include-tests`; that is the change U5 makes.
+
+## Green: every command survives, aliases expand the same categories
+
+Command: venv\Scripts\python.exe -m pytest tests\test_stage_commands.py -q
+..                                                                       [100%]
+2 passed in 6.93s
+
+## Guards (CLI, API, layout)
+
+Command: venv\Scripts\python.exe -m pytest tests\test_stage_commands.py tests\test_cli.py tests\test_public_api_type_hints.py tests\test_package_layout.py -q
+..........................                                               [100%]
+26 passed in 88.50s (0:01:28)
+
+## Golden comparison
+
+Command: venv\Scripts\python.exe scripts\golden.py --check
+click: 0 differences
+flask: 0 differences
+ky: 0 differences
+0 differences
+
+## Full suite
+
+Command: venv\Scripts\python.exe -m pytest tests\ -q
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+214 passed, 1 warning in 196.60s (0:03:16)
+
+Count: 212 -> 214 (+2: `test_all_legacy_commands_still_invokable`,
+`test_consolidated_flags_aliases`). No existing test or assertion was removed,
+skipped, or weakened.
+
+## What changed
+
+- `cartog/cli/commands/map.py`: added `--include-tests` and `--include-examples`
+  as the canonical spellings; the comma-separated `--include` list stays as the
+  legacy alias and both forms feed the same category set. `--no-cache` is
+  labelled a legacy alias in the help.
+- `cartog/cli/commands/parse.py`, `cartog/cli/commands/build.py`: the same
+  legacy-alias label for `--no-cache`. Behaviour is unchanged.
+- `tests/test_stage_commands.py` (new): the two U5 tests.
+
+## Command map after E2
+
+`analyze` is additive. `parse`, `scip`, `build`, `map`, `check`, `flow`, `view`,
+`digest`, `query`, and `doctor` keep their flags, help text, and exit codes;
+the only help-text edits are the legacy-alias labels and the two new `map`
+flags. `cartog view` still opens the viewer by default; `cartog analyze` does
+not.

@@ -30,7 +30,7 @@ def build(
     no_scip: bool = typer.Option(False, "--no-scip", help="Build graph without SCIP data."),
     ignore: list[str] | None = typer.Option(None, "--ignore", help="Additional ignore glob pattern (can be specified multiple times)."),
     force: bool = typer.Option(False, "--force", "-f", help="Force rerun and bypass cache even if valid cache exists."),
-    no_cache: bool = typer.Option(False, "--no-cache", help="Alias for --force: bypass cache and force rerun."),
+    no_cache: bool = typer.Option(False, "--no-cache", help="Legacy alias for --force: bypass cache and force rerun."),
     pretty: bool = typer.Option(False, "--pretty", help="Format graph.json with indentation (default is compact unindented JSON)."),
     emit_contains: bool = typer.Option(False, "--emit-contains", help="Emit redundant contains edges in graph.json (omitted by default in schema 2.0.0)."),
     verbose: bool = typer.Option(False, "--verbose", "-V", help="Enable verbose logging."),

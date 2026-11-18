@@ -29,7 +29,9 @@ def map(
     focus: str | None = typer.Option(None, "--focus", help="Focus on specific subpath."),
     depth: int = typer.Option(3, "--depth", help="Folder depth for overview."),
     max_nodes: int = typer.Option(60, "--max-nodes", help="Maximum diagram nodes before collapsing."),
-    include: str | None = typer.Option(None, "--include", help="Comma-separated categories to expand (e.g. tests,docs,examples,scripts)."),
+    include: str | None = typer.Option(None, "--include", help="Legacy alias: comma-separated categories to expand (e.g. tests,docs,examples,scripts). Prefer --include-tests/--include-examples."),
+    include_tests: bool = typer.Option(False, "--include-tests", help="Canonical spelling: include test files in the analyzed view."),
+    include_examples: bool = typer.Option(False, "--include-examples", help="Canonical spelling: include example files in the analyzed view."),
     show_manifests: bool = typer.Option(False, "--show-manifests", help="Include manifest files (package.json, Dockerfile, etc.) in diagram views."),
     python: str | None = typer.Option(None, "--python", help="Path to Python interpreter to use for Pyright indexing."),
     max_file_size: float | None = typer.Option(DEFAULT_MAX_FILE_SIZE_MB, "--max-file-size", help="Maximum file size in MB to parse (default: 1.0)."),
@@ -39,7 +41,7 @@ def map(
     show_noise: bool = typer.Option(False, "--show-noise", help="Include noise files (re-export barrels, constants/type-only modules) in diagram views."),
     ignore: list[str] | None = typer.Option(None, "--ignore", help="Additional ignore glob pattern (can be specified multiple times)."),
     force: bool = typer.Option(False, "--force", "-f", help="Force rerun and bypass cache even if valid cache exists."),
-    no_cache: bool = typer.Option(False, "--no-cache", help="Alias for --force: bypass cache and force rerun."),
+    no_cache: bool = typer.Option(False, "--no-cache", help="Legacy alias for --force: bypass cache and force rerun."),
     pretty: bool = typer.Option(False, "--pretty", help="Format graph.json with indentation (default is compact unindented JSON)."),
     emit_contains: bool = typer.Option(False, "--emit-contains", help="Emit redundant contains edges in graph.json (omitted by default in schema 2.0.0)."),
     layout: str = typer.Option("dagre", "--layout", help="Mermaid layout engine ('dagre' or 'elk')."),
@@ -95,12 +97,17 @@ def map(
     if not show_noise and noise_classifications:
         console.print(f"  [cyan]Notice:[/cyan] Filtered {len(noise_classifications)} noise module(s) from view (use --show-noise to display).")
 
-    include_set = {s.strip().lower() for s in include.split(",")} if include else None
+    include_set = {s.strip().lower() for s in include.split(",")} if include else set()
+    if include_tests:
+        include_set.add("tests")
+    if include_examples:
+        include_set.add("examples")
+    effective_include = include_set or None
     effective_level = level or "function"
     mmd_content = generate_overview_mermaid(
         graph,
         max_nodes=max_nodes,
-        include=include_set,
+        include=effective_include,
         show_manifests=show_manifests,
         show_noise=show_noise,
         show_references=show_references,
