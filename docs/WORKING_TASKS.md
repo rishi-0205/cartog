@@ -31,7 +31,7 @@ The roadmap narrative is [`docs/IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.m
 | U3 | Output layout writer | E2 | `feature/unified-command-and-output` | U2 | M | E2-S3 | DONE | 402c988 |
 | U4 | Unified command | E2 | `feature/unified-command-and-output` | U3 | M | E2-S4 | DONE | 7991e3c |
 | U5 | Keep stage commands and consolidate flags | E2 | `feature/unified-command-and-output` | U4 | M | E2-S5 | DONE | 4941894 |
-| U6 | Docs and tests for the new flow | E2 | `feature/unified-command-and-output` | U4, U5 | S | E2-S5 | TODO | — |
+| U6 | Docs and tests for the new flow | E2 | `feature/unified-command-and-output` | U4, U5 | S | E2-S5 | DONE | 7008403 |
 | S1 | One subprocess runner | E3 | `feature/security-baseline` | U4 | M | E3-S1 | TODO | — |
 | S2 | Hostile canary repository | E3 | `feature/security-baseline` | S1 | S | E3-S1 | TODO | — |
 | S3 | Escape everything embedded in map.html | E3 | `feature/security-baseline` | U4 | M | E3-S2 | TODO | — |
@@ -79,7 +79,7 @@ The roadmap narrative is [`docs/IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.m
 | E0 | `fix/baseline-correctness` | — | 5 / 5 | ACCEPTED | 2026-11-15 |
 | E1 | `refactor/package-structure` | E0 | 13 / 13 | ACCEPTED | 2026-11-17 |
 | E1b | `refactor/drop-compat-shims` | E1 | 1 / 1 | ACCEPTED | 2026-11-17 |
-| E2 | `feature/unified-command-and-output` | E1b | 5 / 6 | IN PROGRESS | no |
+| E2 | `feature/unified-command-and-output` | E1b | 6 / 6 | READY FOR EPIC REVIEW | no |
 | E3 | `feature/security-baseline` | E2 | 0 / 9 | NOT STARTED | no |
 | E4 | `feature/verification` | E2 | 0 / 5 | NOT STARTED | no |
 | E5 | `feature/llm-layer` | E2, E3 | 0 / 11 | NOT STARTED | no |
@@ -719,10 +719,11 @@ At most one epic per session; within that epic, finish and commit each task befo
 - **User check (epic review):** Run each example from the README against a fixture.
 - **Evidence files:** `docs/evidence/U6-unified-docs.txt`
 - **Planned commit message:** `U6: document the unified command flow`
-- **Status:** TODO
-- **Commit hash:** —
-- **Failure log:** —
-- **Change log:** —
+- **Status:** DONE
+- **Commit hash:** `7008403`
+- **Failure log:** Red run (`docs/evidence/U6-unified-docs-red.txt`): `test_documented_commands_exist` failed with `AssertionError: missing documented file: docs\\USAGE.md`. `test_documented_examples_run` passed from the start because the unified command already existed; it is the executable guard for the examples.
+- **Change log:**
+  - 2026-11-18: Added `docs/USAGE.md` (quick start, per-user output tree, retention, `meta.json`, exit codes, options, stage commands, aliases, examples). Updated `README.md` (216-test badge and count, `analyze` in the CLI reference and workflows, usage-guide link) and `docs/HANDOFF.md` (status, output, test count, E2 contract, install commands, document index). Added `tests/test_documented_commands.py` (2 tests): every `cartog <word>` mention in the README and usage guide must be a registered command, and the quick-start example must run end to end and validate its own `graph.json`. Suite 214 → 216; golden 0 differences; ruff clean. Note: the task row's `docs/USAGE.md` did not exist, so it was created here.
 
 ### S1: One subprocess runner
 
