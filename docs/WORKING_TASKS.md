@@ -27,7 +27,7 @@ The roadmap narrative is [`docs/IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.m
 | R12 | Cleanup pass | E1 | `refactor/package-structure` | R5-R11 | M | E1-S11 | DONE | 2461a3b |
 | C1 | Drop the compatibility shims | E1b | `refactor/drop-compat-shims` | R12 | M | E1b-S1 | DONE | 2f2a0b5 |
 | U1 | Unified command design | E2 | `feature/unified-command-and-output` | E1b | S | E2-S1 | DONE | cb6ce54 |
-| U2 | Default output location | E2 | `feature/unified-command-and-output` | U1 | M | E2-S2 | TODO | — |
+| U2 | Default output location | E2 | `feature/unified-command-and-output` | U1 | M | E2-S2 | DONE | 53c654a |
 | U3 | Output layout writer | E2 | `feature/unified-command-and-output` | U2 | M | E2-S3 | TODO | — |
 | U4 | Unified command | E2 | `feature/unified-command-and-output` | U3 | M | E2-S4 | TODO | — |
 | U5 | Keep stage commands and consolidate flags | E2 | `feature/unified-command-and-output` | U4 | M | E2-S5 | TODO | — |
@@ -79,7 +79,7 @@ The roadmap narrative is [`docs/IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.m
 | E0 | `fix/baseline-correctness` | — | 5 / 5 | ACCEPTED | 2026-11-15 |
 | E1 | `refactor/package-structure` | E0 | 13 / 13 | ACCEPTED | 2026-11-17 |
 | E1b | `refactor/drop-compat-shims` | E1 | 1 / 1 | ACCEPTED | 2026-11-17 |
-| E2 | `feature/unified-command-and-output` | E1b | 1 / 6 | IN PROGRESS | no |
+| E2 | `feature/unified-command-and-output` | E1b | 2 / 6 | IN PROGRESS | no |
 | E3 | `feature/security-baseline` | E2 | 0 / 9 | NOT STARTED | no |
 | E4 | `feature/verification` | E2 | 0 / 5 | NOT STARTED | no |
 | E5 | `feature/llm-layer` | E2, E3 | 0 / 11 | NOT STARTED | no |
@@ -631,10 +631,11 @@ At most one epic per session; within that epic, finish and commit each task befo
 - **User check (epic review):** `cartog <repo> --no-open` then confirm the output path is outside both repos.
 - **Evidence files:** `docs/evidence/U2-output-home.txt`
 - **Planned commit message:** `U2: default output to a per-user data directory`
-- **Status:** TODO
-- **Commit hash:** —
-- **Failure log:** —
-- **Change log:** —
+- **Status:** DONE
+- **Commit hash:** `53c654a`
+- **Failure log:** Red run (`docs/evidence/U2-output-home-red.txt`): `ImportError: cannot import name 'output' from 'cartog.core'` because the module did not exist. Implementation attempt failed once on a real assertion (`my-repo-v2-` instead of `my-repo-v2`); the trailing dash was stripped and the green run recorded.
+- **Change log:**
+  - 2026-11-18: Added `cartog/core/output.py` with platform roots (Windows/macOS/XDG), `CARTOG_HOME`, `--out`, sanitized project names (reserved names, 40-char cap, empty fallback), and `sha1(normalized absolute path)[:8]` keys. `resolve_run_location` keeps the cache in `<project>/cache`, outside `runs/`. Added `tests/test_output_home.py` (3 tests); `docs/dev/PACKAGE_LAYOUT.md` records the new module. Suite 196 → 199; golden 0 differences; ruff clean.
 
 ### U3: Output layout writer
 
