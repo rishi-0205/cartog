@@ -26,12 +26,12 @@ The roadmap narrative is [`docs/IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.m
 | R11 | Split the CLI into modules | E1 | `refactor/package-structure` | R10 | M | E1-S10 | DONE | d88a8b8 |
 | R12 | Cleanup pass | E1 | `refactor/package-structure` | R5-R11 | M | E1-S11 | DONE | 2461a3b |
 | C1 | Drop the compatibility shims | E1b | `refactor/drop-compat-shims` | R12 | M | E1b-S1 | DONE | 2f2a0b5 |
-| U1 | Unified command design | E2 | `feature/unified-command-and-output` | E1b | S | E2-S1 | TODO | — |
-| U2 | Default output location | E2 | `feature/unified-command-and-output` | U1 | M | E2-S2 | TODO | — |
-| U3 | Output layout writer | E2 | `feature/unified-command-and-output` | U2 | M | E2-S3 | TODO | — |
-| U4 | Unified command | E2 | `feature/unified-command-and-output` | U3 | M | E2-S4 | TODO | — |
-| U5 | Keep stage commands and consolidate flags | E2 | `feature/unified-command-and-output` | U4 | M | E2-S5 | TODO | — |
-| U6 | Docs and tests for the new flow | E2 | `feature/unified-command-and-output` | U4, U5 | S | E2-S5 | TODO | — |
+| U1 | Unified command design | E2 | `feature/unified-command-and-output` | E1b | S | E2-S1 | DONE | cb6ce54 |
+| U2 | Default output location | E2 | `feature/unified-command-and-output` | U1 | M | E2-S2 | DONE | 53c654a |
+| U3 | Output layout writer | E2 | `feature/unified-command-and-output` | U2 | M | E2-S3 | DONE | 402c988 |
+| U4 | Unified command | E2 | `feature/unified-command-and-output` | U3 | M | E2-S4 | DONE | 7991e3c |
+| U5 | Keep stage commands and consolidate flags | E2 | `feature/unified-command-and-output` | U4 | M | E2-S5 | DONE | 4941894 |
+| U6 | Docs and tests for the new flow | E2 | `feature/unified-command-and-output` | U4, U5 | S | E2-S5 | DONE | 7008403 |
 | S1 | One subprocess runner | E3 | `feature/security-baseline` | U4 | M | E3-S1 | TODO | — |
 | S2 | Hostile canary repository | E3 | `feature/security-baseline` | S1 | S | E3-S1 | TODO | — |
 | S3 | Escape everything embedded in map.html | E3 | `feature/security-baseline` | U4 | M | E3-S2 | TODO | — |
@@ -79,7 +79,7 @@ The roadmap narrative is [`docs/IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.m
 | E0 | `fix/baseline-correctness` | — | 5 / 5 | ACCEPTED | 2026-11-15 |
 | E1 | `refactor/package-structure` | E0 | 13 / 13 | ACCEPTED | 2026-11-17 |
 | E1b | `refactor/drop-compat-shims` | E1 | 1 / 1 | ACCEPTED | 2026-11-17 |
-| E2 | `feature/unified-command-and-output` | E1b | 0 / 6 | NOT STARTED | no |
+| E2 | `feature/unified-command-and-output` | E1b | 6 / 6 | ACCEPTED | 2026-11-19 |
 | E3 | `feature/security-baseline` | E2 | 0 / 9 | NOT STARTED | no |
 | E4 | `feature/verification` | E2 | 0 / 5 | NOT STARTED | no |
 | E5 | `feature/llm-layer` | E2, E3 | 0 / 11 | NOT STARTED | no |
@@ -608,10 +608,12 @@ At most one epic per session; within that epic, finish and commit each task befo
 - **User check (epic review):** Review the design doc.
 - **Evidence files:** `docs/evidence/U1-unified-command-design.txt`
 - **Planned commit message:** `U1: document unified command design`
-- **Status:** TODO
-- **Commit hash:** —
-- **Failure log:** —
-- **Change log:** —
+- **Status:** DONE
+- **Commit hash:** `cb6ce54`
+- **Failure log:** Red run (`docs/evidence/U1-design-red.txt`): both design tests failed before the document existed — `test_design_doc_has_options_and_exit_codes` with `AssertionError: missing design document: docs\dev\UNIFIED_COMMAND.md`, and `test_design_doc_is_linked_from_agents` with `AGENTS.md does not link to docs/dev/UNIFIED_COMMAND.md`. Revision red run (`docs/evidence/U1-design-revision-red.txt`): the design still advertised the implicit form — `AssertionError: design must not advertise an implicit \`cartog <path>\` form`.
+- **Change log:**
+  - 2026-11-17: Wrote `docs/dev/UNIFIED_COMMAND.md` (command, options, exit codes, output tree, migration, open questions), added `tests/test_unified_command_design.py` (2 tests), linked the doc from `AGENTS.md` (required by `tests/test_docs_links.py::test_agents_points_to_docs_dev`), and recorded Decision 34 in `docs/ISSUES_AND_DECISIONS.md`. Suite 194 → 196; golden check 0 differences; `ruff check .` clean. Note: this task's "Files to read" names `cartog/cli.py`, which R11 split into `cartog/cli/`; the design was written against the package. U1 is BLOCKED pending the author's approval of the design; U2–U6 must not start before it.
+  - 2026-11-18: Gate closed by the author. Revised the design to make `cartog analyze <path>` the only entry point, keep the viewer closed unless `--open`, and add `--keep N` with default `1` (no history kept, implemented in U3). Strengthened the design test (no assertion removed) and recorded the answers in Decision 34. Added Decision 35: `E501` stays ignored through E2 and moves to E3. Suite 196 → 196; `docs/evidence/U1-unified-command-design.txt` has the revision transcripts.
 
 ### U2: Default output location
 
@@ -629,10 +631,11 @@ At most one epic per session; within that epic, finish and commit each task befo
 - **User check (epic review):** `cartog <repo> --no-open` then confirm the output path is outside both repos.
 - **Evidence files:** `docs/evidence/U2-output-home.txt`
 - **Planned commit message:** `U2: default output to a per-user data directory`
-- **Status:** TODO
-- **Commit hash:** —
-- **Failure log:** —
-- **Change log:** —
+- **Status:** DONE
+- **Commit hash:** `53c654a`
+- **Failure log:** Red run (`docs/evidence/U2-output-home-red.txt`): `ImportError: cannot import name 'output' from 'cartog.core'` because the module did not exist. Implementation attempt failed once on a real assertion (`my-repo-v2-` instead of `my-repo-v2`); the trailing dash was stripped and the green run recorded.
+- **Change log:**
+  - 2026-11-18: Added `cartog/core/output.py` with platform roots (Windows/macOS/XDG), `CARTOG_HOME`, `--out`, sanitized project names (reserved names, 40-char cap, empty fallback), and `sha1(normalized absolute path)[:8]` keys. `resolve_run_location` keeps the cache in `<project>/cache`, outside `runs/`. Added `tests/test_output_home.py` (3 tests); `docs/dev/PACKAGE_LAYOUT.md` records the new module. Suite 196 → 199; golden 0 differences; ruff clean.
 
 ### U3: Output layout writer
 
@@ -650,10 +653,11 @@ At most one epic per session; within that epic, finish and commit each task befo
 - **User check (epic review):** Inspect the generated tree and `meta.json`.
 - **Evidence files:** `docs/evidence/U3-output-layout.txt`
 - **Planned commit message:** `U3: add the stable output layout writer`
-- **Status:** TODO
-- **Commit hash:** —
-- **Failure log:** —
-- **Change log:** —
+- **Status:** DONE
+- **Commit hash:** `402c988`
+- **Failure log:** Red run (`docs/evidence/U3-output-layout-red.txt`): `AttributeError` because `RunLayout` did not exist. First green attempt (`docs/evidence/U3-output-layout-impl-fail.txt`) failed on a test arrangement error (finalize called on a non-newest run); the implementation was correct and the test was fixed before the recorded green run.
+- **Change log:**
+  - 2026-11-18: Added `RunLayout` (atomic writes, `.complete`, `latest` directory copy, retention), `build_meta`, and `utc_timestamp` to `cartog/core/output.py`. `--keep N` defaults to `1`; older complete runs and stale partials are pruned, `--out` is never pruned, and `latest/` is refreshed from the newest complete run. Added `tests/test_output_layout.py` (7 tests). Suite 199 → 206; golden 0 differences; ruff clean.
 
 ### U4: Unified command
 
@@ -670,11 +674,12 @@ At most one epic per session; within that epic, finish and commit each task befo
 - **Acceptance criteria:** One command produces the full layout; a check error still leaves the outputs on disk.
 - **User check (epic review):** Run on a fixture with a known check error; confirm outputs exist and exit code is non-zero.
 - **Evidence files:** `docs/evidence/U4-unified-command.txt`
-- **Planned commit message:** `U4: add the unified analysis command`
-- **Status:** TODO
-- **Commit hash:** —
-- **Failure log:** —
-- **Change log:** —
+- **Planned commit message:** `U4: add the unified analyze command`
+- **Status:** DONE
+- **Commit hash:** `7991e3c`
+- **Failure log:** Red run (`docs/evidence/U4-unified-command-red.txt`): the real-run test failed with `assert 2 == 0`, because `cartog/cli/commands/__init__.py` did not import `analyze` and Typer rejected the command as unknown.
+- **Change log:**
+  - 2026-11-18: Added `cartog/cli/commands/analyze.py` and registered it. One command now writes `graph.json`, `diagrams/`, `view/map.html`, `digest.md`, `check.json`, `meta.json`, `logs/`, `stage/`, and `.complete`; a failing check exits `1` without removing the run, invalid input exits `2`, and a stage/output failure exits `3` after writing a failed `meta.json`. `--open` is the only way the browser opens; `--keep` defaults to `1`; the parse cache moved to `<project>/cache` via a new `_execute_parse` hook. Bare `cartog` prints help and exits `0`; unknown tokens still exit `2`. Added `tests/test_unified_command.py` (6 tests) and listed `analyze` in the package-layout guard (that guard must enumerate every registered command). Suite 206 → 212; golden 0 differences; ruff clean. Note: the task row's `cartog/cli.py`/`cartog/outlayout.py` are pre-R11 names; the real homes are `cartog/cli/commands/analyze.py` and `cartog/core/output.py`.
 
 ### U5: Keep stage commands and consolidate flags
 
@@ -692,10 +697,11 @@ At most one epic per session; within that epic, finish and commit each task befo
 - **User check (epic review):** `cartog --help` and each subcommand `--help`.
 - **Evidence files:** `docs/evidence/U5-stage-commands.txt`
 - **Planned commit message:** `U5: keep stage commands and consolidate view flags`
-- **Status:** TODO
-- **Commit hash:** —
-- **Failure log:** —
-- **Change log:** —
+- **Status:** DONE
+- **Commit hash:** `4941894`
+- **Failure log:** Red run (`docs/evidence/U5-stage-commands-red.txt`): `test_consolidated_flags_aliases` failed with `assert 2 == 0` because `map` rejected `--include-tests` as an unknown option. `test_all_legacy_commands_still_invokable` passed immediately because it guards against command removal; that is recorded rather than manufactured into a failure.
+- **Change log:**
+  - 2026-11-18: Added `--include-tests` / `--include-examples` to `map` as the canonical spellings; the comma-separated `--include` list remains a legacy alias feeding the same set. Labelled `--no-cache` a legacy alias in `map`, `parse`, and `build` help. Added `tests/test_stage_commands.py` (2 tests) covering the root help, every stage command's `--help`, and the three flags against a real tiny repo. Suite 212 → 214; golden 0 differences; ruff clean. No command was removed and no other flag changed.
 
 ### U6: Docs and tests for the new flow
 
@@ -713,10 +719,11 @@ At most one epic per session; within that epic, finish and commit each task befo
 - **User check (epic review):** Run each example from the README against a fixture.
 - **Evidence files:** `docs/evidence/U6-unified-docs.txt`
 - **Planned commit message:** `U6: document the unified command flow`
-- **Status:** TODO
-- **Commit hash:** —
-- **Failure log:** —
-- **Change log:** —
+- **Status:** DONE
+- **Commit hash:** `7008403`
+- **Failure log:** Red run (`docs/evidence/U6-unified-docs-red.txt`): `test_documented_commands_exist` failed with `AssertionError: missing documented file: docs\\USAGE.md`. `test_documented_examples_run` passed from the start because the unified command already existed; it is the executable guard for the examples.
+- **Change log:**
+  - 2026-11-18: Added `docs/USAGE.md` (quick start, per-user output tree, retention, `meta.json`, exit codes, options, stage commands, aliases, examples). Updated `README.md` (216-test badge and count, `analyze` in the CLI reference and workflows, usage-guide link) and `docs/HANDOFF.md` (status, output, test count, E2 contract, install commands, document index). Added `tests/test_documented_commands.py` (2 tests): every `cartog <word>` mention in the README and usage guide must be a registered command, and the quick-start example must run end to end and validate its own `graph.json`. Suite 214 → 216; golden 0 differences; ruff clean. Note: the task row's `docs/USAGE.md` did not exist, so it was created here.
 
 ### S1: One subprocess runner
 

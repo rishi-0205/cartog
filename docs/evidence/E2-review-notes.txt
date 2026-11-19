@@ -1,0 +1,100 @@
+# E2 review notes - analyze output volume and duplicate-id check noise
+
+Date: 2026-11-19
+Branch: feature/unified-command-and-output (accepted and merged after this file)
+Target: this repository, C:\Users\rishi\OneDrive\Desktop\Dev\cartog
+Run: 20261118T055640Z
+Output: C:\Users\rishi\AppData\Local\cartog\projects\cartog-e81635f5
+
+## `cartog analyze .` exited 1
+
+The run finished and wrote the complete tree; the check step failed.
+
+Command: venv\Scripts\python.exe -m cartog analyze .
+Exit: 1
+
+Tail of the real output:
+
+| Item                  | Value                                               |
+|-----------------------+-----------------------------------------------------|
+| Output                | C:/Users/rishi/AppData/Local/cartog/projects/carto? |
+| Files / Nodes / Edges | 99 / 863 / 3273                                     |
+| Check                 | fail                                                |
+| Latest                | C:/Users/rishi/AppData/Local/cartog/projects/carto? |
++-----------------------------------------------------------------------------+
+Check failed; the complete run is on disk.
+
+## check.json
+
+status: fail
+errors: 247
+duplicate-id errors: 247
+cross-check: {"total": 978, "matched": 851, "explained": 40, "unexplained": 87}
+scip: {"requested": true, "ran": true, "error": null}
+
+First three errors:
+
+Duplicate node id 'ac0c25d5cc' detected in graph
+Duplicate node id '8fa65e9a8b' detected in graph
+Duplicate node id '7560d6ae91' detected in graph
+
+## The written graph has no duplicate ids
+
+graph.json nodes: 863
+unique ids: 863
+
+`cartog check` on the written file:
+
+Command: venv\Scripts\python.exe -m cartog check C:\Users\rishi\AppData\Local\cartog\projects\cartog-e81635f5\latest\graph.json
+Exit: 0
+
+Tail of the real output:
+
+|                   |                  | ->                | transitive, or   |
+|                   |                  | tests.test_inter? | barrel import    |
+|                   |                  |                   | path found       |
++-----------------------------------------------------------------------------+
+
+So the duplicate ids exist only in the in-memory `Graph.duplicate_node_ids`
+accumulated during assembly; they are not in the persisted artifact.
+
+## Output volume
+
+Project folder size: 79.7 MB
+Run counts: {"files": 99, "nodes": 863, "edges": 3273}
+Files in latest/: 31
+Folder diagrams: 16
+
+Tree:
+
+.complete
+check.json
+diagrams/folder_cartog.mmd
+diagrams/folder_cartog_cli.mmd
+diagrams/folder_cartog_cli_commands.mmd
+diagrams/folder_cartog_core.mmd
+diagrams/folder_cartog_graph.mmd
+diagrams/folder_cartog_parse.mmd
+diagrams/folder_cartog_render.mmd
+diagrams/folder_cartog_render_assets.mmd
+diagrams/folder_cartog_scan.mmd
+diagrams/folder_cartog_scip.mmd
+diagrams/folder_scripts.mmd
+diagrams/folder_tests.mmd
+diagrams/folder_tests_fixtures_mixed_repo_backend_app.mmd
+diagrams/folder_tests_fixtures_mixed_repo_frontend_src.mmd
+diagrams/folder_tests_fixtures_ts_monorepo_packages_core_src.mmd
+diagrams/folder_tests_fixtures_ts_monorepo_packages_web_src.mmd
+diagrams/overview.mmd
+diagrams/overview.png
+digest.md
+graph.json
+logs/check.log
+logs/parse.log
+logs/render.log
+logs/scip.log
+meta.json
+stage/.cartog/scip/0bbfd2e77178/index.scip
+stage/parse.json
+stage/scip.json
+view/map.html

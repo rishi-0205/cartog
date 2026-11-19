@@ -182,6 +182,7 @@ def test_cli_package_layout() -> None:
     assert callable(shared._resolve_graph), "helpers live in cartog.cli.shared"
 
     for name in (
+        "analyze",
         "doctor",
         "parse",
         "scip",
@@ -197,6 +198,7 @@ def test_cli_package_layout() -> None:
 
     command = typer.main.get_command(cli.app)
     assert sorted(command.commands) == [
+        "analyze",
         "build",
         "check",
         "digest",

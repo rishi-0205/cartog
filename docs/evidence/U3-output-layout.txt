@@ -1,0 +1,225 @@
+# U3 evidence - output layout writer, latest copy, and retention
+
+Date: 2026-11-18
+Branch: feature/unified-command-and-output
+Task: U3 (E2)
+
+## Red: RunLayout, build_meta, and the atomic writer do not exist
+
+Command: venv\Scripts\python.exe -m pytest tests\test_output_layout.py -q
+FFFFFFF                                                                  [100%]
+================================== FAILURES ===================================
+__________________________ test_output_layout_paths ___________________________
+
+tmp_path = WindowsPath('C:/Users/rishi/AppData/Local/Temp/pytest-of-rishi/pytest-332/test_output_layout_paths0')
+
+    def test_output_layout_paths(tmp_path):
+        """One finalized run produces the documented tree."""
+>       layout = _layout(tmp_path, "20261118T100000Z")
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_output_layout.py:48: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+tmp_path = WindowsPath('C:/Users/rishi/AppData/Local/Temp/pytest-of-rishi/pytest-332/test_output_layout_paths0')
+run_id = '20261118T100000Z'
+
+    def _layout(tmp_path, run_id: str) -> output.RunLayout:
+>       return output.RunLayout(_location(tmp_path, run_id))
+               ^^^^^^^^^^^^^^^^
+E       AttributeError: module 'cartog.core.output' has no attribute 'RunLayout'
+
+tests\test_output_layout.py:27: AttributeError
+_____________________ test_latest_is_a_copy_not_a_symlink _____________________
+
+tmp_path = WindowsPath('C:/Users/rishi/AppData/Local/Temp/pytest-of-rishi/pytest-332/test_latest_is_a_copy_not_a_sy0')
+
+    def test_latest_is_a_copy_not_a_symlink(tmp_path):
+        """latest is a real directory copy, and editing it does not touch the run."""
+>       first = _layout(tmp_path, "20261118T100000Z")
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_output_layout.py:86: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+tmp_path = WindowsPath('C:/Users/rishi/AppData/Local/Temp/pytest-of-rishi/pytest-332/test_latest_is_a_copy_not_a_sy0')
+run_id = '20261118T100000Z'
+
+    def _layout(tmp_path, run_id: str) -> output.RunLayout:
+>       return output.RunLayout(_location(tmp_path, run_id))
+               ^^^^^^^^^^^^^^^^
+E       AttributeError: module 'cartog.core.output' has no attribute 'RunLayout'
+
+tests\test_output_layout.py:27: AttributeError
+___________________ test_meta_json_has_versions_and_timings ___________________
+
+tmp_path = WindowsPath('C:/Users/rishi/AppData/Local/Temp/pytest-of-rishi/pytest-332/test_meta_json_has_versions_an0')
+
+    def test_meta_json_has_versions_and_timings(tmp_path):
+        """meta.json records schema/cartog versions, start/finish, and timings."""
+>       layout = _layout(tmp_path, "20261118T100002Z")
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_output_layout.py:109: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+tmp_path = WindowsPath('C:/Users/rishi/AppData/Local/Temp/pytest-of-rishi/pytest-332/test_meta_json_has_versions_an0')
+run_id = '20261118T100002Z'
+
+    def _layout(tmp_path, run_id: str) -> output.RunLayout:
+>       return output.RunLayout(_location(tmp_path, run_id))
+               ^^^^^^^^^^^^^^^^
+E       AttributeError: module 'cartog.core.output' has no attribute 'RunLayout'
+
+tests\test_output_layout.py:27: AttributeError
+__________________ test_run_retention_keeps_n_complete_runs ___________________
+
+tmp_path = WindowsPath('C:/Users/rishi/AppData/Local/Temp/pytest-of-rishi/pytest-332/test_run_retention_keeps_n_com0')
+
+    def test_run_retention_keeps_n_complete_runs(tmp_path):
+        """--keep N keeps the newest N complete runs and drops older ones."""
+>       layouts = [_layout(tmp_path, f"20261118T10000{i}Z") for i in range(1, 5)]
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_output_layout.py:122: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+tmp_path = WindowsPath('C:/Users/rishi/AppData/Local/Temp/pytest-of-rishi/pytest-332/test_run_retention_keeps_n_com0')
+run_id = '20261118T100001Z'
+
+    def _layout(tmp_path, run_id: str) -> output.RunLayout:
+>       return output.RunLayout(_location(tmp_path, run_id))
+               ^^^^^^^^^^^^^^^^
+E       AttributeError: module 'cartog.core.output' has no attribute 'RunLayout'
+
+tests\test_output_layout.py:27: AttributeError
+__________________ test_run_retention_default_drops_history ___________________
+
+tmp_path = WindowsPath('C:/Users/rishi/AppData/Local/Temp/pytest-of-rishi/pytest-332/test_run_retention_default_dro0')
+
+    def test_run_retention_default_drops_history(tmp_path):
+        """The default keep=1 leaves only the run that just finished."""
+>       old = _layout(tmp_path, "20261118T100010Z")
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_output_layout.py:150: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+tmp_path = WindowsPath('C:/Users/rishi/AppData/Local/Temp/pytest-of-rishi/pytest-332/test_run_retention_default_dro0')
+run_id = '20261118T100010Z'
+
+    def _layout(tmp_path, run_id: str) -> output.RunLayout:
+>       return output.RunLayout(_location(tmp_path, run_id))
+               ^^^^^^^^^^^^^^^^
+E       AttributeError: module 'cartog.core.output' has no attribute 'RunLayout'
+
+tests\test_output_layout.py:27: AttributeError
+_____________________ test_out_directory_is_never_pruned ______________________
+
+tmp_path = WindowsPath('C:/Users/rishi/AppData/Local/Temp/pytest-of-rishi/pytest-332/test_out_directory_is_never_pr0')
+
+    def test_out_directory_is_never_pruned(tmp_path):
+        """--out is caller-owned: no latest and no retention."""
+        out_dir = tmp_path / "direct"
+        loc = output.resolve_run_location(
+            tmp_path, out=out_dir, run_id="20261118T100000Z", platform_="linux"
+        )
+>       layout = output.RunLayout(loc)
+                 ^^^^^^^^^^^^^^^^
+E       AttributeError: module 'cartog.core.output' has no attribute 'RunLayout'
+
+tests\test_output_layout.py:169: AttributeError
+______________________ test_incomplete_run_is_not_latest ______________________
+
+tmp_path = WindowsPath('C:/Users/rishi/AppData/Local/Temp/pytest-of-rishi/pytest-332/test_incomplete_run_is_not_lat0')
+
+    def test_incomplete_run_is_not_latest(tmp_path):
+        """A run without .complete never becomes latest."""
+>       layout = _layout(tmp_path, "20261118T100000Z")
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_output_layout.py:183: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+tmp_path = WindowsPath('C:/Users/rishi/AppData/Local/Temp/pytest-of-rishi/pytest-332/test_incomplete_run_is_not_lat0')
+run_id = '20261118T100000Z'
+
+    def _layout(tmp_path, run_id: str) -> output.RunLayout:
+>       return output.RunLayout(_location(tmp_path, run_id))
+               ^^^^^^^^^^^^^^^^
+E       AttributeError: module 'cartog.core.output' has no attribute 'RunLayout'
+
+tests\test_output_layout.py:27: AttributeError
+=========================== short test summary info ===========================
+FAILED tests/test_output_layout.py::test_output_layout_paths - AttributeError...
+FAILED tests/test_output_layout.py::test_latest_is_a_copy_not_a_symlink - Att...
+FAILED tests/test_output_layout.py::test_meta_json_has_versions_and_timings
+FAILED tests/test_output_layout.py::test_run_retention_keeps_n_complete_runs
+FAILED tests/test_output_layout.py::test_run_retention_default_drops_history
+FAILED tests/test_output_layout.py::test_out_directory_is_never_pruned - Attr...
+FAILED tests/test_output_layout.py::test_incomplete_run_is_not_latest - Attri...
+7 failed in 0.19s
+
+## Implementation attempt that failed
+
+First green attempt (captured 2026-11-18): the retention test called finalize on
+the wrong run and expected the wrong survivor set. The implementation was
+correct; the test arrangement was fixed before the recorded green run.
+
+Command: venv\Scripts\python.exe -m pytest tests\test_output_layout.py -q
+
+tests\test_output_layout.py:138: AssertionError
+E       AssertionError: assert (['20261118T10...1118T100050Z'] == ['20261118T10...1118T100004Z']
+E         At index 0 diff: '20261118T100003Z' != '20261118T100050Z'
+E         Left contains one more item: '20261118T100050Z'
+FAILED tests/test_output_layout.py::test_run_retention_keeps_n_complete_runs
+1 failed, 6 passed in 0.41s
+
+## Green: paths, versions/timings, latest copy, and retention
+
+Command: venv\Scripts\python.exe -m pytest tests\test_output_layout.py -q
+.......                                                                  [100%]
+7 passed in 0.22s
+
+## Layout/API guards
+
+Command: venv\Scripts\python.exe -m pytest tests\test_output_layout.py tests\test_output_home.py tests\test_public_api_type_hints.py tests\test_package_layout.py -q
+..................                                                       [100%]
+18 passed in 0.74s
+
+## Golden comparison
+
+Command: venv\Scripts\python.exe scripts\golden.py --check
+click: 0 differences
+flask: 0 differences
+ky: 0 differences
+0 differences
+
+## Full suite
+
+Command: venv\Scripts\python.exe -m pytest tests\ -q
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+206 passed, 1 warning in 176.53s (0:02:56)
+
+Count: 199 -> 206 (+7: `test_output_layout_paths`,
+`test_latest_is_a_copy_not_a_symlink`, `test_meta_json_has_versions_and_timings`,
+`test_run_retention_keeps_n_complete_runs`,
+`test_run_retention_default_drops_history`,
+`test_out_directory_is_never_pruned`, `test_incomplete_run_is_not_latest`).
+No existing test was edited, skipped, or weakened.
+
+## What changed
+
+- `cartog/core/output.py`: `RunLayout` (atomic `write_text`/`write_bytes`/
+  `write_json`, `mark_complete`, `publish_latest`, `prune`, `finalize`),
+  `build_meta`, `utc_timestamp`, and automatic run-id collision suffixes.
+- `tests/test_output_layout.py` (new): the seven U3 tests.
+
+## Retention semantics
+
+`--keep N` (default `1`) counts complete runs per project, newest first. After
+`finalize`, older complete runs are deleted, incomplete runs older than the
+oldest kept complete run are deleted, and incomplete runs newer than that
+boundary are kept for diagnosis. `latest/` is a copied directory of the newest
+complete run, never a symlink; `--out` runs have no `latest` and are never
+pruned. `N < 1` raises `ValueError`; the CLI rejects it as a usage error.

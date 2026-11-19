@@ -1,0 +1,44 @@
+F.                                                                       [100%]
+================================== FAILURES ===================================
+_________________ test_design_doc_has_options_and_exit_codes __________________
+
+    def test_design_doc_has_options_and_exit_codes():
+        """The design must be complete before implementation starts."""
+        assert DESIGN.is_file(), f"missing design document: {DESIGN.relative_to(REPO_ROOT)}"
+        text = DESIGN.read_text(encoding="utf-8")
+    
+        missing_sections = [section for section in REQUIRED_SECTIONS if section not in text]
+        assert not missing_sections, f"design is missing section(s): {missing_sections}"
+    
+        missing_commands = [cmd for cmd in REQUIRED_STAGE_COMMANDS if cmd not in text]
+        assert not missing_commands, f"design does not keep stage command(s): {missing_commands}"
+    
+        missing_tokens = [token for token in REQUIRED_OUTPUT_TOKENS if token not in text]
+        assert not missing_tokens, f"design does not describe output token(s): {missing_tokens}"
+    
+        exit_section = text.split("## 3. Exit codes", 1)[1].split("## 4.", 1)[0]
+        for code in ("`0`", "`1`", "`2`", "`3`"):
+            assert code in exit_section, f"exit code {code} is not defined"
+    
+        assert "--out" in text, "design must define --out"
+        assert "analyze" in text, "design must name the explicit unified entry point"
+        assert "cartog analyze <path>" in text, "design must document `cartog analyze <path>`"
+>       assert (
+            "The primary entry point is the bare positional form" not in text
+        ), "design must not advertise an implicit `cartog <path>` form"
+E       AssertionError: design must not advertise an implicit `cartog <path>` form
+E       assert 'The primary...itional form' not in '# Cartog Un...ay `TODO`.\n'
+E         
+E         'The primary entry ...are positional form' is contained here:
+E            Command
+E           
+E           The primary entry point is the bare positional form:
+E           
+E           ```text...
+E         
+E         ...Full output truncated (349 lines hidden), use '-vv' to show
+
+tests\test_unified_command_design.py:73: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_unified_command_design.py::test_design_doc_has_options_and_exit_codes
+1 failed, 1 passed in 0.10s

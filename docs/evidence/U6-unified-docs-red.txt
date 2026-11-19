@@ -1,0 +1,21 @@
+F.                                                                       [100%]
+================================== FAILURES ===================================
+_______________________ test_documented_commands_exist ________________________
+
+    def test_documented_commands_exist():
+        """Every command named in the docs is a registered command."""
+        commands = set(get_command(app).commands)
+        assert "analyze" in commands, "the unified command is not registered"
+    
+        seen: set[str] = set()
+        for path in DOCS:
+>           assert path.is_file(), f"missing documented file: {path}"
+E           AssertionError: missing documented file: C:\Users\rishi\OneDrive\Desktop\Dev\cartog\docs\USAGE.md
+E           assert False
+E            +  where False = is_file()
+E            +    where is_file = WindowsPath('C:/Users/rishi/OneDrive/Desktop/Dev/cartog/docs/USAGE.md').is_file
+
+tests\test_documented_commands.py:35: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_documented_commands.py::test_documented_commands_exist - As...
+1 failed, 1 passed in 2.45s

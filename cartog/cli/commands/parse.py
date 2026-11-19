@@ -21,7 +21,7 @@ def parse(
     no_max_file_size: bool = typer.Option(False, "--no-max-file-size", help="Disable file size limit."),
     ignore: list[str] | None = typer.Option(None, "--ignore", help="Additional ignore glob pattern (can be specified multiple times)."),
     force: bool = typer.Option(False, "--force", "-f", help="Force rerun and bypass cache even if valid cache exists."),
-    no_cache: bool = typer.Option(False, "--no-cache", help="Alias for --force: bypass cache and force rerun."),
+    no_cache: bool = typer.Option(False, "--no-cache", help="Legacy alias for --force: bypass cache and force rerun."),
     verbose: bool = typer.Option(False, "--verbose", "-V", help="Enable verbose logging."),
 ) -> None:
     """Run Stage 1: tree-sitter AST syntax, imports, and framework pattern extraction."""
