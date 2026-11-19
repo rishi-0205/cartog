@@ -32,7 +32,7 @@ The roadmap narrative is [`docs/IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.m
 | U4 | Unified command | E2 | `feature/unified-command-and-output` | U3 | M | E2-S4 | DONE | 7991e3c |
 | U5 | Keep stage commands and consolidate flags | E2 | `feature/unified-command-and-output` | U4 | M | E2-S5 | DONE | 4941894 |
 | U6 | Docs and tests for the new flow | E2 | `feature/unified-command-and-output` | U4, U5 | S | E2-S5 | DONE | 7008403 |
-| S1 | One subprocess runner | E3 | `feature/security-baseline` | U4 | M | E3-S1 | TODO | — |
+| S1 | One subprocess runner | E3 | `feature/security-baseline` | U4 | M | E3-S1 | DONE | b5c96d8 |
 | S2 | Hostile canary repository | E3 | `feature/security-baseline` | S1 | S | E3-S1 | TODO | — |
 | S3 | Escape everything embedded in map.html | E3 | `feature/security-baseline` | U4 | M | E3-S2 | TODO | — |
 | S4 | Sanitize Mermaid labels | E3 | `feature/security-baseline` | S3 | S | E3-S3 | TODO | — |
@@ -80,7 +80,7 @@ The roadmap narrative is [`docs/IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.m
 | E1 | `refactor/package-structure` | E0 | 13 / 13 | ACCEPTED | 2026-11-17 |
 | E1b | `refactor/drop-compat-shims` | E1 | 1 / 1 | ACCEPTED | 2026-11-17 |
 | E2 | `feature/unified-command-and-output` | E1b | 6 / 6 | ACCEPTED | 2026-11-19 |
-| E3 | `feature/security-baseline` | E2 | 0 / 9 | NOT STARTED | no |
+| E3 | `feature/security-baseline` | E2 | 1 / 9 | IN PROGRESS | no |
 | E4 | `feature/verification` | E2 | 0 / 5 | NOT STARTED | no |
 | E5 | `feature/llm-layer` | E2, E3 | 0 / 11 | NOT STARTED | no |
 | E6 | `feature/gallery` | E3 | 0 / 4 | NOT STARTED | no |
@@ -741,10 +741,11 @@ At most one epic per session; within that epic, finish and commit each task befo
 - **User check (epic review):** `pytest tests/test_security.py -k runner -q`
 - **Evidence files:** `docs/evidence/S1-subprocess-runner.txt`
 - **Planned commit message:** `S1: centralize subprocess execution`
-- **Status:** TODO
-- **Commit hash:** —
-- **Failure log:** —
-- **Change log:** —
+- **Status:** DONE
+- **Commit hash:** `b5c96d8`
+- **Failure log:** Red run (`docs/evidence/S1-subprocess-runner-red.txt`): `test_no_subprocess_outside_runner` failed listing `cartog/scip/runner.py`, `cartog/render/export_mermaid.py`, and `cartog/cli/commands/doctor.py`; the other five tests failed with `ModuleNotFoundError: No module named 'cartog.core.proc'`. Two implementation attempts failed before green: `TimeoutExpired` has no `.returncode` in this Python, and `filtered_env()` initially let caller overrides (and so `CARTOG_SECRET_TOKEN`) through. Both fixed before the green run.
+- **Change log:**
+  - 2026-11-19: Added `cartog/core/proc.py` (allowlist, `shell=False`, timeout, environment allowlist, output cap, `ProcResult`). Routed the three existing call sites through it (`scip/runner.py`, `render/export_mermaid.py`, `cli/commands/doctor.py`) and removed every other `subprocess` import. Added `tests/test_security.py` with six S1 tests. Recorded Decision 36 (why `core/proc.py`, and `node`/`madge` in the allowlist) and added the `core/proc.py` row to `docs/dev/PACKAGE_LAYOUT.md`. Suite 216 → 222; golden 0 differences; ruff clean.
 
 ### S2: Hostile canary repository
 
