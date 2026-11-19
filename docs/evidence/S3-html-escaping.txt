@@ -1,0 +1,68 @@
+# S3 evidence - escape everything embedded in map.html
+
+Date: 2026-11-19 18:24:00
+Branch: feature/security-baseline
+
+## Red: hostile names break out, the viewer builds HTML, no CSP
+
+Command: venv\Scripts\python.exe -m pytest tests\test_security.py -k html -q
+Raw transcript: `docs/evidence/S3-html-escaping-red.txt`
+
+FAILED tests\test_security.py::test_html_payload_escapes_script_breakout - As...
+FAILED tests\test_security.py::test_html_viewer_uses_textcontent_only - Asser...
+FAILED tests\test_security.py::test_html_csp_blocks_network - AssertionError:...
+3 failed, 8 deselected in 0.55s
+
+The hostile node name `</script><script>alert('x')</script>&\u2028\u2029`
+reached the payload unchanged (breaking out of the inline script), `viewer.js`
+contained four `innerHTML` assignments (sidebar, empty sidebar, two toolbar
+labels), and `map.html` had no Content-Security-Policy at all.
+
+## Green
+
+Command: venv\Scripts\python.exe -m pytest tests\test_security.py -k html -q
+Raw transcript: `docs/evidence/S3-html-escaping-green.txt`
+
+...                                                                      [100%]
+3 passed, 8 deselected in 0.44s
+
+What the fix does:
+
+* `cartog/render/export_html.py::escape_json_for_script()` escapes `&`, `<`,
+  `>`, U+2028 and U+2029 as JSON `\uXXXX` escapes before the payload is placed
+  in `window.CARTOG_VIEW_DATA`. The test parses the payload back with
+  `json.loads` and asserts the value is preserved, not truncated.
+* Project name and rollup note interpolated in markup go through
+  `html.escape(..., quote=True)`.
+* `cartog/render/assets/viewer.js` now builds the sidebar with
+  `createElement`/`textContent`/`replaceChildren`; the toolbar button labels use
+  `textContent`. No `innerHTML`, `outerHTML`, `insertAdjacentHTML`,
+  `document.write` or `eval(` remains.
+* `map.html` carries
+  `<meta http-equiv="Content-Security-Policy" content="default-src 'none';
+  script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:;
+  font-src data:; connect-src 'none'; base-uri 'none'; form-action 'none'">`.
+
+The viewer is still valid JavaScript:
+
+Command: node --check cartog\render\assets\viewer.js
+exit=0
+
+## Full suite
+
+Command: venv\Scripts\python.exe -m pytest tests\ -q
+Raw transcript: `docs/evidence/S3-html-escaping-suite.txt`
+
+227 passed, 1 warning in 223.68s (0:03:43)
+
+224 -> 227: the three S3 tests, no test removed or weakened.
+
+## Golden
+
+Command: venv\Scripts\python.exe scripts\golden.py --check
+Raw transcript: `docs/evidence/S3-html-escaping-golden.txt`
+
+click: 0 differences
+flask: 0 differences
+ky: 0 differences
+0 differences

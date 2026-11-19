@@ -16,6 +16,8 @@ Each section of this file belongs to one E3 task and was added red-first:
 from __future__ import annotations
 
 import ast
+import json
+import re
 import shutil
 import sys
 import time
@@ -156,3 +158,76 @@ def test_hostile_setup_py_never_runs(tmp_path: Path) -> None:
     )
     assert result.exit_code == 0, result.stdout
     _assert_marker_absent(tmp_path, "HOSTILE_SETUP_MARKER")
+
+
+# --------------------------------------------------------------------------- S3
+
+_HOSTILE_TEXT = "</script><script>alert('x')</script>&\u2028\u2029"
+
+
+def _hostile_graph():
+    """A graph whose names try to close the script tag and inject markup."""
+    from cartog.core.model import Graph, Node
+
+    hostile = _HOSTILE_TEXT
+    graph = Graph()
+    graph.meta = {"target_path": hostile, "cartog_version": "0.1.0"}
+    graph.add_node(
+        Node(
+            id="fn_hostile",
+            name=hostile,
+            qualified_name=hostile,
+            kind="function",
+            path="evil.py",
+        )
+    )
+    return graph
+
+
+def test_html_payload_escapes_script_breakout() -> None:
+    """Hostile names cannot close the inline script or add markup."""
+    from cartog.render.export_html import generate_html_map
+
+    html = generate_html_map(_hostile_graph())
+
+    assert "</script><script>alert" not in html
+    assert "\\u003c/script\\u003e" in html
+    assert "\\u0026" in html
+    payload_line = next(
+        line for line in html.splitlines() if "window.CARTOG_VIEW_DATA" in line
+    )
+    assert "\\u2028" in payload_line
+    assert "\\u2029" in payload_line
+    assert "\u2028" not in payload_line
+    assert "\u2029" not in payload_line
+    parsed = json.loads(payload_line.split(" = ", 1)[1].rstrip(";"))
+    assert parsed["meta"]["target_path"] == _HOSTILE_TEXT, (
+        "escaping must preserve the value, not truncate it"
+    )
+    assert "&lt;/script&gt;" in html, "the header must HTML-escape the project name"
+
+
+def test_html_viewer_uses_textcontent_only() -> None:
+    """The viewer never builds DOM from strings."""
+    js = (
+        PACKAGE_ROOT / "render" / "assets" / "viewer.js"
+    ).read_text(encoding="utf-8")
+    forbidden = ("innerHTML", "outerHTML", "insertAdjacentHTML", "document.write", "eval(")
+    hits = [word for word in forbidden if word in js]
+    assert hits == [], f"viewer.js still builds DOM from strings: {hits}"
+    assert "textContent" in js
+
+
+def test_html_csp_blocks_network() -> None:
+    """The CSP allows the bundled inline script and styles, and no origin."""
+    from cartog.render.export_html import generate_html_map
+
+    html = generate_html_map(_hostile_graph())
+    match = re.search(
+        r'<meta http-equiv="Content-Security-Policy" content="([^"]+)">', html
+    )
+    assert match, "map.html must declare a Content-Security-Policy"
+    policy = match.group(1)
+    assert "default-src 'none'" in policy
+    for origin in ("http:", "https:", "ws:", "wss:", "*"):
+        assert origin not in policy, f"CSP allows a network origin: {origin}"
