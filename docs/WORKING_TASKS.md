@@ -34,7 +34,7 @@ The roadmap narrative is [`docs/IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.m
 | U6 | Docs and tests for the new flow | E2 | `feature/unified-command-and-output` | U4, U5 | S | E2-S5 | DONE | 7008403 |
 | S1 | One subprocess runner | E3 | `feature/security-baseline` | U4 | M | E3-S1 | DONE | b5c96d8 |
 | S2 | Hostile canary repository | E3 | `feature/security-baseline` | S1 | S | E3-S1 | DONE | d0b7731 |
-| S3 | Escape everything embedded in map.html | E3 | `feature/security-baseline` | U4 | M | E3-S2 | TODO | — |
+| S3 | Escape everything embedded in map.html | E3 | `feature/security-baseline` | U4 | M | E3-S2 | DONE | aba352b |
 | S4 | Sanitize Mermaid labels | E3 | `feature/security-baseline` | S3 | S | E3-S3 | TODO | — |
 | S5 | Path confinement and output-name sanitization | E3 | `feature/security-baseline` | S1, U3 | M | E3-S3 | TODO | — |
 | S6 | Strip terminal control characters | E3 | `feature/security-baseline` | S1 | S | E3-S4 | TODO | — |
@@ -80,7 +80,7 @@ The roadmap narrative is [`docs/IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.m
 | E1 | `refactor/package-structure` | E0 | 13 / 13 | ACCEPTED | 2026-11-17 |
 | E1b | `refactor/drop-compat-shims` | E1 | 1 / 1 | ACCEPTED | 2026-11-17 |
 | E2 | `feature/unified-command-and-output` | E1b | 6 / 6 | ACCEPTED | 2026-11-19 |
-| E3 | `feature/security-baseline` | E2 | 2 / 9 | IN PROGRESS | no |
+| E3 | `feature/security-baseline` | E2 | 3 / 9 | IN PROGRESS | no |
 | E4 | `feature/verification` | E2 | 0 / 5 | NOT STARTED | no |
 | E5 | `feature/llm-layer` | E2, E3 | 0 / 11 | NOT STARTED | no |
 | E6 | `feature/gallery` | E3 | 0 / 4 | NOT STARTED | no |
@@ -784,10 +784,11 @@ At most one epic per session; within that epic, finish and commit each task befo
 - **User check (epic review):** `pytest tests/test_security.py -k html -q`
 - **Evidence files:** `docs/evidence/S3-html-escaping.txt`
 - **Planned commit message:** `S3: escape all embedded HTML content`
-- **Status:** TODO
-- **Commit hash:** —
-- **Failure log:** —
-- **Change log:** —
+- **Status:** DONE
+- **Commit hash:** `aba352b`
+- **Failure log:** Red run (`docs/evidence/S3-html-escaping-red.txt`): all three tests failed — the hostile node name kept its raw `</script><script>` (payload breakout), `viewer.js` still had four `innerHTML` assignments, and `map.html` declared no CSP. A first green attempt failed because the test asserted "no U+2028 anywhere"; the separator legitimately appears in escaped header text, so the assertion was narrowed to the payload line where the task requires the escape.
+- **Change log:**
+  - 2026-11-19: Added `escape_json_for_script()` (`&`, `<`, `>`, U+2028, U+2029 as `\uXXXX`) and `escape_html_text()` to `cartog/render/export_html.py`, plus a `Content-Security-Policy` meta tag allowing only the bundled inline script/style and `data:` images/fonts. Rewrote the viewer sidebar and toolbar labels to use `createElement`/`textContent`/`replaceChildren`; removed `innerHTML` and the now-dead `escapeHtml`. Three S3 tests assert the breakout is gone, the payload round-trips through `json.loads`, the viewer has no string-built DOM, and the CSP allows no network origin. Suite 224 → 227; golden 0 differences; `node --check` on `viewer.js` exits 0; ruff clean.
 
 ### S4: Sanitize Mermaid labels
 
