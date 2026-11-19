@@ -1161,3 +1161,11 @@ Following the initial orthogonal routing updates, user testing identified two re
 - **Rationale:** failing before parsing avoids the cost that the limit is meant to bound, and failing before writing `graph.json` means an oversized run cannot masquerade as output. Keeping file size as a skip preserves the existing scanner contract and its tests. Distinct flag names prevent a user from accidentally shrinking their diagram budget when they meant to raise a safety limit.
 - **Consequence:** a limit breach exits 3 with `Analysis failed: <count>, limit is <n> (raise it with --max-*)`, writes a failed `meta.json` containing the active limits, and publishes no `.complete` marker. Defaults are far above the golden repositories, so golden output is unchanged.
 - **Date:** 2026-11-19
+
+## Decision 41: SECURITY.md states the trust boundary instead of claiming a sandbox
+
+- **Context:** S9 asks for a threat model, an explicit "what is not protected" section, and links from README and HANDOFF. E3 added controls (no code execution, subprocess allowlist, escaping, path confinement, limits, hashes) but nothing that isolates the process at the OS level.
+- **Decision:** document the trust boundary as: the analyzed repository is untrusted; the host, the installed allowlisted binaries, and the operator are trusted; generated artifacts are an output boundary. Name the non-protections directly: third-party indexer binaries, absence of an OS sandbox, static-analysis blind spots, the browser/editor, secrets present in the analyzed tree, and slow-but-allowed runs. Link each control and non-protection to its code and test.
+- **Rationale:** an allowlist around trusted tools is defense in depth, not a sandbox; overstating it would be a security claim the implementation cannot keep. A reviewer can follow every row to `tests/test_security.py` and `docs/evidence/`, and the "not protected" list tells an operator what to do separately (trusted installs, minimal privileges).
+- **Consequence:** `tests/test_security.py::test_security_doc_links_resolve` fails if `SECURITY.md` disappears, loses its entry links, omits one of the required topics, or links to a missing path. The document is the acceptance artifact for the epic review and is linked from `README.md` and `docs/HANDOFF.md`.
+- **Date:** 2026-11-19

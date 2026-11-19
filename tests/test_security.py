@@ -606,3 +606,37 @@ def test_limits_are_reported_in_meta() -> None:
         limits=limits,
     )
     assert meta["limits"] == limits
+
+
+# --------------------------------------------------------------------------- S9
+
+
+def test_security_doc_links_resolve() -> None:
+    """SECURITY.md exists, is linked from the entry docs, and links resolve."""
+    security = REPO_ROOT / "SECURITY.md"
+    assert security.is_file(), "the threat model must live at SECURITY.md"
+
+    for entry in ("README.md", "docs/HANDOFF.md"):
+        text = (REPO_ROOT / entry).read_text(encoding="utf-8")
+        assert "SECURITY.md" in text, f"{entry} does not link to SECURITY.md"
+
+    body = security.read_text(encoding="utf-8")
+    for required in (
+        "untrusted",
+        "subprocess",
+        "escaping",
+        "path confinement",
+        "redaction",
+        "not protected",
+    ):
+        assert required.lower() in body.lower(), (
+            f"SECURITY.md does not cover {required!r}"
+        )
+
+    for target in re.findall(r"\]\(([^)\s]+)\)", body):
+        if target.startswith(("http://", "https://", "mailto:", "#")):
+            continue
+        path_part = target.split("#", 1)[0]
+        assert (REPO_ROOT / path_part).exists(), (
+            f"SECURITY.md links to a missing path: {target}"
+        )

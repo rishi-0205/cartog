@@ -3,7 +3,8 @@
 **Last updated:** 2026-11-19 (E2 **ACCEPTED** by the author and merged into `main`; next epic is E3; suite is 216 tests passing)  
 **Role:** Single entry point for any model or developer picking up this project.  
 **Active Working Tasks:** See [`docs/WORKING_TASKS.md`](./WORKING_TASKS.md) for the live epic board and command loop. The historical T0–T21 board is [`docs/archive/WORKING_TASKS_T0-T21.md`](./archive/WORKING_TASKS_T0-T21.md).  
-**Git rules:** [`docs/dev/GIT_WORKFLOW.md`](./dev/GIT_WORKFLOW.md) — one branch per epic, commit per task, never push, merge only after `Accept <epic id>`.
+**Git rules:** [`docs/dev/GIT_WORKFLOW.md`](./dev/GIT_WORKFLOW.md) — one branch per epic, commit per task, never push, merge only after `Accept <epic id>`.  
+**Security:** [`SECURITY.md`](../SECURITY.md) — threat model (untrusted repository), controls, and what is not protected.
 
 ---
 
