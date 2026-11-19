@@ -11,6 +11,17 @@ from rich.table import Table
 
 from cartog.cli.shared import app, console
 from cartog.core.proc import run as run_process
+from cartog.core.toolchain import MINIMUM_TOOL_VERSIONS, version_meets_minimum
+
+
+def _assess_version(tool: str, raw: str) -> tuple[bool, str]:
+    """Return whether ``raw`` meets ``tool``'s minimum, and the display text."""
+    version = raw.strip()
+    minimum = MINIMUM_TOOL_VERSIONS[tool]
+    if version_meets_minimum(tool, version):
+        display = version if version.lower().startswith("v") else f"v{version}"
+        return True, display
+    return False, f"{version or 'unknown'} (below minimum v{minimum})"
 
 
 @app.command()
@@ -104,7 +115,13 @@ def doctor() -> None:
         try:
             res = run_process(["node", "--version"], timeout=15)
             if res.ok:
-                table.add_row("Node.js", "[green]PASS[/green]", res.stdout.strip(), "-")
+                ok, detail = _assess_version("node", res.stdout)
+                table.add_row(
+                    "Node.js",
+                    "[green]PASS[/green]" if ok else "[yellow]WARN[/yellow]",
+                    detail,
+                    "-" if ok else "Upgrade Node.js to v18 or newer",
+                )
             else:
                 table.add_row(
                     "Node.js",
@@ -125,7 +142,13 @@ def doctor() -> None:
             env = get_indexer_env("scip-python")
             res = run_process(["scip-python", "--version"], timeout=5, env=env)
             if res.ok:
-                table.add_row("scip-python", "[green]PASS[/green]", f"v{res.stdout.strip()}", "-")
+                ok, detail = _assess_version("scip-python", res.stdout)
+                table.add_row(
+                    "scip-python",
+                    "[green]PASS[/green]" if ok else "[yellow]WARN[/yellow]",
+                    detail,
+                    "-" if ok else "Upgrade @sourcegraph/scip-python",
+                )
             else:
                 table.add_row("scip-python", "[yellow]WARN[/yellow]", f"Exit code {res.returncode}", "npm install -g @sourcegraph/scip-python")
         except Exception as e:
@@ -144,7 +167,13 @@ def doctor() -> None:
         try:
             res = run_process(["scip-typescript", "--version"], timeout=5)
             if res.ok:
-                table.add_row("scip-typescript", "[green]PASS[/green]", f"v{res.stdout.strip()}", "-")
+                ok, detail = _assess_version("scip-typescript", res.stdout)
+                table.add_row(
+                    "scip-typescript",
+                    "[green]PASS[/green]" if ok else "[yellow]WARN[/yellow]",
+                    detail,
+                    "-" if ok else "Upgrade @sourcegraph/scip-typescript",
+                )
             else:
                 table.add_row("scip-typescript", "[yellow]WARN[/yellow]", f"Exit code {res.returncode}", "npm install -g @sourcegraph/scip-typescript")
         except Exception as e:
@@ -163,7 +192,13 @@ def doctor() -> None:
         try:
             res = run_process(["mmdc", "--version"], timeout=10)
             if res.ok:
-                table.add_row("mmdc (mermaid-cli)", "[green]PASS[/green]", f"v{res.stdout.strip()}", "-")
+                ok, detail = _assess_version("mmdc", res.stdout)
+                table.add_row(
+                    "mmdc (mermaid-cli)",
+                    "[green]PASS[/green]" if ok else "[yellow]WARN[/yellow]",
+                    detail,
+                    "-" if ok else "Upgrade @mermaid-js/mermaid-cli",
+                )
             else:
                 table.add_row("mmdc (mermaid-cli)", "[yellow]WARN[/yellow]", f"Exit code {res.returncode}", "npm install -g @mermaid-js/mermaid-cli")
         except Exception as e:
@@ -188,7 +223,13 @@ def doctor() -> None:
         try:
             res = run_process(["madge", "--version"], timeout=5)
             if res.ok:
-                table.add_row("madge (verification)", "[green]PASS[/green]", f"v{res.stdout.strip()}", "-")
+                ok, detail = _assess_version("madge", res.stdout)
+                table.add_row(
+                    "madge (verification)",
+                    "[green]PASS[/green]" if ok else "[yellow]WARN[/yellow]",
+                    detail,
+                    "-" if ok else "Upgrade madge",
+                )
             else:
                 table.add_row("madge (verification)", "[yellow]WARN[/yellow]", f"Exit code {res.returncode}", "npm install -g madge")
         except Exception as e:

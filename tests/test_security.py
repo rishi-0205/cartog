@@ -471,3 +471,79 @@ def test_digest_strips_controls() -> None:
         (ord(char) < 32 and char not in "\n\t") or 0x7F <= ord(char) <= 0x9F
         for char in digest
     )
+
+
+# --------------------------------------------------------------------------- S7
+
+
+def test_vendor_asset_hashes_match_lock() -> None:
+    """Every vendored library is pinned by version, licence and SHA-256."""
+    import hashlib
+
+    assets = PACKAGE_ROOT / "render" / "assets"
+    lock_path = assets / "VENDOR_LOCK.json"
+    assert lock_path.is_file(), "vendored assets need VENDOR_LOCK.json"
+
+    lock = json.loads(lock_path.read_text(encoding="utf-8"))
+    entries = {entry["file"]: entry for entry in lock["assets"]}
+
+    vendored = {path.name for path in assets.glob("*.js")} - {"viewer.js"}
+    assert set(entries) == vendored, "the lock and the vendored files disagree"
+
+    for filename, entry in entries.items():
+        assert entry["name"], f"{filename} has no upstream name"
+        assert re.fullmatch(r"\d+\.\d+\.\d+", entry["version"]), (
+            f"{filename} has no pinned version"
+        )
+        assert entry["license"], f"{filename} has no licence"
+        digest = hashlib.sha256(
+            (assets / filename).read_bytes().replace(b"\r\n", b"\n")
+        ).hexdigest()
+        assert entry["sha256"] == digest, (
+            f"{filename} does not match its pinned SHA-256 (content changed?)"
+        )
+
+
+def test_doctor_checks_tool_versions(monkeypatch: pytest.MonkeyPatch) -> None:
+    """doctor flags an installed tool below the documented minimum."""
+    from io import StringIO
+
+    from cartog.cli.commands import doctor as doctor_module
+    from cartog.cli.shared import SanitizingConsole
+    from cartog.core.toolchain import (
+        MINIMUM_TOOL_VERSIONS,
+        parse_version,
+        version_meets_minimum,
+    )
+
+    required = {"node", "mmdc", "scip-python", "scip-typescript", "madge"}
+    assert required <= set(MINIMUM_TOOL_VERSIONS), "a checked tool has no minimum"
+    assert parse_version("v22.13.0") == (22, 13, 0)
+    assert parse_version("12.0.0\n") == (12, 0, 0)
+    assert version_meets_minimum("node", "v22.13.0")
+    assert not version_meets_minimum("node", "v10.0.0")
+
+    class FakeResult:
+        ok = True
+        returncode = 0
+        stdout = "v0.0.1"
+        stderr = ""
+
+    monkeypatch.setattr(
+        doctor_module.shutil, "which", lambda name: f"C:/fake/{name}"
+    )
+    monkeypatch.setattr(doctor_module, "run_process", lambda *a, **k: FakeResult())
+    stream = StringIO()
+    monkeypatch.setattr(
+        doctor_module,
+        "console",
+        SanitizingConsole(
+            file=stream, width=200, force_terminal=False, color_system=None
+        ),
+    )
+
+    doctor_module.doctor()
+
+    output = stream.getvalue()
+    assert "below minimum" in output, "doctor did not report the old versions"
+    assert "minimum v" in output, "the report does not state the required version"
