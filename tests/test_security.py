@@ -389,3 +389,85 @@ def test_path_repo_name_sanitized() -> None:
     assert not long_name.endswith((".", " "))
     assert "/" not in long_name and "\\" not in long_name
     assert ":" not in long_name
+
+
+# --------------------------------------------------------------------------- S6
+
+
+def test_console_strips_ansi_and_controls() -> None:
+    """Terminal output cannot carry escape sequences or C0/C1 controls."""
+    from io import StringIO
+
+    from cartog.cli.shared import SanitizingConsole, console
+    from cartog.core.text import sanitize_console_text
+
+    assert isinstance(console, SanitizingConsole), (
+        "the shared console must sanitize everything printed through it"
+    )
+
+    stream = StringIO()
+    safe_console = SanitizingConsole(
+        file=stream, width=200, force_terminal=False, color_system=None
+    )
+    safe_console.print(
+        "vis\x1b[31mible\x1b[0m \x00\x07\x9b\x1b]0;pwned\x07 bell\tkept"
+    )
+    output = stream.getvalue()
+
+    assert "visible" in output
+    assert "bell" in output
+    assert "\x1b" not in output, "an escape sequence reached the terminal"
+    assert "\x00" not in output and "\x07" not in output
+    assert "\x9b" not in output, "a C1 control reached the terminal"
+    assert "31m" not in output, "the CSI parameters survived the escape"
+    assert "pwned" not in output, "an OSC title sequence reached the terminal"
+
+    # Newline and tab stay printable; every other C0/C1 control goes.
+    kept = sanitize_console_text("a\tb\nc\x00d\x1be\x9bf")
+    assert kept == "a\tb\ncdef"
+
+    # Rich tables are a separate write path: their cells are not strings passed
+    # to print(), so the console must sanitize those too.
+    from rich.table import Table
+
+    table = Table(title="evil\x1b]0;pwned\x07")
+    table.add_column("Name")
+    table.add_row("evil\x1b[31mname\x07")
+    table_stream = StringIO()
+    table_console = SanitizingConsole(
+        file=table_stream, width=120, force_terminal=False, color_system=None
+    )
+    table_console.print(table)
+    table_output = table_stream.getvalue()
+    assert "evil" in table_output
+    assert "\x1b" not in table_output, "a table cell carried an escape sequence"
+    assert "31m" not in table_output, "a table cell leaked CSI parameters"
+    assert "pwned" not in table_output, "a table title carried an OSC sequence"
+
+
+def test_digest_strips_controls() -> None:
+    """The digest text carries no control characters or escape sequences."""
+    from cartog.core.model import Graph, Node
+    from cartog.render.views import generate_digest
+
+    graph = Graph()
+    graph.meta = {"target_path": "/tmp/evil\x1b[31mname\x07"}
+    graph.add_node(
+        Node(
+            id="file_evil",
+            name="evil\x1b[2J\x07.py",
+            qualified_name="evil\x1b[2J\x07.py",
+            kind="file",
+            path="src/evil\x1b[31m.py",
+        )
+    )
+
+    digest = generate_digest(graph)
+
+    assert "evil" in digest
+    assert "\x1b" not in digest, "an escape sequence reached the digest"
+    assert "\x07" not in digest and "\x00" not in digest
+    assert not any(
+        (ord(char) < 32 and char not in "\n\t") or 0x7F <= ord(char) <= 0x9F
+        for char in digest
+    )

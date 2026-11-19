@@ -1,0 +1,79 @@
+# S6 evidence - strip control characters from terminal output
+
+Date: 2026-11-19 19:52:00
+Branch: feature/security-baseline
+
+## Red, first run (before any S6 code)
+
+Command: venv\Scripts\python.exe -m pytest tests\test_security.py -k control -q
+
+FAILED tests/test_security.py::test_console_strips_ansi_and_controls - Import...
+FAILED tests/test_security.py::test_digest_strips_controls - AssertionError...
+2 failed, 17 deselected in 0.56s
+
+`cartog/core/text.py` did not exist (`ImportError`), the shared console was a
+plain `rich.console.Console`, and the digest still contained the raw
+`\x1b[31m` and `\x07` from the hostile repository name.
+
+## Red, table iteration (kept transcript)
+
+While checking the green run, a hostile `rich.table.Table` cell still emitted
+`ESC[31m`: table cells never pass through `print()` as strings. The console
+test was extended with a hostile cell, header and title, and the red transcript
+was captured against the string-only implementation.
+
+Raw transcript: `docs/evidence/S6-control-chars-red.txt`
+
+E           \u2502 evil\x1b[31mname \u2502
+tests\test_security.py:443: AssertionError
+FAILED tests/test_security.py::test_console_strips_ansi_and_controls - Assert...
+1 failed, 1 passed, 17 deselected in 0.57s
+
+## Green
+
+Command: venv\Scripts\python.exe -m pytest tests\test_security.py -k control -q
+Raw transcript: `docs/evidence/S6-control-chars-green.txt`
+
+..                                                                       [100%]
+2 passed, 17 deselected in 0.41s
+
+What the fix does:
+
+* New `cartog/core/text.py::sanitize_console_text()` removes complete ANSI
+  sequences (CSI, OSC terminated by BEL or ST, and two-byte escapes), then all
+  C0 controls except tab and newline, plus DEL and C1. This is why `[31m`
+  cannot survive as visible text after the ESC byte is gone.
+* `cartog/cli/shared.py` exports `SanitizingConsole`; the shared `console` is
+  an instance, so every existing `console.print` site is covered. `str` and
+  `Text` arguments are sanitized, and a `rich.table.Table` is deep-copied with
+  its columns, header, footer, title and caption sanitized.
+* `cartog/render/views.py::generate_digest()` returns
+  `sanitize_console_text("\n".join(lines))`, which also covers names and paths
+  inside the digest tables.
+* `docs/dev/PACKAGE_LAYOUT.md` lists the new `cartog/core/text.py` module.
+
+## Related suites
+
+Command: venv\Scripts\python.exe -m pytest tests\test_cli.py tests\test_package_layout.py tests\test_views_mermaid.py -q
+
+.......................................                                  [100%]
+39 passed in 74.01s (0:01:14)
+
+## Full suite
+
+Command: venv\Scripts\python.exe -m pytest tests\ -q
+Raw transcript: `docs/evidence/S6-control-chars-suite.txt`
+
+235 passed, 1 warning in 191.39s (0:03:11)
+
+233 -> 235: the two S6 tests, no test removed or weakened.
+
+## Golden
+
+Command: venv\Scripts\python.exe scripts\golden.py --check
+Raw transcript: `docs/evidence/S6-control-chars-golden.txt`
+
+click: 0 differences
+flask: 0 differences
+ky: 0 differences
+0 differences

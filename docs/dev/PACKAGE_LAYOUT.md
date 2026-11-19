@@ -108,6 +108,7 @@ the list is preserved in [§6](#6-removed-by-c1).
 | `(new)` | `cartog/core/diagnostics.py` | R12 |
 | `(new)` | `cartog/core/output.py` | — |
 | `(new)` | `cartog/core/proc.py` | — |
+| `(new)` | `cartog/core/text.py` | — |
 | `(new)` | `cartog/cli/commands/__init__.py` | R11 |
 | `(new)` | `cartog/cli/commands/analyze.py` | — |
 | `(new)` | `cartog/cli/commands/doctor.py` | R11 |
