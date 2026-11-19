@@ -39,7 +39,7 @@ The roadmap narrative is [`docs/IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.m
 | S5 | Path confinement and output-name sanitization | E3 | `feature/security-baseline` | S1, U3 | M | E3-S3 | DONE | 88b9c30 |
 | S6 | Strip terminal control characters | E3 | `feature/security-baseline` | S1 | S | E3-S4 | DONE | 2131338 |
 | S7 | Pin and checksum vendored libraries | E3 | `feature/security-baseline` | - | S | E3-S4 | DONE | ff8a2eb |
-| S8 | Configurable limits | E3 | `feature/security-baseline` | U2 | S | E3-S4 | TODO | — |
+| S8 | Configurable limits | E3 | `feature/security-baseline` | U2 | S | E3-S4 | DONE | 6c98f80 |
 | S9 | SECURITY.md | E3 | `feature/security-baseline` | S1–S8 | S | E3-S5 | TODO | — |
 | V1 | Timings and peak memory | E4 | `feature/verification` | U3 | S | E4-S1 | TODO | — |
 | V2 | index.scip never left in the analyzed repo | E4 | `feature/verification` | U4 | S | E4-S1 | TODO | — |
@@ -80,7 +80,7 @@ The roadmap narrative is [`docs/IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.m
 | E1 | `refactor/package-structure` | E0 | 13 / 13 | ACCEPTED | 2026-11-17 |
 | E1b | `refactor/drop-compat-shims` | E1 | 1 / 1 | ACCEPTED | 2026-11-17 |
 | E2 | `feature/unified-command-and-output` | E1b | 6 / 6 | ACCEPTED | 2026-11-19 |
-| E3 | `feature/security-baseline` | E2 | 7 / 9 | IN PROGRESS | no |
+| E3 | `feature/security-baseline` | E2 | 8 / 9 | IN PROGRESS | no |
 | E4 | `feature/verification` | E2 | 0 / 5 | NOT STARTED | no |
 | E5 | `feature/llm-layer` | E2, E3 | 0 / 11 | NOT STARTED | no |
 | E6 | `feature/gallery` | E3 | 0 / 4 | NOT STARTED | no |
@@ -892,10 +892,11 @@ At most one epic per session; within that epic, finish and commit each task befo
 - **User check (epic review):** Run with a tiny limit and confirm the error and `meta.json`.
 - **Evidence files:** `docs/evidence/S8-limits.txt`
 - **Planned commit message:** `S8: add configurable analysis limits`
-- **Status:** TODO
-- **Commit hash:** —
-- **Failure log:** —
-- **Change log:** —
+- **Status:** DONE
+- **Commit hash:** `6c98f80`
+- **Failure log:** Red run (`docs/evidence/S8-limits-red.txt`): `cartog.core.limits` did not exist (ModuleNotFoundError) and `build_meta()` rejected `limits=` (TypeError). Nothing stopped an oversized run and `meta.json` had no record of the active limits.
+- **Change log:**
+  - 2026-11-19: Added `cartog/core/limits.py` (`AnalysisLimitError`, `enforce_file_count`, `enforce_graph_size`, defaults 50k files / 200k nodes / 500k edges). `_execute_parse()` takes `max_files` and checks before parsing; `analyze` checks the merged graph before writing `graph.json`, exposes `--max-files`, `--max-graph-nodes`, `--max-graph-edges`, and passes a `limits` object to `build_meta()` for complete and failed runs. The CLI checks with tiny limits exit 3 and leave a failed `meta.json` containing the limits. Two tests (`test_limits_are_enforced`, `test_limits_are_reported_in_meta`); Decision 40 records why file size stays an exclusion and why `--max-nodes` is not reused. Suite 237 -> 239; golden 0 differences; ruff clean.
 
 ### S9: SECURITY.md
 
