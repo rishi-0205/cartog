@@ -31,6 +31,26 @@ This document tracks known issues, architectural limits, discrepancies, and reso
   When multiple blueprints define handlers with identical function names (e.g., `admin.index` vs `frontend.index`), flat symbol lookups require blueprint-qualified scoping to disambiguate. Handled in T7/T8 via qualified names, but edge cases with nested dynamic blueprints may fall back to first-match heuristics.
 - **Status:** MONITORED (resolved for standard Flask/Express patterns in T7/T8).
 
+### Rank 4: `analyze` reports duplicate node ids that the written graph does not contain
+- **Milestone / Area:** E2 (`cartog analyze` check step; U4).
+- **Severity:** Medium — a valid run exits `1`, so CI and reviewers see a failure that the artifact does not reproduce.
+- **Symptoms:**
+  Running `cartog analyze .` on this repository writes a complete 863-node graph but exits `1` with 247 `Duplicate node id '…' detected in graph` errors. `graph.json` contains 863 nodes and 863 unique ids, and `cartog check` on that file exits `0`. The duplicate list is accumulated in `Graph.duplicate_node_ids` while nodes are added/merged during assembly and is still reported by `validate_graph` after the graph has deduplicated.
+- **Evidence:** [`docs/evidence/E2-review-notes.txt`](./evidence/E2-review-notes.txt) (run `20261118T055640Z`: analyze exit `1`, 247 duplicate-id errors, 863/863 unique ids, standalone `check` exit `0`).
+- **Proposed Fix:**
+  Rebuild or clear `duplicate_node_ids` once assembly finishes, or have `validate_graph` ignore ids that appear once in `graph.nodes`. Add a regression test that builds a graph with a transient duplicate and asserts the final check passes.
+- **Status:** OPEN (noted during the E2 review, 2026-11-19).
+
+### Rank 5: `analyze` writes a heavy default output tree
+- **Milestone / Area:** E2 (`cartog analyze` defaults; U3/U4).
+- **Severity:** Low — disk and scan cost, not correctness.
+- **Symptoms:**
+  A 99-file repository produced 79.7 MB in one project folder: `graph.json`, 17 folder diagrams, a PNG, `digest.md`, the viewer, `logs/`, the full `stage/` tree (including the SCIP index), and a complete `latest/` copy. `--keep 1` limits history but still duplicates the newest run for `latest/`.
+- **Evidence:** [`docs/evidence/E2-review-notes.txt`](./evidence/E2-review-notes.txt) (tree, byte total, counts).
+- **Proposed Fix:**
+  Measure each artifact's cost before changing defaults; consider making folder diagrams, PNG rendering, or `stage/` opt-in, raising the folder-diagram threshold, and replacing the `latest/` copy with a cheaper mechanism where the platform allows it.
+- **Status:** DEFERRED (author review, 2026-11-19).
+
 ---
 
 ## Review Findings F1–F9 (2026-11-12)

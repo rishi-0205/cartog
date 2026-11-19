@@ -1,6 +1,6 @@
 # Cartog — Handoff Document
 
-**Last updated:** 2026-11-18 (E2 complete: U1–U6 DONE on `feature/unified-command-and-output`, awaiting epic review; suite is 216 tests passing)  
+**Last updated:** 2026-11-19 (E2 **ACCEPTED** by the author and merged into `main`; next epic is E3; suite is 216 tests passing)  
 **Role:** Single entry point for any model or developer picking up this project.  
 **Active Working Tasks:** See [`docs/WORKING_TASKS.md`](./WORKING_TASKS.md) for the live epic board and command loop. The historical T0–T21 board is [`docs/archive/WORKING_TASKS_T0-T21.md`](./archive/WORKING_TASKS_T0-T21.md).  
 **Git rules:** [`docs/dev/GIT_WORKFLOW.md`](./dev/GIT_WORKFLOW.md) — one branch per epic, commit per task, never push, merge only after `Accept <epic id>`.
@@ -78,7 +78,7 @@ Epic order is **E0 → E1 → E1b → E2 → E3 → E4 → E5 → E6 → E7 → 
 
 ---
 
-## 3. Next Tasks (E2 is complete; awaiting epic review)
+## 3. Next Tasks (E2 accepted; E3 is next)
 
 E0 (`fix/baseline-correctness`) was **ACCEPTED by the author on 2026-11-15** and merged into `main` with `git merge --no-ff`. H1–H5 are all DONE; the branch was deleted after the merge. E0 was built from `docs/task-plan` HEAD (`fcb11f2`), so that merge also brought the T22 documentation restructure into `main` (Decision 29 in `docs/ISSUES_AND_DECISIONS.md`).
 
@@ -86,7 +86,7 @@ E1 (`refactor/package-structure`) was **ACCEPTED by the author on 2026-11-17** a
 
 **E1b** (`refactor/drop-compat-shims`) was **ACCEPTED by the author on 2026-11-17** and merged into `main` with `git merge --no-ff`; the branch was deleted. Its single task, C1 (`2f2a0b5`), deleted the 13 shims and `cartog/langs/`, rewrote every test import to the new homes (`cartog.core.*`, `cartog.scan.*`, `cartog.parse.*`, `cartog.scip.*`, `cartog.graph.*`, `cartog.render.*`), replaced `test_public_imports_after_move` with `test_shims_are_gone`, and updated `docs/dev/PACKAGE_LAYOUT.md`. The old flat paths are gone from the tree and from the wheel; the suite is 194 passed and the goldens report `0 differences`.
 
-The current epic is **E2** (`feature/unified-command-and-output`), created from `main`. All six tasks are DONE and committed: U1 (`cb6ce54`) approved the design in `docs/dev/UNIFIED_COMMAND.md` after the author closed the gate on 2026-11-18; U2 (`53c654a`) added the per-user output home and project keys; U3 (`402c988`) added the atomic layout writer, copied `latest/`, and `--keep N` retention; U4 (`7991e3c`) added `cartog analyze <path>`; U5 (`4941894`) kept every stage command and added the canonical `--include-tests` / `--include-examples` spellings; U6 adds `docs/USAGE.md` and the documented-command tests. The contract is:
+E2 (`feature/unified-command-and-output`) was **ACCEPTED by the author on 2026-11-19** and merged into `main` with `git merge --no-ff`; the branch was deleted. All six tasks are DONE: U1 (`cb6ce54`) approved the design after the author closed the gate on 2026-11-18; U2 (`53c654a`) added the per-user output home and project keys; U3 (`402c988`) added the atomic layout writer, copied `latest/`, and `--keep N` retention; U4 (`7991e3c`) added `cartog analyze <path>`; U5 (`4941894`) kept every stage command and added the canonical `--include-tests` / `--include-examples` spellings; U6 (`7008403`) added `docs/USAGE.md` and the documented-command tests. The contract is:
 
 - `cartog analyze <path>` is the only unified entry point. Bare `cartog` prints help and exits `0`; an unknown top-level word exits `2`.
 - Default output is `<data-root>/projects/<name>-<sha1(path)[:8]>/runs/<run-id>/`, with a copied `latest/` and the parse cache in `<project>/cache`. `<data-root>` is `%LOCALAPPDATA%\cartog`, `~/Library/Application Support/cartog`, or `$XDG_DATA_HOME/cartog`; `CARTOG_HOME` overrides it, and `--out` writes directly with no `latest` and no pruning.
@@ -95,7 +95,7 @@ The current epic is **E2** (`feature/unified-command-and-output`), created from 
 - Every stage command (`parse`, `scip`, `build`, `map`, `check`, `flow`, `view`, `digest`, `query`, `doctor`) keeps its flags, help text, and exit codes; `cartog view` still opens by default.
 - `E501` stays ignored through E2 under Decision 35; the dedicated reflow moves to E3 and is tracked in `docs/KNOWN_ISSUES.md`.
 
-Next: the author reviews and accepts E2, then E3 (`feature/security-baseline`) starts. Full task fields, tests, and acceptance criteria are in [`docs/WORKING_TASKS.md`](./WORKING_TASKS.md); user-facing examples are in [`docs/USAGE.md`](./USAGE.md).
+Next: E3 (`feature/security-baseline`) starts from the accepted `main`. Two issues found while reviewing the first real `analyze` run are recorded in `docs/KNOWN_ISSUES.md` (Rank 4: duplicate-id check false positive; Rank 5: heavy default output tree). Full task fields, tests, and acceptance criteria are in [`docs/WORKING_TASKS.md`](./WORKING_TASKS.md); user-facing examples are in [`docs/USAGE.md`](./USAGE.md).
 
 ---
 
