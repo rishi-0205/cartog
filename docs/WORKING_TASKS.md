@@ -40,7 +40,7 @@ The roadmap narrative is [`docs/IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.m
 | S6 | Strip terminal control characters | E3 | `feature/security-baseline` | S1 | S | E3-S4 | DONE | 2131338 |
 | S7 | Pin and checksum vendored libraries | E3 | `feature/security-baseline` | - | S | E3-S4 | DONE | ff8a2eb |
 | S8 | Configurable limits | E3 | `feature/security-baseline` | U2 | S | E3-S4 | DONE | 6c98f80 |
-| S9 | SECURITY.md | E3 | `feature/security-baseline` | S1–S8 | S | E3-S5 | TODO | — |
+| S9 | SECURITY.md | E3 | `feature/security-baseline` | S1-S8 | S | E3-S5 | DONE | fe854ed |
 | V1 | Timings and peak memory | E4 | `feature/verification` | U3 | S | E4-S1 | TODO | — |
 | V2 | index.scip never left in the analyzed repo | E4 | `feature/verification` | U4 | S | E4-S1 | TODO | — |
 | V3 | SCIP environment investigation | E4 | `feature/verification` | V2 | M | E4-S2 | TODO | — |
@@ -80,7 +80,7 @@ The roadmap narrative is [`docs/IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.m
 | E1 | `refactor/package-structure` | E0 | 13 / 13 | ACCEPTED | 2026-11-17 |
 | E1b | `refactor/drop-compat-shims` | E1 | 1 / 1 | ACCEPTED | 2026-11-17 |
 | E2 | `feature/unified-command-and-output` | E1b | 6 / 6 | ACCEPTED | 2026-11-19 |
-| E3 | `feature/security-baseline` | E2 | 8 / 9 | IN PROGRESS | no |
+| E3 | `feature/security-baseline` | E2 | 9 / 9 | READY FOR EPIC REVIEW | no |
 | E4 | `feature/verification` | E2 | 0 / 5 | NOT STARTED | no |
 | E5 | `feature/llm-layer` | E2, E3 | 0 / 11 | NOT STARTED | no |
 | E6 | `feature/gallery` | E3 | 0 / 4 | NOT STARTED | no |
@@ -914,10 +914,11 @@ At most one epic per session; within that epic, finish and commit each task befo
 - **User check (epic review):** Read SECURITY.md and follow its links.
 - **Evidence files:** `docs/evidence/S9-security-doc.txt`
 - **Planned commit message:** `S9: add SECURITY.md threat model`
-- **Status:** TODO
-- **Commit hash:** —
-- **Failure log:** —
-- **Change log:** —
+- **Status:** DONE
+- **Commit hash:** `fe854ed`
+- **Failure log:** Red run (`docs/evidence/S9-security-doc-red.txt`): `SECURITY.md` was absent (`assert False` on `is_file()`), so neither the threat model nor its entry links existed. The first green attempt failed because the required topic words `path confinement` and `redaction` were only implied; the introduction now states all five properties explicitly.
+- **Change log:**
+  - 2026-11-19: Added `SECURITY.md` with the trust boundary, a threat/control/code/test table for all E3 controls, an explicit "What is not protected" section (trusted indexer binaries, no OS sandbox, static-analysis blind spots, browser/editor, secrets in the tree, slow-but-allowed runs), a private reporting route, and links to code standards, toolchain pins, decisions and evidence. Linked it from `README.md` and `docs/HANDOFF.md`. One test (`test_security_doc_links_resolve`) checks existence, both entry links, required topics, and that every relative link resolves; Decision 41 records the no-sandbox claim discipline. Suite 239 -> 240; golden 0 differences; ruff clean.
 
 ### V1: Timings and peak memory
 

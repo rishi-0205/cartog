@@ -163,7 +163,7 @@ stays ignored on purpose; it is debt, not a fix.
 
 | Rule | Count | Why it is ignored | Owner |
 |---|---|---|---|
-| `E501` line-too-long | 224 | Most hits are Typer `help=` strings, docstring examples and long assertions. Reflowing a help string changes `--help` output, and a blanket `ruff format` would churn lines the evidence transcripts quote. E2 adds a new CLI surface but does not rewrite the existing 224 hits. | E3 (dedicated lint pass; Decision 35) |
+| `E501` line-too-long | 224 (pre-E3 count) | Most hits are Typer `help=` strings, docstring examples and long assertions. Reflowing a help string changes `--help` output, and a blanket `ruff format` would churn lines the evidence transcripts quote. E3's S1–S9 tasks did not include the dedicated reflow, so the count is essentially unchanged and the item is still **owed**. | still owed after E3 (Decision 35); needs its own task to reflow and update any affected help/evidence |
 | `B008` function-call-in-default | — | Typer commands must declare `typer.Option(...)`/`typer.Argument(...)` in the signature; this is the documented idiom, not a bug. | stays ignored by design |
 
 R12 cleared the rest:
