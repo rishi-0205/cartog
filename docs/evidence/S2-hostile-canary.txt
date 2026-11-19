@@ -1,0 +1,64 @@
+# S2 evidence - hostile-repository canary
+
+Date: 2026-11-19 18:02:00
+Branch: feature/security-baseline
+
+## What the canary is
+
+`tests/fixtures/hostile_repo/` is a small mixed Python/JavaScript repository
+whose project files would write a marker if anything executed them:
+
+* `package.json` -> `postinstall` writes `HOSTILE_NPM_MARKER`;
+* `setup.py` -> writes `HOSTILE_SETUP_MARKER` next to itself.
+
+Proof that both payloads are real (executed deliberately in `.scratch/`, never by
+Cartog): `docs/evidence/S2-hostile-canary-armed.txt`.
+
+## Red: the fixture does not exist yet, so the guard cannot run
+
+Command: venv\Scripts\python.exe -m pytest tests\test_security.py -k hostile -q
+Raw transcript: `docs/evidence/S2-hostile-canary-red.txt`
+
+FAILED tests\test_security.py::test_hostile_postinstall_never_runs - Assertio...
+FAILED tests\test_security.py::test_hostile_setup_py_never_runs - AssertionEr...
+2 failed, 6 deselected in 0.53s
+
+    AssertionError: missing hostile fixture:
+    C:\...\tests\fixtures\hostile_repo
+
+This is a regression guard rather than a bug fix: the pipeline never had a code
+path that runs project code, and the test now proves it stays that way. The red
+run fails on the deliverable (the fixture + marker check) being absent, exactly
+as U6's documented-example guard did.
+
+## Green: the full non-SCIP pipeline leaves both markers absent
+
+Command: venv\Scripts\python.exe -m pytest tests\test_security.py -k hostile -q
+Raw transcript: `docs/evidence/S2-hostile-canary-green.txt`
+
+..                                                                       [100%]
+2 passed, 6 deselected in 5.27s
+
+Each test copies the fixture to `tmp_path`, runs
+`cartog analyze <copy> --out <tmp>/out --no-scip`, asserts exit code 0, and then
+asserts that no marker file exists anywhere under `tmp_path`. The postinstall
+test also asserts no `node_modules` directory was created.
+
+## Full suite
+
+Command: venv\Scripts\python.exe -m pytest tests\ -q
+Raw transcript: `docs/evidence/S2-hostile-canary-suite.txt`
+
+224 passed, 1 warning in 208.32s (0:03:28)
+
+222 -> 224: the two S2 tests, no test removed or weakened.
+
+## Golden
+
+Command: venv\Scripts\python.exe scripts\golden.py --check
+Raw transcript: `docs/evidence/S2-hostile-canary-golden.txt`
+
+click: 0 differences
+flask: 0 differences
+ky: 0 differences
+0 differences

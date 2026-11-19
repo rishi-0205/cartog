@@ -16,14 +16,20 @@ Each section of this file belongs to one E3 task and was added red-first:
 from __future__ import annotations
 
 import ast
+import shutil
 import sys
 import time
 from pathlib import Path
 
 import pytest
+from typer.testing import CliRunner
+
+from cartog.cli import app
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 PACKAGE_ROOT = REPO_ROOT / "cartog"
+HOSTILE_FIXTURE = REPO_ROOT / "tests" / "fixtures" / "hostile_repo"
+CLI = CliRunner()
 
 
 # --------------------------------------------------------------------------- S1
@@ -109,3 +115,44 @@ def test_runner_never_uses_shell(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(proc.subprocess, "run", spy)
     proc.run([sys.executable, "-c", "pass"], allow_python=True, timeout=10)
     assert seen.get("shell") is False
+
+
+# --------------------------------------------------------------------------- S2
+
+
+def _copy_hostile_repo(tmp_path: Path) -> Path:
+    """Copy the hostile fixture and prove the canary is still armed."""
+    assert HOSTILE_FIXTURE.is_dir(), f"missing hostile fixture: {HOSTILE_FIXTURE}"
+    package = (HOSTILE_FIXTURE / "package.json").read_text(encoding="utf-8")
+    setup = (HOSTILE_FIXTURE / "setup.py").read_text(encoding="utf-8")
+    assert "HOSTILE_NPM_MARKER" in package, "the postinstall canary lost its marker"
+    assert "HOSTILE_SETUP_MARKER" in setup, "the setup.py canary lost its marker"
+    dest = tmp_path / "hostile_repo"
+    shutil.copytree(HOSTILE_FIXTURE, dest)
+    return dest
+
+
+def _assert_marker_absent(tmp_path: Path, name: str) -> None:
+    hits = [path for path in tmp_path.rglob(name) if path.is_file()]
+    assert hits == [], f"hostile repository executed project code: {hits}"
+
+
+def test_hostile_postinstall_never_runs(tmp_path: Path) -> None:
+    """`npm install` is never run, so a postinstall marker can never appear."""
+    repo = _copy_hostile_repo(tmp_path)
+    result = CLI.invoke(
+        app, ["analyze", str(repo), "--out", str(tmp_path / "out"), "--no-scip"]
+    )
+    assert result.exit_code == 0, result.stdout
+    assert not (repo / "node_modules").exists()
+    _assert_marker_absent(tmp_path, "HOSTILE_NPM_MARKER")
+
+
+def test_hostile_setup_py_never_runs(tmp_path: Path) -> None:
+    """`setup.py` is analysed as text, never imported or executed."""
+    repo = _copy_hostile_repo(tmp_path)
+    result = CLI.invoke(
+        app, ["analyze", str(repo), "--out", str(tmp_path / "out"), "--no-scip"]
+    )
+    assert result.exit_code == 0, result.stdout
+    _assert_marker_absent(tmp_path, "HOSTILE_SETUP_MARKER")

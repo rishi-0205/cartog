@@ -1,0 +1,8 @@
+{
+  "name": "hostile-repo",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "postinstall": "node -e \"require('fs').writeFileSync('HOSTILE_NPM_MARKER','postinstall ran')\""
+  }
+}
