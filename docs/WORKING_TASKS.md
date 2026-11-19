@@ -38,7 +38,7 @@ The roadmap narrative is [`docs/IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.m
 | S4 | Sanitize Mermaid labels | E3 | `feature/security-baseline` | S3 | S | E3-S3 | DONE | 12c24f6 |
 | S5 | Path confinement and output-name sanitization | E3 | `feature/security-baseline` | S1, U3 | M | E3-S3 | DONE | 88b9c30 |
 | S6 | Strip terminal control characters | E3 | `feature/security-baseline` | S1 | S | E3-S4 | DONE | 2131338 |
-| S7 | Pin and checksum vendored libraries | E3 | `feature/security-baseline` | — | S | E3-S4 | TODO | — |
+| S7 | Pin and checksum vendored libraries | E3 | `feature/security-baseline` | - | S | E3-S4 | DONE | ff8a2eb |
 | S8 | Configurable limits | E3 | `feature/security-baseline` | U2 | S | E3-S4 | TODO | — |
 | S9 | SECURITY.md | E3 | `feature/security-baseline` | S1–S8 | S | E3-S5 | TODO | — |
 | V1 | Timings and peak memory | E4 | `feature/verification` | U3 | S | E4-S1 | TODO | — |
@@ -80,7 +80,7 @@ The roadmap narrative is [`docs/IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.m
 | E1 | `refactor/package-structure` | E0 | 13 / 13 | ACCEPTED | 2026-11-17 |
 | E1b | `refactor/drop-compat-shims` | E1 | 1 / 1 | ACCEPTED | 2026-11-17 |
 | E2 | `feature/unified-command-and-output` | E1b | 6 / 6 | ACCEPTED | 2026-11-19 |
-| E3 | `feature/security-baseline` | E2 | 6 / 9 | IN PROGRESS | no |
+| E3 | `feature/security-baseline` | E2 | 7 / 9 | IN PROGRESS | no |
 | E4 | `feature/verification` | E2 | 0 / 5 | NOT STARTED | no |
 | E5 | `feature/llm-layer` | E2, E3 | 0 / 11 | NOT STARTED | no |
 | E6 | `feature/gallery` | E3 | 0 / 4 | NOT STARTED | no |
@@ -870,10 +870,11 @@ At most one epic per session; within that epic, finish and commit each task befo
 - **User check (epic review):** `pytest -k vendor -q`; `cartog doctor`.
 - **Evidence files:** `docs/evidence/S7-vendor-pins.txt`
 - **Planned commit message:** `S7: pin and checksum vendored libraries`
-- **Status:** TODO
-- **Commit hash:** —
-- **Failure log:** —
-- **Change log:** —
+- **Status:** DONE
+- **Commit hash:** `ff8a2eb`
+- **Failure log:** Red run (`docs/evidence/S7-vendor-pins-red.txt`): `VENDOR_LOCK.json` was absent and `cartog.core.toolchain` did not exist. The first full-suite run after implementing also caught `test_agents_points_to_docs_dev`, which requires every `docs/dev/*.md` to be linked from `AGENTS.md`; the new `TOOLCHAIN.md` link fixed it.
+- **Change log:**
+  - 2026-11-19: Added `cartog/render/assets/VENDOR_LOCK.json` (five libraries: name, version, MIT licence, SHA-256 normalised to LF), `cartog/core/toolchain.py` (`MINIMUM_TOOL_VERSIONS`, `parse_version`, `version_meets_minimum`), minimum checks in `doctor` for node/mmdc/scip-python/scip-typescript/madge, and `docs/dev/TOOLCHAIN.md` linked from `AGENTS.md`. Two tests (`test_vendor_asset_hashes_match_lock`, `test_doctor_checks_tool_versions`); Decision 39 records the LF-normalised hash rule and the code-owned minimums. Suite 235 -> 237; golden 0 differences; ruff clean.
 
 ### S8: Configurable limits
 
