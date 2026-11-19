@@ -33,7 +33,7 @@ The roadmap narrative is [`docs/IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.m
 | U5 | Keep stage commands and consolidate flags | E2 | `feature/unified-command-and-output` | U4 | M | E2-S5 | DONE | 4941894 |
 | U6 | Docs and tests for the new flow | E2 | `feature/unified-command-and-output` | U4, U5 | S | E2-S5 | DONE | 7008403 |
 | S1 | One subprocess runner | E3 | `feature/security-baseline` | U4 | M | E3-S1 | DONE | b5c96d8 |
-| S2 | Hostile canary repository | E3 | `feature/security-baseline` | S1 | S | E3-S1 | TODO | — |
+| S2 | Hostile canary repository | E3 | `feature/security-baseline` | S1 | S | E3-S1 | DONE | d0b7731 |
 | S3 | Escape everything embedded in map.html | E3 | `feature/security-baseline` | U4 | M | E3-S2 | TODO | — |
 | S4 | Sanitize Mermaid labels | E3 | `feature/security-baseline` | S3 | S | E3-S3 | TODO | — |
 | S5 | Path confinement and output-name sanitization | E3 | `feature/security-baseline` | S1, U3 | M | E3-S3 | TODO | — |
@@ -80,7 +80,7 @@ The roadmap narrative is [`docs/IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.m
 | E1 | `refactor/package-structure` | E0 | 13 / 13 | ACCEPTED | 2026-11-17 |
 | E1b | `refactor/drop-compat-shims` | E1 | 1 / 1 | ACCEPTED | 2026-11-17 |
 | E2 | `feature/unified-command-and-output` | E1b | 6 / 6 | ACCEPTED | 2026-11-19 |
-| E3 | `feature/security-baseline` | E2 | 1 / 9 | IN PROGRESS | no |
+| E3 | `feature/security-baseline` | E2 | 2 / 9 | IN PROGRESS | no |
 | E4 | `feature/verification` | E2 | 0 / 5 | NOT STARTED | no |
 | E5 | `feature/llm-layer` | E2, E3 | 0 / 11 | NOT STARTED | no |
 | E6 | `feature/gallery` | E3 | 0 / 4 | NOT STARTED | no |
@@ -762,10 +762,11 @@ At most one epic per session; within that epic, finish and commit each task befo
 - **User check (epic review):** `pytest tests/test_security.py -k hostile -q`
 - **Evidence files:** `docs/evidence/S2-hostile-canary.txt`
 - **Planned commit message:** `S2: add hostile-repository canary`
-- **Status:** TODO
-- **Commit hash:** —
-- **Failure log:** —
-- **Change log:** —
+- **Status:** DONE
+- **Commit hash:** `d0b7731`
+- **Failure log:** Red run (`docs/evidence/S2-hostile-canary-red.txt`): both tests failed with `AssertionError: missing hostile fixture` before the fixture existed. This is a regression guard: the pipeline already never executed project code, and the red failure is the absent deliverable, recorded honestly instead of faking a vulnerable pipeline.
+- **Change log:**
+  - 2026-11-19: Added `tests/fixtures/hostile_repo/` (`package.json` postinstall and `setup.py` payloads, plus one Python and one JavaScript file to parse) and two tests that copy it to a temp directory, run `cartog analyze --no-scip`, and assert neither marker nor `node_modules` appears. Added `docs/evidence/S2-hostile-canary-armed.txt` proving both payloads really write their markers when executed in a throwaway directory. Suite 222 → 224; golden 0 differences; ruff clean.
 
 ### S3: Escape everything embedded in map.html
 
