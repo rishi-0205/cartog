@@ -36,7 +36,7 @@ The roadmap narrative is [`docs/IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.m
 | S2 | Hostile canary repository | E3 | `feature/security-baseline` | S1 | S | E3-S1 | DONE | d0b7731 |
 | S3 | Escape everything embedded in map.html | E3 | `feature/security-baseline` | U4 | M | E3-S2 | DONE | aba352b |
 | S4 | Sanitize Mermaid labels | E3 | `feature/security-baseline` | S3 | S | E3-S3 | DONE | 12c24f6 |
-| S5 | Path confinement and output-name sanitization | E3 | `feature/security-baseline` | S1, U3 | M | E3-S3 | TODO | — |
+| S5 | Path confinement and output-name sanitization | E3 | `feature/security-baseline` | S1, U3 | M | E3-S3 | DONE | 88b9c30 |
 | S6 | Strip terminal control characters | E3 | `feature/security-baseline` | S1 | S | E3-S4 | TODO | — |
 | S7 | Pin and checksum vendored libraries | E3 | `feature/security-baseline` | — | S | E3-S4 | TODO | — |
 | S8 | Configurable limits | E3 | `feature/security-baseline` | U2 | S | E3-S4 | TODO | — |
@@ -80,7 +80,7 @@ The roadmap narrative is [`docs/IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.m
 | E1 | `refactor/package-structure` | E0 | 13 / 13 | ACCEPTED | 2026-11-17 |
 | E1b | `refactor/drop-compat-shims` | E1 | 1 / 1 | ACCEPTED | 2026-11-17 |
 | E2 | `feature/unified-command-and-output` | E1b | 6 / 6 | ACCEPTED | 2026-11-19 |
-| E3 | `feature/security-baseline` | E2 | 4 / 9 | IN PROGRESS | no |
+| E3 | `feature/security-baseline` | E2 | 5 / 9 | IN PROGRESS | no |
 | E4 | `feature/verification` | E2 | 0 / 5 | NOT STARTED | no |
 | E5 | `feature/llm-layer` | E2, E3 | 0 / 11 | NOT STARTED | no |
 | E6 | `feature/gallery` | E3 | 0 / 4 | NOT STARTED | no |
@@ -827,10 +827,11 @@ At most one epic per session; within that epic, finish and commit each task befo
 - **User check (epic review):** `pytest tests/test_security.py -k path -q` (junction test may skip without privilege).
 - **Evidence files:** `docs/evidence/S5-path-confinement.txt`
 - **Planned commit message:** `S5: confine output paths and sanitize names`
-- **Status:** TODO
-- **Commit hash:** —
-- **Failure log:** —
-- **Change log:** —
+- **Status:** DONE
+- **Commit hash:** `88b9c30`
+- **Failure log:** Red run (`docs/evidence/S5-path-confinement-red.txt`): all four tests failed. `OutputPathError` did not exist; `RunLayout` joined untrusted strings directly, so `../escaped.txt` and an absolute path escaped; a junction at `out/view` was followed on write; `os.walk` descended through a junction and scanned `linked/secret.py`; `sanitize_project_name("CON.txt")` returned `CON.txt` instead of escaping the reserved stem.
+- **Change log:**
+  - 2026-11-19: Added `OutputPathError` and `RunLayout._confined_path()`: absolute paths, `..` climbs and resolved paths outside `run_dir` (including through a junction) are refused, and writers return the resolved destination. `walk_files` now prunes symlink and junction directories and skips symlinked files resolving outside the repository, recording each skip. `sanitize_project_name()` checks the pre-extension stem against `RESERVED_NAMES` and reapplies the length cap after prefixing. Four tests (`test_output_path_escape_rejected`, `test_path_junction_outside_repo_rejected`, `test_path_junction_outside_repo_not_scanned`, `test_path_repo_name_sanitized`); Decision 37 records why the junction cases carry the `path_` infix. Suite 229 -> 233; golden 0 differences; ruff clean.
 
 ### S6: Strip terminal control characters
 
