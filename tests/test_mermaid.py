@@ -8,7 +8,8 @@ from cartog.render.export_mermaid import generate_flow_mermaid, generate_overvie
 
 def test_sanitize_helpers():
     assert sanitize_id("foo/bar-baz.py") == "foo_bar_baz_py"
-    assert sanitize_label('hello "world" [test]') == 'hello \\"world\\" (test)'
+    # S4: Mermaid rejects \" inside a quoted label, so quotes use the entity code.
+    assert sanitize_label('hello "world" [test]') == 'hello #quot;world#quot; (test)'
 
 
 def test_generate_overview_mermaid():

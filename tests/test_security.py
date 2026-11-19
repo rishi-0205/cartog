@@ -231,3 +231,55 @@ def test_html_csp_blocks_network() -> None:
     assert "default-src 'none'" in policy
     for origin in ("http:", "https:", "ws:", "wss:", "*"):
         assert origin not in policy, f"CSP allows a network origin: {origin}"
+
+
+# --------------------------------------------------------------------------- S4
+
+_MERMAID_HOSTILE = (
+    'x" [y] <b>hi</b> `code` %%{init: {"securityLevel":"loose"}}%%\nsecond & more'
+)
+
+
+def test_mermaid_label_rejects_directives() -> None:
+    """A label cannot carry markup, a directive, a comment or a second line."""
+    from cartog.render.export_mermaid import sanitize_label
+
+    label = sanitize_label(_MERMAID_HOSTILE)
+
+    assert "\n" not in label and "\r" not in label
+    assert "%%" not in label, "a directive or comment survived"
+    assert "<" not in label and ">" not in label
+    assert "`" not in label
+    assert '\\"' not in label, "Mermaid rejects backslash-quote inside a quoted label"
+    assert "#quot;" in label
+    assert "[y]" not in label, "brackets would close the node shape"
+
+
+def test_mermaid_hostile_label_validates_with_mmdc(tmp_path: Path) -> None:
+    """The generated diagram with a hostile name renders through mmdc."""
+    from cartog.core.model import Graph, Node
+    from cartog.render.export_mermaid import generate_overview_mermaid, render_mermaid
+
+    if shutil.which("mmdc") is None:
+        pytest.skip("mmdc (mermaid-cli) is not installed")
+
+    graph = Graph()
+    graph.meta = {"target_path": "hostile"}
+    graph.add_node(
+        Node(
+            id="file_evil",
+            name=_MERMAID_HOSTILE,
+            qualified_name=_MERMAID_HOSTILE,
+            kind="file",
+            path="evil.py",
+        )
+    )
+    mmd = generate_overview_mermaid(graph)
+    assert "#quot;" in mmd, "the hostile file label is not in the diagram"
+    assert "%%" not in mmd, "a comment or directive marker survived"
+
+    mmd_file = tmp_path / "hostile.mmd"
+    mmd_file.write_text(mmd, encoding="utf-8")
+    ok, message = render_mermaid(mmd_file, tmp_path / "hostile.svg")
+    assert ok, message
+    assert (tmp_path / "hostile.svg").is_file()

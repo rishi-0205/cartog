@@ -1,0 +1,103 @@
+# S4 evidence - sanitize Mermaid labels
+
+Date: 2026-11-19 18:52:00
+Branch: feature/security-baseline
+
+## Mermaid security documentation (checked 2026-11-19)
+
+Installed tool: `mmdc 12.0.0` (mermaid-cli), which depends on `mermaid ^12.0.0`
+(https://mermaid.js.org, version banner 12.3.0 at fetch time).
+
+From "API-Usage -> securityLevel"
+(https://mermaid.js.org/config/usage.html):
+
+> - **strict**: (**default**) HTML tags in the text are encoded and click
+>   functionality is disabled.
+> - **antiscript**: HTML tags in text are allowed (only script elements are
+>   removed) and click functionality is enabled.
+> - **loose**: HTML tags in text are allowed and click functionality is enabled.
+
+From "Directives" (https://mermaid.js.org/config/directives.html):
+
+> Directives give a diagram author the capability to alter the appearance of a
+> diagram before rendering by changing the applied configuration.
+>
+> A directive always starts and ends with `%%` signs with directive text in
+> between, like `%% {directive_text} %%`.
+
+So `securityLevel` protects against raw HTML only while it stays `strict`, and
+`%%{init: {...}}%%` is a *label-independent* configuration channel that a
+diagram author controls — exactly what a hostile symbol name must not reach.
+
+## Behaviour checked with mmdc before writing the sanitizer
+
+| label inside `A["..."]` | mmdc 12.0.0 |
+|---|---|
+| `x\" y` (backslash-quote) | **parse error** |
+| `x&quot; y` | renders |
+| `x#quot; y` | renders |
+| `#96;code#96;` | renders |
+| `#37;#37;{init: ...}` | renders (directive neutralised) |
+| `&lt;b&gt;hi&lt;/b&gt;` | renders |
+
+This is why quotes use `#quot;` and not `\"`: the old sanitizer produced output
+Mermaid cannot parse. The existing `tests/test_mermaid.py::test_sanitize_helpers`
+expectation was updated from `hello \"world\" (test)` to
+`hello #quot;world#quot; (test)` in the same commit; the assertion is stricter
+(valid output) and is documented in the change log.
+
+## Red: dangerous label text passes through and mmdc rejects the diagram
+
+Command: venv\Scripts\python.exe -m pytest tests\test_security.py -k mermaid -q
+Raw transcript: `docs/evidence/S4-mermaid-sanitize-red.txt`
+
+FAILED tests\test_security.py::test_mermaid_label_rejects_directives - assert...
+FAILED tests\test_security.py::test_mermaid_hostile_label_validates_with_mmdc
+2 failed, 11 deselected in 0.59s
+
+The generated diagram still contained:
+
+    file_file_evil["x\" (y) <b>hi</b> `code` %%{init: {\"securityLevel\":...
+
+i.e. raw HTML, a backtick span, a live `%%{init: ...}%%` directive, a newline
+inside the label, and a `\"` escape Mermaid cannot parse.
+
+## Green
+
+Command: venv\Scripts\python.exe -m pytest tests\test_security.py -k mermaid tests\test_mermaid.py -q
+Raw transcript: `docs/evidence/S4-mermaid-sanitize-green.txt`
+
+...............                                                          [100%]
+15 passed, 11 deselected in 2.29s
+
+`sanitize_label()` now:
+
+* collapses CR/LF/TAB to spaces (one label line);
+* encodes `&` as `&amp;`, `<`/`>` as `&lt;`/`&gt;`;
+* encodes `"` as `#quot;` and backticks as `#96;`;
+* encodes `%` as `#37;`, so `%%` and `%%{init}%%` can never form;
+* keeps the existing bracket-to-parenthesis replacement.
+
+`test_mermaid_hostile_label_validates_with_mmdc` builds a graph whose file name is
+`x" [y] <b>hi</b> `code` %%{init: {"securityLevel":"loose"}}%%<newline>second & more`,
+generates the overview with the real generator, writes it to a temp `.mmd`, and
+renders it with `mmdc` to SVG; the render succeeds and the SVG exists.
+
+## Full suite
+
+Command: venv\Scripts\python.exe -m pytest tests\ -q
+Raw transcript: `docs/evidence/S4-mermaid-sanitize-suite.txt`
+
+229 passed, 1 warning in 206.76s (0:03:26)
+
+227 -> 229: the two S4 tests, no test removed or weakened.
+
+## Golden
+
+Command: venv\Scripts\python.exe scripts\golden.py --check
+Raw transcript: `docs/evidence/S4-mermaid-sanitize-golden.txt`
+
+click: 0 differences
+flask: 0 differences
+ky: 0 differences
+0 differences

@@ -22,8 +22,25 @@ def sanitize_id(raw_id: str) -> str:
 
 
 def sanitize_label(text: str) -> str:
-    """Sanitize node label text by escaping quotes and problematic characters."""
-    clean = text.replace('"', '\\"').replace("[", "(").replace("]", ")")
+    """Return label text that Mermaid renders literally.
+
+    Mermaid renders HTML in labels at its default security level and treats
+    ``%%`` as a comment/directive marker, so a hostile symbol name could inject
+    markup or a ``%%{init}%%`` directive. Everything that can change meaning is
+    replaced with a Mermaid entity code or a look-alike character; the output
+    fits on one line inside a double-quoted label. ``\\"`` is *not* used for
+    quotes because Mermaid's parser rejects it inside a quoted label (verified
+    with mmdc 12.0.0).
+    """
+    clean = str(text)
+    for newline in ("\r\n", "\r", "\n", "\t"):
+        clean = clean.replace(newline, " ")
+    clean = clean.replace("&", "&amp;")
+    clean = clean.replace("<", "&lt;").replace(">", "&gt;")
+    clean = clean.replace('"', "#quot;")
+    clean = clean.replace("`", "#96;")
+    clean = clean.replace("%", "#37;")
+    clean = clean.replace("[", "(").replace("]", ")")
     return clean.strip()
 
 
