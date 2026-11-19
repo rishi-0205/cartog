@@ -5,13 +5,12 @@ internal edge summarization, and budget-aware node limits.
 """
 
 import re
-import subprocess
-import sys
 from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any
 
 from cartog.core.model import Edge, Graph, Node
+from cartog.core.proc import run as run_process
 from cartog.render.views import classify_boundary_functions, detect_noise_files, get_call_counts, rewire_view_edges
 
 CATEGORIES = ("tests", "docs", "examples", "scripts")
@@ -1135,14 +1134,8 @@ def render_mermaid(
     ]
 
     try:
-        proc = subprocess.run(
-            cmd,
-            shell=sys.platform == "win32",
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-        if proc.returncode == 0 and out_p.exists():
+        proc = run_process(cmd, timeout=600)
+        if proc.ok and out_p.exists():
             return True, f"Successfully rendered to {out_p.as_posix()}"
 
         # Check for ELK failure and fallback to Dagre
@@ -1150,14 +1143,8 @@ def render_mermaid(
         if "defaultRenderer" in content and "elk" in content:
             dagre_content = re.sub(r'%%\{init:\s*\{"flowchart":\s*\{"defaultRenderer":\s*"elk"\}\}\s*\}%%\n?', '', content)
             in_p.write_text(dagre_content, encoding="utf-8")
-            retry_proc = subprocess.run(
-                cmd,
-                shell=sys.platform == "win32",
-                capture_output=True,
-                text=True,
-                check=False,
-            )
-            if retry_proc.returncode == 0 and out_p.exists():
+            retry_proc = run_process(cmd, timeout=600)
+            if retry_proc.ok and out_p.exists():
                 return True, f"Successfully rendered to {out_p.as_posix()} (fallback from ELK to Dagre)"
 
         err = proc.stderr.strip() or proc.stdout.strip() or f"Exit code {proc.returncode}"

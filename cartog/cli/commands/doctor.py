@@ -5,12 +5,12 @@ unchanged.
 """
 
 import shutil
-import subprocess
 import sys
 
 from rich.table import Table
 
 from cartog.cli.shared import app, console
+from cartog.core.proc import run as run_process
 
 
 @app.command()
@@ -98,14 +98,20 @@ def doctor() -> None:
             "Auto-generated during SCIP integration",
         )
 
-    is_win = sys.platform == "win32"
-
     # 5. Node.js on PATH
     node_path = shutil.which("node")
     if node_path:
         try:
-            res = subprocess.run(["node", "--version"], capture_output=True, text=True, check=True, shell=is_win)
-            table.add_row("Node.js", "[green]PASS[/green]", res.stdout.strip(), "-")
+            res = run_process(["node", "--version"], timeout=15)
+            if res.ok:
+                table.add_row("Node.js", "[green]PASS[/green]", res.stdout.strip(), "-")
+            else:
+                table.add_row(
+                    "Node.js",
+                    "[red]FAIL[/red]",
+                    f"Exit code {res.returncode}",
+                    "Ensure Node.js is executable",
+                )
         except Exception as e:
             table.add_row("Node.js", "[red]FAIL[/red]", f"Found but error: {e}", "Ensure Node.js is executable")
     else:
@@ -117,8 +123,8 @@ def doctor() -> None:
         try:
             from cartog.scip.runner import get_indexer_env
             env = get_indexer_env("scip-python")
-            res = subprocess.run(["scip-python", "--version"], capture_output=True, text=True, timeout=5, shell=is_win, env=env)
-            if res.returncode == 0:
+            res = run_process(["scip-python", "--version"], timeout=5, env=env)
+            if res.ok:
                 table.add_row("scip-python", "[green]PASS[/green]", f"v{res.stdout.strip()}", "-")
             else:
                 table.add_row("scip-python", "[yellow]WARN[/yellow]", f"Exit code {res.returncode}", "npm install -g @sourcegraph/scip-python")
@@ -136,8 +142,11 @@ def doctor() -> None:
     scip_ts_path = shutil.which("scip-typescript")
     if scip_ts_path:
         try:
-            res = subprocess.run(["scip-typescript", "--version"], capture_output=True, text=True, timeout=5, shell=is_win)
-            table.add_row("scip-typescript", "[green]PASS[/green]", f"v{res.stdout.strip()}", "-")
+            res = run_process(["scip-typescript", "--version"], timeout=5)
+            if res.ok:
+                table.add_row("scip-typescript", "[green]PASS[/green]", f"v{res.stdout.strip()}", "-")
+            else:
+                table.add_row("scip-typescript", "[yellow]WARN[/yellow]", f"Exit code {res.returncode}", "npm install -g @sourcegraph/scip-typescript")
         except Exception as e:
             table.add_row("scip-typescript", "[yellow]WARN[/yellow]", str(e)[:30], "npm install -g @sourcegraph/scip-typescript")
     else:
@@ -152,8 +161,11 @@ def doctor() -> None:
     mmdc_path = shutil.which("mmdc")
     if mmdc_path:
         try:
-            res = subprocess.run(["mmdc", "--version"], capture_output=True, text=True, timeout=10, shell=is_win)
-            table.add_row("mmdc (mermaid-cli)", "[green]PASS[/green]", f"v{res.stdout.strip()}", "-")
+            res = run_process(["mmdc", "--version"], timeout=10)
+            if res.ok:
+                table.add_row("mmdc (mermaid-cli)", "[green]PASS[/green]", f"v{res.stdout.strip()}", "-")
+            else:
+                table.add_row("mmdc (mermaid-cli)", "[yellow]WARN[/yellow]", f"Exit code {res.returncode}", "npm install -g @mermaid-js/mermaid-cli")
         except Exception as e:
             table.add_row("mmdc (mermaid-cli)", "[yellow]WARN[/yellow]", str(e)[:30], "npm install -g @mermaid-js/mermaid-cli")
     else:
@@ -174,8 +186,11 @@ def doctor() -> None:
     madge_path = shutil.which("madge")
     if madge_path:
         try:
-            res = subprocess.run(["madge", "--version"], capture_output=True, text=True, timeout=5, shell=is_win)
-            table.add_row("madge (verification)", "[green]PASS[/green]", f"v{res.stdout.strip()}", "-")
+            res = run_process(["madge", "--version"], timeout=5)
+            if res.ok:
+                table.add_row("madge (verification)", "[green]PASS[/green]", f"v{res.stdout.strip()}", "-")
+            else:
+                table.add_row("madge (verification)", "[yellow]WARN[/yellow]", f"Exit code {res.returncode}", "npm install -g madge")
         except Exception as e:
             table.add_row("madge (verification)", "[yellow]WARN[/yellow]", str(e)[:30], "npm install -g madge")
     else:
