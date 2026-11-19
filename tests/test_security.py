@@ -547,3 +547,62 @@ def test_doctor_checks_tool_versions(monkeypatch: pytest.MonkeyPatch) -> None:
     output = stream.getvalue()
     assert "below minimum" in output, "doctor did not report the old versions"
     assert "minimum v" in output, "the report does not state the required version"
+
+
+# --------------------------------------------------------------------------- S8
+
+
+def test_limits_are_enforced(tmp_path: Path) -> None:
+    """File-count, node-count and edge-count limits stop the run."""
+    from cartog.cli.shared import _execute_parse
+    from cartog.core.limits import (
+        AnalysisLimitError,
+        enforce_file_count,
+        enforce_graph_size,
+    )
+
+    with pytest.raises(AnalysisLimitError, match="file limit"):
+        enforce_file_count(5, 4)
+    with pytest.raises(AnalysisLimitError, match="graph node limit"):
+        enforce_graph_size(11, 0, max_nodes=10, max_edges=10)
+    with pytest.raises(AnalysisLimitError, match="edge limit"):
+        enforce_graph_size(1, 11, max_nodes=10, max_edges=10)
+
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    (repo / "a.py").write_text("x = 1\n", encoding="utf-8")
+    (repo / "b.py").write_text("y = 2\n", encoding="utf-8")
+
+    with pytest.raises(AnalysisLimitError, match="--max-files"):
+        _execute_parse(
+            path=str(repo),
+            out=str(tmp_path / "out"),
+            no_max_file_size=True,
+            max_files=1,
+        )
+
+
+def test_limits_are_reported_in_meta() -> None:
+    """meta.json carries every active limit, so a run is self-describing."""
+    from cartog.core.output import build_meta
+
+    limits = {
+        "max_file_size_mb": 1.0,
+        "max_files": 10,
+        "max_graph_nodes": 20,
+        "max_graph_edges": 30,
+    }
+    meta = build_meta(
+        run_id="20260101T000000Z",
+        status="complete",
+        project={"name": "p", "hash": "h", "path": "/p"},
+        target={"path": "/p", "languages": ["python"]},
+        options={},
+        counts={"files": 1, "nodes": 2, "edges": 3},
+        tools={"cartog": "0.0.0", "scip_python": None, "mmdc": None},
+        started_at="2026-01-01T00:00:00+00:00",
+        finished_at="2026-01-01T00:00:01+00:00",
+        cartog_version="0.0.0",
+        limits=limits,
+    )
+    assert meta["limits"] == limits

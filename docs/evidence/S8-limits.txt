@@ -1,0 +1,83 @@
+# S8 evidence - configurable analysis limits
+
+Date: 2026-11-19 21:02:00
+Branch: feature/security-baseline
+
+## Red: no limits module, no limits in meta
+
+Command: venv\Scripts\python.exe -m pytest tests\test_security.py -k limits -q
+Raw transcript: `docs/evidence/S8-limits-red.txt`
+
+FAILED tests/test_security.py::test_limits_are_enforced - ModuleNotFoundError...
+FAILED tests/test_security.py::test_limits_are_reported_in_meta - TypeError: ...
+2 failed, 21 deselected in 0.57s
+
+`cartog.core.limits` did not exist, so nothing stopped a run on an oversized
+repository, and `build_meta()` rejected the `limits` keyword.
+
+## Green
+
+Command: venv\Scripts\python.exe -m pytest tests\test_security.py -k limits -q
+Raw transcript: `docs/evidence/S8-limits-green.txt`
+
+..                                                                       [100%]
+2 passed, 21 deselected in 0.71s
+
+What the fix does:
+
+* New `cartog/core/limits.py`: `AnalysisLimitError`; `enforce_file_count()`
+  (default 50,000 files); `enforce_graph_size()` (default 200,000 nodes and
+  500,000 edges). Each message names the exceeded count, the limit, and the
+  flag that raises it.
+* `_execute_parse()` accepts `max_files` and checks the discovered count before
+  parsing; `analyze` passes it through.
+* `analyze` checks the merged graph immediately after `build_graph()` and before
+  `graph.json` is written, so an oversized run publishes no graph.
+* Three flags on `analyze`: `--max-files`, `--max-graph-nodes`,
+  `--max-graph-edges`. The existing `--max-file-size` remains the per-file
+  exclusion threshold (files above it are listed as skipped, not truncated).
+* `build_meta()` takes `limits` and writes them to `meta.json` for both
+  `complete` and `failed` runs; the active values are visible even when the run
+  aborts.
+
+## User check: tiny file limit
+
+Command: venv\Scripts\python.exe -m cartog analyze .scratch\tiny --out .scratch\tinyout --no-scip --max-files 1 --no-render --no-digest --no-view
+Raw transcript: `docs/evidence/S8-limits-cli-file-count.txt`
+
+Discovered 2 source files (0 skipped).
+Analysis failed: file limit exceeded: discovered 2 source files, limit is 1
+(raise it with --max-files)
+exit=3
+meta.json: status=failed, limits={'max_file_size_mb': 1.0, 'max_files': 1,
+'max_graph_nodes': 200000, 'max_graph_edges': 500000}
+
+## User check: tiny graph limit
+
+Command: venv\Scripts\python.exe -m cartog analyze .scratch\one --out .scratch\oneout --no-scip --max-graph-nodes 2 --no-render --no-digest --no-view
+Raw transcript: `docs/evidence/S8-limits-cli-graph-size.txt`
+
+Discovered 2 source files (0 skipped).
+Analysis failed: graph node limit exceeded: built 3 nodes, limit is 2 (raise it
+with --max-graph-nodes)
+exit=3
+meta.json: status=failed, max_graph_nodes=2
+
+## Full suite
+
+Command: venv\Scripts\python.exe -m pytest tests\ -q
+Raw transcript: `docs/evidence/S8-limits-suite.txt`
+
+239 passed, 1 warning in 191.73s (0:03:11)
+
+237 -> 239: the two S8 tests, no test removed or weakened.
+
+## Golden
+
+Command: venv\Scripts\python.exe scripts\golden.py --check
+Raw transcript: `docs/evidence/S8-limits-golden.txt`
+
+click: 0 differences
+flask: 0 differences
+ky: 0 differences
+0 differences

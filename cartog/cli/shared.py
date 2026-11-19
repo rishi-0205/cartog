@@ -13,6 +13,7 @@ from rich.text import Text
 
 from cartog import __version__
 from cartog.core.config import DEFAULT_MAX_FILE_SIZE_MB
+from cartog.core.limits import enforce_file_count
 from cartog.core.model import Graph
 from cartog.core.text import sanitize_console_text
 from cartog.graph.merge import build_graph
@@ -128,6 +129,7 @@ def _execute_parse(
     force: bool = False,
     verbose: bool = False,
     cache_dir: str | Path | None = None,
+    max_files: int | None = None,
 ):
     """Execute Stage 1 parsing pipeline and return (target_path, out_dir, scan_result, parsed_files)."""
     target_path = Path(path).resolve()
@@ -169,6 +171,9 @@ def _execute_parse(
         raise typer.Exit(code=2) from e
 
     console.print(f"Discovered [green]{len(scan_result.files)}[/green] source files ([yellow]{len(scan_result.skipped)}[/yellow] skipped).")
+
+    if max_files is not None:
+        enforce_file_count(len(scan_result.files), max_files)
 
     if force:
         console.print("[yellow]Notice:[/yellow] Forcing rerun; cache bypassed.")

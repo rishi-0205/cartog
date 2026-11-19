@@ -362,6 +362,7 @@ def build_meta(
     cartog_version: str,
     schema_version: str = SCHEMA_VERSION,
     timings: Mapping[str, float] | None = None,
+    limits: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Build the ``meta.json`` payload for one run."""
     return {
@@ -374,6 +375,7 @@ def build_meta(
         "started_at": started_at,
         "finished_at": finished_at,
         "options": dict(options),
+        "limits": dict(limits or {}),
         "counts": dict(counts),
         "tools": dict(tools),
         "timings": dict(timings or {}),
