@@ -37,7 +37,7 @@ The roadmap narrative is [`docs/IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.m
 | S3 | Escape everything embedded in map.html | E3 | `feature/security-baseline` | U4 | M | E3-S2 | DONE | aba352b |
 | S4 | Sanitize Mermaid labels | E3 | `feature/security-baseline` | S3 | S | E3-S3 | DONE | 12c24f6 |
 | S5 | Path confinement and output-name sanitization | E3 | `feature/security-baseline` | S1, U3 | M | E3-S3 | DONE | 88b9c30 |
-| S6 | Strip terminal control characters | E3 | `feature/security-baseline` | S1 | S | E3-S4 | TODO | — |
+| S6 | Strip terminal control characters | E3 | `feature/security-baseline` | S1 | S | E3-S4 | DONE | 2131338 |
 | S7 | Pin and checksum vendored libraries | E3 | `feature/security-baseline` | — | S | E3-S4 | TODO | — |
 | S8 | Configurable limits | E3 | `feature/security-baseline` | U2 | S | E3-S4 | TODO | — |
 | S9 | SECURITY.md | E3 | `feature/security-baseline` | S1–S8 | S | E3-S5 | TODO | — |
@@ -80,7 +80,7 @@ The roadmap narrative is [`docs/IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.m
 | E1 | `refactor/package-structure` | E0 | 13 / 13 | ACCEPTED | 2026-11-17 |
 | E1b | `refactor/drop-compat-shims` | E1 | 1 / 1 | ACCEPTED | 2026-11-17 |
 | E2 | `feature/unified-command-and-output` | E1b | 6 / 6 | ACCEPTED | 2026-11-19 |
-| E3 | `feature/security-baseline` | E2 | 5 / 9 | IN PROGRESS | no |
+| E3 | `feature/security-baseline` | E2 | 6 / 9 | IN PROGRESS | no |
 | E4 | `feature/verification` | E2 | 0 / 5 | NOT STARTED | no |
 | E5 | `feature/llm-layer` | E2, E3 | 0 / 11 | NOT STARTED | no |
 | E6 | `feature/gallery` | E3 | 0 / 4 | NOT STARTED | no |
@@ -848,10 +848,11 @@ At most one epic per session; within that epic, finish and commit each task befo
 - **User check (epic review):** `pytest tests/test_security.py -k control -q`
 - **Evidence files:** `docs/evidence/S6-control-chars.txt`
 - **Planned commit message:** `S6: strip control characters from terminal output`
-- **Status:** TODO
-- **Commit hash:** —
-- **Failure log:** —
-- **Change log:** —
+- **Status:** DONE
+- **Commit hash:** `2131338`
+- **Failure log:** First red run: `cartog/core/text.py` was missing (`ImportError`) and the digest still rendered `\x1b[31m`/`\x07` from a hostile project name. During the green attempt a rich `Table` cell still emitted `ESC[31m`; the test was extended with a hostile table cell/header/title and the saved red transcript (`docs/evidence/S6-control-chars-red.txt`) shows that failure before table support was added.
+- **Change log:**
+  - 2026-11-19: Added `cartog/core/text.py::sanitize_console_text()` (full ANSI CSI/OSC/two-byte sequences, then C0/C1 controls except tab/newline, DEL and C1). Replaced the shared Rich console with `SanitizingConsole`, which sanitizes `str`/`Text` arguments and deep-copies tables to sanitize cells, header, footer, title and caption. `generate_digest()` sanitizes its final text. Added `cartog/core/text.py` to the package layout. Two tests (`test_console_strips_ansi_and_controls`, `test_digest_strips_controls`); Decision 38 records the boundary choice. Suite 233 -> 235; golden 0 differences; ruff clean.
 
 ### S7: Pin and checksum vendored libraries
 
