@@ -1,0 +1,77 @@
+# S5 evidence - confine output paths and sanitize names
+
+Date: 2026-11-19 19:10:00
+Branch: feature/security-baseline
+
+## Red: writes escape, junctions are followed, device names survive
+
+Command: venv\Scripts\python.exe -m pytest tests\test_security.py -k path -q
+Raw transcript: `docs/evidence/S5-path-confinement-red.txt`
+
+FAILED tests/test_security.py::test_output_path_escape_rejected - ImportError...
+FAILED tests/test_security.py::test_path_junction_outside_repo_rejected - Imp...
+FAILED tests/test_security.py::test_path_junction_outside_repo_not_scanned - ...
+FAILED tests/test_security.py::test_path_repo_name_sanitized - AssertionError...
+4 failed, 13 deselected in 0.93s
+
+* `cartog.core.output` had no `OutputPathError`, and `RunLayout.write_bytes`
+  joined the caller's string onto `run_dir` with a bare `/`, so `../escaped.txt`
+  and an absolute path both wrote outside the run.
+* A junction at `out/view` pointing outside was followed and `view/pwned.txt`
+  landed in the outside directory.
+* `os.walk` descended through a junction inside the repository and scanned
+  `linked/secret.py`.
+* `sanitize_project_name("CON.txt")` returned `CON.txt`; Windows reserves the
+  device name regardless of extension, so `CON.TXT` is still the console.
+
+The three required cases carry a `path_` infix so the documented user check
+`pytest tests/test_security.py -k path -q` selects all of them (Decision 37).
+
+## Green
+
+Command: venv\Scripts\python.exe -m pytest tests\test_security.py -k path -q
+Raw transcript: `docs/evidence/S5-path-confinement-green.txt`
+
+....                                                                     [100%]
+4 passed, 13 deselected in 0.53s
+
+What the fix does:
+
+* `cartog/core/output.py` gains `OutputPathError`. `RunLayout` now routes every
+  writer through `_confined_path()`, which rejects absolute paths and any path
+  whose `Path.resolve()` is not `run_dir` or below it, then writes to and
+  returns that resolved path. The junction case is caught because `resolve()`
+  follows the link before the containment test.
+* `cartog/scan/walk.py` prunes a directory when it is a symlink **or** a Windows
+  junction (the latter reports `is_symlink() == False`), and skips a symlinked
+  file whose target resolves outside the repository. Each skip is recorded in
+  `ScanResult.skipped` with a reason.
+* `sanitize_project_name()` compares the stem before the first dot against the
+  Windows reserved set, so `CON.txt`, `LPT1.log` and friends get the `_` prefix;
+  it re-applies the length cap after prefixing.
+
+## Related suites
+
+Command: venv\Scripts\python.exe -m pytest tests\test_output_home.py tests\test_output_layout.py tests\test_scan.py tests\test_package_layout.py -q
+
+..................                                                       [100%]
+18 passed in 1.00s
+
+## Full suite
+
+Command: venv\Scripts\python.exe -m pytest tests\ -q
+Raw transcript: `docs/evidence/S5-path-confinement-suite.txt`
+
+233 passed, 1 warning in 202.00s (0:03:22)
+
+229 -> 233: the four S5 tests, no test removed or weakened.
+
+## Golden
+
+Command: venv\Scripts\python.exe scripts\golden.py --check
+Raw transcript: `docs/evidence/S5-path-confinement-golden.txt`
+
+click: 0 differences
+flask: 0 differences
+ky: 0 differences
+0 differences

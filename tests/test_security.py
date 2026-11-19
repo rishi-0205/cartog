@@ -19,6 +19,7 @@ import ast
 import json
 import re
 import shutil
+import subprocess
 import sys
 import time
 from pathlib import Path
@@ -283,3 +284,108 @@ def test_mermaid_hostile_label_validates_with_mmdc(tmp_path: Path) -> None:
     ok, message = render_mermaid(mmd_file, tmp_path / "hostile.svg")
     assert ok, message
     assert (tmp_path / "hostile.svg").is_file()
+
+
+# --------------------------------------------------------------------------- S5
+
+
+def _make_junction(link: Path, target: Path) -> None:
+    """Create a Windows junction (no privilege needed) or a POSIX symlink."""
+    if sys.platform == "win32":
+        completed = subprocess.run(
+            ["cmd", "/c", "mklink", "/J", str(link), str(target)],
+            capture_output=True,
+            text=True,
+        )
+        if completed.returncode != 0:
+            pytest.skip(
+                "cannot create a junction here: "
+                + (completed.stderr or completed.stdout).strip()
+            )
+        return
+    try:
+        link.symlink_to(target, target_is_directory=True)
+    except OSError as exc:  # pragma: no cover - depends on host policy
+        pytest.skip(f"cannot create a symlink here: {exc}")
+
+
+def test_output_path_escape_rejected(tmp_path: Path) -> None:
+    """A run-relative write may never leave the run directory."""
+    from cartog.core.output import (
+        OutputPathError,
+        RunLayout,
+        resolve_run_location,
+    )
+
+    out = tmp_path / "out"
+    layout = RunLayout(resolve_run_location(tmp_path / "repo", out=out))
+
+    for bad in ("../escaped.txt", "view/../../escaped.txt", str(tmp_path / "abs.txt")):
+        with pytest.raises(OutputPathError):
+            layout.write_text(bad, "x")
+
+    assert not (tmp_path / "escaped.txt").exists()
+    assert not (tmp_path / "abs.txt").exists()
+
+    written = layout.write_text("view/map.html", "<html></html>")
+    assert written == (out / "view" / "map.html").resolve()
+    assert written.is_file()
+
+
+def test_path_junction_outside_repo_rejected(tmp_path: Path) -> None:
+    """A link inside the output root cannot be used to write outside it."""
+    from cartog.core.output import (
+        OutputPathError,
+        RunLayout,
+        resolve_run_location,
+    )
+
+    out = tmp_path / "out"
+    out.mkdir()
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    _make_junction(out / "view", outside)
+
+    layout = RunLayout(resolve_run_location(tmp_path / "repo", out=out))
+    with pytest.raises(OutputPathError):
+        layout.write_text("view/pwned.txt", "x")
+    assert not (outside / "pwned.txt").exists()
+
+
+def test_path_junction_outside_repo_not_scanned(tmp_path: Path) -> None:
+    """The walker never leaves the repository through a link."""
+    from cartog.scan import walk_files
+
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    (repo / "app.py").write_text("x = 1\n", encoding="utf-8")
+
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    (outside / "secret.py").write_text("secret = 1\n", encoding="utf-8")
+    _make_junction(repo / "linked", outside)
+
+    result = walk_files(repo)
+    paths = {info.path for info in result.files}
+    assert "app.py" in paths
+    assert not any(path.startswith("linked/") for path in paths)
+
+
+def test_path_repo_name_sanitized() -> None:
+    """Every hostile repository name becomes one safe folder component."""
+    from cartog.core.output import MAX_PROJECT_NAME, sanitize_project_name
+
+    assert sanitize_project_name("..") == "repo"
+    assert sanitize_project_name("a/b\\c") == "a-b-c"
+    assert sanitize_project_name("CON") == "_CON"
+    assert sanitize_project_name("CON.txt").upper().startswith("_CON")
+    assert sanitize_project_name("LPT1.log").upper().startswith("_LPT1")
+    assert sanitize_project_name("name..") == "name"
+    assert sanitize_project_name("name  ") == "name"
+    assert sanitize_project_name("") == "repo"
+
+    long_name = sanitize_project_name("x" * 100)
+    assert len(long_name) <= MAX_PROJECT_NAME
+    assert not long_name.endswith((".", " "))
+    assert "/" not in long_name and "\\" not in long_name
+    assert ":" not in long_name
