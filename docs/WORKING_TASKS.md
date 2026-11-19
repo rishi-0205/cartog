@@ -35,7 +35,7 @@ The roadmap narrative is [`docs/IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.m
 | S1 | One subprocess runner | E3 | `feature/security-baseline` | U4 | M | E3-S1 | DONE | b5c96d8 |
 | S2 | Hostile canary repository | E3 | `feature/security-baseline` | S1 | S | E3-S1 | DONE | d0b7731 |
 | S3 | Escape everything embedded in map.html | E3 | `feature/security-baseline` | U4 | M | E3-S2 | DONE | aba352b |
-| S4 | Sanitize Mermaid labels | E3 | `feature/security-baseline` | S3 | S | E3-S3 | TODO | — |
+| S4 | Sanitize Mermaid labels | E3 | `feature/security-baseline` | S3 | S | E3-S3 | DONE | 12c24f6 |
 | S5 | Path confinement and output-name sanitization | E3 | `feature/security-baseline` | S1, U3 | M | E3-S3 | TODO | — |
 | S6 | Strip terminal control characters | E3 | `feature/security-baseline` | S1 | S | E3-S4 | TODO | — |
 | S7 | Pin and checksum vendored libraries | E3 | `feature/security-baseline` | — | S | E3-S4 | TODO | — |
@@ -80,7 +80,7 @@ The roadmap narrative is [`docs/IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.m
 | E1 | `refactor/package-structure` | E0 | 13 / 13 | ACCEPTED | 2026-11-17 |
 | E1b | `refactor/drop-compat-shims` | E1 | 1 / 1 | ACCEPTED | 2026-11-17 |
 | E2 | `feature/unified-command-and-output` | E1b | 6 / 6 | ACCEPTED | 2026-11-19 |
-| E3 | `feature/security-baseline` | E2 | 3 / 9 | IN PROGRESS | no |
+| E3 | `feature/security-baseline` | E2 | 4 / 9 | IN PROGRESS | no |
 | E4 | `feature/verification` | E2 | 0 / 5 | NOT STARTED | no |
 | E5 | `feature/llm-layer` | E2, E3 | 0 / 11 | NOT STARTED | no |
 | E6 | `feature/gallery` | E3 | 0 / 4 | NOT STARTED | no |
@@ -805,10 +805,11 @@ At most one epic per session; within that epic, finish and commit each task befo
 - **User check (epic review):** Render a hostile fixture with `mmdc`.
 - **Evidence files:** `docs/evidence/S4-mermaid-sanitize.txt`
 - **Planned commit message:** `S4: sanitize Mermaid labels`
-- **Status:** TODO
-- **Commit hash:** —
-- **Failure log:** —
-- **Change log:** —
+- **Status:** DONE
+- **Commit hash:** `12c24f6`
+- **Failure log:** Red run (`docs/evidence/S4-mermaid-sanitize-red.txt`): `test_mermaid_label_rejects_directives` found raw HTML, backticks, `%%`, a newline and `\"` in the label; the mmdc test failed because the generated diagram still contained `%%{init: {"securityLevel":"loose"}}%%`. Probing mmdc 12.0.0 showed `\"` inside a quoted label is a parse error, so the old quote escaping was itself broken; `#quot;` renders. `tests/test_mermaid.py::test_sanitize_helpers` was updated to the entity form (stronger: the old expectation produced unparseable Mermaid), documented in `docs/evidence/S4-mermaid-sanitize.txt`.
+- **Change log:**
+  - 2026-11-19: Rewrote `sanitize_label()`: newlines/tabs to spaces, `&`/`<`/`>` to HTML entities, `"` to `#quot;`, backticks to `#96;`, `%` to `#37;` (so `%%` and `%%{init}%%` cannot form), brackets to parentheses. Quoted Mermaid's `securityLevel` contract and directive syntax in the evidence file after checking the live docs and mmdc 12.0.0. Added two tests: the structural label test and a real `mmdc` render of a hostile generated diagram. Suite 227 → 229; golden 0 differences; ruff clean.
 
 ### S5: Path confinement and output-name sanitization
 
