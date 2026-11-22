@@ -822,7 +822,7 @@ At most one epic per session; within that epic, finish and commit each task befo
   1. Resolve every output path under the resolved output root; reject escapes.
   2. Reject symlinks and junctions that point outside the repo or output root.
   3. Sanitize project names: `..`, separators, Windows reserved names, trailing dots/spaces, length cap.
-- **Tests (red-green):** `test_output_path_escape_rejected`, `test_junction_outside_repo_rejected`, `test_repo_name_sanitized`
+- **Tests (red-green):** `test_output_path_escape_rejected`, `test_path_junction_outside_repo_rejected`, `test_path_junction_outside_repo_not_scanned`, `test_path_repo_name_sanitized`
 - **Acceptance criteria:** No write outside the output root; hostile names are safe.
 - **User check (epic review):** `pytest tests/test_security.py -k path -q` (junction test may skip without privilege).
 - **Evidence files:** `docs/evidence/S5-path-confinement.txt`
@@ -832,6 +832,7 @@ At most one epic per session; within that epic, finish and commit each task befo
 - **Failure log:** Red run (`docs/evidence/S5-path-confinement-red.txt`): all four tests failed. `OutputPathError` did not exist; `RunLayout` joined untrusted strings directly, so `../escaped.txt` and an absolute path escaped; a junction at `out/view` was followed on write; `os.walk` descended through a junction and scanned `linked/secret.py`; `sanitize_project_name("CON.txt")` returned `CON.txt` instead of escaping the reserved stem.
 - **Change log:**
   - 2026-11-19: Added `OutputPathError` and `RunLayout._confined_path()`: absolute paths, `..` climbs and resolved paths outside `run_dir` (including through a junction) are refused, and writers return the resolved destination. `walk_files` now prunes symlink and junction directories and skips symlinked files resolving outside the repository, recording each skip. `sanitize_project_name()` checks the pre-extension stem against `RESERVED_NAMES` and reapplies the length cap after prefixing. Four tests (`test_output_path_escape_rejected`, `test_path_junction_outside_repo_rejected`, `test_path_junction_outside_repo_not_scanned`, `test_path_repo_name_sanitized`); Decision 37 records why the junction cases carry the `path_` infix. Suite 229 -> 233; golden 0 differences; ruff clean.
+  - 2026-11-22: Corrected this task's "Tests (red-green)" field, which still named `test_junction_outside_repo_rejected` and `test_repo_name_sanitized`; neither exists. The `path_` infix convention is unchanged and `pytest tests/test_security.py -k path -q` selects all four (Decision 42).
 
 ### S6: Strip terminal control characters
 
@@ -853,6 +854,7 @@ At most one epic per session; within that epic, finish and commit each task befo
 - **Failure log:** First red run: `cartog/core/text.py` was missing (`ImportError`) and the digest still rendered `\x1b[31m`/`\x07` from a hostile project name. During the green attempt a rich `Table` cell still emitted `ESC[31m`; the test was extended with a hostile table cell/header/title and the saved red transcript (`docs/evidence/S6-control-chars-red.txt`) shows that failure before table support was added.
 - **Change log:**
   - 2026-11-19: Added `cartog/core/text.py::sanitize_console_text()` (full ANSI CSI/OSC/two-byte sequences, then C0/C1 controls except tab/newline, DEL and C1). Replaced the shared Rich console with `SanitizingConsole`, which sanitizes `str`/`Text` arguments and deep-copies tables to sanitize cells, header, footer, title and caption. `generate_digest()` sanitizes its final text. Added `cartog/core/text.py` to the package layout. Two tests (`test_console_strips_ansi_and_controls`, `test_digest_strips_controls`); Decision 38 records the boundary choice. Suite 233 -> 235; golden 0 differences; ruff clean.
+  - 2026-11-22: `rich>=13,<16` is now a direct dependency. The table branch rewrites `Column._cells` (Rich exposes no public way to replace a built table's cells) and Rich arrived only transitively via `typer`, so a major bump could have changed the control silently. `test_rich_dependency_is_pinned` asserts the declaration, the upper bound and that the installed version is inside it (Decision 42).
 
 ### S7: Pin and checksum vendored libraries
 
@@ -1522,6 +1524,7 @@ At most one epic per session; within that epic, finish and commit each task befo
   1. Write `docs/ARCHITECTURE.md` and `docs/USAGE.md`.
   2. Refresh README with a demo GIF; add CHANGELOG.
   3. Update the project report and HANDOFF; verify every link.
+  4. Carry the post-E8 backlog forward: `BI-1` to `BI-6` in `docs/KNOWN_ISSUES.md`. Re-measure each item, and either schedule it or hand the list to the author as the next milestone; do not let it disappear in the final docs.
 - **Tests (red-green):** `test_docs_links_resolve`, `test_usage_covers_every_command`
 - **Acceptance criteria:** Docs match the shipped CLI; links resolve; report and handoff current.
 - **User check (epic review):** Open README, ARCHITECTURE, USAGE; run every usage example.

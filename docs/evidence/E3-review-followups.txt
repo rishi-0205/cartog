@@ -1,0 +1,126 @@
+# E3 review follow-ups — Q2, Q3, Q4 and the post-E8 backlog
+
+Date: 2026-11-22
+Branch: feature/security-baseline (base 94a4d63)
+Decision: 42 in docs/ISSUES_AND_DECISIONS.md
+
+## Q2 — S5 `path_` names: the spec now matches the tests
+
+The four names in `docs/WORKING_TASKS.md` (S5, "Tests (red-green)") were
+`test_junction_outside_repo_rejected` and `test_repo_name_sanitized`, which do
+not exist. `tests/test_security.py` names them with a `path_` infix so the
+documented review check `pytest tests/test_security.py -k path -q` selects the
+whole family (Decision 37). The spec was corrected; no test was renamed.
+
+## Q3 red — rich was only a transitive dependency of typer
+
+Command: `venv\Scripts\python.exe -m pytest tests/test_security.py::test_rich_dependency_is_pinned -q`
+
+(transcript below: `tests/test_security.py - red`)
+
+F                                                                        [100%]
+================================== FAILURES ===================================
+_______________________ test_rich_dependency_is_pinned ________________________
+
+    def test_rich_dependency_is_pinned() -> None:
+        """Rich is a direct, upper-bounded dependency because the sanitiser is version-sensitive.
+    
+        ``SanitizingConsole`` rewrites ``Column._cells``; Rich exposes no public way
+        to replace the cells of a built table, so a major upgrade could move or
+        rename that attribute and the control would depend on an unpinned transitive
+        dependency of Typer.
+        """
+        data = tomllib.loads((REPO_ROOT / "pyproject.toml").read_text(encoding="utf-8"))
+        specs = [dep for dep in data["project"]["dependencies"] if dep.startswith("rich")]
+>       assert specs, (
+            "rich must be a direct dependency: cartog/cli/shared.py mutates Column._cells"
+        )
+E       AssertionError: rich must be a direct dependency: cartog/cli/shared.py mutates Column._cells
+E       assert []
+
+tests\test_security.py:489: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_security.py::test_rich_dependency_is_pinned - AssertionErro...
+1 failed in 0.69s
+
+## Q3 green - rich is now declared with an upper bound
+
+Command: venv\Scripts\python.exe -m pytest tests/test_security.py::test_rich_dependency_is_pinned -q
+
+.                                                                        [100%]
+1 passed in 0.41s
+
+## Q2 proof - the documented check selects all four S5 tests
+
+Command: venv\Scripts\python.exe -m pytest tests/test_security.py -k path -q --collect-only
+
+tests/test_security.py::test_output_path_escape_rejected
+tests/test_security.py::test_path_junction_outside_repo_rejected
+tests/test_security.py::test_path_junction_outside_repo_not_scanned
+tests/test_security.py::test_path_repo_name_sanitized
+
+4/25 tests collected (21 deselected) in 0.38s
+
+## Q4 - SECURITY.md floor sentence; the link test still resolves every relative link
+
+Command: venv\Scripts\python.exe -m pytest tests/test_security.py::test_security_doc_links_resolve -q
+
+.                                                                        [100%]
+1 passed in 0.39s
+
+## Lint and rule counts after the change
+
+Command: venv\Scripts\python.exe -m ruff check . --no-cache
+
+All checks passed!
+
+Command: venv\Scripts\python.exe -m ruff check . --select E501 --statistics --no-cache
+
+227	E501	line-too-long
+Found 227 errors.
+
+Command: venv\Scripts\python.exe -m ruff check . --select B008 --statistics --no-cache
+
+6	B008	function-call-in-default-argument
+Found 6 errors.
+
+## Full suite
+
+Command: venv\Scripts\python.exe -m pytest -q
+
+........................................................................ [ 29%]
+........................................................................ [ 59%]
+........................................................................ [ 89%]
+.........................                                                [100%]
+============================== warnings summary ===============================
+tests/test_jsonc.py::test_jsonc_unterminated_block_comment
+  C:\Users\rishi\OneDrive\Desktop\Dev\cartog\cartog\core\jsonc.py:142: UserWarning: Unterminated block comment in 'C:/Users/rishi/AppData/Local/Temp/pytest-of-rishi/pytest-404/test_jsonc_unterminated_block_0/tsconfig.json' starting at line 3
+    clean = strip_jsonc_comments_and_trailing_commas(raw, filename=p.as_posix())
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+241 passed, 1 warning in 189.70s (0:03:09)
+
+## Goldens
+
+Command: venv\Scripts\python.exe scripts/golden.py --check
+
+click: 0 differences
+flask: 0 differences
+ky: 0 differences
+0 differences
+
+## Final full suite (all edits in place)
+
+Command: venv\Scripts\python.exe -m pytest -q
+
+........................................................................ [ 29%]
+........................................................................ [ 59%]
+........................................................................ [ 89%]
+.........................                                                [100%]
+============================== warnings summary ===============================
+tests/test_jsonc.py::test_jsonc_unterminated_block_comment
+  C:\Users\rishi\OneDrive\Desktop\Dev\cartog\cartog\core\jsonc.py:142: UserWarning: Unterminated block comment in 'C:/Users/rishi/AppData/Local/Temp/pytest-of-rishi/pytest-407/test_jsonc_unterminated_block_0/tsconfig.json' starting at line 3
+    clean = strip_jsonc_comments_and_trailing_commas(raw, filename=p.as_posix())
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+241 passed, 1 warning in 189.28s (0:03:09)

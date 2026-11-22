@@ -39,6 +39,10 @@ dependencies = [
     "tree-sitter-typescript>=0.23.0",
     "protobuf>=4.21.0",
     "typer>=0.12.0",
+    # The console sanitiser rewrites ``Column._cells`` and Rich (a Typer
+    # dependency) offers no public replacement for a built table's cells, so the
+    # major version is pinned here rather than inherited transitively.
+    "rich>=13,<16",
     "pathspec>=0.11.0",
 ]
 
@@ -92,14 +96,14 @@ extend-exclude = [
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B"]
 ignore = [
-    # 228 lines are longer than 120 columns, mostly Typer help strings, docstring
+    # 227 lines are longer than 120 columns, mostly Typer help strings, docstring
     # examples and long assertions. Reflowing a help string changes `--help`
-    # output, which is part of the CLI contract this epic keeps stable; the
-    # unified-command epic (E2) rewrites those strings anyway. Tracked in
-    # docs/KNOWN_ISSUES.md.
+    # output, which is part of the CLI contract; the reflow is scheduled after
+    # E8 rather than forced through a review (BI-1 in docs/KNOWN_ISSUES.md).
     "E501",
     # Typer commands must declare `typer.Option(...)`/`typer.Argument(...)` in
     # the function signature; this is the documented Typer idiom, not a bug.
+    # Scoping this to cartog/cli/commands/ is BI-2 in docs/KNOWN_ISSUES.md.
     "B008",
 ]
 

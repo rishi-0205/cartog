@@ -22,12 +22,15 @@ import shutil
 import subprocess
 import sys
 import time
+import tomllib
+from importlib.metadata import version as dist_version
 from pathlib import Path
 
 import pytest
 from typer.testing import CliRunner
 
 from cartog.cli import app
+from cartog.core.toolchain import parse_version
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 PACKAGE_ROOT = REPO_ROOT / "cartog"
@@ -470,6 +473,30 @@ def test_digest_strips_controls() -> None:
     assert not any(
         (ord(char) < 32 and char not in "\n\t") or 0x7F <= ord(char) <= 0x9F
         for char in digest
+    )
+
+
+def test_rich_dependency_is_pinned() -> None:
+    """Rich is a direct, upper-bounded dependency because the sanitiser is version-sensitive.
+
+    ``SanitizingConsole`` rewrites ``Column._cells``; Rich exposes no public way
+    to replace the cells of a built table, so a major upgrade could move or
+    rename that attribute and the control would depend on an unpinned transitive
+    dependency of Typer.
+    """
+    data = tomllib.loads((REPO_ROOT / "pyproject.toml").read_text(encoding="utf-8"))
+    specs = [dep for dep in data["project"]["dependencies"] if dep.startswith("rich")]
+    assert specs, (
+        "rich must be a direct dependency: cartog/cli/shared.py mutates Column._cells"
+    )
+
+    spec = specs[0]
+    upper = re.search(r"<\s*(\d+)", spec)
+    assert upper, f"rich needs an upper bound, not {spec!r}: a major bump can rename Column._cells"
+
+    installed = parse_version(dist_version("rich"))
+    assert installed[0] < int(upper.group(1)), (
+        f"installed rich {dist_version('rich')} is outside the pinned range {spec!r}"
     )
 
 

@@ -74,6 +74,11 @@ write outside the run directory, or a leaked absolute path.
   slow to lay out or render. The limits bound the worst case; they do not make
   every allowed run fast.
 
+These statements are the floor for every later epic, not a ceiling. E7's hosted
+analysis service (task W1, "Service threat model and architecture") must keep
+every one of them true and may only add controls; a design that needs to weaken
+one changes this document first, not the service.
+
 ## Reporting a vulnerability
 
 Do not open a public issue for a suspected vulnerability. Send a private report

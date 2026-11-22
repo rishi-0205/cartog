@@ -1,6 +1,6 @@
 # Cartog — Handoff Document
 
-**Last updated:** 2026-11-19 (E3 **READY FOR EPIC REVIEW** on `feature/security-baseline`; all nine tasks DONE; suite is 240 tests passing)  
+**Last updated:** 2026-11-22 (E3 **READY FOR EPIC REVIEW** on `feature/security-baseline`; all nine tasks DONE; the four review questions are decided in Decision 42; static-analysis debt is the post-E8 backlog BI-1–BI-6; suite is 241 tests passing)  
 **Role:** Single entry point for any model or developer picking up this project.  
 **Active Working Tasks:** See [`docs/WORKING_TASKS.md`](./WORKING_TASKS.md) for the live epic board and command loop. The historical T0–T21 board is [`docs/archive/WORKING_TASKS_T0-T21.md`](./archive/WORKING_TASKS_T0-T21.md).  
 **Git rules:** [`docs/dev/GIT_WORKFLOW.md`](./dev/GIT_WORKFLOW.md) — one branch per epic, commit per task, never push, merge only after `Accept <epic id>`.  
@@ -75,7 +75,7 @@ Epic order is **E0 → E1 → E1b → E2 → E3 → E4 → E5 → E6 → E7 → 
 | **Phase E: Polish** | T13, T14, T15, T16 | Added visible legends and summary subgraphs in Mermaid; ranked digest files by connectivity and attributed constructors to enclosing classes; completed noise filtering with `if t.TYPE_CHECKING:` guard support; benchmarked compact serialization (44–50% reduction) and token budgets (<2,000 tokens). |
 | **Milestone 11: Interactive Viewer** | T11 | Packaged offline Cytoscape stack in `cartog/view_assets/`; implemented `cartog view` generating offline `map.html`; implemented orthogonal Manhattan edge routing (`taxi`), edge rollup (`N calls`), reference filter toggle (`References: Off / On`), compound padding (35-50px) & layout physics, and internal helper expansion & linking with toggle. |
 
-**Test suite:** 240 passed, 1 warning (2026-11-19, `pytest tests/` in venv; E3 added 24 tests in `tests/test_security.py` across the runner, hostile canary, HTML/Mermaid escaping, terminal controls, path confinement, vendor pins, limits and the threat model, moving the count from 216 to 240 with 0 regressions).
+**Test suite:** 241 passed, 1 warning (2026-11-22, `pytest tests/` in venv; E3 added 24 tests in `tests/test_security.py` across the runner, hostile canary, HTML/Mermaid escaping, terminal controls, path confinement, vendor pins, limits and the threat model, moving the count from 216 to 240 with 0 regressions; the review follow-up added `test_rich_dependency_is_pinned`, 240 → 241).
 
 ---
 
@@ -96,7 +96,7 @@ E2 (`feature/unified-command-and-output`) was **ACCEPTED by the author on 2026-1
 - Every stage command (`parse`, `scip`, `build`, `map`, `check`, `flow`, `view`, `digest`, `query`, `doctor`) keeps its flags, help text, and exit codes; `cartog view` still opens by default.
 - `E501` stays ignored through E2 under Decision 35; the dedicated reflow was not one of E3's S1–S9 tasks and is still owed (see `docs/KNOWN_ISSUES.md`).
 
-E3 (`feature/security-baseline`) is **READY FOR EPIC REVIEW** on its branch; all nine tasks are DONE and committed, the suite is 240 passed, and the goldens report `0 differences`:
+E3 (`feature/security-baseline`) is **READY FOR EPIC REVIEW** on its branch; all nine tasks are DONE and committed, the suite is 241 passed, and the goldens report `0 differences`:
 
 - S1 (`b5c96d8`) one `cartog/core/proc.py` runner (allowlist, `shell=False`, timeout, output cap, filtered env) and no other `subprocess` import.
 - S2 (`d0b7731`) hostile canary repository proves `postinstall` and `setup.py` never run.
@@ -108,7 +108,9 @@ E3 (`feature/security-baseline`) is **READY FOR EPIC REVIEW** on its branch; all
 - S8 (`6c98f80`) hard file/node/edge limits reported in `meta.json`.
 - S9 (`fe854ed`) `SECURITY.md` threat model linked from README and this file.
 
-Do not merge before the author's `Accept E3`. Open items for the review are in the session report and `docs/KNOWN_ISSUES.md` (notably the still-owed `E501` reflow). The E2 contract above is unchanged. Full task fields, tests, and acceptance criteria are in [`docs/WORKING_TASKS.md`](./WORKING_TASKS.md); user-facing examples are in [`docs/USAGE.md`](./USAGE.md).
+Do not merge before the author's `Accept E3`. The E2 contract above is unchanged. Full task fields, tests, and acceptance criteria are in [`docs/WORKING_TASKS.md`](./WORKING_TASKS.md); user-facing examples are in [`docs/USAGE.md`](./USAGE.md).
+
+The four review questions were closed on 2026-11-22 (Decision 42): `rich>=13,<16>` is a direct dependency because the console sanitiser rewrites Rich's private `Column._cells`; the S5 `path_` test names stay and the stale names in the S5 spec are corrected; `SECURITY.md` now states that its non-protections are the floor every later epic must keep; and `E501`, `B008` plus the wider static-analysis tooling are deferred to the **post-E8 backlog (BI-1 to BI-6 in [`docs/KNOWN_ISSUES.md`](./KNOWN_ISSUES.md))**, which D1 carries forward.
 
 ---
 
