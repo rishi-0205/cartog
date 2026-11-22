@@ -139,3 +139,12 @@ Command: venv\Scripts\python.exe -m pytest -q
 
 -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
 241 passed, 1 warning in 192.30s (0:03:12)
+
+## Final goldens on HEAD
+
+Command: venv\Scripts\python.exe scripts/golden.py --check
+
+click: 0 differences
+flask: 0 differences
+ky: 0 differences
+0 differences
