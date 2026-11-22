@@ -23,6 +23,9 @@ htmlcov/
 .cartog/
 cartog-out/
 
+# Session scratch space (deleted at the end of every session)
+.scratch/
+
 # Real repo samples for manual verification (Section 11.2)
 samples/
 
