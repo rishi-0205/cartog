@@ -1,0 +1,40 @@
+flowchart TD
+  subgraph folder_backend_app ["📁 backend/app"]
+    subgraph file_250ddce1ff ["📄 main.py"]
+      fn_000cb58a2d["GET /items"]:::route
+      fn_a92104eb56["get_items() :7"]:::function
+    end
+    subgraph file_53a6db498b ["📄 models.py"]
+      subgraph class_d1a96eba03 ["🏛️ Item"]
+        helpers_d1a96eba03["+1 helpers"]:::helper
+      end
+    end
+  end
+  subgraph folder_frontend_src ["📁 frontend/src"]
+    subgraph file_0e612108ea ["📄 index.ts"]
+      helpers_0e612108ea["+1 helpers"]:::helper
+    end
+    subgraph file_00ddd23b31 ["📄 server.ts"]
+      fn_7db4586ead["GET /api/status"]:::route
+    end
+  end
+
+  subgraph legend ["Legend"]
+    leg_dir["Direct call"]:::legendNode -->|calls| leg_dir_t["Target"]:::legendNode
+    leg_no_imp["Call without import"]:::legendNode -.->|calls| leg_no_imp_t["Target"]:::legendNode
+    leg_rec["Reconciled call"]:::legendNode -.->|"calls (reconciled)"| leg_rec_t["Target"]:::legendNode
+    leg_serv["Route / Command"]:::legendNode ==>|serves/starts| leg_serv_t["Target"]:::legendNode
+    leg_over["Method override"]:::legendNode -.->|overrides| leg_over_t["Target"]:::legendNode
+  end
+
+  classDef folder fill:#e1f5fe,stroke:#0288d1,stroke-width:2px,color:#01579b;
+  classDef file fill:#f3e5f5,stroke:#7b1fa2,stroke-width:1.5px,color:#4a148c;
+  classDef classNode fill:#e8f5e9,stroke:#388e3c,stroke-width:1.5px,color:#1b5e20;
+  classDef function fill:#fff9c4,stroke:#fbc02d,stroke-width:1.5px,color:#f57f17;
+  classDef route fill:#fff3e0,stroke:#f57c00,stroke-width:2px,color:#e65100;
+  classDef command fill:#e0f7fa,stroke:#0097a7,stroke-width:2px,color:#006064;
+  classDef entrypoint fill:#fce4ec,stroke:#c2185b,stroke-width:2px,color:#880e4f;
+  classDef helper fill:#f5f5f5,stroke:#9e9e9e,stroke-width:1px,stroke-dasharray: 3 3,color:#616161;
+  classDef default fill:#f8f9fa,stroke:#343a40,stroke-width:1px,color:#212529;
+  classDef legendNode fill:#f8f9fa,stroke:#adb5bd,stroke-width:1px,color:#212529;
+  linkStyle 2 stroke:#f57c00,stroke-dasharray: 4 4,stroke-width:1.5px;

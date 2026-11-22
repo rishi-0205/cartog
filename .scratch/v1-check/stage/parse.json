@@ -1,0 +1,266 @@
+{
+  "schema_version": "2.0.0",
+  "meta": {
+    "target_path": "C:/Users/rishi/OneDrive/Desktop/Dev/cartog/tests/fixtures/mixed_repo",
+    "roots": [
+      ".",
+      "backend",
+      "frontend"
+    ],
+    "languages": [
+      "python",
+      "typescript"
+    ],
+    "files_count": 5,
+    "symbols_count": 4,
+    "skipped_count": 2
+  },
+  "files": [
+    {
+      "path": "backend/app/__init__.py",
+      "language": "python",
+      "hash": "8af3357eb70055d0f9d9a2590b60f4739eeeccb5",
+      "has_error": false,
+      "symbols": [],
+      "imports": [],
+      "patterns": []
+    },
+    {
+      "path": "backend/app/main.py",
+      "language": "python",
+      "hash": "82175561b885c4185c190d1ce5b722fe76d15ab6",
+      "has_error": false,
+      "symbols": [
+        {
+          "kind": "function",
+          "name": "get_items",
+          "qualified_name": "backend.app.main.get_items",
+          "range": [
+            7,
+            0,
+            8,
+            27
+          ],
+          "parent": null,
+          "attrs": {
+            "decorators": [
+              "app.get(\"/items\")"
+            ]
+          }
+        }
+      ],
+      "imports": [
+        {
+          "specifier": "fastapi",
+          "names": [
+            "FastAPI"
+          ],
+          "aliases": {},
+          "kind": "from",
+          "line": 1,
+          "level": 0,
+          "raw_text": "from fastapi import FastAPI",
+          "is_type_only": false
+        },
+        {
+          "specifier": "app.models",
+          "names": [
+            "Item"
+          ],
+          "aliases": {},
+          "kind": "from",
+          "line": 2,
+          "level": 0,
+          "raw_text": "from app.models import Item",
+          "is_type_only": false
+        }
+      ],
+      "patterns": [
+        {
+          "kind": "route",
+          "name": "GET /items",
+          "url_path": "/items",
+          "methods": [
+            "GET"
+          ],
+          "handler": "get_items",
+          "handler_qname": "backend.app.main.get_items",
+          "handler_line": 7,
+          "enclosing_scope": "backend.app.main",
+          "dec_line": 6,
+          "range": [
+            6,
+            0,
+            6,
+            18
+          ],
+          "raw_text": "@app.get(\"/items\")"
+        }
+      ]
+    },
+    {
+      "path": "backend/app/models.py",
+      "language": "python",
+      "hash": "639016da8e79d6fb63d90b6feaf130657059b791",
+      "has_error": false,
+      "symbols": [
+        {
+          "kind": "class",
+          "name": "Item",
+          "qualified_name": "backend.app.models.Item",
+          "range": [
+            1,
+            0,
+            3,
+            24
+          ],
+          "parent": null,
+          "attrs": {}
+        },
+        {
+          "kind": "method",
+          "name": "__init__",
+          "qualified_name": "backend.app.models.Item.__init__",
+          "range": [
+            2,
+            4,
+            3,
+            24
+          ],
+          "parent": "Item",
+          "attrs": {}
+        }
+      ],
+      "imports": [],
+      "patterns": []
+    },
+    {
+      "path": "frontend/src/index.ts",
+      "language": "typescript",
+      "hash": "92d4f73a0e4d62be775387a7261055e918b09f11",
+      "has_error": false,
+      "symbols": [
+        {
+          "kind": "function",
+          "name": "start",
+          "qualified_name": "frontend.src.start",
+          "range": [
+            3,
+            7,
+            5,
+            1
+          ],
+          "parent": null,
+          "attrs": {}
+        }
+      ],
+      "imports": [
+        {
+          "specifier": "./server",
+          "names": [
+            "default"
+          ],
+          "aliases": {
+            "default": "app"
+          },
+          "kind": "relative",
+          "line": 1,
+          "level": 1,
+          "raw_text": "import app from './server';",
+          "is_type_only": false
+        }
+      ],
+      "patterns": []
+    },
+    {
+      "path": "frontend/src/server.ts",
+      "language": "typescript",
+      "hash": "aa89c7ff55b713396c29d8a3fb1165ea9359b02d",
+      "has_error": false,
+      "symbols": [],
+      "imports": [
+        {
+          "specifier": "express",
+          "names": [
+            "default"
+          ],
+          "aliases": {
+            "default": "express"
+          },
+          "kind": "from",
+          "line": 1,
+          "level": 0,
+          "raw_text": "import express from 'express';",
+          "is_type_only": false
+        }
+      ],
+      "patterns": [
+        {
+          "kind": "route",
+          "name": "GET /api/status",
+          "url_path": "/api/status",
+          "methods": [
+            "GET"
+          ],
+          "handler": null,
+          "range": [
+            5,
+            0,
+            7,
+            2
+          ],
+          "raw_text": "app.get('/api/status', (req, res) => {\n  res.json({ status: 'ok' });\n})"
+        }
+      ]
+    }
+  ],
+  "manifests": {
+    "dependencies": [
+      {
+        "name": "fastapi",
+        "version_spec": "*",
+        "file": "backend/pyproject.toml",
+        "manager": "pip"
+      },
+      {
+        "name": "uvicorn",
+        "version_spec": "*",
+        "file": "backend/pyproject.toml",
+        "manager": "pip"
+      },
+      {
+        "name": "express",
+        "version_spec": "^4.18.2",
+        "file": "frontend/package.json",
+        "manager": "npm"
+      }
+    ],
+    "entrypoints": [
+      {
+        "name": "api",
+        "target": "app.main:app",
+        "file": "backend/pyproject.toml",
+        "kind": "script"
+      },
+      {
+        "name": "npm run start",
+        "target": "node src/server.js",
+        "file": "frontend/package.json",
+        "kind": "npm_script"
+      }
+    ],
+    "services": [],
+    "ci_jobs": [],
+    "warnings": []
+  },
+  "skipped": [
+    {
+      "path": "backend/pyproject.toml",
+      "reason": "unsupported file extension '.toml'"
+    },
+    {
+      "path": "frontend/package.json",
+      "reason": "unsupported file extension '.json'"
+    }
+  ]
+}

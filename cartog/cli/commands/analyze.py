@@ -41,6 +41,7 @@ from cartog.core.output import (
     sanitize_project_name,
     utc_timestamp,
 )
+from cartog.core.timing import StageTimer
 from cartog.graph.merge import build_graph
 from cartog.graph.validate import (
     cross_check_imports_and_calls,
@@ -256,11 +257,17 @@ def analyze(
     no_render: bool = typer.Option(
         False, "--no-render", help="Skip PNG rendering; Mermaid sources are still written."
     ),
+    timings: bool = typer.Option(
+        False,
+        "--timings",
+        help="Record per-stage wall time and peak memory in meta.json.",
+    ),
     verbose: bool = typer.Option(False, "--verbose", "-V", help="Verbose stage logging."),
 ) -> None:
     """Run the whole pipeline and write the stable per-user output tree."""
     started = time.perf_counter()
     started_at = utc_timestamp()
+    clock = StageTimer(track_memory=timings)
     target_path = Path(path).expanduser()
     if not target_path.exists() or not target_path.is_dir():
         console.print(f"[bold red]Error:[/bold red] Target directory not found: {path}")
@@ -294,6 +301,7 @@ def analyze(
     }
 
     try:
+        stage_start = clock.now()
         target_path, stage_dir, scan_result, parsed_files, _, _, _, _, manifest_facts = (
             _execute_parse(
                 path=str(target_path),
@@ -308,7 +316,9 @@ def analyze(
                 max_files=max_files,
             )
         )
+        clock.record("parse", stage_start)
 
+        stage_start = clock.now()
         scip_res = _resolve_scip(
             target_path,
             stage_dir,
@@ -318,7 +328,9 @@ def analyze(
             roots=scan_result.roots,
             verbose=verbose,
         )
+        clock.record("scip", stage_start)
 
+        stage_start = clock.now()
         ignored_paths = {s.path for s in scan_result.skipped if "matched" in s.reason}
         graph = build_graph(
             parsed_files=parsed_files,
@@ -348,7 +360,9 @@ def analyze(
         layout.write_text(
             "graph.json", graph.to_json(indent=2 if pretty else None)
         )
+        clock.record("build", stage_start)
 
+        stage_start = clock.now()
         include_set: set[str] = set()
         if include_tests:
             include_set.add("tests")
@@ -422,6 +436,9 @@ def analyze(
                 ),
             )
 
+        clock.record("diagrams", stage_start)
+
+        stage_start = clock.now()
         if not no_render:
             rendered, message = render_mermaid(
                 layout.run_dir / "diagrams" / "overview.mmd",
@@ -431,7 +448,9 @@ def analyze(
                 "logs/render.log",
                 f"rendered={rendered}\n{message}\n",
             )
+        clock.record("render", stage_start)
 
+        stage_start = clock.now()
         if not no_digest:
             layout.write_text(
                 "digest.md",
@@ -439,7 +458,9 @@ def analyze(
                     graph, include_tests=include_tests, include_examples=include_examples
                 ),
             )
+        clock.record("digest", stage_start)
 
+        stage_start = clock.now()
         if not no_view:
             layout.write_text(
                 "view/map.html",
@@ -452,7 +473,9 @@ def analyze(
                     stats={},
                 ),
             )
+        clock.record("view", stage_start)
 
+        stage_start = clock.now()
         if no_check:
             check_payload: dict[str, Any] = {
                 "status": "skipped",
@@ -477,6 +500,7 @@ def analyze(
                 graph, target_path=target_path, strict=strict, no_scip=no_scip
             )
         layout.write_json("check.json", check_payload, pretty=True)
+        clock.record("check", stage_start)
 
         languages = sorted(
             {node.language for node in graph.nodes.values() if node.language}
@@ -499,6 +523,9 @@ def analyze(
         layout.write_text("logs/scip.log", scip_log)
         layout.write_text("logs/check.log", json.dumps(check_payload, indent=2) + "\n")
 
+        timing_payload = clock.payload(
+            total_ms=(time.perf_counter() - started) * 1000
+        )
         meta = build_meta(
             run_id=location.run_id,
             status="complete",
@@ -518,7 +545,7 @@ def analyze(
             started_at=started_at,
             finished_at=utc_timestamp(),
             cartog_version=__version__,
-            timings={"total_ms": round((time.perf_counter() - started) * 1000, 2)},
+            timings=timing_payload,
             limits=limits,
         )
         layout.write_json("meta.json", meta, pretty=True)
@@ -545,9 +572,9 @@ def analyze(
                     started_at=started_at,
                     finished_at=utc_timestamp(),
                     cartog_version=__version__,
-                    timings={
-                        "total_ms": round((time.perf_counter() - started) * 1000, 2)
-                    },
+                    timings=clock.payload(
+                        total_ms=(time.perf_counter() - started) * 1000
+                    ),
                     limits=limits,
                 ),
                 pretty=True,
@@ -565,6 +592,16 @@ def analyze(
     summary.add_row("Latest", location.latest_dir.as_posix() if location.latest_dir else "—")
     console.print()
     console.print(summary)
+
+    if timings:
+        timing_table = Table(title="Timings", show_header=True, header_style="bold cyan")
+        timing_table.add_column("Measurement")
+        timing_table.add_column("Value", justify="right")
+        for name in sorted(timing_payload):
+            value = timing_payload[name]
+            shown = f"{value:,.1f} MB" if name == "peak_memory_mb" else f"{value:,.2f} ms"
+            timing_table.add_row(name, shown)
+        console.print(timing_table)
 
     if not no_scip and scip_res is not None and not scip_res.ran:
         console.print(f"[bold red]{_format_scip_fail_line(scip_res.error)}[/bold red]")

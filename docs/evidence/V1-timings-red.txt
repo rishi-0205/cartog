@@ -1,0 +1,42 @@
+FF                                                                       [100%]
+================================== FAILURES ===================================
+____________________ test_meta_json_records_stage_timings _____________________
+
+tmp_path = WindowsPath('C:/Users/rishi/AppData/Local/Temp/pytest-of-rishi/pytest-419/test_meta_json_records_stage_t0')
+
+    def test_meta_json_records_stage_timings(tmp_path):
+        """meta.json carries one duration per stage plus peak memory."""
+        repo = _repo(tmp_path)
+        out = tmp_path / "out"
+    
+        result = _invoke(repo, out, "--timings")
+    
+>       assert result.exit_code == 0, result.stdout
+E       AssertionError: 
+E       assert 2 == 0
+E        +  where 2 = <Result SystemExit(2)>.exit_code
+
+tests\test_timings.py:66: AssertionError
+_____________________ test_timings_do_not_change_goldens ______________________
+
+tmp_path = WindowsPath('C:/Users/rishi/AppData/Local/Temp/pytest-of-rishi/pytest-419/test_timings_do_not_change_gol0')
+
+    def test_timings_do_not_change_goldens(tmp_path):
+        """The same run with and without --timings produces identical artefacts."""
+        repo = _repo(tmp_path)
+        plain = tmp_path / "plain"
+        timed = tmp_path / "timed"
+    
+        plain_result = _invoke(repo, plain)
+        timed_result = _invoke(repo, timed, "--timings")
+        assert plain_result.exit_code == 0, plain_result.stdout
+>       assert timed_result.exit_code == 0, timed_result.stdout
+E       AssertionError: 
+E       assert 2 == 0
+E        +  where 2 = <Result SystemExit(2)>.exit_code
+
+tests\test_timings.py:85: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_timings.py::test_meta_json_records_stage_timings - Assertio...
+FAILED tests/test_timings.py::test_timings_do_not_change_goldens - AssertionE...
+2 failed in 0.63s
