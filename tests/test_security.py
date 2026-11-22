@@ -433,8 +433,8 @@ def test_console_strips_ansi_and_controls() -> None:
     # to print(), so the console must sanitize those too.
     from rich.table import Table
 
-    table = Table(title="evil\x1b]0;pwned\x07")
-    table.add_column("Name")
+    table = Table(title="evil\x1b]0;pwned\x07", show_footer=True)
+    table.add_column("Name\x1b[31m", footer="foot\x07")
     table.add_row("evil\x1b[31mname\x07")
     table_stream = StringIO()
     table_console = SanitizingConsole(
@@ -446,6 +446,8 @@ def test_console_strips_ansi_and_controls() -> None:
     assert "\x1b" not in table_output, "a table cell carried an escape sequence"
     assert "31m" not in table_output, "a table cell leaked CSI parameters"
     assert "pwned" not in table_output, "a table title carried an OSC sequence"
+    assert "Name" in table_output, "the header text itself must survive"
+    assert "foot" in table_output, "the footer text itself must survive"
 
 
 def test_digest_strips_controls() -> None:

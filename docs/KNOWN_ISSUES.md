@@ -200,7 +200,7 @@ Facts recorded with the deferral so the next task does not re-measure them:
 - `E501` is **227** lines as measured on 2026-11-22 (`ruff check . --select E501 --statistics`). Earlier notes said 224 and 228; BI-1 should leave one number in one place.
 - `B008` has **6** hits, all `typer.Option` in `cartog/cli/commands/`.
 - `rich>=13,<16` became a direct dependency in the E3 review follow-up (Decision 42); that pin is what makes BI-6 safe to defer.
-- The private-API control is covered by `test_console_strips_ansi_and_controls` (cell, header and title) and `test_rich_dependency_is_pinned` (the pin itself).
+- The private-API control is covered by `test_console_strips_ansi_and_controls` (cell, header, footer and title) and `test_rich_dependency_is_pinned` (the pin itself).
 
 
 ---
