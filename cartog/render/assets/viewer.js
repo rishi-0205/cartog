@@ -340,6 +340,47 @@
     setupToolbar(cy, api);
   }
 
+  function sidebarSection() {
+    const box = document.createElement('div');
+    box.className = 'sidebar-section';
+    return box;
+  }
+
+  function sidebarLabel(text) {
+    const el = document.createElement('div');
+    el.className = 'sidebar-label';
+    el.textContent = text;
+    return el;
+  }
+
+  function sidebarValue(text, asCode) {
+    const el = document.createElement('div');
+    el.className = 'sidebar-value';
+    if (asCode) {
+      const code = document.createElement('code');
+      code.textContent = text;
+      el.appendChild(code);
+    } else {
+      el.textContent = text;
+    }
+    return el;
+  }
+
+  function sidebarRelations(title, items) {
+    const box = sidebarSection();
+    box.appendChild(sidebarLabel(title));
+    const list = document.createElement('ul');
+    list.className = 'relation-list';
+    items.forEach((item) => {
+      const entry = document.createElement('li');
+      entry.className = 'relation-item';
+      entry.textContent = item;
+      list.appendChild(entry);
+    });
+    box.appendChild(list);
+    return box;
+  }
+
   function displayNodeDetails(node, cy) {
     const sidebar = document.getElementById('sidebar');
     const detailsContainer = document.getElementById('node-details');
@@ -360,17 +401,24 @@
     const incomingImports = node.incomers('edge[kind = "imports"]');
     const outgoingImports = node.outgoers('edge[kind = "imports"]');
 
-    let html = `
-      <div class="sidebar-section">
-        <span class="sidebar-badge badge-${kind}">${kind}</span>
-        <div class="sidebar-title" style="margin-top: 4px;">${escapeHtml(name)}</div>
-      </div>
+    const fragment = document.createDocumentFragment();
 
-      <div class="sidebar-section">
-        <div class="sidebar-label">Qualified Name</div>
-        <div class="sidebar-value"><code>${escapeHtml(qualifiedName)}</code></div>
-      </div>
-    `;
+    const header = sidebarSection();
+    const badge = document.createElement('span');
+    badge.className = 'sidebar-badge badge-' + String(kind).replace(/[^\w-]/g, '');
+    badge.textContent = kind;
+    header.appendChild(badge);
+    const title = document.createElement('div');
+    title.className = 'sidebar-title';
+    title.style.marginTop = '4px';
+    title.textContent = name;
+    header.appendChild(title);
+    fragment.appendChild(header);
+
+    const qualified = sidebarSection();
+    qualified.appendChild(sidebarLabel('Qualified Name'));
+    qualified.appendChild(sidebarValue(qualifiedName, true));
+    fragment.appendChild(qualified);
 
     if (relPath) {
       const targetPath = (window.CARTOG_VIEW_DATA?.meta?.target_path || '').replace(/\\/g, '/');
@@ -378,79 +426,64 @@
       const fullPath = targetPath ? `${targetPath}/${cleanRel}` : cleanRel;
       const vscodeUrl = `vscode://file/${fullPath}:${line}`;
 
-      html += `
-        <div class="sidebar-section">
-          <div class="sidebar-label">Location (Line ${line})</div>
-          <div class="sidebar-value"><code>${escapeHtml(cleanRel)}:${line}</code></div>
-          <a href="${vscodeUrl}" class="vscode-link" title="Open in VS Code" style="margin-top: 6px;">
-            <span>&#9998;</span> Open in VS Code
-          </a>
-        </div>
-      `;
+      const location = sidebarSection();
+      location.appendChild(sidebarLabel(`Location (Line ${line})`));
+      location.appendChild(sidebarValue(`${cleanRel}:${line}`, true));
+      const link = document.createElement('a');
+      link.href = vscodeUrl;
+      link.className = 'vscode-link';
+      link.title = 'Open in VS Code';
+      link.style.marginTop = '6px';
+      link.textContent = '\u270E Open in VS Code';
+      location.appendChild(link);
+      fragment.appendChild(location);
     }
 
     if (d.description) {
-      html += `
-        <div class="sidebar-section">
-          <div class="sidebar-label">Description</div>
-          <div class="sidebar-value">${escapeHtml(d.description)}</div>
-        </div>
-      `;
+      const description = sidebarSection();
+      description.appendChild(sidebarLabel('Description'));
+      description.appendChild(sidebarValue(d.description));
+      fragment.appendChild(description);
     }
 
-    // Callers list
+    const nodeLabel = (element) => element.data('label') || element.data('id');
+
     if (incomingCalls.length > 0) {
-      html += `
-        <div class="sidebar-section">
-          <div class="sidebar-label">Callers (${incomingCalls.length})</div>
-          <ul class="relation-list">
-      `;
-      incomingCalls.forEach((edge) => {
-        const src = edge.source();
-        html += `<li class="relation-item">${escapeHtml(src.data('label') || src.data('id'))}</li>`;
-      });
-      html += `</ul></div>`;
+      fragment.appendChild(sidebarRelations(
+        `Callers (${incomingCalls.length})`,
+        incomingCalls.map((edge) => nodeLabel(edge.source()))
+      ));
     }
 
-    // Callees list
     if (outgoingCalls.length > 0) {
-      html += `
-        <div class="sidebar-section">
-          <div class="sidebar-label">Callees (${outgoingCalls.length})</div>
-          <ul class="relation-list">
-      `;
-      outgoingCalls.forEach((edge) => {
-        const tgt = edge.target();
-        html += `<li class="relation-item">${escapeHtml(tgt.data('label') || tgt.data('id'))}</li>`;
-      });
-      html += `</ul></div>`;
+      fragment.appendChild(sidebarRelations(
+        `Callees (${outgoingCalls.length})`,
+        outgoingCalls.map((edge) => nodeLabel(edge.target()))
+      ));
     }
 
-    // Imports list
     if (outgoingImports.length > 0) {
-      html += `
-        <div class="sidebar-section">
-          <div class="sidebar-label">Imports (${outgoingImports.length})</div>
-          <ul class="relation-list">
-      `;
-      outgoingImports.forEach((edge) => {
-        const tgt = edge.target();
-        html += `<li class="relation-item">${escapeHtml(tgt.data('label') || tgt.data('id'))}</li>`;
-      });
-      html += `</ul></div>`;
+      fragment.appendChild(sidebarRelations(
+        `Imports (${outgoingImports.length})`,
+        outgoingImports.map((edge) => nodeLabel(edge.target()))
+      ));
     }
 
-    detailsContainer.innerHTML = html;
+    detailsContainer.replaceChildren(fragment);
   }
 
   function clearSidebar() {
     const detailsContainer = document.getElementById('node-details');
     if (detailsContainer) {
-      detailsContainer.innerHTML = `
-        <div class="sidebar-section" style="color: var(--text-muted); font-size: 0.85rem; text-align: center; margin-top: 32px;">
-          Select any node or symbol in the diagram to inspect properties, dependencies, and code coordinates.
-        </div>
-      `;
+      const empty = document.createElement('div');
+      empty.className = 'sidebar-section';
+      empty.style.color = 'var(--text-muted)';
+      empty.style.fontSize = '0.85rem';
+      empty.style.textAlign = 'center';
+      empty.style.marginTop = '32px';
+      empty.textContent =
+        'Select any node or symbol in the diagram to inspect properties, dependencies, and code coordinates.';
+      detailsContainer.replaceChildren(empty);
     }
   }
 
@@ -539,9 +572,9 @@
       let showReferences = false;
       btnToggleReferences.addEventListener('click', () => {
         showReferences = !showReferences;
-        btnToggleReferences.innerHTML = showReferences
-          ? '&#9678; References: On'
-          : '&#9678; References: Off';
+        btnToggleReferences.textContent = showReferences
+          ? '\u25CE References: On'
+          : '\u25CE References: Off';
         btnToggleReferences.classList.toggle('active', showReferences);
         cy.batch(() => {
           cy.edges('[kind = "references"]').forEach(edge => {
@@ -556,9 +589,9 @@
       let showHelpers = true;
       btnToggleHelpers.addEventListener('click', () => {
         showHelpers = !showHelpers;
-        btnToggleHelpers.innerHTML = showHelpers
-          ? '&#9881; Helpers: Shown'
-          : '&#9881; Helpers: Hidden';
+        btnToggleHelpers.textContent = showHelpers
+          ? '\u2699 Helpers: Shown'
+          : '\u2699 Helpers: Hidden';
         btnToggleHelpers.classList.toggle('active', !showHelpers);
         cy.batch(() => {
           cy.nodes('[is_helper = 1]').forEach(node => {
@@ -638,16 +671,6 @@
         sidebar.classList.add('hidden');
       });
     }
-  }
-
-  function escapeHtml(str) {
-    if (!str) return '';
-    return String(str)
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#039;');
   }
 })();
 

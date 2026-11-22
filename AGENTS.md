@@ -18,6 +18,7 @@ commands) and [`docs/WORKING_TASKS.md`](docs/WORKING_TASKS.md) (the live board).
 | Code standards, repository map, key invariants | [`docs/dev/CODE_STANDARDS.md`](docs/dev/CODE_STANDARDS.md) |
 | Package layout: every module's destination, import rules, migration order | [`docs/dev/PACKAGE_LAYOUT.md`](docs/dev/PACKAGE_LAYOUT.md) |
 | Unified command design: name, options, exit codes, output tree, migration (E2/U1) | [`docs/dev/UNIFIED_COMMAND.md`](docs/dev/UNIFIED_COMMAND.md) |
+| Toolchain pins: vendored asset hashes, minimum Node tool versions (E3/S7) | [`docs/dev/TOOLCHAIN.md`](docs/dev/TOOLCHAIN.md) |
 
 ## Non-negotiables
 

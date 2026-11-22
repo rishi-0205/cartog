@@ -5,7 +5,6 @@ import json
 import os
 import re
 import shutil
-import subprocess
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -14,6 +13,7 @@ from typing import Any
 from cartog.core.config import SCHEMA_VERSION
 from cartog.core.diagnostics import get_logger
 from cartog.core.model import SourceRange
+from cartog.core.proc import run as run_process
 from cartog.parse.base import SymbolRecord
 from cartog.scip.scip_pb2 import Index
 
@@ -353,8 +353,10 @@ def run_scip_indexer(
 
         # Query version of resolved Python interpreter
         try:
-            v_res = subprocess.run([resolved_python, "--version"], capture_output=True, text=True, timeout=5)
-            python_version = (v_res.stdout.strip() or v_res.stderr.strip())
+            v_res = run_process(
+                [resolved_python, "--version"], timeout=5, allow_python=True
+            )
+            python_version = (v_res.stdout.strip() or v_res.stderr.strip()) or None
         except Exception:
             python_version = None
 
@@ -373,12 +375,9 @@ def run_scip_indexer(
 
     # Pre-check execution (ensure indexer runs cleanly without crash)
     try:
-        check_res = subprocess.run(
+        check_res = run_process(
             [indexer_name, "--version"],
-            capture_output=True,
-            text=True,
             timeout=5,
-            shell=is_win,
             env=env,
         )
         if check_res.returncode != 0:
@@ -434,15 +433,16 @@ def run_scip_indexer(
     logger.info(f"Running SCIP indexer: {' '.join(indexer_cmd)}")
 
     try:
-        proc = subprocess.run(
+        proc = run_process(
             indexer_cmd,
             cwd=target_p,
-            capture_output=True,
-            text=True,
             timeout=timeout_sec,
-            shell=is_win,
             env=env,
         )
+        if proc.timed_out:
+            reason = f"SCIP indexer timed out after {timeout_sec}s."
+            logger.warning(reason)
+            return _fail(reason)
         if proc.returncode != 0:
             full_err = proc.stderr.strip() or proc.stdout.strip()
             reason = f"SCIP indexer exited with code {proc.returncode}: {full_err}"
@@ -468,10 +468,6 @@ def run_scip_indexer(
             logger.warning(reason)
             return _fail(reason)
 
-    except subprocess.TimeoutExpired:
-        reason = f"SCIP indexer timed out after {timeout_sec}s."
-        logger.warning(reason)
-        return _fail(reason)
     except Exception as e:
         reason = f"SCIP indexer execution error: {e}"
         logger.warning(reason)

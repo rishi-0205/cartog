@@ -158,13 +158,13 @@ All nine findings below were **reproduced on branch `docs/task-plan`** before th
 
 ## Lint debt (deferred from R1, reviewed in R12)
 
-R1 turned on `ruff check .` (select `E,F,I,UP,B`) and the tree is clean. One rule
-stays ignored on purpose; it is debt, not a fix.
+R1 turned on `ruff check .` (select `E,F,I,UP,B`) and the tree is clean. Two
+rules stay ignored on purpose: one is debt, one is a framework idiom.
 
 | Rule | Count | Why it is ignored | Owner |
 |---|---|---|---|
-| `E501` line-too-long | 224 | Most hits are Typer `help=` strings, docstring examples and long assertions. Reflowing a help string changes `--help` output, and a blanket `ruff format` would churn lines the evidence transcripts quote. E2 adds a new CLI surface but does not rewrite the existing 224 hits. | E3 (dedicated lint pass; Decision 35) |
-| `B008` function-call-in-default | — | Typer commands must declare `typer.Option(...)`/`typer.Argument(...)` in the signature; this is the documented idiom, not a bug. | stays ignored by design |
+| `E501` line-too-long | 227 (2026-11-22) | Most hits are Typer `help=` strings, docstring examples and long assertions. Reflowing a help string changes `--help` output, and a blanket `ruff format` would churn lines the evidence transcripts quote. | **BI-1**, deferred to after E8 (Decision 42) |
+| `B008` function-call-in-default | 6, all `typer.Option` | Typer commands must declare `typer.Option(...)`/`typer.Argument(...)` in the signature; this is the documented idiom, not a bug. Scoping the rule to `cartog/cli/commands/*.py` restores the check everywhere else. | **BI-2**, deferred to after E8 (Decision 42) |
 
 R12 cleared the rest:
 
@@ -175,6 +175,33 @@ R12 cleared the rest:
   in `find_calls` is bound as a default argument, and the two cache comparisons
   now use `zip(..., strict=True)`. `[tool.ruff.lint.per-file-ignores]` no longer
   exempts `tests/*.py`.
+
+
+---
+
+## Post-E8 backlog: static analysis and tooling (deferred 2026-11-22)
+
+The author deferred these from the E3 review. They are **not** E3 scope and are
+not scheduled into E4–E7; D1 (E8, final documentation) carries the list forward
+so it cannot be lost. Each becomes its own task, with its own red-green evidence,
+when it is picked up. E3 itself was **ACCEPTED on 2026-11-22** with no blocking
+findings; these six items are the only follow-ups it left.
+
+| ID | Item | Size | Why it waits |
+|---|---|---|---|
+| **BI-1** | Reflow the 227 `E501` lines and re-enable the rule | M | Changes `--help` text and lines quoted in `docs/evidence/`; needs its own pass and evidence refresh, not a blanket `ruff format`. |
+| **BI-2** | Scope `B008` to `cartog/cli/commands/*.py` with `per-file-ignores` | S | Restores the rule everywhere else; the six Typer hits stay ignored by design. |
+| **BI-3** | Add the `S` (flake8-bandit) family to `select` and triage | S–M | Each new finding needs a decision, not a bulk `noqa`. |
+| **BI-4** | Type checking (`mypy` or `pyright`) over `cartog/` with a recorded baseline and a CI gate | L | The largest real defect-detection gap: annotations exist, nothing checks them. |
+| **BI-5** | Coverage gate (`pytest-cov` with a floor) | S | 241 tests, no enforced minimum. |
+| **BI-6** | Triage `C90`/`SIM`/`PERF`; replace the `Column._cells` mutation with a `SanitizingTable` | M | 9 imports and 13 construction sites; no behaviour risk today because Rich is now pinned. |
+
+Facts recorded with the deferral so the next task does not re-measure them:
+
+- `E501` is **227** lines as measured on 2026-11-22 (`ruff check . --select E501 --statistics`). Earlier notes said 224 and 228; BI-1 should leave one number in one place.
+- `B008` has **6** hits, all `typer.Option` in `cartog/cli/commands/`.
+- `rich>=13,<16` became a direct dependency in the E3 review follow-up (Decision 42); that pin is what makes BI-6 safe to defer.
+- The private-API control is covered by `test_console_strips_ansi_and_controls` (cell, header, footer and title) and `test_rich_dependency_is_pinned` (the pin itself).
 
 
 ---

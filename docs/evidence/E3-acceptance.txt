@@ -1,0 +1,61 @@
+# E3 acceptance — security baseline merged into main
+
+Date: 2026-11-22
+Author command: `accepted E3, commit and merge it to main`
+Branch: `feature/security-baseline` (from `main` at `a857da4`, the E2 merge)
+
+Procedure from `docs/dev/GIT_WORKFLOW.md` §4.3: record acceptance on the epic
+branch, run the suite and the goldens on that commit, merge with
+`git merge --no-ff`, then delete the branch with `git branch -d`.
+
+The tree verified below is the tree the merge commit points at: `main` was an
+ancestor of the branch, so `git diff main feature/security-baseline` was empty
+before the merge and the no-ff merge changed no file.
+
+## Epics accepted before this one
+
+| Epic | Accepted | Test count at acceptance |
+|---|---|---|
+| E0 `fix/baseline-correctness` | 2026-11-15 | 162 |
+| E1 `refactor/package-structure` | 2026-11-17 | 194 |
+| E1b `refactor/drop-compat-shims` | 2026-11-17 | 194 |
+| E2 `feature/unified-command-and-output` | 2026-11-19 | 216 |
+| E3 `feature/security-baseline` | 2026-11-22 | 241 |
+
+## What E3 left behind
+
+Nine tasks, 24 security tests plus one pin test, and three deferred debts:
+
+- open findings: none;
+- follow-ups: the post-E8 backlog BI-1 to BI-6 in `docs/KNOWN_ISSUES.md`
+  (`E501` reflow, `B008` scoping, bandit `S`, type checking, coverage gate,
+  `C90`/`SIM`/`PERF` plus the `SanitizingTable` rewrite);
+- decisions added: 36 (single subprocess runner), 37 (path confinement and the
+  `path_` selector), 38 (one sanitiser at the console boundary), 39 (vendor
+  hashes after LF normalisation), 40 (hard limits), 41 (threat model without a
+  sandbox claim), 42 (Rich pin, security floor, backlog).
+
+## Full suite on the acceptance commit
+
+Command: venv\Scripts\python.exe -m pytest -q
+
+........................................................................ [ 29%]
+........................................................................ [ 59%]
+........................................................................ [ 89%]
+.........................                                                [100%]
+============================== warnings summary ===============================
+tests/test_jsonc.py::test_jsonc_unterminated_block_comment
+  C:\Users\rishi\OneDrive\Desktop\Dev\cartog\cartog\core\jsonc.py:142: UserWarning: Unterminated block comment in 'C:/Users/rishi/AppData/Local/Temp/pytest-of-rishi/pytest-413/test_jsonc_unterminated_block_0/tsconfig.json' starting at line 3
+    clean = strip_jsonc_comments_and_trailing_commas(raw, filename=p.as_posix())
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+241 passed, 1 warning in 189.27s (0:03:09)
+
+## Goldens on the acceptance commit
+
+Command: venv\Scripts\python.exe scripts/golden.py --check
+
+click: 0 differences
+flask: 0 differences
+ky: 0 differences
+0 differences

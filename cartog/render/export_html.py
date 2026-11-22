@@ -4,12 +4,54 @@ Generates a 100% self-contained, offline HTML map (map.html) with
 dynamic compound expand/collapse, sidebar details, and vscode:// editor links.
 """
 
+import html as html_lib
 import json
 from pathlib import Path
 from typing import Any
 
 from cartog.core.model import Edge, Graph, Node
 from cartog.render.views import ViewNode, build_universal_view_tree
+
+#: Policy for the self-contained map: inline bundled script and styles only,
+#: no network origin, no form, no base override. The viewer never navigates
+#: except through user-clicked ``vscode://`` links.
+CSP_POLICY = (
+    "default-src 'none'; "
+    "script-src 'unsafe-inline'; "
+    "style-src 'unsafe-inline'; "
+    "img-src data:; "
+    "font-src data:; "
+    "connect-src 'none'; "
+    "base-uri 'none'; "
+    "form-action 'none'"
+)
+
+#: Characters that can terminate the inline ``<script>`` element or break a
+#: JavaScript string literal. Both spellings are valid inside JSON strings.
+_SCRIPT_UNSAFE = {
+    "&": "\\u0026",
+    "<": "\\u003c",
+    ">": "\\u003e",
+    "\u2028": "\\u2028",
+    "\u2029": "\\u2029",
+}
+
+
+def escape_json_for_script(payload: str) -> str:
+    """Escape a serialized JSON payload for safe embedding in ``<script>``.
+
+    ``json.dumps`` does not escape ``</script>``, ``&`` or the JavaScript line
+    separators; after this pass the payload cannot close the element or inject
+    markup, while still parsing back to the same value.
+    """
+    for raw, escaped in _SCRIPT_UNSAFE.items():
+        payload = payload.replace(raw, escaped)
+    return payload
+
+
+def escape_html_text(text: Any) -> str:
+    """HTML-escape text that is interpolated into markup outside the payload."""
+    return html_lib.escape(str(text), quote=True)
 
 
 def _load_asset(name: str) -> str:
@@ -233,7 +275,7 @@ def generate_html_map(
     else:
         rollup_note = "No edges rolled up"
 
-    payload_json = json.dumps({
+    payload_json = escape_json_for_script(json.dumps({
         "elements": elements,
         "meta": {
             "target_path": graph.meta.get("target_path", ""),
@@ -243,14 +285,17 @@ def generate_html_map(
             "dropped_self_edges": dropped_self,
             "emitted_edges": rollup_stats.get("emitted_edges", 0),
         }
-    }, indent=None, separators=(",", ":"))
+    }, indent=None, separators=(",", ":")))
+
+    safe_target = escape_html_text(target_name)
 
     html = f"""<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cartog Interactive Map - {target_name}</title>
+  <meta http-equiv="Content-Security-Policy" content="{CSP_POLICY}">
+  <title>Cartog Interactive Map - {safe_target}</title>
   <style>
 {viewer_css}
   </style>
@@ -260,8 +305,8 @@ def generate_html_map(
     <header id="header-bar">
       <div class="brand-section">
         <span class="brand-logo">&#9670; Cartog</span>
-        <span class="project-title">{target_name} &bull; {subtitle}</span>
-        <span id="rollup-note" class="rollup-note" title="Edges whose endpoint is collapsed are aggregated at the nearest visible ancestor">{rollup_note}</span>
+        <span class="project-title">{safe_target} &bull; {escape_html_text(subtitle)}</span>
+        <span id="rollup-note" class="rollup-note" title="Edges whose endpoint is collapsed are aggregated at the nearest visible ancestor">{escape_html_text(rollup_note)}</span>
       </div>
       <div class="header-controls">
         <input type="text" id="search-input" class="search-box" placeholder="Filter symbols, files..." aria-label="Search">

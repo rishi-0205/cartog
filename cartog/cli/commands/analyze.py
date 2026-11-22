@@ -26,6 +26,12 @@ from cartog.cli.shared import (
     console,
 )
 from cartog.core.config import DEFAULT_MAX_FILE_SIZE_MB
+from cartog.core.limits import (
+    DEFAULT_MAX_FILES,
+    DEFAULT_MAX_GRAPH_EDGES,
+    DEFAULT_MAX_GRAPH_NODES,
+    enforce_graph_size,
+)
 from cartog.core.model import Graph
 from cartog.core.output import (
     RunLayout,
@@ -178,6 +184,24 @@ def analyze(
     no_max_file_size: bool = typer.Option(
         False, "--no-max-file-size", help="Disable the file size limit."
     ),
+    max_files: int = typer.Option(
+        DEFAULT_MAX_FILES,
+        "--max-files",
+        min=1,
+        help="Abort when more source files than this are discovered.",
+    ),
+    max_graph_nodes: int = typer.Option(
+        DEFAULT_MAX_GRAPH_NODES,
+        "--max-graph-nodes",
+        min=1,
+        help="Abort when the merged graph has more nodes than this.",
+    ),
+    max_graph_edges: int = typer.Option(
+        DEFAULT_MAX_GRAPH_EDGES,
+        "--max-graph-edges",
+        min=1,
+        help="Abort when the merged graph has more edges than this.",
+    ),
     pretty: bool = typer.Option(False, "--pretty", help="Indent graph.json."),
     emit_contains: bool = typer.Option(
         False, "--emit-contains", help="Emit redundant contains edges."
@@ -262,6 +286,12 @@ def analyze(
         "flow": flow,
         "keep": keep,
     }
+    limits = {
+        "max_file_size_mb": None if no_max_file_size else max_file_size,
+        "max_files": max_files,
+        "max_graph_nodes": max_graph_nodes,
+        "max_graph_edges": max_graph_edges,
+    }
 
     try:
         target_path, stage_dir, scan_result, parsed_files, _, _, _, _, manifest_facts = (
@@ -275,6 +305,7 @@ def analyze(
                 force=force or no_cache,
                 verbose=verbose,
                 cache_dir=location.cache_dir,
+                max_files=max_files,
             )
         )
 
@@ -308,6 +339,12 @@ def analyze(
                 path_: classification.to_dict()
                 for path_, classification in sorted(noise_classifications.items())
             }
+        enforce_graph_size(
+            len(graph.nodes),
+            len(graph.edges),
+            max_nodes=max_graph_nodes,
+            max_edges=max_graph_edges,
+        )
         layout.write_text(
             "graph.json", graph.to_json(indent=2 if pretty else None)
         )
@@ -482,6 +519,7 @@ def analyze(
             finished_at=utc_timestamp(),
             cartog_version=__version__,
             timings={"total_ms": round((time.perf_counter() - started) * 1000, 2)},
+            limits=limits,
         )
         layout.write_json("meta.json", meta, pretty=True)
         layout.finalize(keep=keep)
@@ -510,6 +548,7 @@ def analyze(
                     timings={
                         "total_ms": round((time.perf_counter() - started) * 1000, 2)
                     },
+                    limits=limits,
                 ),
                 pretty=True,
             )

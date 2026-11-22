@@ -1,0 +1,81 @@
+# S1 evidence - one subprocess runner
+
+Date: 2026-11-19 17:49:06
+Branch: feature/security-baseline
+
+## Starting count
+
+Command: venv\Scripts\python.exe -m pytest tests\ -q --ignore=tests\test_security.py
+216 passed, 1 warning in 207.59s (0:03:27)
+
+`tests/test_security.py` is new in this task, so the pre-existing suite is the
+baseline: 216 tests (same count E2 recorded).
+
+## Red: no runner module, subprocess imported in three places
+
+Command: venv\Scripts\python.exe -m pytest tests\test_security.py -k runner -q
+Raw transcript: `docs/evidence/S1-subprocess-runner-red.txt`
+
+FAILED tests\test_security.py::test_no_subprocess_outside_runner - AssertionE...
+FAILED tests\test_security.py::test_runner_rejects_unknown_binary - ModuleNot...
+FAILED tests\test_security.py::test_runner_times_out - ModuleNotFoundError: N...
+FAILED tests\test_security.py::test_runner_caps_captured_output - ModuleNotFo...
+FAILED tests\test_security.py::test_runner_env_allowlist_drops_secrets - Modu...
+FAILED tests\test_security.py::test_runner_never_uses_shell - ImportError: ca...
+6 failed in 0.27s
+
+`test_no_subprocess_outside_runner` lists the three offending modules
+(`cartog/scip/runner.py`, `cartog/render/export_mermaid.py`,
+`cartog/cli/commands/doctor.py`); the other five fail because
+`cartog/core/proc.py` does not exist yet.
+
+First implementation attempt failed twice before the green run:
+
+* `TimeoutExpired` in this Python has no `.returncode` attribute
+  (`AttributeError`, `cartog/core/proc.py:224`), fixed by returning `-1`;
+* `filtered_env()` let caller overrides through unfiltered, so
+  `CARTOG_SECRET_TOKEN` survived
+  (`AssertionError: assert 'CARTOG_SECRET_TOKEN' not in {...}`), fixed by
+  filtering the overrides through the same allowlist.
+
+Both were fixed before the transcript below was taken.
+
+## Green: one runner, whitelist enforced
+
+Command: venv\Scripts\python.exe -m pytest tests\test_security.py -k runner -q
+Raw transcript: `docs/evidence/S1-subprocess-runner-green.txt`
+
+......                                                                   [100%]
+6 passed in 0.54s
+
+Covered: the AST scan allows `subprocess` only in `cartog/core/proc.py`; an
+unknown binary (`curl`) raises `UnknownBinaryError`; a timeout returns
+`timed_out=True` with a non-zero exit in under 4 s; captured output is capped;
+`filtered_env()` keeps `PATH`/`NODE_OPTIONS` and drops secrets; the runner
+always calls `subprocess.run(..., shell=False)`.
+
+## Full suite
+
+Command: venv\Scripts\python.exe -m pytest tests\ -q
+Raw transcript: `docs/evidence/S1-subprocess-runner-suite.txt`
+
+222 passed, 1 warning in 197.28s (0:03:17)
+
+216 -> 222: the six new S1 tests, no test removed or weakened.
+
+## Golden
+
+Command: venv\Scripts\python.exe scripts\golden.py --check
+Raw transcript: `docs/evidence/S1-subprocess-runner-golden.txt`
+
+click: 0 differences
+flask: 0 differences
+ky: 0 differences
+0 differences
+
+## Notes
+
+* Decision 36 records why the runner is `cartog/core/proc.py` and why `node`
+  and `madge` are allowlisted for `doctor`'s version probes.
+* `docs/dev/PACKAGE_LAYOUT.md` gained the `core/proc.py` row in the same commit
+  so `tests/test_package_layout.py` still covers every file under `cartog/`.

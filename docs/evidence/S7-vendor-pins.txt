@@ -1,0 +1,76 @@
+# S7 evidence - pin and checksum vendored libraries
+
+Date: 2026-11-19 20:26:00
+Branch: feature/security-baseline
+
+## Red: no lock, no toolchain module
+
+Command: venv\Scripts\python.exe -m pytest tests\test_security.py -k "vendor or doctor" -q
+Raw transcript: `docs/evidence/S7-vendor-pins-red.txt`
+
+FAILED tests/test_security.py::test_vendor_asset_hashes_match_lock - Assertio...
+FAILED tests/test_security.py::test_doctor_checks_tool_versions - ModuleNotFo...
+2 failed, 19 deselected in 0.58s
+
+`cartog/render/assets/VENDOR_LOCK.json` did not exist, so no vendored library
+had a pinned version, licence or digest, and `cartog.core.toolchain` did not
+exist, so `doctor` printed a version string without comparing it to a floor.
+
+## Green
+
+Command: venv\Scripts\python.exe -m pytest tests\test_security.py -k "vendor or doctor" -q
+Raw transcript: `docs/evidence/S7-vendor-pins-green.txt`
+
+..                                                                       [100%]
+2 passed, 19 deselected in 0.50s
+
+What the fix does:
+
+* `cartog/render/assets/VENDOR_LOCK.json` pins the five vendored libraries
+  (cytoscape 3.34.4, expand-collapse 4.1.1, fcose 2.2.0, layout-base 2.0.1,
+  cose-base 2.2.0) by upstream name, version, MIT licence and SHA-256.
+  `viewer.js`/`viewer.css` are Cartog's own code, not vendored, and are not in
+  the lock. Digests are computed after normalising CRLF/CR to LF so the pin is
+  identical on a Windows checkout and on Linux CI; the JSON records that rule.
+* `test_vendor_asset_hashes_match_lock` recomputes each digest and asserts the
+  lock's file set equals the vendored `.js` set minus `viewer.js`.
+* New `cartog/core/toolchain.py` declares `MINIMUM_TOOL_VERSIONS` (node 18.0.0,
+  mmdc 10.0.0, scip-python 0.6.0, scip-typescript 0.3.0, madge 6.0.0) and
+  `parse_version`/`version_meets_minimum`. `cartog doctor` uses them for every
+  tool it probes and prints `<version> (below minimum v<minimum>)` on a WARN
+  row instead of a bare PASS.
+* `docs/dev/TOOLCHAIN.md` records the tested/pinned versions, the minimums and
+  the vendored table; `AGENTS.md` links it (the existing docs-link test
+  requires every `docs/dev/*.md` to be linked, which the first full-suite run
+  caught and this commit fixes).
+
+## doctor, real environment
+
+Command: venv\Scripts\python.exe -m cartog doctor
+
+| Component | Status | Version |
+|---|---|---|
+| Node.js | PASS | v22.13.0 |
+| scip-python | PASS | v0.6.6 |
+| scip-typescript | PASS | v0.4.0 |
+| mmdc (mermaid-cli) | PASS | v12.0.0 |
+| madge (verification) | PASS | v8.0.0 |
+
+## Full suite
+
+Command: venv\Scripts\python.exe -m pytest tests\ -q
+Raw transcript: `docs/evidence/S7-vendor-pins-suite.txt`
+
+237 passed, 1 warning in 193.29s (0:03:13)
+
+235 -> 237: the two S7 tests, no test removed or weakened.
+
+## Golden
+
+Command: venv\Scripts\python.exe scripts\golden.py --check
+Raw transcript: `docs/evidence/S7-vendor-pins-golden.txt`
+
+click: 0 differences
+flask: 0 differences
+ky: 0 differences
+0 differences

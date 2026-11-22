@@ -32,15 +32,15 @@ The roadmap narrative is [`docs/IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.m
 | U4 | Unified command | E2 | `feature/unified-command-and-output` | U3 | M | E2-S4 | DONE | 7991e3c |
 | U5 | Keep stage commands and consolidate flags | E2 | `feature/unified-command-and-output` | U4 | M | E2-S5 | DONE | 4941894 |
 | U6 | Docs and tests for the new flow | E2 | `feature/unified-command-and-output` | U4, U5 | S | E2-S5 | DONE | 7008403 |
-| S1 | One subprocess runner | E3 | `feature/security-baseline` | U4 | M | E3-S1 | TODO | — |
-| S2 | Hostile canary repository | E3 | `feature/security-baseline` | S1 | S | E3-S1 | TODO | — |
-| S3 | Escape everything embedded in map.html | E3 | `feature/security-baseline` | U4 | M | E3-S2 | TODO | — |
-| S4 | Sanitize Mermaid labels | E3 | `feature/security-baseline` | S3 | S | E3-S3 | TODO | — |
-| S5 | Path confinement and output-name sanitization | E3 | `feature/security-baseline` | S1, U3 | M | E3-S3 | TODO | — |
-| S6 | Strip terminal control characters | E3 | `feature/security-baseline` | S1 | S | E3-S4 | TODO | — |
-| S7 | Pin and checksum vendored libraries | E3 | `feature/security-baseline` | — | S | E3-S4 | TODO | — |
-| S8 | Configurable limits | E3 | `feature/security-baseline` | U2 | S | E3-S4 | TODO | — |
-| S9 | SECURITY.md | E3 | `feature/security-baseline` | S1–S8 | S | E3-S5 | TODO | — |
+| S1 | One subprocess runner | E3 | `feature/security-baseline` | U4 | M | E3-S1 | DONE | b5c96d8 |
+| S2 | Hostile canary repository | E3 | `feature/security-baseline` | S1 | S | E3-S1 | DONE | d0b7731 |
+| S3 | Escape everything embedded in map.html | E3 | `feature/security-baseline` | U4 | M | E3-S2 | DONE | aba352b |
+| S4 | Sanitize Mermaid labels | E3 | `feature/security-baseline` | S3 | S | E3-S3 | DONE | 12c24f6 |
+| S5 | Path confinement and output-name sanitization | E3 | `feature/security-baseline` | S1, U3 | M | E3-S3 | DONE | 88b9c30 |
+| S6 | Strip terminal control characters | E3 | `feature/security-baseline` | S1 | S | E3-S4 | DONE | 2131338 |
+| S7 | Pin and checksum vendored libraries | E3 | `feature/security-baseline` | - | S | E3-S4 | DONE | ff8a2eb |
+| S8 | Configurable limits | E3 | `feature/security-baseline` | U2 | S | E3-S4 | DONE | 6c98f80 |
+| S9 | SECURITY.md | E3 | `feature/security-baseline` | S1-S8 | S | E3-S5 | DONE | fe854ed |
 | V1 | Timings and peak memory | E4 | `feature/verification` | U3 | S | E4-S1 | TODO | — |
 | V2 | index.scip never left in the analyzed repo | E4 | `feature/verification` | U4 | S | E4-S1 | TODO | — |
 | V3 | SCIP environment investigation | E4 | `feature/verification` | V2 | M | E4-S2 | TODO | — |
@@ -80,7 +80,7 @@ The roadmap narrative is [`docs/IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.m
 | E1 | `refactor/package-structure` | E0 | 13 / 13 | ACCEPTED | 2026-11-17 |
 | E1b | `refactor/drop-compat-shims` | E1 | 1 / 1 | ACCEPTED | 2026-11-17 |
 | E2 | `feature/unified-command-and-output` | E1b | 6 / 6 | ACCEPTED | 2026-11-19 |
-| E3 | `feature/security-baseline` | E2 | 0 / 9 | NOT STARTED | no |
+| E3 | `feature/security-baseline` | E2 | 9 / 9 | ACCEPTED | 2026-11-22 |
 | E4 | `feature/verification` | E2 | 0 / 5 | NOT STARTED | no |
 | E5 | `feature/llm-layer` | E2, E3 | 0 / 11 | NOT STARTED | no |
 | E6 | `feature/gallery` | E3 | 0 / 4 | NOT STARTED | no |
@@ -741,10 +741,11 @@ At most one epic per session; within that epic, finish and commit each task befo
 - **User check (epic review):** `pytest tests/test_security.py -k runner -q`
 - **Evidence files:** `docs/evidence/S1-subprocess-runner.txt`
 - **Planned commit message:** `S1: centralize subprocess execution`
-- **Status:** TODO
-- **Commit hash:** —
-- **Failure log:** —
-- **Change log:** —
+- **Status:** DONE
+- **Commit hash:** `b5c96d8`
+- **Failure log:** Red run (`docs/evidence/S1-subprocess-runner-red.txt`): `test_no_subprocess_outside_runner` failed listing `cartog/scip/runner.py`, `cartog/render/export_mermaid.py`, and `cartog/cli/commands/doctor.py`; the other five tests failed with `ModuleNotFoundError: No module named 'cartog.core.proc'`. Two implementation attempts failed before green: `TimeoutExpired` has no `.returncode` in this Python, and `filtered_env()` initially let caller overrides (and so `CARTOG_SECRET_TOKEN`) through. Both fixed before the green run.
+- **Change log:**
+  - 2026-11-19: Added `cartog/core/proc.py` (allowlist, `shell=False`, timeout, environment allowlist, output cap, `ProcResult`). Routed the three existing call sites through it (`scip/runner.py`, `render/export_mermaid.py`, `cli/commands/doctor.py`) and removed every other `subprocess` import. Added `tests/test_security.py` with six S1 tests. Recorded Decision 36 (why `core/proc.py`, and `node`/`madge` in the allowlist) and added the `core/proc.py` row to `docs/dev/PACKAGE_LAYOUT.md`. Suite 216 → 222; golden 0 differences; ruff clean.
 
 ### S2: Hostile canary repository
 
@@ -761,10 +762,11 @@ At most one epic per session; within that epic, finish and commit each task befo
 - **User check (epic review):** `pytest tests/test_security.py -k hostile -q`
 - **Evidence files:** `docs/evidence/S2-hostile-canary.txt`
 - **Planned commit message:** `S2: add hostile-repository canary`
-- **Status:** TODO
-- **Commit hash:** —
-- **Failure log:** —
-- **Change log:** —
+- **Status:** DONE
+- **Commit hash:** `d0b7731`
+- **Failure log:** Red run (`docs/evidence/S2-hostile-canary-red.txt`): both tests failed with `AssertionError: missing hostile fixture` before the fixture existed. This is a regression guard: the pipeline already never executed project code, and the red failure is the absent deliverable, recorded honestly instead of faking a vulnerable pipeline.
+- **Change log:**
+  - 2026-11-19: Added `tests/fixtures/hostile_repo/` (`package.json` postinstall and `setup.py` payloads, plus one Python and one JavaScript file to parse) and two tests that copy it to a temp directory, run `cartog analyze --no-scip`, and assert neither marker nor `node_modules` appears. Added `docs/evidence/S2-hostile-canary-armed.txt` proving both payloads really write their markers when executed in a throwaway directory. Suite 222 → 224; golden 0 differences; ruff clean.
 
 ### S3: Escape everything embedded in map.html
 
@@ -782,10 +784,11 @@ At most one epic per session; within that epic, finish and commit each task befo
 - **User check (epic review):** `pytest tests/test_security.py -k html -q`
 - **Evidence files:** `docs/evidence/S3-html-escaping.txt`
 - **Planned commit message:** `S3: escape all embedded HTML content`
-- **Status:** TODO
-- **Commit hash:** —
-- **Failure log:** —
-- **Change log:** —
+- **Status:** DONE
+- **Commit hash:** `aba352b`
+- **Failure log:** Red run (`docs/evidence/S3-html-escaping-red.txt`): all three tests failed — the hostile node name kept its raw `</script><script>` (payload breakout), `viewer.js` still had four `innerHTML` assignments, and `map.html` declared no CSP. A first green attempt failed because the test asserted "no U+2028 anywhere"; the separator legitimately appears in escaped header text, so the assertion was narrowed to the payload line where the task requires the escape.
+- **Change log:**
+  - 2026-11-19: Added `escape_json_for_script()` (`&`, `<`, `>`, U+2028, U+2029 as `\uXXXX`) and `escape_html_text()` to `cartog/render/export_html.py`, plus a `Content-Security-Policy` meta tag allowing only the bundled inline script/style and `data:` images/fonts. Rewrote the viewer sidebar and toolbar labels to use `createElement`/`textContent`/`replaceChildren`; removed `innerHTML` and the now-dead `escapeHtml`. Three S3 tests assert the breakout is gone, the payload round-trips through `json.loads`, the viewer has no string-built DOM, and the CSP allows no network origin. Suite 224 → 227; golden 0 differences; `node --check` on `viewer.js` exits 0; ruff clean.
 
 ### S4: Sanitize Mermaid labels
 
@@ -802,10 +805,11 @@ At most one epic per session; within that epic, finish and commit each task befo
 - **User check (epic review):** Render a hostile fixture with `mmdc`.
 - **Evidence files:** `docs/evidence/S4-mermaid-sanitize.txt`
 - **Planned commit message:** `S4: sanitize Mermaid labels`
-- **Status:** TODO
-- **Commit hash:** —
-- **Failure log:** —
-- **Change log:** —
+- **Status:** DONE
+- **Commit hash:** `12c24f6`
+- **Failure log:** Red run (`docs/evidence/S4-mermaid-sanitize-red.txt`): `test_mermaid_label_rejects_directives` found raw HTML, backticks, `%%`, a newline and `\"` in the label; the mmdc test failed because the generated diagram still contained `%%{init: {"securityLevel":"loose"}}%%`. Probing mmdc 12.0.0 showed `\"` inside a quoted label is a parse error, so the old quote escaping was itself broken; `#quot;` renders. `tests/test_mermaid.py::test_sanitize_helpers` was updated to the entity form (stronger: the old expectation produced unparseable Mermaid), documented in `docs/evidence/S4-mermaid-sanitize.txt`.
+- **Change log:**
+  - 2026-11-19: Rewrote `sanitize_label()`: newlines/tabs to spaces, `&`/`<`/`>` to HTML entities, `"` to `#quot;`, backticks to `#96;`, `%` to `#37;` (so `%%` and `%%{init}%%` cannot form), brackets to parentheses. Quoted Mermaid's `securityLevel` contract and directive syntax in the evidence file after checking the live docs and mmdc 12.0.0. Added two tests: the structural label test and a real `mmdc` render of a hostile generated diagram. Suite 227 → 229; golden 0 differences; ruff clean.
 
 ### S5: Path confinement and output-name sanitization
 
@@ -818,15 +822,17 @@ At most one epic per session; within that epic, finish and commit each task befo
   1. Resolve every output path under the resolved output root; reject escapes.
   2. Reject symlinks and junctions that point outside the repo or output root.
   3. Sanitize project names: `..`, separators, Windows reserved names, trailing dots/spaces, length cap.
-- **Tests (red-green):** `test_output_path_escape_rejected`, `test_junction_outside_repo_rejected`, `test_repo_name_sanitized`
+- **Tests (red-green):** `test_output_path_escape_rejected`, `test_path_junction_outside_repo_rejected`, `test_path_junction_outside_repo_not_scanned`, `test_path_repo_name_sanitized`
 - **Acceptance criteria:** No write outside the output root; hostile names are safe.
 - **User check (epic review):** `pytest tests/test_security.py -k path -q` (junction test may skip without privilege).
 - **Evidence files:** `docs/evidence/S5-path-confinement.txt`
 - **Planned commit message:** `S5: confine output paths and sanitize names`
-- **Status:** TODO
-- **Commit hash:** —
-- **Failure log:** —
-- **Change log:** —
+- **Status:** DONE
+- **Commit hash:** `88b9c30`
+- **Failure log:** Red run (`docs/evidence/S5-path-confinement-red.txt`): all four tests failed. `OutputPathError` did not exist; `RunLayout` joined untrusted strings directly, so `../escaped.txt` and an absolute path escaped; a junction at `out/view` was followed on write; `os.walk` descended through a junction and scanned `linked/secret.py`; `sanitize_project_name("CON.txt")` returned `CON.txt` instead of escaping the reserved stem.
+- **Change log:**
+  - 2026-11-19: Added `OutputPathError` and `RunLayout._confined_path()`: absolute paths, `..` climbs and resolved paths outside `run_dir` (including through a junction) are refused, and writers return the resolved destination. `walk_files` now prunes symlink and junction directories and skips symlinked files resolving outside the repository, recording each skip. `sanitize_project_name()` checks the pre-extension stem against `RESERVED_NAMES` and reapplies the length cap after prefixing. Four tests (`test_output_path_escape_rejected`, `test_path_junction_outside_repo_rejected`, `test_path_junction_outside_repo_not_scanned`, `test_path_repo_name_sanitized`); Decision 37 records why the junction cases carry the `path_` infix. Suite 229 -> 233; golden 0 differences; ruff clean.
+  - 2026-11-22: Corrected this task's "Tests (red-green)" field, which still named `test_junction_outside_repo_rejected` and `test_repo_name_sanitized`; neither exists. The `path_` infix convention is unchanged and `pytest tests/test_security.py -k path -q` selects all four (Decision 42).
 
 ### S6: Strip terminal control characters
 
@@ -843,10 +849,12 @@ At most one epic per session; within that epic, finish and commit each task befo
 - **User check (epic review):** `pytest tests/test_security.py -k control -q`
 - **Evidence files:** `docs/evidence/S6-control-chars.txt`
 - **Planned commit message:** `S6: strip control characters from terminal output`
-- **Status:** TODO
-- **Commit hash:** —
-- **Failure log:** —
-- **Change log:** —
+- **Status:** DONE
+- **Commit hash:** `2131338`
+- **Failure log:** First red run: `cartog/core/text.py` was missing (`ImportError`) and the digest still rendered `\x1b[31m`/`\x07` from a hostile project name. During the green attempt a rich `Table` cell still emitted `ESC[31m`; the test was extended with a hostile table cell/header/title and the saved red transcript (`docs/evidence/S6-control-chars-red.txt`) shows that failure before table support was added.
+- **Change log:**
+  - 2026-11-19: Added `cartog/core/text.py::sanitize_console_text()` (full ANSI CSI/OSC/two-byte sequences, then C0/C1 controls except tab/newline, DEL and C1). Replaced the shared Rich console with `SanitizingConsole`, which sanitizes `str`/`Text` arguments and deep-copies tables to sanitize cells, header, footer, title and caption. `generate_digest()` sanitizes its final text. Added `cartog/core/text.py` to the package layout. Two tests (`test_console_strips_ansi_and_controls`, `test_digest_strips_controls`); Decision 38 records the boundary choice. Suite 233 -> 235; golden 0 differences; ruff clean.
+  - 2026-11-22: `rich>=13,<16` is now a direct dependency. The table branch rewrites `Column._cells` (Rich exposes no public way to replace a built table's cells) and Rich arrived only transitively via `typer`, so a major bump could have changed the control silently. `test_rich_dependency_is_pinned` asserts the declaration, the upper bound and that the installed version is inside it (Decision 42).
 
 ### S7: Pin and checksum vendored libraries
 
@@ -864,10 +872,11 @@ At most one epic per session; within that epic, finish and commit each task befo
 - **User check (epic review):** `pytest -k vendor -q`; `cartog doctor`.
 - **Evidence files:** `docs/evidence/S7-vendor-pins.txt`
 - **Planned commit message:** `S7: pin and checksum vendored libraries`
-- **Status:** TODO
-- **Commit hash:** —
-- **Failure log:** —
-- **Change log:** —
+- **Status:** DONE
+- **Commit hash:** `ff8a2eb`
+- **Failure log:** Red run (`docs/evidence/S7-vendor-pins-red.txt`): `VENDOR_LOCK.json` was absent and `cartog.core.toolchain` did not exist. The first full-suite run after implementing also caught `test_agents_points_to_docs_dev`, which requires every `docs/dev/*.md` to be linked from `AGENTS.md`; the new `TOOLCHAIN.md` link fixed it.
+- **Change log:**
+  - 2026-11-19: Added `cartog/render/assets/VENDOR_LOCK.json` (five libraries: name, version, MIT licence, SHA-256 normalised to LF), `cartog/core/toolchain.py` (`MINIMUM_TOOL_VERSIONS`, `parse_version`, `version_meets_minimum`), minimum checks in `doctor` for node/mmdc/scip-python/scip-typescript/madge, and `docs/dev/TOOLCHAIN.md` linked from `AGENTS.md`. Two tests (`test_vendor_asset_hashes_match_lock`, `test_doctor_checks_tool_versions`); Decision 39 records the LF-normalised hash rule and the code-owned minimums. Suite 235 -> 237; golden 0 differences; ruff clean.
 
 ### S8: Configurable limits
 
@@ -885,10 +894,11 @@ At most one epic per session; within that epic, finish and commit each task befo
 - **User check (epic review):** Run with a tiny limit and confirm the error and `meta.json`.
 - **Evidence files:** `docs/evidence/S8-limits.txt`
 - **Planned commit message:** `S8: add configurable analysis limits`
-- **Status:** TODO
-- **Commit hash:** —
-- **Failure log:** —
-- **Change log:** —
+- **Status:** DONE
+- **Commit hash:** `6c98f80`
+- **Failure log:** Red run (`docs/evidence/S8-limits-red.txt`): `cartog.core.limits` did not exist (ModuleNotFoundError) and `build_meta()` rejected `limits=` (TypeError). Nothing stopped an oversized run and `meta.json` had no record of the active limits.
+- **Change log:**
+  - 2026-11-19: Added `cartog/core/limits.py` (`AnalysisLimitError`, `enforce_file_count`, `enforce_graph_size`, defaults 50k files / 200k nodes / 500k edges). `_execute_parse()` takes `max_files` and checks before parsing; `analyze` checks the merged graph before writing `graph.json`, exposes `--max-files`, `--max-graph-nodes`, `--max-graph-edges`, and passes a `limits` object to `build_meta()` for complete and failed runs. The CLI checks with tiny limits exit 3 and leave a failed `meta.json` containing the limits. Two tests (`test_limits_are_enforced`, `test_limits_are_reported_in_meta`); Decision 40 records why file size stays an exclusion and why `--max-nodes` is not reused. Suite 237 -> 239; golden 0 differences; ruff clean.
 
 ### S9: SECURITY.md
 
@@ -906,10 +916,11 @@ At most one epic per session; within that epic, finish and commit each task befo
 - **User check (epic review):** Read SECURITY.md and follow its links.
 - **Evidence files:** `docs/evidence/S9-security-doc.txt`
 - **Planned commit message:** `S9: add SECURITY.md threat model`
-- **Status:** TODO
-- **Commit hash:** —
-- **Failure log:** —
-- **Change log:** —
+- **Status:** DONE
+- **Commit hash:** `fe854ed`
+- **Failure log:** Red run (`docs/evidence/S9-security-doc-red.txt`): `SECURITY.md` was absent (`assert False` on `is_file()`), so neither the threat model nor its entry links existed. The first green attempt failed because the required topic words `path confinement` and `redaction` were only implied; the introduction now states all five properties explicitly.
+- **Change log:**
+  - 2026-11-19: Added `SECURITY.md` with the trust boundary, a threat/control/code/test table for all E3 controls, an explicit "What is not protected" section (trusted indexer binaries, no OS sandbox, static-analysis blind spots, browser/editor, secrets in the tree, slow-but-allowed runs), a private reporting route, and links to code standards, toolchain pins, decisions and evidence. Linked it from `README.md` and `docs/HANDOFF.md`. One test (`test_security_doc_links_resolve`) checks existence, both entry links, required topics, and that every relative link resolves; Decision 41 records the no-sandbox claim discipline. Suite 239 -> 240; golden 0 differences; ruff clean.
 
 ### V1: Timings and peak memory
 
@@ -1513,6 +1524,7 @@ At most one epic per session; within that epic, finish and commit each task befo
   1. Write `docs/ARCHITECTURE.md` and `docs/USAGE.md`.
   2. Refresh README with a demo GIF; add CHANGELOG.
   3. Update the project report and HANDOFF; verify every link.
+  4. Carry the post-E8 backlog forward: `BI-1` to `BI-6` in `docs/KNOWN_ISSUES.md`. Re-measure each item, and either schedule it or hand the list to the author as the next milestone; do not let it disappear in the final docs.
 - **Tests (red-green):** `test_docs_links_resolve`, `test_usage_covers_every_command`
 - **Acceptance criteria:** Docs match the shipped CLI; links resolve; report and handoff current.
 - **User check (epic review):** Open README, ARCHITECTURE, USAGE; run every usage example.

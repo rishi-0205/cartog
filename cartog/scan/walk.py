@@ -252,6 +252,17 @@ def walk_files(
 
         # Prune default ignored directories and base gitignored directories
         for d in list(dirnames):
+            # Never follow a link out of the tree. Junctions report False from
+            # ``is_symlink`` on Windows, so check both.
+            child_dir = current_dir / d
+            if child_dir.is_symlink() or getattr(child_dir, "is_junction", lambda: False)():
+                dirnames.remove(d)
+                rel_linked = (rel_dir / d).as_posix() if rel_dir_posix != "." else d
+                result.skipped.append(
+                    SkippedFile(path=rel_linked, reason="symlink or junction ignored")
+                )
+                continue
+
             if d in DEFAULT_IGNORED_DIRS:
                 dirnames.remove(d)
                 rel_d = (rel_dir / d).as_posix() if rel_dir_posix != "." else d
@@ -273,6 +284,15 @@ def walk_files(
         for fname in filenames:
             file_path = current_dir / fname
             rel_file = file_path.relative_to(root_path).as_posix()
+
+            # A symlinked file may otherwise read a file outside the repository.
+            if file_path.is_symlink() and not file_path.resolve().is_relative_to(
+                root_path
+            ):
+                result.skipped.append(
+                    SkippedFile(path=rel_file, reason="symlink outside the repository")
+                )
+                continue
 
             # Precedence 1: Root .gitignore (base, immutable)
             if root_gitignore_spec and (root_gitignore_spec.match_file(rel_file) or root_gitignore_spec.match_file(fname)):

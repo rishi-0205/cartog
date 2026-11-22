@@ -1,0 +1,24 @@
+F                                                                        [100%]
+================================== FAILURES ===================================
+_______________________ test_rich_dependency_is_pinned ________________________
+
+    def test_rich_dependency_is_pinned() -> None:
+        """Rich is a direct, upper-bounded dependency because the sanitiser is version-sensitive.
+    
+        ``SanitizingConsole`` rewrites ``Column._cells``; Rich exposes no public way
+        to replace the cells of a built table, so a major upgrade could move or
+        rename that attribute and the control would depend on an unpinned transitive
+        dependency of Typer.
+        """
+        data = tomllib.loads((REPO_ROOT / "pyproject.toml").read_text(encoding="utf-8"))
+        specs = [dep for dep in data["project"]["dependencies"] if dep.startswith("rich")]
+>       assert specs, (
+            "rich must be a direct dependency: cartog/cli/shared.py mutates Column._cells"
+        )
+E       AssertionError: rich must be a direct dependency: cartog/cli/shared.py mutates Column._cells
+E       assert []
+
+tests\test_security.py:489: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_security.py::test_rich_dependency_is_pinned - AssertionErro...
+1 failed in 0.69s

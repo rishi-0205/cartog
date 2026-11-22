@@ -3,14 +3,19 @@
 Split out of cartog/cli.py in R11; behaviour is unchanged.
 """
 
+import copy
 from pathlib import Path
 
 import typer
 from rich.console import Console
+from rich.table import Table
+from rich.text import Text
 
 from cartog import __version__
 from cartog.core.config import DEFAULT_MAX_FILE_SIZE_MB
+from cartog.core.limits import enforce_file_count
 from cartog.core.model import Graph
+from cartog.core.text import sanitize_console_text
 from cartog.graph.merge import build_graph
 from cartog.parse import parse_source_file
 from cartog.render.export_json import write_parse_json
@@ -29,7 +34,63 @@ app = typer.Typer(
     help="Cartography for codebases: maps source files with tree-sitter + SCIP into JSON + Mermaid.",
     add_completion=False,
 )
-console = Console()
+class SanitizingConsole(Console):
+    """A Rich console that strips escape sequences and controls from strings."""
+
+    def print(self, *objects: object, **kwargs: object) -> None:
+        """Print every argument through :func:`_sanitize_renderable`."""
+        super().print(
+            *(_sanitize_renderable(item) for item in objects),
+            **kwargs,
+        )
+
+
+def _sanitize_text(text: Text) -> Text:
+    """Return a copy of ``text`` with its plain content sanitized."""
+    clone = text.copy()
+    clone.plain = sanitize_console_text(clone.plain)
+    return clone
+
+
+def _sanitize_renderable(obj: object) -> object:
+    """Sanitize a print argument, including the cells of a ``rich`` table.
+
+    Strings and ``Text`` are sanitized directly. A table is deep-copied (so the
+    caller's object is unchanged) and every column, row and title cell is
+    sanitized, because table cells never pass through ``print()`` as strings.
+    Other renderables are returned untouched.
+    """
+    if isinstance(obj, str):
+        return sanitize_console_text(obj)
+    if isinstance(obj, Text):
+        return _sanitize_text(obj)
+    if not isinstance(obj, Table):
+        return obj
+
+    table = copy.deepcopy(obj)
+    for column in table.columns:
+        column._cells = [_sanitize_cell(cell) for cell in column._cells]
+        column.header = _sanitize_cell(column.header)
+        column.footer = _sanitize_cell(column.footer)
+    for attribute in ("title", "caption"):
+        value = getattr(table, attribute)
+        if isinstance(value, Text):
+            setattr(table, attribute, _sanitize_text(value))
+        elif isinstance(value, str):
+            setattr(table, attribute, sanitize_console_text(value))
+    return table
+
+
+def _sanitize_cell(cell: object) -> object:
+    """Sanitize one table cell, which is a string, ``Text``, or renderable."""
+    if isinstance(cell, str):
+        return sanitize_console_text(cell)
+    if isinstance(cell, Text):
+        return _sanitize_text(cell)
+    return cell
+
+
+console = SanitizingConsole()
 
 
 def version_callback(value: bool) -> None:
@@ -68,6 +129,7 @@ def _execute_parse(
     force: bool = False,
     verbose: bool = False,
     cache_dir: str | Path | None = None,
+    max_files: int | None = None,
 ):
     """Execute Stage 1 parsing pipeline and return (target_path, out_dir, scan_result, parsed_files)."""
     target_path = Path(path).resolve()
@@ -109,6 +171,9 @@ def _execute_parse(
         raise typer.Exit(code=2) from e
 
     console.print(f"Discovered [green]{len(scan_result.files)}[/green] source files ([yellow]{len(scan_result.skipped)}[/yellow] skipped).")
+
+    if max_files is not None:
+        enforce_file_count(len(scan_result.files), max_files)
 
     if force:
         console.print("[yellow]Notice:[/yellow] Forcing rerun; cache bypassed.")

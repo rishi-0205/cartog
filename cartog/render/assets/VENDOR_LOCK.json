@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "normalization": "CRLF and CR are replaced with LF before hashing, so the pin is stable across checkouts",
+  "note": "Vendored JavaScript libraries shipped in cartog/render/assets/. Recompute with the test test_vendor_asset_hashes_match_lock before upgrading any file.",
+  "assets": [
+    {
+      "file": "cose-base.js",
+      "name": "cose-base",
+      "version": "2.2.0",
+      "license": "MIT",
+      "sha256": "7cae9509bd36235a63a85e71c8d9fa2cd0bc1d0c1ecc5b5a737976f39d040ddf"
+    },
+    {
+      "file": "cytoscape-expand-collapse.js",
+      "name": "cytoscape-expand-collapse",
+      "version": "4.1.1",
+      "license": "MIT",
+      "sha256": "0f2ad3c36a62c61071076044f70f7db844a816d199de3619373efd9d1ab864e6"
+    },
+    {
+      "file": "cytoscape-fcose.js",
+      "name": "cytoscape-fcose",
+      "version": "2.2.0",
+      "license": "MIT",
+      "sha256": "4b1cab218d74996aa59cd8473f9239cc6398b8c1774d84d7e59ad9a68959cb57"
+    },
+    {
+      "file": "cytoscape.min.js",
+      "name": "cytoscape",
+      "version": "3.34.4",
+      "license": "MIT",
+      "sha256": "081591ab735b2b6a3b31a3c60f8f3a3e2fee8c92939e0c7820ad1208571b6cd8"
+    },
+    {
+      "file": "layout-base.js",
+      "name": "layout-base",
+      "version": "2.0.1",
+      "license": "MIT",
+      "sha256": "f5c66be21c9cca16c4f25a576bffbd16ed1a48181c1c2dcbb8d905ec822e76b5"
+    }
+  ]
+}

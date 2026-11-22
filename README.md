@@ -3,6 +3,10 @@
 > **Cartography for codebases.**  
 > A compiler-grade static analysis and architectural mapping engine that turns complex codebases into deterministic property graphs, interactive offline blueprint maps, call-flow traces, and LLM context digests.
 
+**Security:** Cartog treats the analyzed repository as untrusted. See
+[SECURITY.md](SECURITY.md) for the threat model, controls, and what is not
+protected.
+
 [![Tests](https://img.shields.io/badge/tests-216%20passed-brightgreen.svg)]()
 [![Schema](https://img.shields.io/badge/schema-2.0.0-blue.svg)]()
 [![Python](https://img.shields.io/badge/python-3.11%20|%203.12%20|%203.13-blue.svg)]()

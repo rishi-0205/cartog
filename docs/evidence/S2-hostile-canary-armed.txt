@@ -1,0 +1,24 @@
+# S2 canary check - the hostile payloads are real
+
+Date: 2026-11-19 17:56:00
+Branch: feature/security-baseline
+
+Both fixture payloads were executed deliberately in a throwaway `.scratch/`
+directory (never by Cartog) to prove the canary is armed: if the pipeline ever
+ran them, the marker would exist.
+
+Command (in `.scratch/canary`, populated from the same fixture files):
+
+    ..\..\venv\Scripts\python.exe setup.py
+    node -e "require('fs').writeFileSync('HOSTILE_NPM_MARKER','postinstall ran')"
+    Get-ChildItem -Name
+
+Output:
+
+    HOSTILE_NPM_MARKER
+    HOSTILE_SETUP_MARKER
+    setup.py
+
+Both markers appear only when the project code is executed; the pipeline test
+asserts they never appear after `cartog analyze --no-scip`. The directory was
+deleted immediately.

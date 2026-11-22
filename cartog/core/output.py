@@ -34,6 +34,10 @@ RESERVED_NAMES = frozenset(
 MAX_PROJECT_NAME = 40
 
 
+class OutputPathError(ValueError):
+    """A run-relative output path tried to leave the run directory."""
+
+
 def default_data_root(
     *,
     platform_: str | None = None,
@@ -100,8 +104,13 @@ def sanitize_project_name(name: str) -> str:
         cleaned = cleaned[:MAX_PROJECT_NAME].rstrip(" .-")
     if not cleaned:
         return "repo"
-    if cleaned.upper() in RESERVED_NAMES:
-        return f"_{cleaned}"
+    # Windows reserves the device name regardless of extension (`CON.txt` is
+    # still the console device), so compare the stem before the first dot.
+    stem = cleaned.split(".", 1)[0].rstrip(" ").upper()
+    if stem in RESERVED_NAMES:
+        cleaned = f"_{cleaned}"
+        if len(cleaned) > MAX_PROJECT_NAME:
+            cleaned = cleaned[:MAX_PROJECT_NAME].rstrip(" .-")
     return cleaned
 
 
@@ -232,10 +241,30 @@ class RunLayout:
         return self.write_bytes(relative_path, text.encode("utf-8"))
 
     def write_bytes(self, relative_path: str, data: bytes) -> Path:
-        """Write bytes to ``relative_path`` inside the run, atomically."""
-        path = self.run_dir / relative_path
+        """Write bytes to ``relative_path`` inside the run, atomically.
+
+        Raises :class:`OutputPathError` when the path is absolute, climbs out
+        with ``..``, or reaches outside the run through a symlink or junction.
+        The resolved destination is returned.
+        """
+        path = self._confined_path(relative_path)
         _atomic_write(path, data)
         return path
+
+    def _confined_path(self, relative_path: str) -> Path:
+        """Resolve ``relative_path`` under :attr:`run_dir` or refuse it."""
+        candidate = Path(relative_path)
+        if candidate.is_absolute():
+            raise OutputPathError(
+                f"output path must be relative to the run: {relative_path!r}"
+            )
+        root = self.run_dir.resolve()
+        resolved = (root / candidate).resolve()
+        if resolved != root and not resolved.is_relative_to(root):
+            raise OutputPathError(
+                f"output path escapes the run directory: {relative_path!r}"
+            )
+        return resolved
 
     def write_json(self, relative_path: str, payload: Any, *, pretty: bool = False) -> Path:
         """Serialise ``payload`` as JSON inside the run, atomically."""
@@ -333,6 +362,7 @@ def build_meta(
     cartog_version: str,
     schema_version: str = SCHEMA_VERSION,
     timings: Mapping[str, float] | None = None,
+    limits: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Build the ``meta.json`` payload for one run."""
     return {
@@ -345,6 +375,7 @@ def build_meta(
         "started_at": started_at,
         "finished_at": finished_at,
         "options": dict(options),
+        "limits": dict(limits or {}),
         "counts": dict(counts),
         "tools": dict(tools),
         "timings": dict(timings or {}),

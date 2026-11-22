@@ -1,0 +1,70 @@
+# S9 evidence - SECURITY.md threat model
+
+Date: 2026-11-19 21:34:00
+Branch: feature/security-baseline
+
+## Red: no threat model and no links
+
+Command: venv\Scripts\python.exe -m pytest tests\test_security.py -k security_doc -q
+Raw transcript: `docs/evidence/S9-security-doc-red.txt`
+
+E       assert False
+E        +  where False = is_file()
+E        +    where is_file = WindowsPath('C:/.../cartog/SECURITY.md').is_file
+FAILED tests/test_security.py::test_security_doc_links_resolve - AssertionErr...
+1 failed, 23 deselected in 0.60s
+
+`SECURITY.md` did not exist, `README.md` and `docs/HANDOFF.md` did not link to
+it, and there was no written statement of what the E3 controls do and do not
+protect.
+
+## Green
+
+Command: venv\Scripts\python.exe -m pytest tests\test_security.py -k security_doc -q
+Raw transcript: `docs/evidence/S9-security-doc-green.txt`
+
+.                                                                        [100%]
+1 passed, 23 deselected in 0.40s
+
+`SECURITY.md` now contains:
+
+* the trust boundary (untrusted repository, trusted host and tools, generated
+  artifacts as an output boundary);
+* a threat/control/code/test table covering execution, subprocess use, secret
+  leakage, HTML, Mermaid, terminal escapes, path confinement, output names,
+  limits, vendored pins, digest redaction and stale tools;
+* an explicit **What is not protected** section: trusted indexer binaries, no
+  OS sandbox, static-analysis blind spots, the browser/editor, secrets in the
+  analyzed tree, and slowdown below the limits;
+* a private vulnerability-reporting route and links to the code standards,
+  toolchain pins, decisions and evidence.
+
+`README.md` links it beside the project blurb; `docs/HANDOFF.md` links it from
+the header. The test also resolves every relative link in `SECURITY.md` against
+the repository.
+
+## Documentation checks
+
+Command: venv\Scripts\python.exe -m pytest tests\test_docs_links.py tests\test_docs_consistency.py tests\test_package_layout.py -q
+
+.......                                                                  [100%]
+7 passed in 0.54s
+
+## Full suite
+
+Command: venv\Scripts\python.exe -m pytest tests\ -q
+Raw transcript: `docs/evidence/S9-security-doc-suite.txt`
+
+240 passed, 1 warning in 193.77s (0:03:13)
+
+239 -> 240: the S9 test, no test removed or weakened.
+
+## Golden
+
+Command: venv\Scripts\python.exe scripts\golden.py --check
+Raw transcript: `docs/evidence/S9-security-doc-golden.txt`
+
+click: 0 differences
+flask: 0 differences
+ky: 0 differences
+0 differences
