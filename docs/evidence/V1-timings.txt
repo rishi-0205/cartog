@@ -74,6 +74,13 @@ Command: venv\Scripts\python.exe scripts\golden.py --check
 click: 0 differences / flask: 0 differences / ky: 0 differences
 0 differences                                [V1-golden.txt]
 
+## Commit hygiene note
+
+The first V1 commit accidentally staged `.scratch/v1-check/` because `.scratch/`
+was not in `.gitignore`. The tree is never rewritten: a follow-up commit
+(`git rm -r --cached .scratch`, plus `.scratch/` in `.gitignore`) removes the
+scratch output from the index so later tasks cannot repeat it.
+
 ## Full suite
 
 Command: venv\Scripts\python.exe -m pytest tests\ -q
