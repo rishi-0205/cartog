@@ -41,7 +41,7 @@ The roadmap narrative is [`docs/IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.m
 | S7 | Pin and checksum vendored libraries | E3 | `feature/security-baseline` | - | S | E3-S4 | DONE | ff8a2eb |
 | S8 | Configurable limits | E3 | `feature/security-baseline` | U2 | S | E3-S4 | DONE | 6c98f80 |
 | S9 | SECURITY.md | E3 | `feature/security-baseline` | S1-S8 | S | E3-S5 | DONE | fe854ed |
-| V1 | Timings and peak memory | E4 | `feature/verification` | U3 | S | E4-S1 | TODO | — |
+| V1 | Timings and peak memory | E4 | `feature/verification` | U3 | S | E4-S1 | DONE | `29a2ae4` |
 | V2 | index.scip never left in the analyzed repo | E4 | `feature/verification` | U4 | S | E4-S1 | TODO | — |
 | V3 | SCIP environment investigation | E4 | `feature/verification` | V2 | M | E4-S2 | TODO | — |
 | V4 | Compare imports with grimp and madge | E4 | `feature/verification` | V3 | M | E4-S3 | TODO | — |
@@ -81,7 +81,7 @@ The roadmap narrative is [`docs/IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.m
 | E1b | `refactor/drop-compat-shims` | E1 | 1 / 1 | ACCEPTED | 2026-11-17 |
 | E2 | `feature/unified-command-and-output` | E1b | 6 / 6 | ACCEPTED | 2026-11-19 |
 | E3 | `feature/security-baseline` | E2 | 9 / 9 | ACCEPTED | 2026-11-22 |
-| E4 | `feature/verification` | E2 | 0 / 5 | NOT STARTED | no |
+| E4 | `feature/verification` | E2 | 1 / 5 | IN PROGRESS | no |
 | E5 | `feature/llm-layer` | E2, E3 | 0 / 11 | NOT STARTED | no |
 | E6 | `feature/gallery` | E3 | 0 / 4 | NOT STARTED | no |
 | E7 | `feature/analysis-service` | E3, E4 | 0 / 9 | NOT STARTED | no |
@@ -937,10 +937,11 @@ At most one epic per session; within that epic, finish and commit each task befo
 - **User check (epic review):** `cartog <fixture> --timings`; inspect `meta.json`.
 - **Evidence files:** `docs/evidence/V1-timings.txt`
 - **Planned commit message:** `V1: record stage timings and peak memory`
-- **Status:** TODO
-- **Commit hash:** —
-- **Failure log:** —
-- **Change log:** —
+- **Status:** DONE
+- **Commit hash:** `29a2ae4` (follow-ups: `b0a4161`, `8a817be`)
+- **Failure log:** Red run (`docs/evidence/V1-timings-red.txt`): both tests failed with exit code 2 because `--timings` did not exist. The first full-suite run after implementation failed the package-layout guard (`test_layout_doc_covers_every_module`, 1 failed, 242 passed) because `cartog/core/timing.py` was not listed in `docs/dev/PACKAGE_LAYOUT.md`; the document was updated, no test changed. The first commit also staged `.scratch/`; a follow-up commit removed it from the index and `.scratch/` is now in `.gitignore`.
+- **Change log:**
+  - 2026-11-22: Added `cartog/core/timing.py` (`StageTimer`: monotonic stage markers, `tracemalloc` peak), wired `--timings` through `analyze` with eight stage markers (parse, scip, build, diagrams, render, digest, view, check) and a console timing table, and recorded `timings` in `meta.json`. Without the flag the payload is `total_ms` only, so the default `meta.json` does not grow. Two new tests: stage keys plus `peak_memory_mb` present under `--timings`, and five deterministic artefacts byte-identical with and without it. Suite 241 -> 243; golden 0 differences; ruff clean.
 
 ### V2: index.scip never left in the analyzed repo
 
