@@ -184,7 +184,8 @@ R12 cleared the rest:
 The author deferred these from the E3 review. They are **not** E3 scope and are
 not scheduled into E4–E7; D1 (E8, final documentation) carries the list forward
 so it cannot be lost. Each becomes its own task, with its own red-green evidence,
-when it is picked up.
+when it is picked up. E3 itself was **ACCEPTED on 2026-11-22** with no blocking
+findings; these six items are the only follow-ups it left.
 
 | ID | Item | Size | Why it waits |
 |---|---|---|---|
