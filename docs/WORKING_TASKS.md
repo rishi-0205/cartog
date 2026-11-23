@@ -42,7 +42,7 @@ The roadmap narrative is [`docs/IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.m
 | S8 | Configurable limits | E3 | `feature/security-baseline` | U2 | S | E3-S4 | DONE | 6c98f80 |
 | S9 | SECURITY.md | E3 | `feature/security-baseline` | S1-S8 | S | E3-S5 | DONE | fe854ed |
 | V1 | Timings and peak memory | E4 | `feature/verification` | U3 | S | E4-S1 | DONE | `29a2ae4` |
-| V2 | index.scip never left in the analyzed repo | E4 | `feature/verification` | U4 | S | E4-S1 | TODO | — |
+| V2 | index.scip never left in the analyzed repo | E4 | `feature/verification` | U4 | S | E4-S1 | DONE | `c1422ab` |
 | V3 | SCIP environment investigation | E4 | `feature/verification` | V2 | M | E4-S2 | TODO | — |
 | V4 | Compare imports with grimp and madge | E4 | `feature/verification` | V3 | M | E4-S3 | TODO | — |
 | V5 | Call-edge recall sample | E4 | `feature/verification` | V4 | S | E4-S4 | TODO | — |
@@ -81,7 +81,7 @@ The roadmap narrative is [`docs/IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.m
 | E1b | `refactor/drop-compat-shims` | E1 | 1 / 1 | ACCEPTED | 2026-11-17 |
 | E2 | `feature/unified-command-and-output` | E1b | 6 / 6 | ACCEPTED | 2026-11-19 |
 | E3 | `feature/security-baseline` | E2 | 9 / 9 | ACCEPTED | 2026-11-22 |
-| E4 | `feature/verification` | E2 | 1 / 5 | IN PROGRESS | no |
+| E4 | `feature/verification` | E2 | 2 / 5 | IN PROGRESS | no |
 | E5 | `feature/llm-layer` | E2, E3 | 0 / 11 | NOT STARTED | no |
 | E6 | `feature/gallery` | E3 | 0 / 4 | NOT STARTED | no |
 | E7 | `feature/analysis-service` | E3, E4 | 0 / 9 | NOT STARTED | no |
@@ -958,10 +958,11 @@ At most one epic per session; within that epic, finish and commit each task befo
 - **User check (epic review):** `pytest tests/test_scip_pass.py -k stray -q`
 - **Evidence files:** `docs/evidence/V2-index-scip.txt`
 - **Planned commit message:** `V2: enforce index.scip confinement`
-- **Status:** TODO
-- **Commit hash:** —
-- **Failure log:** —
-- **Change log:** —
+- **Status:** DONE
+- **Commit hash:** `c1422ab`
+- **Failure log:** Red run (`docs/evidence/V2-index-scip-red.txt`): both tests failed on the missing cleanup, the confinement test with `index.scip was left in the analyzed repository` and the detection test with `assert 'index.scip' in ''`. The adversarial scratch run (`V2-cleanup-off.txt`) shows the confinement test fails again when `_remove_stray_index` is monkeypatched to a no-op, so it is not vacuous.
+- **Change log:**
+  - 2026-11-23: `run_scip_indexer` now calls `_remove_stray_index(target_p)` after every run: the fallback move of a local `index.scip` is unchanged, and any residue that survives (for example when the indexer wrote both copies) is deleted. A failed deletion becomes a `ScipIndexResult.warnings` entry naming the file and the OS error instead of being swallowed. Two tests drive the real function through `shutil.which`/`run_process` fakes. Suite 243 -> 245; golden 0 differences; ruff clean.
 
 ### V3: SCIP environment investigation
 
