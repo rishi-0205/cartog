@@ -43,7 +43,7 @@ The roadmap narrative is [`docs/IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.m
 | S9 | SECURITY.md | E3 | `feature/security-baseline` | S1-S8 | S | E3-S5 | DONE | fe854ed |
 | V1 | Timings and peak memory | E4 | `feature/verification` | U3 | S | E4-S1 | DONE | `29a2ae4` |
 | V2 | index.scip never left in the analyzed repo | E4 | `feature/verification` | U4 | S | E4-S1 | DONE | `c1422ab` |
-| V3 | SCIP environment investigation | E4 | `feature/verification` | V2 | M | E4-S2 | TODO | — |
+| V3 | SCIP environment investigation | E4 | `feature/verification` | V2 | M | E4-S2 | DONE | `17f245a` |
 | V4 | Compare imports with grimp and madge | E4 | `feature/verification` | V3 | M | E4-S3 | TODO | — |
 | V5 | Call-edge recall sample | E4 | `feature/verification` | V4 | S | E4-S4 | TODO | — |
 | L0 | LLM spike kit and results | E5 | `feature/llm-layer` | E3, E4 accepted | S | E5-S1 | TODO | — |
@@ -81,7 +81,7 @@ The roadmap narrative is [`docs/IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.m
 | E1b | `refactor/drop-compat-shims` | E1 | 1 / 1 | ACCEPTED | 2026-11-17 |
 | E2 | `feature/unified-command-and-output` | E1b | 6 / 6 | ACCEPTED | 2026-11-19 |
 | E3 | `feature/security-baseline` | E2 | 9 / 9 | ACCEPTED | 2026-11-22 |
-| E4 | `feature/verification` | E2 | 2 / 5 | IN PROGRESS | no |
+| E4 | `feature/verification` | E2 | 3 / 5 | IN PROGRESS | no |
 | E5 | `feature/llm-layer` | E2, E3 | 0 / 11 | NOT STARTED | no |
 | E6 | `feature/gallery` | E3 | 0 / 4 | NOT STARTED | no |
 | E7 | `feature/analysis-service` | E3, E4 | 0 / 9 | NOT STARTED | no |
@@ -980,10 +980,11 @@ At most one epic per session; within that epic, finish and commit each task befo
 - **User check (epic review):** Read the table in `docs/dev/VERIFICATION.md`.
 - **Evidence files:** `docs/evidence/V3-scip-environment.txt`
 - **Planned commit message:** `V3: document SCIP environment behaviour`
-- **Status:** TODO
-- **Commit hash:** —
-- **Failure log:** —
-- **Change log:** —
+- **Status:** DONE
+- **Commit hash:** `17f245a` (encoding follow-up: `85c5be5`)
+- **Failure log:** Red run (`docs/evidence/V3-scip-python-red.txt`): a nonexistent `--python` was accepted (exit 0) and the run completed. The docs-links guard then failed with `AGENTS.md does not link to every docs/dev document: ['VERIFICATION.md']`; AGENTS.md was updated. The first `scip-python --help` capture was written as UTF-16 by a `cmd` redirect, so it showed as a binary file; it was re-captured as UTF-8 in a follow-up commit.
+- **Change log:**
+  - 2026-11-24: Ran `cartog analyze` with `--timings --no-render` on click and flask in a clean environment (910 and 594 call edges, 0 and 38 reconciled) and on click with four contaminated interpreters (2 687–2 755 call edges, 1 750–1 813 reconciled). Decoded every `index.scip` to attribute symbols: clean runs show no third-party `click`; contaminated runs attribute 4 755–4 857 occurrences to an *installed* `click`. Proved the mechanism with two manual `scip-python` 0.6.6 runs that differ only by a `python3.exe` copy (4 806 × `click 8.1.7` -> 4 857 × `click 8.5.0`, same 91 documents, same call count). `scip-python --version` is 0.6.6 and its `index --help` has no interpreter flag. Wrote `docs/dev/VERIFICATION.md` (method, table, `click 8.1.7` origin, `python3` lookup explanation, what cartog guarantees) and KNOWN_ISSUES Rank 6 for the limitation. `--python` now resolves to an absolute path and aborts with exit 2 when it names no interpreter; `test_scip_python_flag_selects_interpreter` pins both. Suite 245 -> 246; golden 0 differences; ruff clean.
 
 ### V4: Compare imports with grimp and madge
 
