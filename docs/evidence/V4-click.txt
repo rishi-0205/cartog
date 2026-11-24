@@ -1,0 +1,7 @@
+click vs grimp
+  cartog edges : 61
+  grimp        : 61
+  shared       : 61
+  precision    : 1.000
+  recall       : 1.000
+  excluded     : 106 (outside the files grimp indexes)

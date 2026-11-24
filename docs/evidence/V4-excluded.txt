@@ -1,0 +1,8 @@
+== click (grimp): 167 pairs, 106 excluded
+   files outside the reference index, by top directory: {'tests': 56, 'examples': 12}
+== flask (grimp): 185 pairs, 116 excluded
+   files outside the reference index, by top directory: {'examples': 17, 'tests': 37, 'src': 3}
+   pairs touching flask.sansio (no __init__.py, grimp skips it): 26
+== ky (madge): 203 pairs, 110 excluded
+   files outside the reference index, by top directory: {'test': 46, 'test-d': 21}
+   pairs to source/index.ts (self-reference 'ky'): 58

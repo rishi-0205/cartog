@@ -35,6 +35,8 @@ Verified by test or by measurement:
   changing any deterministic artefact (`tests/test_timings.py`);
 - a `--python` path that does not exist aborts before a run is written, and a
   valid one is recorded as an absolute path (`tests/test_scip_python.py`);
+- cartog's file-to-file import edges equal grimp's for click and flask, and
+  madge's for ky, on every file both tools index (section 4);
 - SCIP environment behaviour, import-edge precision/recall, and a labelled
   call-edge sample (sections 3–5).
 
@@ -157,3 +159,85 @@ Get-Content .scratch\click\logs\scip.log        # ran=True documents=91 error=No
 `logs/scip.log` carries `ran`, the document count and the failure reason when
 the indexer does not run; the top-level summary prints `SCIP: FAILED (reason)`
 instead of pretending the graph has call edges.
+
+## 4. Import edges vs grimp and madge (V4)
+
+### 4.1 Method
+
+`scripts/compare_imports.py` runs cartog without SCIP
+(`analyze --no-scip --no-render --no-digest --no-view --no-check`), takes every
+`imports` edge (file -> file, one per resolved import), and compares it with a
+tool written by someone else:
+
+| Language | Reference tool | Version checked |
+|---|---|---|
+| Python | `grimp.build_graph(..., include_external_packages=False)` | 3.17 |
+| JS/TS | `madge --json --extensions js,jsx,ts,tsx` | 8.0.0 |
+
+Both sides are reduced to `(importer file, imported file)` pairs relative to
+the repository root, then scored:
+
+```text
+precision = |cartog and tool| / |cartog|      recall = |cartog and tool| / |tool|
+```
+
+The comparison is restricted to files the reference tool indexed, because the
+tools do not cover the same universe (a Python package versus a directory of
+JS/TS files). Pairs outside that universe are counted as `excluded` and
+explained in 4.3 — they are not scored, so neither tool is penalised for
+covering more ground.
+
+### 4.2 Results
+
+| repo | tool | cartog pairs | tool pairs | shared | precision | recall | excluded |
+|---|---|---|---|---|---|---|---|
+| click | grimp 3.17 | 61 | 61 | 61 | **1.000** | **1.000** | 106 |
+| flask | grimp 3.17 | 69 | 69 | 69 | **1.000** | **1.000** | 116 |
+| ky | madge 8.0.0 | 93 | 93 | 93 | **1.000** | **1.000** | 110 |
+
+Raw transcripts: [`V4-click.txt`](../evidence/V4-click.txt),
+[`V4-flask.txt`](../evidence/V4-flask.txt),
+[`V4-ky.txt`](../evidence/V4-ky.txt).
+
+Reproduce:
+
+```powershell
+venv\Scripts\python.exe scripts\compare_imports.py samples\click
+venv\Scripts\python.exe scripts\compare_imports.py samples\flask
+venv\Scripts\python.exe scripts\compare_imports.py samples\ky
+```
+
+### 4.3 Every discrepancy, explained
+
+There are no scored discrepancies: on the shared universe the two sides agree
+pair for pair. The `excluded` pairs are the interesting part.
+
+**click — 106 pairs outside the `click` package.** grimp indexes one importable
+package (`src/click`, 17 modules). Cartog also resolves imports from `tests/`
+(56 files) and `examples/` (12 files) into that package; grimp cannot see those
+importers at all. Nothing to compare, nothing lost.
+
+**flask — 116 pairs, of which 26 touch `flask.sansio`.** `src/flask/sansio/`
+and `src/flask/json/` have no `__init__.py`; they are namespace packages and
+grimp does not index them, so every `sansio` edge is outside its universe. The
+remaining pairs are tests/ and examples/ importing `flask`, plus three `src/`
+files that belong to those namespace packages. This is a grimp limitation, not
+a cartog error: the `sansio` edges are visible in `graph.json` and in the
+viewer.
+
+**ky — 110 pairs from `test/` and `test-d/`.** madge is run on `source/` (the
+package directory, which is what `package.json` publishes). Cartog also
+resolves the self-referencing package import `from 'ky'` inside the test
+suites; 58 of the 110 excluded pairs point at `source/index.ts` through the
+`exports` map in `package.json`. madge does not resolve self-references without
+extra configuration, so those pairs are outside its universe.
+
+### 4.4 What this does and does not prove
+
+It proves that cartog's import resolution agrees with two independent parsers
+on every file they can both see — including relative imports, package
+`__init__` re-exports, subpackages, and `if TYPE_CHECKING` imports (the fixture
+in `tests/test_compare_imports.py` covers the first three). It does not prove
+that an import *statement* is resolved to the module Python or Node would load
+at runtime (conditional imports, dynamic `import`, bundler aliases), and it
+says nothing about call edges — see section 5.
