@@ -44,7 +44,7 @@ The roadmap narrative is [`docs/IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.m
 | V1 | Timings and peak memory | E4 | `feature/verification` | U3 | S | E4-S1 | DONE | `29a2ae4` |
 | V2 | index.scip never left in the analyzed repo | E4 | `feature/verification` | U4 | S | E4-S1 | DONE | `c1422ab` |
 | V3 | SCIP environment investigation | E4 | `feature/verification` | V2 | M | E4-S2 | DONE | `17f245a` |
-| V4 | Compare imports with grimp and madge | E4 | `feature/verification` | V3 | M | E4-S3 | TODO | — |
+| V4 | Compare imports with grimp and madge | E4 | `feature/verification` | V3 | M | E4-S3 | DONE | `b0adfa3` |
 | V5 | Call-edge recall sample | E4 | `feature/verification` | V4 | S | E4-S4 | TODO | — |
 | L0 | LLM spike kit and results | E5 | `feature/llm-layer` | E3, E4 accepted | S | E5-S1 | TODO | — |
 | L1 | Overlay schema design | E5 | `feature/llm-layer` | L0 | S | E5-S2 | TODO | — |
@@ -81,7 +81,7 @@ The roadmap narrative is [`docs/IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.m
 | E1b | `refactor/drop-compat-shims` | E1 | 1 / 1 | ACCEPTED | 2026-11-17 |
 | E2 | `feature/unified-command-and-output` | E1b | 6 / 6 | ACCEPTED | 2026-11-19 |
 | E3 | `feature/security-baseline` | E2 | 9 / 9 | ACCEPTED | 2026-11-22 |
-| E4 | `feature/verification` | E2 | 3 / 5 | IN PROGRESS | no |
+| E4 | `feature/verification` | E2 | 4 / 5 | IN PROGRESS | no |
 | E5 | `feature/llm-layer` | E2, E3 | 0 / 11 | NOT STARTED | no |
 | E6 | `feature/gallery` | E3 | 0 / 4 | NOT STARTED | no |
 | E7 | `feature/analysis-service` | E3, E4 | 0 / 9 | NOT STARTED | no |
@@ -1002,10 +1002,11 @@ At most one epic per session; within that epic, finish and commit each task befo
 - **User check (epic review):** `python scripts/compare_imports.py samples/click` and `samples/ky`.
 - **Evidence files:** `docs/evidence/V4-import-comparison.txt`
 - **Planned commit message:** `V4: compare raw import edges with grimp and madge`
-- **Status:** TODO
-- **Commit hash:** —
-- **Failure log:** —
-- **Change log:** —
+- **Status:** DONE
+- **Commit hash:** `b0adfa3`
+- **Failure log:** The script was prototyped before its tests were written, so there is no red transcript for "the script does not exist". The test is proved able to fail by mutation instead: `pairs.discard(sorted(pairs)[-1])` in `grimp_edges` makes the fixture equality test fail (`V4-mutation-red.txt`), and the mutation was reverted. The first design scored flask at precision 0.726 because grimp cannot index the `flask.sansio` namespace package and cannot see `tests/`; comparing on the reference tool's universe (and counting the rest as `excluded`) was the correction, recorded in VERIFICATION.md §4.1/§4.3.
+- **Change log:**
+  - 2026-11-24: Added `scripts/compare_imports.py` (cartog `imports` edges from a `--no-scip` run; grimp 3.17 for Python, madge 8.0.0 for JS/TS; precision/recall, discrepancy lists, `--json`). Results: click 61/61, flask 69/69, ky 93/93, precision and recall 1.000 on the shared universe; 106/116/110 pairs excluded because grimp indexes one package (and skips namespace packages) and madge is run on `source/`. Two tests pin the fixture equality and the set arithmetic. VERIFICATION.md §4 gained the method, table, and a per-repository explanation of every excluded pair. Suite 246 -> 248; golden 0 differences; ruff clean.
 
 ### V5: Call-edge recall sample
 
