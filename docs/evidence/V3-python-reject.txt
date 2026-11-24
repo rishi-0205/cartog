@@ -1,0 +1,2 @@
+Error: --python: no such interpreter: C:\nope\python.exe
+exit=2

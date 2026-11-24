@@ -1,0 +1,112 @@
+# V3 evidence - SCIP environment behaviour and the `--python` contract
+Date: 2026-11-24
+Branch: feature/verification
+
+Scope: measure what survives when `samples/click` and `samples/flask` are indexed
+without their dependencies, prove where `click 8.1.7` came from and how the
+interpreter is contaminated, write the results into `docs/dev/VERIFICATION.md`,
+and make `--python` fail fast and record the interpreter it was given.
+
+Files touched:
+- `cartog/cli/commands/analyze.py`: `--python` is canonicalised (absolute) and a
+  path that names no interpreter aborts with exit 2 before a run is created.
+- `tests/test_scip_python.py` (new): `test_scip_python_flag_selects_interpreter`.
+- `docs/dev/VERIFICATION.md` (new): the experiment table and explanation.
+- `docs/KNOWN_ISSUES.md`: Rank 6, the `python3` lookup limitation.
+- `AGENTS.md`: link to the new document.
+
+## Red: the test fails before validation exists
+
+Command: venv\Scripts\python.exe -m pytest tests\test_scip_python.py -q
+E       assert 0 == 2
+E        +  where 0 = <Result okay>.exit_code
+FAILED tests/test_scip_python.py::test_scip_python_flag_selects_interpreter
+1 failed in 0.56s                            [V3-scip-python-red.txt]
+
+A nonexistent `--python` was accepted and the run completed (a full analysis
+table in the captured output), which is exactly the silent-selection failure
+the experiment found.
+
+## Green: the test passes
+
+Command: venv\Scripts\python.exe -m pytest tests\test_scip_python.py -q
+1 passed in 0.68s                            [V3-scip-python-green.txt]
+
+## CLI check: a missing interpreter aborts
+
+Command: venv\Scripts\python.exe -m cartog analyze tests\fixtures\mixed_repo
+         --out .scratch\v3\reject --no-scip --no-render --python C:\nope\python.exe
+Error: --python: no such interpreter: C:\nope\python.exe
+exit=2                                       [V3-python-reject.txt]
+
+No run directory is created (asserted in the test).
+
+## Indexer version and options (checked before writing anything about it)
+
+Command: scip-python --version ; scip-python index --help ; where.exe python3
+0.6.6
+Usage: scip-python index [options]
+  --project-name, --project-version, --project-namespace, --cwd, --target-only,
+  --output, --quiet, --show-progress-rate-limit, --environment, --dev
+C:\Users\rishi\AppData\Local\Microsoft\WindowsApps\python3.exe
+C:\msys64\mingw64\bin\python3.exe
+                                             [V3-indexer-version.txt]
+
+There is no interpreter option in the indexer. The Windows Store `python3` is
+first on PATH.
+
+## Experiment: clean vs contaminated environments
+
+Command: see docs/evidence/V3-experiment-table.txt (six full `cartog analyze`
+runs with `--timings --no-render`, then decode of each `stage/.cartog/scip/*/index.scip`)
+
+| repo | interpreter given | call edges | reconciled | resolved | installed-click occurrences |
+|---|---|---|---|---|---|
+| click | cartog venv (3.13), no click | 910 | 0 | 910 | 0 |
+| click | scratch venv + click 8.5.0, no python3.exe | 2 752 | 1 813 | 939 | 4 806 × `click 8.1.7` |
+| click | same venv, python3.exe added | 2 752 | 1 813 | 939 | 4 857 × `click 8.5.0` |
+| click | `--python C:\Python313\python.exe` | 2 755 | 1 813 | 942 | 4 806 × `click 8.1.7` |
+| click | `--python` Store 3.11 | 2 687 | 1 750 | 937 | 4 755 × `click 8.1.7` |
+| flask | cartog venv (3.13), no flask | 594 | 38 | 556 | 0 |
+                                             [V3-experiment-table.txt]
+
+`python-stdlib 3.11` appears in every run, including the 3.13 interpreters, so
+it is the bundled typeshed label, not the runtime interpreter.
+
+## Mechanism proof: the `python3` copy is the only difference
+
+Command: two manual `scip-python index` runs with the same `VIRTUAL_ENV` and
+`PATH`, differing only by a `python3.exe` copy in the venv `Scripts` directory
+(details in docs/evidence/V3-manual-indexer.txt)
+manual-venv850.scip          docs 91 {workspace sha: 17323, stdlib: 6303, click 8.1.7: 4806}
+manual-venv850-python3.scip  docs 91 {workspace sha: 17323, stdlib: 6303, click 8.5.0: 4857}
+                                             [V3-manual-indexer.txt]
+
+Same document count, same workspace symbols, same stdlib; only the third-party
+attribution moved from the Store 3.11's `click 8.1.7` to the chosen venv's
+`click 8.5.0`. This is the explanation recorded in VERIFICATION.md §3.4 and
+KNOWN_ISSUES Rank 6.
+
+## Docs checks
+
+Command: venv\Scripts\python.exe -m pytest tests\test_docs_links.py
+         tests\test_docs_consistency.py tests\test_package_layout.py -q
+7 passed in 0.58s
+
+(The first run failed with `AGENTS.md does not link to every docs/dev document:
+['VERIFICATION.md']`; AGENTS.md was updated, no test changed.)
+
+## Goldens unchanged
+
+Command: venv\Scripts\python.exe scripts\golden.py --check
+click: 0 differences / flask: 0 differences / ky: 0 differences
+0 differences                                [V3-golden.txt]
+
+## Full suite
+
+Command: venv\Scripts\python.exe -m pytest tests\ -q
+246 passed, 1 warning in 251.07s (0:04:11)   [V3-suite.txt]
+
+Start 245 -> end 246 (+1 new test; none removed, none skipped).
+Command: venv\Scripts\python.exe -m ruff check .
+All checks passed!

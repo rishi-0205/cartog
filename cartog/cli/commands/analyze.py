@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import json
 import re
+import shutil
 import time
 import webbrowser
 from pathlib import Path
@@ -280,6 +281,19 @@ def analyze(
     if layout_engine not in ("dagre", "elk"):
         console.print("[bold red]Error:[/bold red] --layout must be 'dagre' or 'elk'.")
         raise typer.Exit(code=2)
+
+    if python_path:
+        candidate = Path(python_path).expanduser()
+        if candidate.is_file():
+            python_path = str(candidate.resolve())
+        else:
+            found = shutil.which(python_path)
+            if not found:
+                console.print(
+                    f"[bold red]Error:[/bold red] --python: no such interpreter: {python_path}"
+                )
+                raise typer.Exit(code=2)
+            python_path = str(Path(found).resolve())
 
     location = resolve_run_location(target_path, out=out)
     layout = RunLayout(location)

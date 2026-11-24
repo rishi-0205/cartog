@@ -51,6 +51,16 @@ This document tracks known issues, architectural limits, discrepancies, and reso
   Measure each artifact's cost before changing defaults; consider making folder diagrams, PNG rendering, or `stage/` opt-in, raising the folder-diagram threshold, and replacing the `latest/` copy with a cheaper mechanism where the platform allows it.
 - **Status:** DEFERRED (author review, 2026-11-19).
 
+### Rank 6: `--python` cannot override Pyright's `python3` lookup on Windows
+- **Milestone / Area:** E4 (V3, SCIP environment investigation).
+- **Severity:** Medium — a run can silently index against a different interpreter than the one the user asked for, which changes third-party symbol attribution and therefore call edges (910 vs ~2 750 call edges on `samples/click`).
+- **Symptoms:**
+  `scip-python` 0.6.6 has no interpreter option (see its `index --help`); Pyright discovers its environment itself. On this machine it resolves a `python3` executable, and `%LOCALAPPDATA%\Microsoft\WindowsApps\python3.exe` precedes every other candidate. Cartog's `--python` only prepends the chosen interpreter's directory to `PATH` and sets `VIRTUAL_ENV`; a venv whose `Scripts` directory contains `python.exe` but no `python3.exe` is therefore ignored, and symbols are attributed to the Windows Store Python 3.11's installed packages instead. Even `--python C:\Python313\python.exe` (Click 8.5.0 in its user site) produced `click 8.1.7` symbols.
+- **Evidence:** [`docs/evidence/V3-experiment-table.txt`](./evidence/V3-experiment-table.txt) and [`docs/dev/VERIFICATION.md`](./dev/VERIFICATION.md) §3 — adding a `python3.exe` copy to the scratch venv switched the attribution from 4 806 `click 8.1.7` occurrences to 4 857 `click 8.5.0` occurrences with the same call count.
+- **Proposed Fix:**
+  Idle unless it becomes a support problem: make `cartog analyze --python` detect that the chosen environment has no `python3` on its first `PATH` entry and print a warning (or stage a `python3` alias in a cartog-controlled directory that precedes `PATH`). Any fix must not write into the analyzed repository.
+- **Status:** OPEN (found during V3, 2026-11-24); fail-fast validation for a missing interpreter was added in V3, the lookup itself is unchanged.
+
 ---
 
 ## Review Findings F1–F9 (2026-11-12)

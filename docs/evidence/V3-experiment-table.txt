@@ -1,0 +1,30 @@
+﻿| repo | run | interpreter given | calls | reconciled | resolved | 3rd-party click symbols |
+|---|---|---|---|---|---|---|
+| click | click-a | cartog venv (3.13), click absent | 910 | 0 | 910 | 0 (python-stdlib 3.11) |
+| click | click-venv850 | scratch venv (3.13) + click 8.5.0, no python3.exe | 2752 | 1813 | 939 | 4806 (python-stdlib 3.11) |
+| click | click-venv850b | same venv, python3.exe added | 2752 | 1813 | 939 | 4857 (python-stdlib 3.11) |
+| click | click-py313 | --python C:\Python313 (click 8.5.0 user site) | 2755 | 1813 | 942 | 4806 (python-stdlib 3.11) |
+| click | click-py311 | --python Store 3.11 (click 8.1.7) | 2687 | 1750 | 937 | 4755 (python-stdlib 3.11) |
+| flask | flask-a | cartog venv (3.13), flask absent | 594 | 38 | 556 | 0 (python-stdlib 3.11) |
+
+commands:
+
+
+cartog analyze commands behind the rows (all with --timings --no-render):
+  venv\Scripts\python.exe -m cartog analyze samples\click  --out .scratch\v3\click-a  --timings --no-render
+  venv\Scripts\python.exe -m cartog analyze samples\click  --out .scratch\v3\click-venv850  --timings --no-render --python .scratch\v3\venv-click850\Scripts\python.exe
+  venv\Scripts\python.exe -m cartog analyze samples\click  --out .scratch\v3\click-venv850b --timings --no-render --python .scratch\v3\venv-click850\Scripts\python.exe   (after copying python.exe -> python3.exe in that venv)
+  venv\Scripts\python.exe -m cartog analyze samples\click  --out .scratch\v3\click-py313   --timings --no-render --python C:\Python313\python.exe
+  venv\Scripts\python.exe -m cartog analyze samples\click  --out .scratch\v3\click-py311   --timings --no-render --python C:\Users\rishi\AppData\Local\Microsoft\WindowsApps\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\python.exe
+  venv\Scripts\python.exe -m cartog analyze samples\flask  --out .scratch\v3\flask-a  --timings --no-render
+
+The scratch venv came from:
+  venv\Scripts\python.exe -m venv .scratch\v3\venv-click850
+  venv\Scripts\python.exe -m pip download --no-deps -d .scratch\pip click==8.5.0
+  .scratch\v3\venv-click850\Scripts\python.exe -m pip install --no-index --find-links .scratch\pip click==8.5.0
+
+Manual indexer runs proving the python3 lookup (same output dirs, NODE_OPTIONS loads cartog\scip\windows_shim.js):
+  scip-python index --cwd <abs samples\click> --project-name click --output <abs>\manual-venv850.scip
+  scip-python index --cwd <abs samples\click> --project-name click --output <abs>\manual-venv850-python3.scip
+Both with VIRTUAL_ENV=.scratch\v3\venv-click850 and its Scripts first on PATH; the second only differs by a python3.exe copy.
+Result: without python3.exe 4806 occurrences are `click 8.1.7`; with it 4857 are `click 8.5.0`.
