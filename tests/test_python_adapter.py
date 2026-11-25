@@ -148,7 +148,7 @@ def test_cache_and_export_json(tmp_path: Path):
         out_file=out_json,
     )
 
-    assert data["schema_version"] == "2.0.0"
+    assert data["schema_version"] == "2.1.0"
     assert len(data["files"]) == 1
     assert data["files"][0]["symbols"][0]["name"] == "hello"
     assert out_json.exists()

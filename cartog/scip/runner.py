@@ -534,6 +534,36 @@ def find_enclosing_symbol(
     return best_match
 
 
+def is_call_selector(node: Any, language: str = "python") -> bool:
+    """True when ``node`` is the callee selector of an enclosing call.
+
+    A dotted callee ``a.b.c()`` has selector ``c``; ``a`` and ``b`` are
+    receivers. Returns True when verification is not possible so that SCIP
+    edges are only demoted on positive evidence from the tree.
+    """
+    if node is None:
+        return True
+    call = None
+    cur = node
+    while cur is not None:
+        if cur.type in ("call", "call_expression", "new_expression"):
+            call = cur
+            break
+        cur = cur.parent
+    if call is None:
+        return True
+    func = call.child_by_field_name("function") or call.child_by_field_name("constructor")
+    if func is None:
+        return True
+    selector = func
+    while selector.type in ("member_expression", "attribute"):
+        prop = selector.child_by_field_name("property") or selector.child_by_field_name("attribute")
+        if prop is None:
+            break
+        selector = prop
+    return selector.start_byte <= node.start_byte and node.end_byte <= selector.end_byte
+
+
 def classify_occurrence(tree: Any, line: int, col: int, language: str = "python") -> tuple[str, str | None]:
     """Determine (edge_kind, ref_kind) for an AST occurrence at 1-based (line, col)."""
     if not tree:
@@ -574,7 +604,9 @@ def classify_occurrence(tree: Any, line: int, col: int, language: str = "python"
             if args and args.start_byte <= node.start_byte <= args.end_byte:
                 return ("references", "callback")
             if func and func.start_byte <= node.start_byte <= func.end_byte:
-                return ("calls", None)
+                if is_call_selector(node, language):
+                    return ("calls", None)
+                return ("references", "receiver")
             return ("calls", None)
         if t == "binary_expression":
             op = curr.child_by_field_name("operator")

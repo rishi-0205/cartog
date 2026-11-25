@@ -255,6 +255,9 @@ def analyze(
     ),
     no_digest: bool = typer.Option(False, "--no-digest", help="Skip digest.md."),
     no_view: bool = typer.Option(False, "--no-view", help="Skip view/map.html."),
+    mermaid: bool = typer.Option(
+        False, "--mermaid", help="Emit Mermaid sources (.mmd) and overview.png (default off)."
+    ),
     no_render: bool = typer.Option(
         False, "--no-render", help="Skip PNG rendering; Mermaid sources are still written."
     ),
@@ -382,33 +385,36 @@ def analyze(
             include_set.add("tests")
         if include_examples:
             include_set.add("examples")
-        overview = generate_overview_mermaid(
-            graph,
-            max_nodes=max_nodes,
-            include=include_set or None,
-            show_manifests=show_manifests,
-            show_noise=show_noise,
-            layout=layout_engine,
-            show_references=show_references,
-            show_imports=show_imports,
-            level=level or "function",
-        )
-        layout.write_text("diagrams/overview.mmd", overview)
 
-        folder_counts: dict[str, int] = {}
-        for node in graph.nodes.values():
-            if node.kind == "file" and node.path:
-                folder = Path(node.path).parent.as_posix()
-                if folder != ".":
-                    folder_counts[folder] = folder_counts.get(folder, 0) + 1
-        for folder, count in sorted(folder_counts.items()):
-            if count >= 2:
-                slug = folder.replace("/", "_").replace("\\", "_")
-                layout.write_text(
-                    f"diagrams/folder_{slug}.mmd",
-                    generate_folder_mermaid(graph, folder, layout=layout_engine),
-                )
+        if mermaid:
+            overview = generate_overview_mermaid(
+                graph,
+                max_nodes=max_nodes,
+                include=include_set or None,
+                show_manifests=show_manifests,
+                show_noise=show_noise,
+                layout=layout_engine,
+                show_references=show_references,
+                show_imports=show_imports,
+                level=level or "function",
+            )
+            layout.write_text("diagrams/overview.mmd", overview)
 
+            folder_counts: dict[str, int] = {}
+            for node in graph.nodes.values():
+                if node.kind == "file" and node.path:
+                    folder = Path(node.path).parent.as_posix()
+                    if folder != ".":
+                        folder_counts[folder] = folder_counts.get(folder, 0) + 1
+            for folder, count in sorted(folder_counts.items()):
+                if count >= 2:
+                    slug = folder.replace("/", "_").replace("\\", "_")
+                    layout.write_text(
+                        f"diagrams/folder_{slug}.mmd",
+                        generate_folder_mermaid(graph, folder, layout=layout_engine),
+                    )
+
+        # Flow (validation + tracing; .mmd only if --mermaid; HTML always)
         if flow:
             scoped, excluded = find_flow_candidates(
                 graph,
@@ -440,20 +446,33 @@ def analyze(
             visited_nodes, traversed_edges = trace_call_flow(
                 graph, starts=selected, max_depth=depth
             )
-            layout.write_text(
-                f"diagrams/flow_{_flow_slug(flow)}.mmd",
-                generate_flow_mermaid(
-                    visited_nodes,
-                    traversed_edges,
-                    target_name=target_path.name,
-                    start_node_ids=[node.id for node in selected],
-                ),
-            )
+            if mermaid:
+                layout.write_text(
+                    f"diagrams/flow_{_flow_slug(flow)}.mmd",
+                    generate_flow_mermaid(
+                        visited_nodes,
+                        traversed_edges,
+                        target_name=target_path.name,
+                        start_node_ids=[node.id for node in selected],
+                    ),
+                )
+            if not no_view:
+                flow_html = generate_html_map(
+                    graph,
+                    show_noise=show_noise,
+                    show_manifests=show_manifests,
+                    max_nodes=max_nodes,
+                    include_helpers=include_helpers,
+                    stats={},
+                    flow_nodes=visited_nodes,
+                    flow_edges=traversed_edges,
+                )
+                layout.write_text(f"view/flow_{_flow_slug(flow)}.html", flow_html)
 
         clock.record("diagrams", stage_start)
 
         stage_start = clock.now()
-        if not no_render:
+        if mermaid and not no_render and (layout.run_dir / "diagrams" / "overview.mmd").is_file():
             rendered, message = render_mermaid(
                 layout.run_dir / "diagrams" / "overview.mmd",
                 layout.run_dir / "diagrams" / "overview.png",
@@ -476,17 +495,52 @@ def analyze(
 
         stage_start = clock.now()
         if not no_view:
-            layout.write_text(
-                "view/map.html",
-                generate_html_map(
-                    graph,
-                    show_noise=show_noise,
-                    show_manifests=show_manifests,
-                    max_nodes=max_nodes,
-                    include_helpers=include_helpers,
-                    stats={},
-                ),
+            html = generate_html_map(
+                graph,
+                show_noise=show_noise,
+                show_manifests=show_manifests,
+                max_nodes=max_nodes,
+                include_helpers=include_helpers,
+                stats={},
             )
+            layout.write_text("view/overview.html", html)
+            # One-release alias for backwards compatibility.
+            layout.write_text("view/map.html", html)
+
+            # Combined flow.html: trace every entry point (route/command/entrypoint)
+            # into one interactive view. No depth cap (full reachable subgraph).
+            entry_starts = [
+                n for n in graph.nodes.values()
+                if n.kind in ("route", "command", "entrypoint")
+            ]
+            if entry_starts:
+                try:
+                    visited_nodes, traversed_edges = trace_call_flow(
+                        graph, starts=entry_starts
+                    )
+                    # Per-entry-point visited sets for the dropdown filter.
+                    entry_points_payload = []
+                    for start in entry_starts:
+                        v_nodes, _ = trace_call_flow(graph, starts=[start])
+                        entry_points_payload.append({
+                            "id": start.id,
+                            "name": f"{start.name or start.qualified_name}  ({start.path})",
+                            "visited": [n.id for n in v_nodes],
+                        })
+                    flow_html = generate_html_map(
+                        graph,
+                        show_noise=show_noise,
+                        show_manifests=show_manifests,
+                        max_nodes=max_nodes,
+                        include_helpers=include_helpers,
+                        stats={},
+                        flow_nodes=visited_nodes,
+                        flow_edges=traversed_edges,
+                        entry_points=entry_points_payload,
+                    )
+                    layout.write_text("view/flow.html", flow_html)
+                except Exception as exc:  # never break the run on flow failure
+                    layout.write_text("logs/flow.log", f"flow generation failed: {exc}\n")
         clock.record("view", stage_start)
 
         stage_start = clock.now()
@@ -624,7 +678,7 @@ def analyze(
             "[bold yellow]Check failed;[/bold yellow] the complete run is on disk."
         )
 
-    view_file = layout.run_dir / "view" / "map.html"
+    view_file = layout.run_dir / "view" / "overview.html"
     if open_browser and view_file.is_file():
         webbrowser.open(view_file.resolve().as_uri())
 

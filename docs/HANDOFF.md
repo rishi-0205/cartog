@@ -18,7 +18,7 @@ Cartog is a **code-mapping CLI tool** that produces:
 5. Validation reports (`cartog check`) with configurable strictness.
 
 Input: any Python, JS, or TS project directory.  
-Output: `cartog analyze` writes a per-user run tree (see §3) with `graph.json`, `diagrams/`, `view/map.html`, `digest.md`, `check.json`, `meta.json`, `logs/`, and `stage/`; the stage commands keep `cartog-out/`.
+Output: `cartog analyze` writes a per-user run tree (see §3) with `graph.json`, `diagrams/`, `view/overview.html` (and `view/flow.html`), `digest.md`, `check.json`, `meta.json`, `logs/`, and `stage/`; the stage commands keep `cartog-out/`.
 
 ---
 
@@ -118,7 +118,7 @@ E4 (`feature/verification`) is **READY FOR EPIC REVIEW** on branch `feature/veri
 - V2 (`c1422ab`, `121e61f`) every indexer run removes a stray `index.scip` from the analysed repository; a failed removal is reported as a warning (`tests/test_scip_pass.py`).
 - V3 (`17f245a`, `85c5be5`, `e5994d6`) measured the SCIP environment (910 vs ~2 750 call edges on click depending on the interpreter), wrote `docs/dev/VERIFICATION.md` §3, and made `--python` fail fast and record an absolute path (`tests/test_scip_python.py`, KNOWN_ISSUES Rank 6).
 - V4 (`b0adfa3`, `e61cb7b`) `scripts/compare_imports.py` scores file-to-file imports against grimp 3.17 and madge 8.0.0: precision and recall 1.000 on click, flask and ky over the files those tools index (VERIFICATION.md §4).
-- V5 (`9048721`, `06d7303`) `scripts/sample_calls.py` and 60 hand-labelled call edges: 50 TP / 10 FP, precision 0.833; every FP is the Rank 1 classification rule, and the recall scans found no name-level misses (VERIFICATION.md §5, `docs/dev/verification/call-sample.json`, KNOWN_ISSUES Ranks 1 and 7).
+- V5 (`9048721`, `06d7303`) `scripts/sample_calls.py` and 60 hand-labelled call edges: originally 50 TP / 10 FP (precision 0.833); after tree-sitter verification and chain repair the same seed/limit yields 60/60 (precision 1.000), with the original baseline kept in `call-sample.json` under `history`. Follow-up (`CALLVERIFY` task): `is_call_selector()` demotes Rank 1 receivers, `cartog/scip/static_calls.py` resolves `A.B.C(...)` chains through imports/re-exports into `inferred` call edges; all 7 scorer routes now reach services (VERIFICATION.md §5, KNOWN_ISSUES Ranks 1, 8–11).
 
 After `Accept E4`, merge `feature/verification` into `main` with `--no-ff` and delete the branch. The next epic is E5 (`feature/llm-layer`); its L0 gate needs the author to run the spike model by hand.
 

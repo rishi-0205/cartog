@@ -647,7 +647,7 @@ class ViewNode:
     """A hierarchical tree node for the Universal View Model."""
     id: str
     name: str
-    kind: str  # "subsystem", "folder", "file", "class", "function", "method", "route", "command", "entrypoint", "helper_group"
+    kind: str  # "subsystem", "folder", "file", "class", "function", "method", "route", "command", "entrypoint", "middleware", "helper_group"
     path: str | None = None
     parent_id: str | None = None
     children: list[ViewNode] = field(default_factory=list)
@@ -696,7 +696,7 @@ def classify_boundary_functions(graph: Graph) -> tuple[set[str], set[str]]:
     for n in graph.nodes.values():
         if n.kind in ("function", "method"):
             all_func_ids.add(n.id)
-        elif n.kind in ("route", "command", "entrypoint"):
+        elif n.kind in ("route", "command", "entrypoint", "middleware"):
             boundary_ids.add(n.id)
 
     # Route/command/entrypoint handlers
@@ -787,7 +787,7 @@ def build_universal_view_tree(
     # 2. Collect symbols within files
     symbols_by_parent: dict[str, list[Node]] = defaultdict(list)
     for n in sorted_nodes:
-        if n.parent and n.kind in ("class", "function", "method", "route", "command", "entrypoint"):
+        if n.parent and n.kind in ("class", "function", "method", "route", "command", "entrypoint", "middleware"):
             symbols_by_parent[n.parent].append(n)
 
     # 3. Build file internals
@@ -860,7 +860,7 @@ def build_universal_view_tree(
                 else:
                     file_helpers.append(s)
 
-            elif s.kind in ("route", "command", "entrypoint"):
+            elif s.kind in ("route", "command", "entrypoint", "middleware"):
                 f_node.children.append(
                     ViewNode(
                         id=s.id,
@@ -1055,14 +1055,15 @@ def find_flow_candidates(
 def trace_call_flow(
     graph: Graph,
     target: str | None = None,
-    max_depth: int = 3,
+    max_depth: int | None = None,
     include_tests: bool = False,
     include_examples: bool = False,
     starts: list[Node] | None = None,
 ) -> tuple[list[Node], list[Edge]]:
     """Perform BFS call-flow tracing starting from entrypoints, routes, or named functions.
 
-    Follows outgoing 'serves', 'starts', 'calls', and 'overrides' edges up to max_depth hops.
+    Follows outgoing 'serves', 'starts', 'calls', and 'overrides' edges. By default
+    there is no depth cap (full reachable subgraph); pass max_depth to bound it.
     Returns (visited_nodes, traversed_edges).
     """
     if starts is not None:
@@ -1079,7 +1080,7 @@ def trace_call_flow(
 
     outgoing_edges: dict[str, list[Edge]] = defaultdict(list)
     for e in graph.edges:
-        if e.kind in ("serves", "starts", "calls", "overrides"):
+        if e.kind in ("serves", "starts", "calls", "overrides", "uses"):
             outgoing_edges[e.source].append(e)
 
     visited_nodes: dict[str, Node] = {}
@@ -1097,7 +1098,7 @@ def trace_call_flow(
 
     while queue:
         curr_id, curr_depth = queue.popleft()
-        if curr_depth >= max_depth:
+        if max_depth is not None and curr_depth >= max_depth:
             continue
 
         for edge in outgoing_edges.get(curr_id, []):

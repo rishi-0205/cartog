@@ -1046,10 +1046,21 @@ class JsAdapter(LanguageAdapter):
                                     _get_node_text(named_args[0])
                                 )
                                 handler = None
+                                middlewares: list[str] = []
                                 if len(named_args) > 1:
                                     last_arg = named_args[-1]
                                     if last_arg.type == "identifier":
                                         handler = _get_node_text(last_arg).strip()
+                                    elif last_arg.type == "member_expression":
+                                        prop = last_arg.child_by_field_name("property")
+                                        if prop:
+                                            handler = _get_node_text(prop).strip()
+                                    # Middleware = middle args that are identifiers or calls
+                                    middlewares = [
+                                        _get_node_text(a).strip()
+                                        for a in named_args[1:-1]
+                                        if a.type in ("identifier", "call_expression")
+                                    ]
 
                                 method_name = (
                                     method_raw.upper()
@@ -1063,6 +1074,7 @@ class JsAdapter(LanguageAdapter):
                                         "url_path": url_path,
                                         "methods": [method_name],
                                         "handler": handler,
+                                        "middleware": middlewares,
                                         "range": [
                                             node.start_point.row + 1,
                                             node.start_point.column,

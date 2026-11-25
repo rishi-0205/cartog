@@ -1,0 +1,111 @@
+# CALLVERIFY evidence — tree-sitter verification and repair of call edges
+
+Date: 2026-11-25
+Branch: feature/verification
+
+Goal: make tree-sitter authoritative over SCIP for call-edge classification
+(verify and correct), and repair call chains SCIP cannot symbolise.
+
+## Red
+
+Command: venv\Scripts\python.exe -m pytest tests\test_call_verification.py -q
+ImportError: cannot import name 'is_call_selector' from 'cartog.scip.runner'
+1 error during collection                          [CALLVERIFY-red.txt]
+
+## Green
+
+Command: venv\Scripts\python.exe -m pytest tests\test_call_verification.py -q
+7 passed in 0.21s                                  [CALLVERIFY-green.txt]
+
+Seven red-first cases:
+* Python receiver `self.parser.parse(...)` demoted; final selector `parse` verified.
+* TS chain `svc.inner.handleScoreUpdate(...)`: `inner` demoted, final selector verified.
+* Barrel chain resolves to the object-literal method.
+* A decoy file with the same method name is not chosen.
+* Ambiguous re-exports abstain (no edge).
+
+## Implementation
+
+* `cartog/scip/runner.py::is_call_selector()` — an occurrence is a `calls` edge
+  only when it is the rightmost selector of the callee chain. Receivers become
+  `references`/`receiver`. This is the Rank 1 fix.
+* `cartog/scip/static_calls.py::resolve_chain_calls()` — walks `A.B.C(...)`
+  through the caller's import map, re-exports and object-literal property
+  initializers, then looks up `C` only in the container reached. Emits
+  `calls` edges with `confidence="inferred"` and evidence `path:line`.
+  Ambiguity, computed dynamic keys, spreads and `Object.assign` abstain.
+* `cartog/graph/merge.py` — appends static candidates (deduped) after SCIP ones.
+* `cartog/scip/static_calls.py` added to `docs/dev/PACKAGE_LAYOUT.md`.
+
+## Golden fingerprints
+
+Command: venv\Scripts\python.exe scripts\golden.py --check
+click: 0 differences / flask: 0 differences / ky: 0 differences
+0 differences                                     [CALLVERIFY-golden-red.txt]
+
+No regeneration was needed: neither demotion nor chain repair changed any
+fingerprinted artifact on the three pinned samples. The planned `--write` step
+was therefore unnecessary; the baseline remains unchanged.
+
+## Cricklo verification
+
+Command: venv\Scripts\python.exe -m cartog analyze
+         C:\Users\rishi\OneDrive\Desktop\Dev\Cricklo --no-render
+Before: calls=268 (all resolved), references=527.
+After:  calls=394 (259 resolved, 135 inferred), references=531.
+
+The 7 scorer entry points went from 3 nodes each (route + middleware +
+controller) to 4–10 nodes. Examples re-checked against source:
+
+POST /score-update (8 nodes):
+  POST /score-update -> requireAuth -> scoreUpdateController
+    -> handleScoreUpdate -> buildWrapper -> updateMatchStateInRedis
+    -> broadcastToRoom -> getIo
+  Verified at scoreUpdate.service.ts:40,54,77.
+
+POST /admin/rebuild (4 nodes):
+  POST /admin/rebuild -> requireAuth -> rebuildMatchController -> rebuildMatch
+  Verified at admin.controller.ts:49 (scorerService.adminService.rebuildMatch).
+
+GET /:matchId (7 nodes):
+  -> getMatchController -> validate(GetMatchDto) -> getMatchById
+  -> findFullById -> findByMatchId
+
+## V5 call-edge sample re-measurement
+
+Re-ran `analyze` on samples/webscrapper and samples/ky with the new pipeline,
+then `scripts/sample_calls.py --limit 30 --seed 7`. Only 4 (webscrapper) and
+10 (ky) rows were unchanged from the original sample, so all 60 new rows were
+re-labelled by reading their evidence lines.
+
+| repo | before | after |
+|---|---|---|
+| webscrapper | 24/30 (0.800) | 30/30 (1.000) |
+| ky | 26/30 (0.867) | 30/30 (1.000) |
+| both | 50/60 (0.833) | 60/60 (1.000) |
+
+The original baseline is preserved in `call-sample.json` under `history`.
+`tests/test_recall_sample.py` now also accepts `confidence="inferred"`.
+
+## Full suite
+
+Command: venv\Scripts\python.exe -m pytest tests\ -q
+258 passed, 1 warning in 243.00s (0:04:02)
+
+Start 251 -> end 258 (+7 new tests; none removed, none weakened). An earlier
+run reported one `test_hermetic` failure because evidence files were being
+edited while the suite snapshotted `git status`; the clean rerun passes.
+
+Command: venv\Scripts\python.exe -m ruff check .
+All checks passed!
+
+Command: venv\Scripts\python.exe -m pytest tests\test_docs_links.py
+         tests\test_docs_consistency.py -q
+4 passed in 0.11s
+
+## Remaining issues
+
+Recorded in `docs/KNOWN_ISSUES.md` Ranks 8–11: dynamic composition (abstain),
+11 unresolved `app.use`/inline routes, Python equivalents (next phase), SCIP
+dependency and UTF-16 position risk. Rank 1 is now FIXED; Rank 7 (`new X()`)
+remains open.

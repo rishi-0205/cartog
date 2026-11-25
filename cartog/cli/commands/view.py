@@ -43,7 +43,7 @@ def view(
         out_file = out_p
     else:
         out_p.mkdir(parents=True, exist_ok=True)
-        out_file = out_p / "map.html"
+        out_file = out_p / ("flow.html" if flow else "overview.html")
 
     flow_nodes: list[Node] | None = None
     flow_edges = None
@@ -154,6 +154,12 @@ def view(
         )
 
     console.print(f"\n[bold green]Success:[/bold green] Interactive map written to [bold]{out_file.as_posix()}[/bold]\n")
+
+    # One-release alias for backwards compatibility.
+    try:
+        (out_file.parent / "map.html").write_text(out_file.read_text(encoding="utf-8"), encoding="utf-8")
+    except Exception:
+        pass
 
     if not no_open:
         import webbrowser

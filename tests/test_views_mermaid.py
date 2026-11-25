@@ -214,7 +214,7 @@ def test_compact_json_and_parent_serialization(tmp_path: Path):
     # Unindented JSON should have only 1 line
     assert compact_text.count("\n") == 0
     compact_data = json.loads(compact_text)
-    assert compact_data["schema_version"] == "2.0.0"
+    assert compact_data["schema_version"] == "2.1.0"
 
     # Check parent ID on child nodes
     run_dict = next(n for n in compact_data["nodes"] if n["name"] == "run")
@@ -229,7 +229,7 @@ def test_compact_json_and_parent_serialization(tmp_path: Path):
 
     # 3. Reload re-validates cleanly
     reloaded = Graph.load(compact_path)
-    assert reloaded.schema_version == "2.0.0"
+    assert reloaded.schema_version == "2.1.0"
     reloaded_val = validate_graph(reloaded)
     assert reloaded_val.is_valid is True
 

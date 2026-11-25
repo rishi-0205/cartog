@@ -74,8 +74,8 @@ def validate_graph(graph: Graph) -> ValidationResult:
     warnings: list[str] = []
 
     # 1. Schema version
-    if graph.schema_version not in ("1.0.0", "1.1.0", "2.0.0"):
-        errors.append(f"Invalid schema_version: expected '1.0.0', '1.1.0', or '2.0.0', got '{graph.schema_version}'")
+    if graph.schema_version not in ("1.0.0", "1.1.0", "2.0.0", "2.1.0"):
+        errors.append(f"Invalid schema_version: expected '1.0.0', '1.1.0', '2.0.0', or '2.1.0', got '{graph.schema_version}'")
 
     # 2. Node validation
     if getattr(graph, "duplicate_node_ids", None):

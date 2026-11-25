@@ -286,20 +286,31 @@ The 60 labelled rows, with a reason for every FP, are in
 
 | repo | call edges | sampled | TP | FP | precision |
 |---|---|---|---|---|---|
-| webscrapper | 219 | 30 | 24 | 6 | **0.800** |
-| ky | 238 | 30 | 26 | 4 | **0.867** |
-| both | 457 | 60 | 50 | 10 | **0.833** |
+| webscrapper | 219 | 30 | 30 | 0 | **1.000** |
+| ky | 238 | 30 | 30 | 0 | **1.000** |
+| both | 457 | 60 | 60 | 0 | **1.000** |
+
+These figures are the re-measurement after tree-sitter verification. The
+original sample (before the verifier and chain resolver) measured 24/30,
+26/30 and 50/60 (precision 0.800 / 0.867 / 0.833) with ten Rank 1 false
+positives; that baseline is preserved in `call-sample.json` under `history`.
+The same seed and limit were reused on fresh analyses, and every one of the
+60 new rows was re-checked against its evidence line.
 
 Precision only: a sample of existing edges cannot measure recall, which is
 covered separately in 5.4.
 
 ### 5.3 Every false positive, and why
 
-All ten come from one classification rule, already tracked as KNOWN_ISSUES
-Rank 1. When an occurrence is an attribute or property reference and that
-reference sits inside a call expression, `classify_occurrence()` returns
-`calls`; the callee is then the symbol that *encloses the attribute's
-definition*.
+Before the tree-sitter verifier (2026-11-25), all ten sampled false positives
+came from one classification rule, tracked as KNOWN_ISSUES Rank 1. When an
+occurrence was an attribute or property reference and that reference sat inside
+a call expression, `classify_occurrence()` returned `calls`; the callee was then
+the symbol that *encloses the attribute's definition*. The verifier now requires
+the occurrence to be the rightmost selector of the callee chain, so these
+occurrences are demoted to `references`/`receiver` and no longer produce call
+edges. The table below records the historical false positives and why they
+were wrong.
 
 | repo | edge | evidence | what the line really does |
 |---|---|---|---|

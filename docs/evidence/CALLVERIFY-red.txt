@@ -1,0 +1,16 @@
+
+=================================== ERRORS ====================================
+______________ ERROR collecting tests/test_call_verification.py _______________
+ImportError while importing test module 'C:\Users\rishi\OneDrive\Desktop\Dev\cartog\tests\test_call_verification.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+C:\Python313\Lib\importlib\__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_call_verification.py:20: in <module>
+    from cartog.scip.runner import is_call_selector
+E   ImportError: cannot import name 'is_call_selector' from 'cartog.scip.runner' (C:\Users\rishi\OneDrive\Desktop\Dev\cartog\cartog\scip\runner.py)
+=========================== short test summary info ===========================
+ERROR tests/test_call_verification.py
+!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!
+1 error in 0.47s

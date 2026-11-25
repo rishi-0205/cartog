@@ -19,7 +19,7 @@ This document tracks known issues, architectural limits, discrepancies, and reso
   `docs/dev/verification/call-sample.json` (all ten FP rows, each with a reason) and `docs/dev/VERIFICATION.md` §5.3. The ten: four `test → setUp`, one `Fetcher.close → Fetcher.__init__`, one `Scraper._looks_js_rendered → ScrapeResponse`, three `Ky.#method → Ky`, one `Ky.create → Ky`. The original click case is at `samples/click/src/click/testing.py:131`.
 - **Proposed Fix:**
   In `classify_occurrence()`, distinguish the call *selector* from its *receiver*: when the occurrence is the receiver (or a receiver sub-expression) of a call, return `references`/`other` unless the selector itself resolves to an in-repo symbol. Add a regression test for each of the three shapes above.
-- **Status:** OPEN (measured in V5, 2026-11-24/25).
+- **Status:** FIXED (2026-11-25): `is_call_selector()` in `cartog/scip/runner.py` requires the SCIP occurrence to be the rightmost selector of the callee chain; receiver occurrences are demoted to `references`/`receiver`. Re-measured with the same V5 seed/limit: 60/60 sampled call edges are now genuine (precision 1.000). Evidence: `docs/evidence/CALLVERIFY-*.txt`.
 
 ### Rank 2: Dynamic Dispatch and Closure Resolution
 - **Milestone / Area:** M5/M6 (SCIP Static Analysis Limit)
@@ -75,6 +75,34 @@ This document tracks known issues, architectural limits, discrepancies, and reso
 - **Proposed Fix:**
   Treat `new_expression` as a call in `classify_occurrence()` (callee = the constructor) and add a test asserting `new X()` produces a `calls` edge to `X`/`X.constructor`.
 - **Status:** OPEN (found in V5, 2026-11-25).
+
+### Rank 8: Dynamically composed calls are deliberately unresolved
+- **Milestone / Area:** Tree-sitter call verification (call-chain resolver).
+- **Severity:** Low — recall only; no wrong edges are emitted.
+- **Symptoms:**
+  The chain resolver links `A.B.C(...)` only when every hop is a direct identifier-to-import or property-to-identifier mapping. `Object.assign`, object spreads, computed dynamic keys (`obj["m" + x]()`), decorator-based DI, and proxy/wrapper service objects cannot be resolved statically. They are recorded in `unresolved` with reason `ambiguous_chain` and get no `calls` edge.
+- **Status:** ACCEPTED LIMIT (abstain by design, 2026-11-25).
+
+### Rank 9: `app.use` mount points and inline handlers have no serves edge
+- **Milestone / Area:** Route linking; observed on Cricklo.
+- **Severity:** Medium — 11 of 85 routes have no handler.
+- **Symptoms:**
+  On Cricklo `src/app.ts`, ten `app.use("/api/v1/...", authRoutes)` mounts store the router as a default import (`names=['default']`) so the local alias never matches a symbol, and `GET /api/v1/health` uses an inline arrow handler with no symbol node. After the cross-file serves fix, 74/85 routes are served; these 11 remain. Needs mount edges and inline-handler nodes — a different mechanism from member-chain call repair.
+- **Status:** OPEN (found 2026-11-25); follow-up epic after the JS/TS call work.
+
+### Rank 10: Python call-resolution gaps (next phase)
+- **Milestone / Area:** Python adapters; planned after the TS/JS work.
+- **Severity:** Medium.
+- **Symptoms:**
+  The tree-sitter verifier and chain resolver are TS/JS first. Python analogues remain: FastAPI `APIRouter` inclusion, class-based views, decorator-injected dependencies, and `module.fn()` calls through re-exported package objects.
+- **Status:** PLANNED (2026-11-25).
+
+### Rank 11: SCIP remains authoritative for typed callees; position encoding risk
+- **Milestone / Area:** SCIP/treesitter boundary.
+- **Severity:** Low.
+- **Symptoms:**
+  Typed cases still require `scip-typescript`; if it is absent or fails, only `inferred` chain edges are produced. SCIP reports UTF-16 columns while tree-sitter uses byte offsets; a mismatch must cause the verifier to abstain rather than wrongly demote a SCIP edge. Consumers that filter to `confidence=resolved` will not see `inferred` edges.
+- **Status:** MONITORED (implementation guard, 2026-11-25).
 
 ---
 

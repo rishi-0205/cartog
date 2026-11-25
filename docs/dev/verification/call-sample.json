@@ -10,7 +10,8 @@
       "venv\\Scripts\\python.exe -m cartog analyze samples\\ky --out .scratch\\v5\\ky --timings --no-render",
       "venv\\Scripts\\python.exe scripts\\sample_calls.py .scratch\\v5\\webscrapper\\graph.json --limit 30 --seed 7",
       "venv\\Scripts\\python.exe scripts\\sample_calls.py .scratch\\v5\\ky\\graph.json --limit 30 --seed 7"
-    ]
+    ],
+    "remeasured": "2026-11-25: after tree-sitter verification demoted Rank 1 receiver occurrences and the chain resolver added inferred edges, the same seed/limit was re-run on fresh analyses. All 60 rows are genuine calls; the previous 10 FPs no longer exist as calls edges. Every row was re-checked against its evidence line."
   },
   "repos": {
     "webscrapper": {
@@ -19,42 +20,33 @@
       "call_edges": 219,
       "documents": 22,
       "sampled": 30,
-      "true_positives": 24,
-      "false_positives": 6,
-      "precision": 0.8,
+      "true_positives": 30,
+      "false_positives": 0,
+      "precision": 1.0,
       "rows": [
         {
-          "caller": "tests.test_fetcher.TestFetcherStaticFetch.test_browser_flag_routes_to_playwright",
-          "callee": "scraper.core.fetcher.Fetcher.fetch",
-          "callee_kind": "method",
-          "evidence": "tests/test_fetcher.py:192",
-          "confidence": "resolved",
-          "verdict": "TP",
-          "reason": null
-        },
-        {
-          "caller": "scraper.core.scraper.Scraper.scrape",
-          "callee": "scraper.core.scraper.Scraper._looks_js_rendered",
-          "callee_kind": "method",
-          "evidence": "scraper/core/scraper.py:117",
-          "confidence": "resolved",
-          "verdict": "TP",
-          "reason": null
-        },
-        {
-          "caller": "tests.test_parser.TestParserContentExtraction.test_custom_content_tags_are_respected",
-          "callee": "tests.test_parser.make_response",
-          "callee_kind": "function",
-          "evidence": "tests/test_parser.py:155",
-          "confidence": "resolved",
-          "verdict": "TP",
-          "reason": null
-        },
-        {
-          "caller": "tests.test_parser.TestParserTitleExtraction.test_returns_empty_string_when_no_title_found",
+          "caller": "tests.test_parser.TestParserContentExtraction.test_extracts_paragraph_content",
           "callee": "scraper.core.parser.Parser.parse",
-          "callee_kind": "method",
-          "evidence": "tests/test_parser.py:117",
+          "callee_kind": null,
+          "evidence": "tests/test_parser.py:129",
+          "confidence": "resolved",
+          "verdict": "TP",
+          "reason": null
+        },
+        {
+          "caller": "scraper.storage.json_storage.JsonStorage._dict_to_response",
+          "callee": "scraper.models.response.ScrapeResponse",
+          "callee_kind": null,
+          "evidence": "scraper/storage/json_storage.py:241",
+          "confidence": "resolved",
+          "verdict": "TP",
+          "reason": null
+        },
+        {
+          "caller": "tests.test_parser.TestParserLinkExtraction.test_extracts_absolute_links",
+          "callee": "tests.test_parser.make_response",
+          "callee_kind": null,
+          "evidence": "tests/test_parser.py:183",
           "confidence": "resolved",
           "verdict": "TP",
           "reason": null
@@ -62,170 +54,53 @@
         {
           "caller": "scraper.core.fetcher.Fetcher._fetch_with_playwright",
           "callee": "scraper.utils.headers.merge_headers",
-          "callee_kind": "function",
+          "callee_kind": null,
           "evidence": "scraper/core/fetcher.py:253",
           "confidence": "resolved",
           "verdict": "TP",
           "reason": null
         },
         {
-          "caller": "scraper.core.fetcher.Fetcher.fetch",
-          "callee": "scraper.core.fetcher.Fetcher._fetch_with_playwright",
-          "callee_kind": "method",
-          "evidence": "scraper/core/fetcher.py:97",
+          "caller": "scraper.core.parser.Parser._extract_content",
+          "callee": "scraper.core.parser.Parser._clean_text",
+          "callee_kind": null,
+          "evidence": "scraper/core/parser.py:211",
           "confidence": "resolved",
           "verdict": "TP",
           "reason": null
         },
         {
-          "caller": "tests.test_scraper.TestScraperPipeline.test_parser_is_called_with_fetch_result",
-          "callee": "scraper.core.scraper.Scraper.scrape",
-          "callee_kind": "method",
-          "evidence": "tests/test_scraper.py:121",
-          "confidence": "resolved",
-          "verdict": "TP",
-          "reason": null
-        },
-        {
-          "caller": "tests.test_parser.TestParserLinkExtraction.test_javascript_links_are_excluded",
-          "callee": "scraper.core.parser.Parser.parse",
-          "callee_kind": "method",
-          "evidence": "tests/test_parser.py:208",
+          "caller": "tests.test_scraper.TestScraperAutoBrowser.test_playwright_fallback_failure_uses_original_response",
+          "callee": "scraper.core.scraper.Scraper",
+          "callee_kind": null,
+          "evidence": "tests/test_scraper.py:242",
           "confidence": "resolved",
           "verdict": "TP",
           "reason": null
         },
         {
           "caller": "scraper.core.parser.Parser.parse",
-          "callee": "scraper.core.parser.Parser._extract_content",
-          "callee_kind": "method",
-          "evidence": "scraper/core/parser.py:103",
+          "callee": "scraper.core.parser.Parser._extract_title",
+          "callee_kind": null,
+          "evidence": "scraper/core/parser.py:100",
           "confidence": "resolved",
           "verdict": "TP",
           "reason": null
         },
         {
-          "caller": "tests.test_fetcher.TestFetcherStaticFetch.test_successful_fetch_returns_success_response",
-          "callee": "scraper.core.fetcher.Fetcher.fetch",
-          "callee_kind": "method",
-          "evidence": "tests/test_fetcher.py:47",
-          "confidence": "resolved",
-          "verdict": "TP",
-          "reason": null
-        },
-        {
-          "caller": "tests.test_parser.TestParserTextCleaning.test_multiple_spaces_are_collapsed",
-          "callee": "tests.test_parser.make_response",
-          "callee_kind": "function",
-          "evidence": "tests/test_parser.py:241",
-          "confidence": "resolved",
-          "verdict": "TP",
-          "reason": null
-        },
-        {
-          "caller": "scraper.core.fetcher.Fetcher._fetch_with_requests",
-          "callee": "scraper.models.response.ScrapeResponse",
-          "callee_kind": "class",
-          "evidence": "scraper/core/fetcher.py:150",
-          "confidence": "resolved",
-          "verdict": "TP",
-          "reason": null
-        },
-        {
-          "caller": "tests.test_parser.TestParserLinkExtraction.test_empty_href_links_are_excluded",
-          "callee": "tests.test_parser.TestParserLinkExtraction.setUp",
-          "callee_kind": "method",
-          "evidence": "tests/test_parser.py:214",
-          "confidence": "resolved",
-          "verdict": "FP",
-          "reason": "attribute reference inside a call expression: the occurrence is a field/property read, classified as a call and attributed to the symbol that encloses the field's definition (`self.parser`, assigned in `setUp`)"
-        },
-        {
-          "caller": "scraper.storage.json_storage.JsonStorage.load",
-          "callee": "scraper.storage.json_storage.JsonStorage._url_to_filepath",
-          "callee_kind": "method",
-          "evidence": "scraper/storage/json_storage.py:106",
-          "confidence": "resolved",
-          "verdict": "TP",
-          "reason": null
-        },
-        {
-          "caller": "scraper.core.fetcher.Fetcher.__init__",
-          "callee": "scraper.core.fetcher.Fetcher._create_session",
-          "callee_kind": "method",
-          "evidence": "scraper/core/fetcher.py:74",
-          "confidence": "resolved",
-          "verdict": "TP",
-          "reason": null
-        },
-        {
-          "caller": "scraper.core.parser.Parser._extract_links",
-          "callee": "scraper.utils.url.resolve_relative_url",
-          "callee_kind": "function",
-          "evidence": "scraper/core/parser.py:252",
-          "confidence": "resolved",
-          "verdict": "TP",
-          "reason": null
-        },
-        {
-          "caller": "tests.test_parser.TestParserContentExtraction.test_noise_tags_are_removed_from_content",
+          "caller": "tests.test_parser.TestParserEdgeCases.test_parse_returns_same_response_object",
           "callee": "scraper.core.parser.Parser.parse",
-          "callee_kind": "method",
-          "evidence": "tests/test_parser.py:135",
+          "callee_kind": null,
+          "evidence": "tests/test_parser.py:279",
           "confidence": "resolved",
           "verdict": "TP",
           "reason": null
         },
         {
-          "caller": "tests.test_parser.TestParserContentExtraction.test_extracts_paragraph_content",
-          "callee": "tests.test_parser.make_response",
-          "callee_kind": "function",
-          "evidence": "tests/test_parser.py:129",
-          "confidence": "resolved",
-          "verdict": "TP",
-          "reason": null
-        },
-        {
-          "caller": "scraper.core.fetcher.Fetcher.close",
-          "callee": "scraper.core.fetcher.Fetcher.__init__",
-          "callee_kind": "method",
-          "evidence": "scraper/core/fetcher.py:106",
-          "confidence": "resolved",
-          "verdict": "FP",
-          "reason": "attribute reference inside a call expression: the occurrence is a field/property read, classified as a call and attributed to the symbol that encloses the field's definition (`self.session`, assigned in `Fetcher.__init__`)"
-        },
-        {
-          "caller": "scraper.utils.url.normalize_url",
-          "callee": "scraper.utils.url.is_valid_url",
-          "callee_kind": "function",
-          "evidence": "scraper/utils/url.py:82",
-          "confidence": "resolved",
-          "verdict": "TP",
-          "reason": null
-        },
-        {
-          "caller": "scraper.core.parser.Parser._extract_title",
-          "callee": "scraper.core.parser.Parser._clean_text",
-          "callee_kind": "method",
-          "evidence": "scraper/core/parser.py:170",
-          "confidence": "resolved",
-          "verdict": "TP",
-          "reason": null
-        },
-        {
-          "caller": "tests.test_parser.TestParserLinkExtraction.test_mailto_links_are_excluded",
-          "callee": "tests.test_parser.TestParserLinkExtraction.setUp",
-          "callee_kind": "method",
-          "evidence": "tests/test_parser.py:202",
-          "confidence": "resolved",
-          "verdict": "FP",
-          "reason": "attribute reference inside a call expression: the occurrence is a field/property read, classified as a call and attributed to the symbol that encloses the field's definition (`self.parser`, assigned in `setUp`)"
-        },
-        {
-          "caller": "tests.test_parser.TestParserContentExtraction.test_headings_are_included_in_content",
-          "callee": "scraper.core.parser.Parser.parse",
-          "callee_kind": "method",
-          "evidence": "tests/test_parser.py:169",
+          "caller": "tests.test_scraper.TestScraperContextManager.test_context_manager_calls_close_on_exit",
+          "callee": "scraper.core.scraper.Scraper",
+          "callee_kind": null,
+          "evidence": "tests/test_scraper.py:259",
           "confidence": "resolved",
           "verdict": "TP",
           "reason": null
@@ -233,62 +108,188 @@
         {
           "caller": "scraper.core.fetcher.Fetcher._fetch_with_requests",
           "callee": "scraper.utils.headers.get_headers_for_url",
-          "callee_kind": "function",
+          "callee_kind": null,
           "evidence": "scraper/core/fetcher.py:125",
           "confidence": "resolved",
           "verdict": "TP",
           "reason": null
         },
         {
+          "caller": "tests.test_scraper.TestScraperAutoBrowser.test_auto_browser_disabled_skips_playwright",
+          "callee": "scraper.core.scraper.Scraper.scrape",
+          "callee_kind": null,
+          "evidence": "tests/test_scraper.py:198",
+          "confidence": "resolved",
+          "verdict": "TP",
+          "reason": null
+        },
+        {
+          "caller": "scraper/storage/base.py",
+          "callee": "scraper.utils.logger.get_logger",
+          "callee_kind": null,
+          "evidence": "scraper/storage/base.py:26",
+          "confidence": "resolved",
+          "verdict": "TP",
+          "reason": null
+        },
+        {
+          "caller": "scraper.core.fetcher.Fetcher.__init__",
+          "callee": "scraper.core.fetcher.Fetcher._create_session",
+          "callee_kind": null,
+          "evidence": "scraper/core/fetcher.py:74",
+          "confidence": "resolved",
+          "verdict": "TP",
+          "reason": null
+        },
+        {
+          "caller": "scraper.core.parser.Parser.parse",
+          "callee": "scraper.core.parser.Parser._extract_content",
+          "callee_kind": null,
+          "evidence": "scraper/core/parser.py:103",
+          "confidence": "resolved",
+          "verdict": "TP",
+          "reason": null
+        },
+        {
+          "caller": "tests.test_parser.TestParserTextCleaning.test_multiple_spaces_are_collapsed",
+          "callee": "scraper.core.parser.Parser.parse",
+          "callee_kind": null,
+          "evidence": "tests/test_parser.py:241",
+          "confidence": "resolved",
+          "verdict": "TP",
+          "reason": null
+        },
+        {
+          "caller": "tests.test_parser.TestParserLinkExtraction.test_mailto_links_are_excluded",
+          "callee": "tests.test_parser.make_response",
+          "callee_kind": null,
+          "evidence": "tests/test_parser.py:202",
+          "confidence": "resolved",
+          "verdict": "TP",
+          "reason": null
+        },
+        {
+          "caller": "scraper.core.fetcher.Fetcher.fetch",
+          "callee": "scraper.core.fetcher.Fetcher._fetch_with_requests",
+          "callee_kind": null,
+          "evidence": "scraper/core/fetcher.py:98",
+          "confidence": "resolved",
+          "verdict": "TP",
+          "reason": null
+        },
+        {
+          "caller": "tests.test_fetcher.TestFetcherSession.test_default_session_is_created",
+          "callee": "scraper.core.fetcher.Fetcher.close",
+          "callee_kind": null,
+          "evidence": "tests/test_fetcher.py:207",
+          "confidence": "resolved",
+          "verdict": "TP",
+          "reason": null
+        },
+        {
+          "caller": "scraper.core.parser.Parser.parse",
+          "callee": "scraper.core.parser.Parser._extract_links",
+          "callee_kind": null,
+          "evidence": "scraper/core/parser.py:106",
+          "confidence": "resolved",
+          "verdict": "TP",
+          "reason": null
+        },
+        {
+          "caller": "tests.test_scraper.TestScraperAutoBrowser.test_rich_content_does_not_trigger_playwright",
+          "callee": "scraper.core.scraper.Scraper.scrape",
+          "callee_kind": null,
+          "evidence": "tests/test_scraper.py:180",
+          "confidence": "resolved",
+          "verdict": "TP",
+          "reason": null
+        },
+        {
           "caller": "tests.test_parser.TestParserLinkExtraction.test_resolves_relative_links_to_absolute",
-          "callee": "tests.test_parser.TestParserLinkExtraction.setUp",
-          "callee_kind": "method",
+          "callee": "scraper.core.parser.Parser.parse",
+          "callee_kind": null,
           "evidence": "tests/test_parser.py:189",
           "confidence": "resolved",
-          "verdict": "FP",
-          "reason": "attribute reference inside a call expression: the occurrence is a field/property read, classified as a call and attributed to the symbol that encloses the field's definition (`self.parser`, assigned in `setUp`)"
+          "verdict": "TP",
+          "reason": null
         },
         {
-          "caller": "scraper.core.scraper.Scraper._looks_js_rendered",
-          "callee": "scraper.models.response.ScrapeResponse",
-          "callee_kind": "class",
-          "evidence": "scraper/core/scraper.py:194",
-          "confidence": "resolved",
-          "verdict": "FP",
-          "reason": "attribute reference inside a call expression: the occurrence is a field/property read, classified as a call and attributed to the symbol that encloses the field's definition (`response.raw_html`, declared in `ScrapeResponse`)"
-        },
-        {
-          "caller": "scraper.storage.json_storage.JsonStorage.save",
-          "callee": "scraper.storage.json_storage.JsonStorage._url_to_filepath",
-          "callee_kind": "method",
-          "evidence": "scraper/storage/json_storage.py:82",
+          "caller": "scraper.core.fetcher.Fetcher._fetch_with_requests",
+          "callee": "scraper.utils.headers.merge_headers",
+          "callee_kind": null,
+          "evidence": "scraper/core/fetcher.py:124",
           "confidence": "resolved",
           "verdict": "TP",
           "reason": null
         },
         {
-          "caller": "tests.test_parser.TestParserTitleExtraction.test_falls_back_to_h1_when_no_title_tag",
-          "callee": "tests.test_parser.TestParserTitleExtraction.setUp",
-          "callee_kind": "method",
-          "evidence": "tests/test_parser.py:106",
-          "confidence": "resolved",
-          "verdict": "FP",
-          "reason": "attribute reference inside a call expression: the occurrence is a field/property read, classified as a call and attributed to the symbol that encloses the field's definition (`self.parser`, assigned in `setUp`)"
-        },
-        {
-          "caller": "tests.test_parser.TestParserTitleExtraction.test_falls_back_to_h1_when_no_title_tag",
-          "callee": "scraper.core.parser.Parser.parse",
-          "callee_kind": "method",
-          "evidence": "tests/test_parser.py:106",
+          "caller": "tests.test_scraper.TestScraperAutoBrowser.test_sparse_content_triggers_playwright_retry",
+          "callee": "scraper.core.scraper.Scraper",
+          "callee_kind": null,
+          "evidence": "tests/test_scraper.py:153",
           "confidence": "resolved",
           "verdict": "TP",
           "reason": null
         },
         {
-          "caller": "tests.test_scraper.TestScraperPipeline.test_fetch_failure_skips_parser",
+          "caller": "scraper.core.scraper.Scraper.scrape",
+          "callee": "scraper.core.fetcher.Fetcher.fetch",
+          "callee_kind": null,
+          "evidence": "scraper/core/scraper.py:103",
+          "confidence": "resolved",
+          "verdict": "TP",
+          "reason": null
+        },
+        {
+          "caller": "scraper/utils/url.py",
+          "callee": "scraper.utils.logger.get_logger",
+          "callee_kind": null,
+          "evidence": "scraper/utils/url.py:28",
+          "confidence": "resolved",
+          "verdict": "TP",
+          "reason": null
+        },
+        {
+          "caller": "tests.test_scraper.TestScraperAutoBrowser.test_sparse_content_triggers_playwright_retry",
           "callee": "tests.test_scraper.make_fetch_response",
-          "callee_kind": "function",
-          "evidence": "tests/test_scraper.py:93",
+          "callee_kind": null,
+          "evidence": "tests/test_scraper.py:143",
+          "confidence": "resolved",
+          "verdict": "TP",
+          "reason": null
+        },
+        {
+          "caller": "tests.test_scraper.TestScraperPipeline.test_successful_scrape_returns_parsed_response",
+          "callee": "tests.test_scraper.make_parsed_response",
+          "callee_kind": null,
+          "evidence": "tests/test_scraper.py:70",
+          "confidence": "resolved",
+          "verdict": "TP",
+          "reason": null
+        },
+        {
+          "caller": "tests.test_scraper.TestScraperPipeline.test_successful_scrape_returns_parsed_response",
+          "callee": "tests.test_scraper.make_fetch_response",
+          "callee_kind": null,
+          "evidence": "tests/test_scraper.py:69",
+          "confidence": "resolved",
+          "verdict": "TP",
+          "reason": null
+        },
+        {
+          "caller": "scraper/utils/logger.py",
+          "callee": "scraper.utils.logger._setup_root_logger",
+          "callee_kind": null,
+          "evidence": "scraper/utils/logger.py:85",
+          "confidence": "resolved",
+          "verdict": "TP",
+          "reason": null
+        },
+        {
+          "caller": "scraper.core.fetcher.Fetcher._fetch_with_playwright",
+          "callee": "scraper.utils.headers.get_headers_for_url",
+          "callee_kind": null,
+          "evidence": "scraper/core/fetcher.py:254",
           "confidence": "resolved",
           "verdict": "TP",
           "reason": null
@@ -301,42 +302,42 @@
       "call_edges": 238,
       "documents": 98,
       "sampled": 30,
-      "true_positives": 26,
-      "false_positives": 4,
-      "precision": 0.867,
+      "true_positives": 30,
+      "false_positives": 0,
+      "precision": 1.0,
       "rows": [
         {
-          "caller": "source.core.Ky.Ky.#retryFromError",
-          "callee": "source.utils.type-guards.isForceRetryError",
-          "callee_kind": "function",
-          "evidence": "source/core/Ky.ts:1156",
+          "caller": "source.core.Ky.Ky.#run",
+          "callee": "source.core.Ky.Ky.#retryFromError",
+          "callee_kind": null,
+          "evidence": "source/core/Ky.ts:646",
           "confidence": "resolved",
           "verdict": "TP",
           "reason": null
         },
         {
-          "caller": "source.core.Ky.Ky.#getRemainingTotalTimeout",
-          "callee": "source.core.Ky.getCurrentTime",
-          "callee_kind": "function",
-          "evidence": "source/core/Ky.ts:1283",
-          "confidence": "resolved",
-          "verdict": "TP",
-          "reason": null
-        },
-        {
-          "caller": "source.core.Ky.Ky.#runAfterResponseHooks",
+          "caller": "source.core.Ky.Ky.#getResponseData",
           "callee": "source.core.Ky.Ky.#getResponseRequest",
-          "callee_kind": "method",
-          "evidence": "source/core/Ky.ts:1066",
+          "callee_kind": null,
+          "evidence": "source/core/Ky.ts:816",
           "confidence": "resolved",
           "verdict": "TP",
           "reason": null
         },
         {
-          "caller": "source.core.retry-timing.parseDate",
-          "callee": "source.core.retry-timing.createTimestamp",
-          "callee_kind": "function",
-          "evidence": "source/core/retry-timing.ts:91",
+          "caller": "source.core.Ky.Ky.#runBeforeRequestHooks",
+          "callee": "source.core.Ky.Ky.#assignRequest",
+          "callee_kind": null,
+          "evidence": "source/core/Ky.ts:1055",
+          "confidence": "resolved",
+          "verdict": "TP",
+          "reason": null
+        },
+        {
+          "caller": "source.errors.ForceRetryError.ForceRetryError.constructor",
+          "callee": "source.utils.is.isNonNegativeNumber",
+          "callee_kind": null,
+          "evidence": "source/errors/ForceRetryError.ts:25",
           "confidence": "resolved",
           "verdict": "TP",
           "reason": null
@@ -344,7 +345,7 @@
         {
           "caller": "source.core.Ky.Ky.#calculateRetryDelay",
           "callee": "source.errors.NonError.NonError.wrap",
-          "callee_kind": "method",
+          "callee_kind": null,
           "evidence": "source/core/Ky.ts:695",
           "confidence": "resolved",
           "verdict": "TP",
@@ -353,44 +354,17 @@
         {
           "caller": "source.core.Ky.Ky.#calculateRetryDelay",
           "callee": "source.utils.type-guards.isTimeoutError",
-          "callee_kind": "function",
+          "callee_kind": null,
           "evidence": "source/core/Ky.ts:725",
           "confidence": "resolved",
           "verdict": "TP",
           "reason": null
         },
         {
-          "caller": "source.utils.merge.deepMergeInternal",
-          "callee": "source.utils.merge.resolveReplaceMarkers",
-          "callee_kind": "function",
-          "evidence": "source/utils/merge.ts:492",
-          "confidence": "resolved",
-          "verdict": "TP",
-          "reason": null
-        },
-        {
-          "caller": "source.core.Ky.Ky.create",
-          "callee": "source.core.Ky.Ky",
-          "callee_kind": "class",
-          "evidence": "source/core/Ky.ts:367",
-          "confidence": "resolved",
-          "verdict": "FP",
-          "reason": "the three evidence lines are private-field reads (`ky.#originalRequest`, `ky.request`); the only `new Ky(...)` (Ky.ts:357) is recorded as a `references` edge to `Ky.constructor`, so no evidence line is a call to `Ky`"
-        },
-        {
-          "caller": "source.core.Ky.Ky.#fetch",
-          "callee": "source.core.Ky.Ky.#getEffectiveTimeout",
-          "callee_kind": "method",
-          "evidence": "source/core/Ky.ts:1238",
-          "confidence": "resolved",
-          "verdict": "TP",
-          "reason": null
-        },
-        {
-          "caller": "source.core.Ky.Ky.#run",
-          "callee": "source.core.Ky.Ky.#shouldThrowHttpErrors",
-          "callee_kind": "method",
-          "evidence": "source/core/Ky.ts:625",
+          "caller": "source.utils.merge.resolveReplaceMarkers.resolveItem",
+          "callee": "source.utils.merge.getReplaceState",
+          "callee_kind": null,
+          "evidence": "source/utils/merge.ts:266",
           "confidence": "resolved",
           "verdict": "TP",
           "reason": null
@@ -398,8 +372,35 @@
         {
           "caller": "source.core.Ky.applySearchParameters",
           "callee": "source.utils.is.isNonArrayObject",
-          "callee_kind": "function",
+          "callee_kind": null,
           "evidence": "source/core/Ky.ts:295",
+          "confidence": "resolved",
+          "verdict": "TP",
+          "reason": null
+        },
+        {
+          "caller": "source.core.Ky.Ky.#fetch",
+          "callee": "source.core.Ky.Ky.#setResponseRequest",
+          "callee_kind": null,
+          "evidence": "source/core/Ky.ts:1260",
+          "confidence": "resolved",
+          "verdict": "TP",
+          "reason": null
+        },
+        {
+          "caller": "source.core.Ky.Ky.#runAfterResponseHooks",
+          "callee": "source.core.Ky.Ky.#getNormalizedOptions",
+          "callee_kind": null,
+          "evidence": "source/core/Ky.ts:1079",
+          "confidence": "resolved",
+          "verdict": "TP",
+          "reason": null
+        },
+        {
+          "caller": "source.core.Ky.resolveInput",
+          "callee": "source.core.Ky.isAbsoluteInput",
+          "callee_kind": null,
+          "evidence": "source/core/Ky.ts:264",
           "confidence": "resolved",
           "verdict": "TP",
           "reason": null
@@ -407,26 +408,26 @@
         {
           "caller": "source.core.Ky.Ky.#calculateRetryDelay",
           "callee": "source.utils.normalize.normalizeRetryOptions",
-          "callee_kind": "function",
+          "callee_kind": null,
           "evidence": "source/core/Ky.ts:689",
           "confidence": "resolved",
           "verdict": "TP",
           "reason": null
         },
         {
-          "caller": "source.core.Ky.Ky.constructor",
-          "callee": "source.core.Ky.validateTimeoutOption",
-          "callee_kind": "function",
-          "evidence": "source/core/Ky.ts:501",
+          "caller": "source.core.Ky.Ky.create",
+          "callee": "source.core.Ky.Ky.#raceWithTotalTimeout",
+          "callee_kind": null,
+          "evidence": "source/core/Ky.ts:406",
           "confidence": "resolved",
           "verdict": "TP",
           "reason": null
         },
         {
-          "caller": "source.core.Ky.Ky.#raceBodyRead",
-          "callee": "source.core.Ky.Ky.#throwProcessedError",
-          "callee_kind": "method",
-          "evidence": "source/core/Ky.ts:887",
+          "caller": "source.core.Ky.Ky.#raceWithTotalTimeout",
+          "callee": "source.core.Ky.cancelReturnedBody",
+          "callee_kind": null,
+          "evidence": "source/core/Ky.ts:976",
           "confidence": "resolved",
           "verdict": "TP",
           "reason": null
@@ -434,35 +435,35 @@
         {
           "caller": "source.core.Ky.Ky.#calculateRetryDelay",
           "callee": "source.core.retry-timing.calculateRetryTimingDelay",
-          "callee_kind": "function",
+          "callee_kind": null,
           "evidence": "source/core/Ky.ts:740",
           "confidence": "resolved",
           "verdict": "TP",
           "reason": null
         },
         {
-          "caller": "source.core.Ky.Ky.#decorateResponse",
-          "callee": "source.core.Ky.Ky.#setResponseRequest",
-          "callee_kind": "method",
-          "evidence": "source/core/Ky.ts:777",
+          "caller": "source.core.Ky.Ky.#fetch",
+          "callee": "source.core.Ky.Ky.#getEffectiveTimeout",
+          "callee_kind": null,
+          "evidence": "source/core/Ky.ts:1238",
           "confidence": "resolved",
           "verdict": "TP",
           "reason": null
         },
         {
-          "caller": "source.core.Ky.Ky.#runBeforeRequestHooks",
-          "callee": "source.core.Ky.Ky.#raceWithTotalTimeout",
-          "callee_kind": "method",
-          "evidence": "source/core/Ky.ts:1044",
+          "caller": "source.core.Ky.Ky.#wrapRequestWithUploadProgress",
+          "callee": "source.utils.body.streamRequest",
+          "callee_kind": null,
+          "evidence": "source/core/Ky.ts:1374",
           "confidence": "resolved",
           "verdict": "TP",
           "reason": null
         },
         {
-          "caller": "source.core.Ky.Ky.#runAfterResponseHooks",
-          "callee": "source.utils.is.isResponse",
-          "callee_kind": "function",
-          "evidence": "source/core/Ky.ts:1099",
+          "caller": "source.core.Ky.Ky.#shouldThrowHttpErrors",
+          "callee": "source.utils.body.cancelBody",
+          "callee_kind": null,
+          "evidence": "source/core/Ky.ts:1025",
           "confidence": "resolved",
           "verdict": "TP",
           "reason": null
@@ -470,107 +471,107 @@
         {
           "caller": "source.core.Ky.Ky.#calculateRetryDelay",
           "callee": "source.utils.type-guards.isNetworkError",
-          "callee_kind": "function",
+          "callee_kind": null,
           "evidence": "source/core/Ky.ts:758",
           "confidence": "resolved",
           "verdict": "TP",
           "reason": null
         },
         {
-          "caller": "source.core.Ky.Ky.#retry",
-          "callee": "source.core.Ky.Ky.#fetch",
-          "callee_kind": "method",
-          "evidence": "source/core/Ky.ts:1119",
+          "caller": "source.core.Ky.Ky.#retryFromError",
+          "callee": "source.core.Ky.Ky.#createManagedSignal",
+          "callee_kind": null,
+          "evidence": "source/core/Ky.ts:1150",
           "confidence": "resolved",
           "verdict": "TP",
           "reason": null
         },
         {
           "caller": "source.core.Ky.Ky.#fetch",
-          "callee": "source.core.Ky.Ky",
-          "callee_kind": "class",
-          "evidence": "source/core/Ky.ts:1225",
-          "confidence": "resolved",
-          "verdict": "FP",
-          "reason": "attribute reference inside a call expression: the occurrence is a field/property read, classified as a call and attributed to the symbol that encloses the field's definition (`this.#retryLimit`, `this.request`)"
-        },
-        {
-          "caller": "source.core.Ky.Ky.create",
-          "callee": "source.core.Ky.Ky.#raceWithTotalTimeout",
-          "callee_kind": "method",
-          "evidence": "source/core/Ky.ts:406",
+          "callee": "source.core.Ky.Ky.#getRemainingTotalTimeout",
+          "callee_kind": null,
+          "evidence": "source/core/Ky.ts:1254",
           "confidence": "resolved",
           "verdict": "TP",
           "reason": null
         },
         {
-          "caller": "source.core.Ky.Ky.#runBeforeRequestHooks",
-          "callee": "source.core.Ky.Ky",
-          "callee_kind": "class",
-          "evidence": "source/core/Ky.ts:1057",
+          "caller": "source.core.Ky.cloneInitHookOptions",
+          "callee": "source.utils.merge.cloneDeep",
+          "callee_kind": null,
+          "evidence": "source/core/Ky.ts:320",
           "confidence": "resolved",
-          "verdict": "FP",
-          "reason": "attribute reference inside a call expression: the occurrence is a field/property read, classified as a call and attributed to the symbol that encloses the field's definition (`this.#hookResponses`)"
+          "verdict": "TP",
+          "reason": null
+        },
+        {
+          "caller": "source.core.Ky.Ky.#throwIfTotalTimeoutExhausted",
+          "callee": "source.core.Ky.Ky.#getRemainingTotalTimeout",
+          "callee_kind": null,
+          "evidence": "source/core/Ky.ts:1036",
+          "confidence": "resolved",
+          "verdict": "TP",
+          "reason": null
         },
         {
           "caller": "source.core.Ky.Ky.#calculateRetryDelay",
           "callee": "source.utils.type-guards.isForceRetryError",
-          "callee_kind": "function",
+          "callee_kind": null,
           "evidence": "source/core/Ky.ts:698",
           "confidence": "resolved",
           "verdict": "TP",
           "reason": null
         },
         {
-          "caller": "source.utils.merge.getReplaceState",
-          "callee": "source.utils.is.isObject",
-          "callee_kind": "function",
-          "evidence": "source/utils/merge.ts:21",
-          "confidence": "resolved",
-          "verdict": "TP",
-          "reason": null
-        },
-        {
-          "caller": "source.core.Ky.Ky.create",
-          "callee": "source.core.Ky.cloneInitHookOptions",
-          "callee_kind": "function",
-          "evidence": "source/core/Ky.ts:351",
+          "caller": "source.core.Ky.readResponseText",
+          "callee": "source.core.Ky.createTextDecoder",
+          "callee_kind": null,
+          "evidence": "source/core/Ky.ts:156",
           "confidence": "resolved",
           "verdict": "TP",
           "reason": null
         },
         {
           "caller": "source.core.Ky.Ky.#fetch",
-          "callee": "source.utils.is-network-error.isRawNetworkError",
-          "callee_kind": "function",
-          "evidence": "source/core/Ky.ts:1268",
+          "callee": "source.utils.normalize.normalizeRetryOptions",
+          "callee_kind": null,
+          "evidence": "source/core/Ky.ts:1223",
           "confidence": "resolved",
           "verdict": "TP",
           "reason": null
         },
         {
-          "caller": "source.core.Ky.Ky.#raceWithTotalTimeout",
+          "caller": "source.core.Ky.Ky.#retry",
+          "callee": "source.core.Ky.Ky.#retryFromError",
+          "callee_kind": null,
+          "evidence": "source/core/Ky.ts:1121",
+          "confidence": "resolved",
+          "verdict": "TP",
+          "reason": null
+        },
+        {
+          "caller": "source.createRequest",
           "callee": "source.core.Ky.Ky",
-          "callee_kind": "class",
-          "evidence": "source/core/Ky.ts:937",
-          "confidence": "resolved",
-          "verdict": "FP",
-          "reason": "attribute reference inside a call expression: the occurrence is a field/property read, classified as a call and attributed to the symbol that encloses the field's definition (`this.#abortController`)"
+          "callee_kind": null,
+          "evidence": "source/index.ts:19",
+          "confidence": "inferred",
+          "verdict": "TP",
+          "reason": null
         },
         {
-          "caller": "source.core.Ky.resolveInput",
-          "callee": "source.core.Ky.isAbsoluteInput",
-          "callee_kind": "function",
-          "evidence": "source/core/Ky.ts:264",
+          "caller": "source.createInstance.ky",
+          "callee": "source.utils.merge.validateAndMerge",
+          "callee_kind": null,
+          "evidence": "source/index.ts:35",
           "confidence": "resolved",
           "verdict": "TP",
           "reason": null
         },
         {
-          "caller": "source.core.Ky.releaseWhenSettled",
-          "callee": "source.core.Ky.cancelReturnedBody",
-          "callee_kind": "function",
-          "evidence": "source/core/Ky.ts:92",
+          "caller": "source.utils.normalize.normalizeRetryOptions",
+          "callee": "source.utils.is.isNonArrayObject",
+          "callee_kind": null,
+          "evidence": "source/utils/normalize.ts:42",
           "confidence": "resolved",
           "verdict": "TP",
           "reason": null
@@ -580,9 +581,9 @@
   },
   "overall": {
     "sampled": 60,
-    "true_positives": 50,
-    "false_positives": 10,
-    "precision": 0.833
+    "true_positives": 60,
+    "false_positives": 0,
+    "precision": 1.0
   },
   "false_negatives": [
     {
@@ -595,5 +596,14 @@
       "finding": "local closures and recursion are not edges",
       "detail": "`throwIfTotalTimeoutReached` (Ky.ts:819) is an arrow function assigned to a `const`; calls at Ky.ts:832 and Ky.ts:848 have no node to point at. The recursive `this.#decorateResponse(...)` at Ky.ts:777 is dropped by the same-function self-call guard. Every other `this.x(...)` site is a field method call (WeakSet/Headers/AbortController) or a call whose edge exists with the evidence list capped at three entries."
     }
-  ]
+  ],
+  "history": {
+    "before_tree_sitter_verification": {
+      "sampled": 60,
+      "true_positives": 50,
+      "false_positives": 10,
+      "precision": 0.833,
+      "cause": "Rank 1: attribute references inside calls promoted to calls edges"
+    }
+  }
 }

@@ -44,6 +44,8 @@ Without `--out`, the run lives under the per-user data directory:
       folder_<name>.mmd
       flow_<target>.mmd
     view/map.html
+    view/overview.html
+    view/flow.html
     digest.md
     check.json
     meta.json

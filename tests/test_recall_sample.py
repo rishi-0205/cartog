@@ -58,7 +58,7 @@ def test_recall_sample_file_is_complete():
             assert row["evidence"], row
             path, _, line = row["evidence"].rpartition(":")
             assert path and line.isdigit() and int(line) > 0, row["evidence"]
-            assert row["confidence"] in {"resolved", "reconciled", "import"}, row
+            assert row["confidence"] in {"resolved", "reconciled", "import", "inferred"}, row
             if row["verdict"] == "FP":
                 assert row["reason"], row
 

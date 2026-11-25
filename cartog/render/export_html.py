@@ -233,6 +233,7 @@ def generate_html_map(
     flow_edges: list[Edge] | None = None,
     include_helpers: bool = True,
     stats: dict[str, int] | None = None,
+    entry_points: list[dict[str, Any]] | None = None,
 ) -> str:
     """Generate self-contained map.html with inlined Cytoscape stack, CSS, JS, and graph data."""
     rollup_stats: dict[str, int] = {} if stats is None else stats
@@ -277,6 +278,7 @@ def generate_html_map(
 
     payload_json = escape_json_for_script(json.dumps({
         "elements": elements,
+        "entry_points": entry_points or [],
         "meta": {
             "target_path": graph.meta.get("target_path", ""),
             "cartog_version": graph.meta.get("cartog_version", "0.1.0"),
@@ -309,6 +311,7 @@ def generate_html_map(
         <span id="rollup-note" class="rollup-note" title="Edges whose endpoint is collapsed are aggregated at the nearest visible ancestor">{escape_html_text(rollup_note)}</span>
       </div>
       <div class="header-controls">
+        <select id="entry-filter" class="select-ctrl" title="Filter by entry point" style="display:none;"></select>
         <input type="text" id="search-input" class="search-box" placeholder="Filter symbols, files..." aria-label="Search">
         <select id="select-layout" class="select-ctrl" title="Layout Algorithm">
           <option value="fcose">Layout: Blueprint (fCoSE)</option>

@@ -90,6 +90,7 @@ the list is preserved in [§6](#6-removed-by-c1).
 | `cartog/langs/js_adapter.py` | `cartog/parse/js_adapter.py` | R7 |
 | `cartog/scip_pass.py` | `cartog/scip/runner.py` | R8 |
 | `cartog/scip_pb2.py` | `cartog/scip/scip_pb2.py` | R8 |
+| `(new)` | `cartog/scip/static_calls.py` | R8 |
 | `cartog/scip.proto` | `cartog/scip/scip.proto` | R8 |
 | `cartog/scip_windows_shim.js` | `cartog/scip/windows_shim.js` | R8 |
 | `cartog/merge.py` | `cartog/graph/merge.py` | R9 |

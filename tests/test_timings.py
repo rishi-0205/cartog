@@ -28,10 +28,10 @@ STAGE_KEYS = (
 
 DETERMINISTIC_FILES = (
     "graph.json",
-    "diagrams/overview.mmd",
     "digest.md",
     "check.json",
     "view/map.html",
+    "view/overview.html",
 )
 
 
