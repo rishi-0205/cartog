@@ -121,6 +121,12 @@ Command: venv\Scripts\python.exe .scratch\v5_fn2.py
 All 7 are methods of external objects whose name collides with an in-repo name;
 0 genuine misses among the 141 sites.
 
+The two scan helpers were scratch scripts (`.scratch/v5_fn2.py`,
+`.scratch/v5_fn_ky2.py`, deleted at session end); the paragraph above is the
+complete method: parse with `ast` / tree-sitter, keep call expressions whose
+callee name matches an in-repo symbol, then require a `calls` edge whose
+evidence contains the same `path:line` and whose callee has the same name.
+
 Command: venv\Scripts\python.exe .scratch\v5_fn_ky2.py
 108 `this.x(...)` call sites; 26 have no call edge
                                              [V5-fn-ky.txt]
