@@ -241,3 +241,129 @@ in `tests/test_compare_imports.py` covers the first three). It does not prove
 that an import *statement* is resolved to the module Python or Node would load
 at runtime (conditional imports, dynamic `import`, bundler aliases), and it
 says nothing about call edges — see section 5.
+
+## 5. Call-edge sample (V5)
+
+### 5.1 Method
+
+`scripts/sample_calls.py` reads a `graph.json`, keeps every `calls` edge, sorts
+them by `(caller, callee, first evidence)`, and draws `limit` of them with
+`random.Random(seed).sample`. The same run, seed and limit always produce the
+same rows, so a reviewer can re-label the sample instead of trusting it.
+
+Two repositories were sampled:
+
+| repo | language | checkout | call edges | documents |
+|---|---|---|---|---|
+| webscrapper | Python, annotated but not type-checked; 22 files, no third-party dependencies | `e1901a1` (local checkout, not in `samples.lock`) | 219 | 22 |
+| ky | TypeScript | `3541888` (`samples.lock`) | 238 | 98 |
+
+Runs:
+
+```powershell
+venv\Scripts\python.exe -m cartog analyze samples\webscrapper --out .scratch\v5\webscrapper --timings --no-render
+venv\Scripts\python.exe -m cartog analyze samples\ky --out .scratch\v5\ky --timings --no-render
+venv\Scripts\python.exe scripts\sample_calls.py .scratch\v5\webscrapper\graph.json --limit 30 --seed 7
+venv\Scripts\python.exe scripts\sample_calls.py .scratch\v5\ky\graph.json --limit 30 --seed 7
+```
+
+SCIP ran in both runs (`ran=True`, 22 and 98 documents). `check` failed in both
+with duplicate-node-id errors (KNOWN_ISSUES Rank 4); the `graph.json` on disk
+has no duplicate ids and the call edges are unaffected.
+
+Every row was labelled by opening the evidence line in the checkout:
+
+* **TP** — an evidence line is a real call (or instantiation) from the caller to
+  the callee.
+* **FP** — no evidence line is such a call.
+
+The 60 labelled rows, with a reason for every FP, are in
+[`verification/call-sample.json`](verification/call-sample.json);
+`tests/test_recall_sample.py` checks the counts, the arithmetic, and that every
+`path:line` exists in the sample checkout.
+
+### 5.2 Results
+
+| repo | call edges | sampled | TP | FP | precision |
+|---|---|---|---|---|---|
+| webscrapper | 219 | 30 | 24 | 6 | **0.800** |
+| ky | 238 | 30 | 26 | 4 | **0.867** |
+| both | 457 | 60 | 50 | 10 | **0.833** |
+
+Precision only: a sample of existing edges cannot measure recall, which is
+covered separately in 5.4.
+
+### 5.3 Every false positive, and why
+
+All ten come from one classification rule, already tracked as KNOWN_ISSUES
+Rank 1. When an occurrence is an attribute or property reference and that
+reference sits inside a call expression, `classify_occurrence()` returns
+`calls`; the callee is then the symbol that *encloses the attribute's
+definition*.
+
+| repo | edge | evidence | what the line really does |
+|---|---|---|---|
+| webscrapper | `…test_empty_href_links_are_excluded` → `…setUp` | `tests/test_parser.py:214` | reads `self.parser` (assigned in `setUp`) and calls `Parser.parse` |
+| webscrapper | `…test_mailto_links_are_excluded` → `…setUp` | `tests/test_parser.py:202` | same |
+| webscrapper | `…test_resolves_relative_links_to_absolute` → `…setUp` | `tests/test_parser.py:189` | same |
+| webscrapper | `…test_falls_back_to_h1_when_no_title_tag` → `…setUp` | `tests/test_parser.py:106` | same |
+| webscrapper | `Fetcher.close` → `Fetcher.__init__` | `scraper/core/fetcher.py:106` | `self.session.close()`; `session` is assigned in `__init__` |
+| webscrapper | `Scraper._looks_js_rendered` → `ScrapeResponse` | `scraper/core/scraper.py:194` | `len(response.raw_html.strip())`; `raw_html` is a dataclass field |
+| ky | `Ky.create` → `Ky` | `source/core/Ky.ts:367` | `ky.#originalRequest` (field read); the real `new Ky(...)` is at line 357 and is not a `calls` edge (5.4) |
+| ky | `Ky.#fetch` → `Ky` | `source/core/Ky.ts:1225` | `this.#retryLimit`, `this.request` (field reads) |
+| ky | `Ky.#runBeforeRequestHooks` → `Ky` | `source/core/Ky.ts:1057` | `this.#hookResponses.add(result)` (field read) |
+| ky | `Ky.#raceWithTotalTimeout` → `Ky` | `source/core/Ky.ts:937` | `this.#abortController?.abort()` (field read) |
+
+The callee depends on where the field is defined: a field assigned in a method
+body gives that method (`setUp`, `Fetcher.__init__`, five rows); a field
+declared in a class body gives the class (`ScrapeResponse`, `Ky`, five rows).
+The same rule fires in TypeScript private fields, so this is not a Python-only
+artefact.
+
+### 5.4 Recall: what the sample cannot see
+
+A precision sample says nothing about calls that never became edges. Two
+name-based scans looked for them:
+
+**Python (`webscrapper`)** — an `ast` walk over all 22 files, taking every
+`Call` whose callee name matches a function or method defined in the
+repository: **141 call sites, 7 without a matching edge**. All 7 are methods of
+external objects whose name collides with an in-repo name: `parser.parse_args`
+(argparse), `self.session.close` (requests), `browser.close` (Playwright),
+`filepath.exists` (pathlib), `json.load` (stdlib). **No genuine miss.**
+
+**TypeScript (`ky`)** — every `this.x(...)` call site: **108 sites, 26 without
+a call edge**. Of those, 21 are calls on field values (`WeakSet`/`Headers`/
+`Map`/`AbortController`: `.add`, `.has`, `.get`, `.set`, `.delete`, `.abort`,
+`.clone`, `.throwIfAborted`, `stringifyJson`); 3 are `this.#throwProcessedError`
+and 2 are `this.#calculateDelay` in methods whose edge already exists with the
+evidence list capped at three entries; 1 is the recursive
+`this.#decorateResponse(...)` inside the arrow function assigned to
+`response.clone` at `Ky.ts:777`, dropped by the same-function self-call guard.
+
+Three recall limits remain, all documented:
+
+* **Local closures are not symbols.** `throwIfTotalTimeoutReached` (`Ky.ts:819`)
+  is an arrow function assigned to a `const`; the calls at `Ky.ts:832` and
+  `Ky.ts:848` have no node to point at (KNOWN_ISSUES Rank 2).
+* **Direct recursion is dropped** by the same-function self-call guard (one
+  site in ky).
+* **`new X(...)` is not classified as a call.** In TypeScript the instantiation
+  `new Ky(input, initHookOptions)` at `Ky.ts:357` is recorded as a `references`
+  edge to `Ky.constructor`, not a `calls` edge (KNOWN_ISSUES Rank 7).
+
+### 5.5 What this does and does not prove
+
+It proves that on two real repositories 50 of 60 sampled call edges are
+genuine, that every false positive is one reproducible classification bug rather
+than random noise, and that the Python resolver has no name-level misses in a
+141-site scan.
+
+It does not give a recall number: the sample is edge-based, and the scans only
+see calls whose callee name matches a symbol the repository defines. It says
+nothing about dynamic dispatch, `getattr`, reflection, or decorators, and an
+edge's caller is the enclosing *static* symbol, not necessarily the runtime
+caller.
+
+Fixing Rank 1 and Rank 7 would raise measured precision; the same seed and
+limit make the before/after comparison exact.

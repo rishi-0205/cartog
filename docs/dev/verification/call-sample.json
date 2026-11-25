@@ -1,0 +1,599 @@
+{
+  "schema_version": 1,
+  "method": {
+    "sample": "scripts/sample_calls.py: edges sorted by (caller, callee, evidence), then random.Random(seed).sample(limit)",
+    "seed": 7,
+    "limit_per_repo": 30,
+    "verdict_rule": "TP when an evidence line is a real call from the caller to the callee; FP otherwise. Labelled by reading every evidence line in the pinned checkout.",
+    "reproduce": [
+      "venv\\Scripts\\python.exe -m cartog analyze samples\\webscrapper --out .scratch\\v5\\webscrapper --timings --no-render",
+      "venv\\Scripts\\python.exe -m cartog analyze samples\\ky --out .scratch\\v5\\ky --timings --no-render",
+      "venv\\Scripts\\python.exe scripts\\sample_calls.py .scratch\\v5\\webscrapper\\graph.json --limit 30 --seed 7",
+      "venv\\Scripts\\python.exe scripts\\sample_calls.py .scratch\\v5\\ky\\graph.json --limit 30 --seed 7"
+    ]
+  },
+  "repos": {
+    "webscrapper": {
+      "sample_commit": "e1901a1e0a8a2c2ab01378912196a25cb8dffa9d",
+      "pinned": false,
+      "call_edges": 219,
+      "documents": 22,
+      "sampled": 30,
+      "true_positives": 24,
+      "false_positives": 6,
+      "precision": 0.8,
+      "rows": [
+        {
+          "caller": "tests.test_fetcher.TestFetcherStaticFetch.test_browser_flag_routes_to_playwright",
+          "callee": "scraper.core.fetcher.Fetcher.fetch",
+          "callee_kind": "method",
+          "evidence": "tests/test_fetcher.py:192",
+          "confidence": "resolved",
+          "verdict": "TP",
+          "reason": null
+        },
+        {
+          "caller": "scraper.core.scraper.Scraper.scrape",
+          "callee": "scraper.core.scraper.Scraper._looks_js_rendered",
+          "callee_kind": "method",
+          "evidence": "scraper/core/scraper.py:117",
+          "confidence": "resolved",
+          "verdict": "TP",
+          "reason": null
+        },
+        {
+          "caller": "tests.test_parser.TestParserContentExtraction.test_custom_content_tags_are_respected",
+          "callee": "tests.test_parser.make_response",
+          "callee_kind": "function",
+          "evidence": "tests/test_parser.py:155",
+          "confidence": "resolved",
+          "verdict": "TP",
+          "reason": null
+        },
+        {
+          "caller": "tests.test_parser.TestParserTitleExtraction.test_returns_empty_string_when_no_title_found",
+          "callee": "scraper.core.parser.Parser.parse",
+          "callee_kind": "method",
+          "evidence": "tests/test_parser.py:117",
+          "confidence": "resolved",
+          "verdict": "TP",
+          "reason": null
+        },
+        {
+          "caller": "scraper.core.fetcher.Fetcher._fetch_with_playwright",
+          "callee": "scraper.utils.headers.merge_headers",
+          "callee_kind": "function",
+          "evidence": "scraper/core/fetcher.py:253",
+          "confidence": "resolved",
+          "verdict": "TP",
+          "reason": null
+        },
+        {
+          "caller": "scraper.core.fetcher.Fetcher.fetch",
+          "callee": "scraper.core.fetcher.Fetcher._fetch_with_playwright",
+          "callee_kind": "method",
+          "evidence": "scraper/core/fetcher.py:97",
+          "confidence": "resolved",
+          "verdict": "TP",
+          "reason": null
+        },
+        {
+          "caller": "tests.test_scraper.TestScraperPipeline.test_parser_is_called_with_fetch_result",
+          "callee": "scraper.core.scraper.Scraper.scrape",
+          "callee_kind": "method",
+          "evidence": "tests/test_scraper.py:121",
+          "confidence": "resolved",
+          "verdict": "TP",
+          "reason": null
+        },
+        {
+          "caller": "tests.test_parser.TestParserLinkExtraction.test_javascript_links_are_excluded",
+          "callee": "scraper.core.parser.Parser.parse",
+          "callee_kind": "method",
+          "evidence": "tests/test_parser.py:208",
+          "confidence": "resolved",
+          "verdict": "TP",
+          "reason": null
+        },
+        {
+          "caller": "scraper.core.parser.Parser.parse",
+          "callee": "scraper.core.parser.Parser._extract_content",
+          "callee_kind": "method",
+          "evidence": "scraper/core/parser.py:103",
+          "confidence": "resolved",
+          "verdict": "TP",
+          "reason": null
+        },
+        {
+          "caller": "tests.test_fetcher.TestFetcherStaticFetch.test_successful_fetch_returns_success_response",
+          "callee": "scraper.core.fetcher.Fetcher.fetch",
+          "callee_kind": "method",
+          "evidence": "tests/test_fetcher.py:47",
+          "confidence": "resolved",
+          "verdict": "TP",
+          "reason": null
+        },
+        {
+          "caller": "tests.test_parser.TestParserTextCleaning.test_multiple_spaces_are_collapsed",
+          "callee": "tests.test_parser.make_response",
+          "callee_kind": "function",
+          "evidence": "tests/test_parser.py:241",
+          "confidence": "resolved",
+          "verdict": "TP",
+          "reason": null
+        },
+        {
+          "caller": "scraper.core.fetcher.Fetcher._fetch_with_requests",
+          "callee": "scraper.models.response.ScrapeResponse",
+          "callee_kind": "class",
+          "evidence": "scraper/core/fetcher.py:150",
+          "confidence": "resolved",
+          "verdict": "TP",
+          "reason": null
+        },
+        {
+          "caller": "tests.test_parser.TestParserLinkExtraction.test_empty_href_links_are_excluded",
+          "callee": "tests.test_parser.TestParserLinkExtraction.setUp",
+          "callee_kind": "method",
+          "evidence": "tests/test_parser.py:214",
+          "confidence": "resolved",
+          "verdict": "FP",
+          "reason": "attribute reference inside a call expression: the occurrence is a field/property read, classified as a call and attributed to the symbol that encloses the field's definition (`self.parser`, assigned in `setUp`)"
+        },
+        {
+          "caller": "scraper.storage.json_storage.JsonStorage.load",
+          "callee": "scraper.storage.json_storage.JsonStorage._url_to_filepath",
+          "callee_kind": "method",
+          "evidence": "scraper/storage/json_storage.py:106",
+          "confidence": "resolved",
+          "verdict": "TP",
+          "reason": null
+        },
+        {
+          "caller": "scraper.core.fetcher.Fetcher.__init__",
+          "callee": "scraper.core.fetcher.Fetcher._create_session",
+          "callee_kind": "method",
+          "evidence": "scraper/core/fetcher.py:74",
+          "confidence": "resolved",
+          "verdict": "TP",
+          "reason": null
+        },
+        {
+          "caller": "scraper.core.parser.Parser._extract_links",
+          "callee": "scraper.utils.url.resolve_relative_url",
+          "callee_kind": "function",
+          "evidence": "scraper/core/parser.py:252",
+          "confidence": "resolved",
+          "verdict": "TP",
+          "reason": null
+        },
+        {
+          "caller": "tests.test_parser.TestParserContentExtraction.test_noise_tags_are_removed_from_content",
+          "callee": "scraper.core.parser.Parser.parse",
+          "callee_kind": "method",
+          "evidence": "tests/test_parser.py:135",
+          "confidence": "resolved",
+          "verdict": "TP",
+          "reason": null
+        },
+        {
+          "caller": "tests.test_parser.TestParserContentExtraction.test_extracts_paragraph_content",
+          "callee": "tests.test_parser.make_response",
+          "callee_kind": "function",
+          "evidence": "tests/test_parser.py:129",
+          "confidence": "resolved",
+          "verdict": "TP",
+          "reason": null
+        },
+        {
+          "caller": "scraper.core.fetcher.Fetcher.close",
+          "callee": "scraper.core.fetcher.Fetcher.__init__",
+          "callee_kind": "method",
+          "evidence": "scraper/core/fetcher.py:106",
+          "confidence": "resolved",
+          "verdict": "FP",
+          "reason": "attribute reference inside a call expression: the occurrence is a field/property read, classified as a call and attributed to the symbol that encloses the field's definition (`self.session`, assigned in `Fetcher.__init__`)"
+        },
+        {
+          "caller": "scraper.utils.url.normalize_url",
+          "callee": "scraper.utils.url.is_valid_url",
+          "callee_kind": "function",
+          "evidence": "scraper/utils/url.py:82",
+          "confidence": "resolved",
+          "verdict": "TP",
+          "reason": null
+        },
+        {
+          "caller": "scraper.core.parser.Parser._extract_title",
+          "callee": "scraper.core.parser.Parser._clean_text",
+          "callee_kind": "method",
+          "evidence": "scraper/core/parser.py:170",
+          "confidence": "resolved",
+          "verdict": "TP",
+          "reason": null
+        },
+        {
+          "caller": "tests.test_parser.TestParserLinkExtraction.test_mailto_links_are_excluded",
+          "callee": "tests.test_parser.TestParserLinkExtraction.setUp",
+          "callee_kind": "method",
+          "evidence": "tests/test_parser.py:202",
+          "confidence": "resolved",
+          "verdict": "FP",
+          "reason": "attribute reference inside a call expression: the occurrence is a field/property read, classified as a call and attributed to the symbol that encloses the field's definition (`self.parser`, assigned in `setUp`)"
+        },
+        {
+          "caller": "tests.test_parser.TestParserContentExtraction.test_headings_are_included_in_content",
+          "callee": "scraper.core.parser.Parser.parse",
+          "callee_kind": "method",
+          "evidence": "tests/test_parser.py:169",
+          "confidence": "resolved",
+          "verdict": "TP",
+          "reason": null
+        },
+        {
+          "caller": "scraper.core.fetcher.Fetcher._fetch_with_requests",
+          "callee": "scraper.utils.headers.get_headers_for_url",
+          "callee_kind": "function",
+          "evidence": "scraper/core/fetcher.py:125",
+          "confidence": "resolved",
+          "verdict": "TP",
+          "reason": null
+        },
+        {
+          "caller": "tests.test_parser.TestParserLinkExtraction.test_resolves_relative_links_to_absolute",
+          "callee": "tests.test_parser.TestParserLinkExtraction.setUp",
+          "callee_kind": "method",
+          "evidence": "tests/test_parser.py:189",
+          "confidence": "resolved",
+          "verdict": "FP",
+          "reason": "attribute reference inside a call expression: the occurrence is a field/property read, classified as a call and attributed to the symbol that encloses the field's definition (`self.parser`, assigned in `setUp`)"
+        },
+        {
+          "caller": "scraper.core.scraper.Scraper._looks_js_rendered",
+          "callee": "scraper.models.response.ScrapeResponse",
+          "callee_kind": "class",
+          "evidence": "scraper/core/scraper.py:194",
+          "confidence": "resolved",
+          "verdict": "FP",
+          "reason": "attribute reference inside a call expression: the occurrence is a field/property read, classified as a call and attributed to the symbol that encloses the field's definition (`response.raw_html`, declared in `ScrapeResponse`)"
+        },
+        {
+          "caller": "scraper.storage.json_storage.JsonStorage.save",
+          "callee": "scraper.storage.json_storage.JsonStorage._url_to_filepath",
+          "callee_kind": "method",
+          "evidence": "scraper/storage/json_storage.py:82",
+          "confidence": "resolved",
+          "verdict": "TP",
+          "reason": null
+        },
+        {
+          "caller": "tests.test_parser.TestParserTitleExtraction.test_falls_back_to_h1_when_no_title_tag",
+          "callee": "tests.test_parser.TestParserTitleExtraction.setUp",
+          "callee_kind": "method",
+          "evidence": "tests/test_parser.py:106",
+          "confidence": "resolved",
+          "verdict": "FP",
+          "reason": "attribute reference inside a call expression: the occurrence is a field/property read, classified as a call and attributed to the symbol that encloses the field's definition (`self.parser`, assigned in `setUp`)"
+        },
+        {
+          "caller": "tests.test_parser.TestParserTitleExtraction.test_falls_back_to_h1_when_no_title_tag",
+          "callee": "scraper.core.parser.Parser.parse",
+          "callee_kind": "method",
+          "evidence": "tests/test_parser.py:106",
+          "confidence": "resolved",
+          "verdict": "TP",
+          "reason": null
+        },
+        {
+          "caller": "tests.test_scraper.TestScraperPipeline.test_fetch_failure_skips_parser",
+          "callee": "tests.test_scraper.make_fetch_response",
+          "callee_kind": "function",
+          "evidence": "tests/test_scraper.py:93",
+          "confidence": "resolved",
+          "verdict": "TP",
+          "reason": null
+        }
+      ]
+    },
+    "ky": {
+      "sample_commit": "3541888878c4d303a8bc2ad61815f4e048f55a5d",
+      "pinned": true,
+      "call_edges": 238,
+      "documents": 98,
+      "sampled": 30,
+      "true_positives": 26,
+      "false_positives": 4,
+      "precision": 0.867,
+      "rows": [
+        {
+          "caller": "source.core.Ky.Ky.#retryFromError",
+          "callee": "source.utils.type-guards.isForceRetryError",
+          "callee_kind": "function",
+          "evidence": "source/core/Ky.ts:1156",
+          "confidence": "resolved",
+          "verdict": "TP",
+          "reason": null
+        },
+        {
+          "caller": "source.core.Ky.Ky.#getRemainingTotalTimeout",
+          "callee": "source.core.Ky.getCurrentTime",
+          "callee_kind": "function",
+          "evidence": "source/core/Ky.ts:1283",
+          "confidence": "resolved",
+          "verdict": "TP",
+          "reason": null
+        },
+        {
+          "caller": "source.core.Ky.Ky.#runAfterResponseHooks",
+          "callee": "source.core.Ky.Ky.#getResponseRequest",
+          "callee_kind": "method",
+          "evidence": "source/core/Ky.ts:1066",
+          "confidence": "resolved",
+          "verdict": "TP",
+          "reason": null
+        },
+        {
+          "caller": "source.core.retry-timing.parseDate",
+          "callee": "source.core.retry-timing.createTimestamp",
+          "callee_kind": "function",
+          "evidence": "source/core/retry-timing.ts:91",
+          "confidence": "resolved",
+          "verdict": "TP",
+          "reason": null
+        },
+        {
+          "caller": "source.core.Ky.Ky.#calculateRetryDelay",
+          "callee": "source.errors.NonError.NonError.wrap",
+          "callee_kind": "method",
+          "evidence": "source/core/Ky.ts:695",
+          "confidence": "resolved",
+          "verdict": "TP",
+          "reason": null
+        },
+        {
+          "caller": "source.core.Ky.Ky.#calculateRetryDelay",
+          "callee": "source.utils.type-guards.isTimeoutError",
+          "callee_kind": "function",
+          "evidence": "source/core/Ky.ts:725",
+          "confidence": "resolved",
+          "verdict": "TP",
+          "reason": null
+        },
+        {
+          "caller": "source.utils.merge.deepMergeInternal",
+          "callee": "source.utils.merge.resolveReplaceMarkers",
+          "callee_kind": "function",
+          "evidence": "source/utils/merge.ts:492",
+          "confidence": "resolved",
+          "verdict": "TP",
+          "reason": null
+        },
+        {
+          "caller": "source.core.Ky.Ky.create",
+          "callee": "source.core.Ky.Ky",
+          "callee_kind": "class",
+          "evidence": "source/core/Ky.ts:367",
+          "confidence": "resolved",
+          "verdict": "FP",
+          "reason": "the three evidence lines are private-field reads (`ky.#originalRequest`, `ky.request`); the only `new Ky(...)` (Ky.ts:357) is recorded as a `references` edge to `Ky.constructor`, so no evidence line is a call to `Ky`"
+        },
+        {
+          "caller": "source.core.Ky.Ky.#fetch",
+          "callee": "source.core.Ky.Ky.#getEffectiveTimeout",
+          "callee_kind": "method",
+          "evidence": "source/core/Ky.ts:1238",
+          "confidence": "resolved",
+          "verdict": "TP",
+          "reason": null
+        },
+        {
+          "caller": "source.core.Ky.Ky.#run",
+          "callee": "source.core.Ky.Ky.#shouldThrowHttpErrors",
+          "callee_kind": "method",
+          "evidence": "source/core/Ky.ts:625",
+          "confidence": "resolved",
+          "verdict": "TP",
+          "reason": null
+        },
+        {
+          "caller": "source.core.Ky.applySearchParameters",
+          "callee": "source.utils.is.isNonArrayObject",
+          "callee_kind": "function",
+          "evidence": "source/core/Ky.ts:295",
+          "confidence": "resolved",
+          "verdict": "TP",
+          "reason": null
+        },
+        {
+          "caller": "source.core.Ky.Ky.#calculateRetryDelay",
+          "callee": "source.utils.normalize.normalizeRetryOptions",
+          "callee_kind": "function",
+          "evidence": "source/core/Ky.ts:689",
+          "confidence": "resolved",
+          "verdict": "TP",
+          "reason": null
+        },
+        {
+          "caller": "source.core.Ky.Ky.constructor",
+          "callee": "source.core.Ky.validateTimeoutOption",
+          "callee_kind": "function",
+          "evidence": "source/core/Ky.ts:501",
+          "confidence": "resolved",
+          "verdict": "TP",
+          "reason": null
+        },
+        {
+          "caller": "source.core.Ky.Ky.#raceBodyRead",
+          "callee": "source.core.Ky.Ky.#throwProcessedError",
+          "callee_kind": "method",
+          "evidence": "source/core/Ky.ts:887",
+          "confidence": "resolved",
+          "verdict": "TP",
+          "reason": null
+        },
+        {
+          "caller": "source.core.Ky.Ky.#calculateRetryDelay",
+          "callee": "source.core.retry-timing.calculateRetryTimingDelay",
+          "callee_kind": "function",
+          "evidence": "source/core/Ky.ts:740",
+          "confidence": "resolved",
+          "verdict": "TP",
+          "reason": null
+        },
+        {
+          "caller": "source.core.Ky.Ky.#decorateResponse",
+          "callee": "source.core.Ky.Ky.#setResponseRequest",
+          "callee_kind": "method",
+          "evidence": "source/core/Ky.ts:777",
+          "confidence": "resolved",
+          "verdict": "TP",
+          "reason": null
+        },
+        {
+          "caller": "source.core.Ky.Ky.#runBeforeRequestHooks",
+          "callee": "source.core.Ky.Ky.#raceWithTotalTimeout",
+          "callee_kind": "method",
+          "evidence": "source/core/Ky.ts:1044",
+          "confidence": "resolved",
+          "verdict": "TP",
+          "reason": null
+        },
+        {
+          "caller": "source.core.Ky.Ky.#runAfterResponseHooks",
+          "callee": "source.utils.is.isResponse",
+          "callee_kind": "function",
+          "evidence": "source/core/Ky.ts:1099",
+          "confidence": "resolved",
+          "verdict": "TP",
+          "reason": null
+        },
+        {
+          "caller": "source.core.Ky.Ky.#calculateRetryDelay",
+          "callee": "source.utils.type-guards.isNetworkError",
+          "callee_kind": "function",
+          "evidence": "source/core/Ky.ts:758",
+          "confidence": "resolved",
+          "verdict": "TP",
+          "reason": null
+        },
+        {
+          "caller": "source.core.Ky.Ky.#retry",
+          "callee": "source.core.Ky.Ky.#fetch",
+          "callee_kind": "method",
+          "evidence": "source/core/Ky.ts:1119",
+          "confidence": "resolved",
+          "verdict": "TP",
+          "reason": null
+        },
+        {
+          "caller": "source.core.Ky.Ky.#fetch",
+          "callee": "source.core.Ky.Ky",
+          "callee_kind": "class",
+          "evidence": "source/core/Ky.ts:1225",
+          "confidence": "resolved",
+          "verdict": "FP",
+          "reason": "attribute reference inside a call expression: the occurrence is a field/property read, classified as a call and attributed to the symbol that encloses the field's definition (`this.#retryLimit`, `this.request`)"
+        },
+        {
+          "caller": "source.core.Ky.Ky.create",
+          "callee": "source.core.Ky.Ky.#raceWithTotalTimeout",
+          "callee_kind": "method",
+          "evidence": "source/core/Ky.ts:406",
+          "confidence": "resolved",
+          "verdict": "TP",
+          "reason": null
+        },
+        {
+          "caller": "source.core.Ky.Ky.#runBeforeRequestHooks",
+          "callee": "source.core.Ky.Ky",
+          "callee_kind": "class",
+          "evidence": "source/core/Ky.ts:1057",
+          "confidence": "resolved",
+          "verdict": "FP",
+          "reason": "attribute reference inside a call expression: the occurrence is a field/property read, classified as a call and attributed to the symbol that encloses the field's definition (`this.#hookResponses`)"
+        },
+        {
+          "caller": "source.core.Ky.Ky.#calculateRetryDelay",
+          "callee": "source.utils.type-guards.isForceRetryError",
+          "callee_kind": "function",
+          "evidence": "source/core/Ky.ts:698",
+          "confidence": "resolved",
+          "verdict": "TP",
+          "reason": null
+        },
+        {
+          "caller": "source.utils.merge.getReplaceState",
+          "callee": "source.utils.is.isObject",
+          "callee_kind": "function",
+          "evidence": "source/utils/merge.ts:21",
+          "confidence": "resolved",
+          "verdict": "TP",
+          "reason": null
+        },
+        {
+          "caller": "source.core.Ky.Ky.create",
+          "callee": "source.core.Ky.cloneInitHookOptions",
+          "callee_kind": "function",
+          "evidence": "source/core/Ky.ts:351",
+          "confidence": "resolved",
+          "verdict": "TP",
+          "reason": null
+        },
+        {
+          "caller": "source.core.Ky.Ky.#fetch",
+          "callee": "source.utils.is-network-error.isRawNetworkError",
+          "callee_kind": "function",
+          "evidence": "source/core/Ky.ts:1268",
+          "confidence": "resolved",
+          "verdict": "TP",
+          "reason": null
+        },
+        {
+          "caller": "source.core.Ky.Ky.#raceWithTotalTimeout",
+          "callee": "source.core.Ky.Ky",
+          "callee_kind": "class",
+          "evidence": "source/core/Ky.ts:937",
+          "confidence": "resolved",
+          "verdict": "FP",
+          "reason": "attribute reference inside a call expression: the occurrence is a field/property read, classified as a call and attributed to the symbol that encloses the field's definition (`this.#abortController`)"
+        },
+        {
+          "caller": "source.core.Ky.resolveInput",
+          "callee": "source.core.Ky.isAbsoluteInput",
+          "callee_kind": "function",
+          "evidence": "source/core/Ky.ts:264",
+          "confidence": "resolved",
+          "verdict": "TP",
+          "reason": null
+        },
+        {
+          "caller": "source.core.Ky.releaseWhenSettled",
+          "callee": "source.core.Ky.cancelReturnedBody",
+          "callee_kind": "function",
+          "evidence": "source/core/Ky.ts:92",
+          "confidence": "resolved",
+          "verdict": "TP",
+          "reason": null
+        }
+      ]
+    }
+  },
+  "overall": {
+    "sampled": 60,
+    "true_positives": 50,
+    "false_positives": 10,
+    "precision": 0.833
+  },
+  "false_negatives": [
+    {
+      "repo": "webscrapper",
+      "finding": "none",
+      "detail": "141 call sites name a function or method defined in the repository; 7 have no matching edge and all 7 are methods of external objects whose name collides with an in-repo name (argparse `parse_args`, requests `session.close`, playwright `browser.close`, pathlib `exists`, json `load`)."
+    },
+    {
+      "repo": "ky",
+      "finding": "local closures and recursion are not edges",
+      "detail": "`throwIfTotalTimeoutReached` (Ky.ts:819) is an arrow function assigned to a `const`; calls at Ky.ts:832 and Ky.ts:848 have no node to point at. The recursive `this.#decorateResponse(...)` at Ky.ts:777 is dropped by the same-function self-call guard. Every other `this.x(...)` site is a field method call (WeakSet/Headers/AbortController) or a call whose edge exists with the evidence list capped at three entries."
+    }
+  ]
+}

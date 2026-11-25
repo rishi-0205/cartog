@@ -1,0 +1,242 @@
+[
+  {
+    "caller": "source.core.Ky.Ky.#retryFromError",
+    "callee": "source.utils.type-guards.isForceRetryError",
+    "caller_path": "source/core/Ky.ts",
+    "callee_path": "source/utils/type-guards.ts",
+    "evidence": "source/core/Ky.ts:1156",
+    "confidence": "resolved"
+  },
+  {
+    "caller": "source.core.Ky.Ky.#getRemainingTotalTimeout",
+    "callee": "source.core.Ky.getCurrentTime",
+    "caller_path": "source/core/Ky.ts",
+    "callee_path": "source/core/Ky.ts",
+    "evidence": "source/core/Ky.ts:1283",
+    "confidence": "resolved"
+  },
+  {
+    "caller": "source.core.Ky.Ky.#runAfterResponseHooks",
+    "callee": "source.core.Ky.Ky.#getResponseRequest",
+    "caller_path": "source/core/Ky.ts",
+    "callee_path": "source/core/Ky.ts",
+    "evidence": "source/core/Ky.ts:1066",
+    "confidence": "resolved"
+  },
+  {
+    "caller": "source.core.retry-timing.parseDate",
+    "callee": "source.core.retry-timing.createTimestamp",
+    "caller_path": "source/core/retry-timing.ts",
+    "callee_path": "source/core/retry-timing.ts",
+    "evidence": "source/core/retry-timing.ts:91",
+    "confidence": "resolved"
+  },
+  {
+    "caller": "source.core.Ky.Ky.#calculateRetryDelay",
+    "callee": "source.errors.NonError.NonError.wrap",
+    "caller_path": "source/core/Ky.ts",
+    "callee_path": "source/errors/NonError.ts",
+    "evidence": "source/core/Ky.ts:695",
+    "confidence": "resolved"
+  },
+  {
+    "caller": "source.core.Ky.Ky.#calculateRetryDelay",
+    "callee": "source.utils.type-guards.isTimeoutError",
+    "caller_path": "source/core/Ky.ts",
+    "callee_path": "source/utils/type-guards.ts",
+    "evidence": "source/core/Ky.ts:725",
+    "confidence": "resolved"
+  },
+  {
+    "caller": "source.utils.merge.deepMergeInternal",
+    "callee": "source.utils.merge.resolveReplaceMarkers",
+    "caller_path": "source/utils/merge.ts",
+    "callee_path": "source/utils/merge.ts",
+    "evidence": "source/utils/merge.ts:492",
+    "confidence": "resolved"
+  },
+  {
+    "caller": "source.core.Ky.Ky.create",
+    "callee": "source.core.Ky.Ky",
+    "caller_path": "source/core/Ky.ts",
+    "callee_path": "source/core/Ky.ts",
+    "evidence": "source/core/Ky.ts:367",
+    "confidence": "resolved"
+  },
+  {
+    "caller": "source.core.Ky.Ky.#fetch",
+    "callee": "source.core.Ky.Ky.#getEffectiveTimeout",
+    "caller_path": "source/core/Ky.ts",
+    "callee_path": "source/core/Ky.ts",
+    "evidence": "source/core/Ky.ts:1238",
+    "confidence": "resolved"
+  },
+  {
+    "caller": "source.core.Ky.Ky.#run",
+    "callee": "source.core.Ky.Ky.#shouldThrowHttpErrors",
+    "caller_path": "source/core/Ky.ts",
+    "callee_path": "source/core/Ky.ts",
+    "evidence": "source/core/Ky.ts:625",
+    "confidence": "resolved"
+  },
+  {
+    "caller": "source.core.Ky.applySearchParameters",
+    "callee": "source.utils.is.isNonArrayObject",
+    "caller_path": "source/core/Ky.ts",
+    "callee_path": "source/utils/is.ts",
+    "evidence": "source/core/Ky.ts:295",
+    "confidence": "resolved"
+  },
+  {
+    "caller": "source.core.Ky.Ky.#calculateRetryDelay",
+    "callee": "source.utils.normalize.normalizeRetryOptions",
+    "caller_path": "source/core/Ky.ts",
+    "callee_path": "source/utils/normalize.ts",
+    "evidence": "source/core/Ky.ts:689",
+    "confidence": "resolved"
+  },
+  {
+    "caller": "source.core.Ky.Ky.constructor",
+    "callee": "source.core.Ky.validateTimeoutOption",
+    "caller_path": "source/core/Ky.ts",
+    "callee_path": "source/core/Ky.ts",
+    "evidence": "source/core/Ky.ts:501",
+    "confidence": "resolved"
+  },
+  {
+    "caller": "source.core.Ky.Ky.#raceBodyRead",
+    "callee": "source.core.Ky.Ky.#throwProcessedError",
+    "caller_path": "source/core/Ky.ts",
+    "callee_path": "source/core/Ky.ts",
+    "evidence": "source/core/Ky.ts:887",
+    "confidence": "resolved"
+  },
+  {
+    "caller": "source.core.Ky.Ky.#calculateRetryDelay",
+    "callee": "source.core.retry-timing.calculateRetryTimingDelay",
+    "caller_path": "source/core/Ky.ts",
+    "callee_path": "source/core/retry-timing.ts",
+    "evidence": "source/core/Ky.ts:740",
+    "confidence": "resolved"
+  },
+  {
+    "caller": "source.core.Ky.Ky.#decorateResponse",
+    "callee": "source.core.Ky.Ky.#setResponseRequest",
+    "caller_path": "source/core/Ky.ts",
+    "callee_path": "source/core/Ky.ts",
+    "evidence": "source/core/Ky.ts:777",
+    "confidence": "resolved"
+  },
+  {
+    "caller": "source.core.Ky.Ky.#runBeforeRequestHooks",
+    "callee": "source.core.Ky.Ky.#raceWithTotalTimeout",
+    "caller_path": "source/core/Ky.ts",
+    "callee_path": "source/core/Ky.ts",
+    "evidence": "source/core/Ky.ts:1044",
+    "confidence": "resolved"
+  },
+  {
+    "caller": "source.core.Ky.Ky.#runAfterResponseHooks",
+    "callee": "source.utils.is.isResponse",
+    "caller_path": "source/core/Ky.ts",
+    "callee_path": "source/utils/is.ts",
+    "evidence": "source/core/Ky.ts:1099",
+    "confidence": "resolved"
+  },
+  {
+    "caller": "source.core.Ky.Ky.#calculateRetryDelay",
+    "callee": "source.utils.type-guards.isNetworkError",
+    "caller_path": "source/core/Ky.ts",
+    "callee_path": "source/utils/type-guards.ts",
+    "evidence": "source/core/Ky.ts:758",
+    "confidence": "resolved"
+  },
+  {
+    "caller": "source.core.Ky.Ky.#retry",
+    "callee": "source.core.Ky.Ky.#fetch",
+    "caller_path": "source/core/Ky.ts",
+    "callee_path": "source/core/Ky.ts",
+    "evidence": "source/core/Ky.ts:1119",
+    "confidence": "resolved"
+  },
+  {
+    "caller": "source.core.Ky.Ky.#fetch",
+    "callee": "source.core.Ky.Ky",
+    "caller_path": "source/core/Ky.ts",
+    "callee_path": "source/core/Ky.ts",
+    "evidence": "source/core/Ky.ts:1225",
+    "confidence": "resolved"
+  },
+  {
+    "caller": "source.core.Ky.Ky.create",
+    "callee": "source.core.Ky.Ky.#raceWithTotalTimeout",
+    "caller_path": "source/core/Ky.ts",
+    "callee_path": "source/core/Ky.ts",
+    "evidence": "source/core/Ky.ts:406",
+    "confidence": "resolved"
+  },
+  {
+    "caller": "source.core.Ky.Ky.#runBeforeRequestHooks",
+    "callee": "source.core.Ky.Ky",
+    "caller_path": "source/core/Ky.ts",
+    "callee_path": "source/core/Ky.ts",
+    "evidence": "source/core/Ky.ts:1057",
+    "confidence": "resolved"
+  },
+  {
+    "caller": "source.core.Ky.Ky.#calculateRetryDelay",
+    "callee": "source.utils.type-guards.isForceRetryError",
+    "caller_path": "source/core/Ky.ts",
+    "callee_path": "source/utils/type-guards.ts",
+    "evidence": "source/core/Ky.ts:698",
+    "confidence": "resolved"
+  },
+  {
+    "caller": "source.utils.merge.getReplaceState",
+    "callee": "source.utils.is.isObject",
+    "caller_path": "source/utils/merge.ts",
+    "callee_path": "source/utils/is.ts",
+    "evidence": "source/utils/merge.ts:21",
+    "confidence": "resolved"
+  },
+  {
+    "caller": "source.core.Ky.Ky.create",
+    "callee": "source.core.Ky.cloneInitHookOptions",
+    "caller_path": "source/core/Ky.ts",
+    "callee_path": "source/core/Ky.ts",
+    "evidence": "source/core/Ky.ts:351",
+    "confidence": "resolved"
+  },
+  {
+    "caller": "source.core.Ky.Ky.#fetch",
+    "callee": "source.utils.is-network-error.isRawNetworkError",
+    "caller_path": "source/core/Ky.ts",
+    "callee_path": "source/utils/is-network-error.ts",
+    "evidence": "source/core/Ky.ts:1268",
+    "confidence": "resolved"
+  },
+  {
+    "caller": "source.core.Ky.Ky.#raceWithTotalTimeout",
+    "callee": "source.core.Ky.Ky",
+    "caller_path": "source/core/Ky.ts",
+    "callee_path": "source/core/Ky.ts",
+    "evidence": "source/core/Ky.ts:937",
+    "confidence": "resolved"
+  },
+  {
+    "caller": "source.core.Ky.resolveInput",
+    "callee": "source.core.Ky.isAbsoluteInput",
+    "caller_path": "source/core/Ky.ts",
+    "callee_path": "source/core/Ky.ts",
+    "evidence": "source/core/Ky.ts:264",
+    "confidence": "resolved"
+  },
+  {
+    "caller": "source.core.Ky.releaseWhenSettled",
+    "callee": "source.core.Ky.cancelReturnedBody",
+    "caller_path": "source/core/Ky.ts",
+    "callee_path": "source/core/Ky.ts",
+    "evidence": "source/core/Ky.ts:92",
+    "confidence": "resolved"
+  }
+]

@@ -1,0 +1,154 @@
+# V5 evidence - labelled call-edge sample and recall scans
+Date: 2026-11-25
+Branch: feature/verification
+
+Scope: sample 30 `calls` edges from each of two real repositories, label every
+one by reading its evidence line, publish the labelled sample and the sampler,
+and look for calls that never became edges.
+
+Files added:
+- `scripts/sample_calls.py` - deterministic, seeded edge sampler.
+- `docs/dev/verification/call-sample.json` - the 60 labelled rows.
+- `tests/test_recall_sample.py` - completeness, evidence-line and sampler tests.
+- `docs/dev/VERIFICATION.md` §5 - method, results, every FP, recall limits.
+- `docs/KNOWN_ISSUES.md` Rank 1 rewritten with the measured rate; Rank 7 added.
+
+## Start state
+
+Suite before V5: 248 passed (`docs/evidence/V4-suite.txt`).
+
+## Runs sampled
+
+Command: venv\Scripts\python.exe -m cartog analyze samples\webscrapper --out
+         .scratch\v5\webscrapper --timings --no-render
+scip: ran=True documents=22
+edges by kind: calls=219, depends_on=47, imports=38, overrides=6, references=165
+check: fail (duplicate node ids, KNOWN_ISSUES Rank 4)
+
+Command: venv\Scripts\python.exe -m cartog analyze samples\ky --out
+         .scratch\v5\ky --timings --no-render
+scip: ran=True documents=98
+edges by kind: calls=238, depends_on=115, imports=203, overrides=5,
+               references=165, serves=60
+check: fail (duplicate node ids, KNOWN_ISSUES Rank 4)
+
+Both `graph.json` files have unique node ids; the `check` failure is the
+already-tracked reporting bug and does not change the edges.
+
+## Sampling
+
+Command: venv\Scripts\python.exe scripts\sample_calls.py
+         .scratch\v5\webscrapper\graph.json --limit 30 --seed 7
+30 rows, first: tests/test_fetcher.py:192            [V5-web-sample.txt]
+
+Command: venv\Scripts\python.exe scripts\sample_calls.py
+         .scratch\v5\ky\graph.json --limit 30 --seed 7
+30 rows, first: source/core/Ky.ts:1156               [V5-ky-sample.txt]
+
+The sampler sorts by `(caller, callee, first evidence)` before
+`random.Random(seed).sample`, so the same run, seed and limit give the same
+rows. `test_sample_calls_is_reproducible` pins that.
+
+## Red: the labelled sample does not exist yet
+
+Command: venv\Scripts\python.exe -m pytest tests\test_recall_sample.py -q
+E       FileNotFoundError: ... docs\dev\verification\call-sample.json
+FAILED tests/test_recall_sample.py::test_recall_sample_file_is_complete
+FAILED tests/test_recall_sample.py::test_recall_sample_evidence_lines_exist
+2 failed, 1 passed in 0.18s                       [V5-recall-sample-red.txt]
+
+## Green
+
+Command: venv\Scripts\python.exe -m pytest tests\test_recall_sample.py -q
+3 passed in 0.06s                                 [V5-recall-sample-green.txt]
+
+`scripts/sample_calls.py` was prototyped before its test, so the sampler test
+was proved able to fail by mutation: replacing `random.Random(seed)` with
+`random.Random(0)` makes `test_sample_calls_is_reproducible` fail, and the
+mutation was reverted.
+
+Command: venv\Scripts\python.exe -m pytest
+         tests\test_recall_sample.py::test_sample_calls_is_reproducible -q
+E       AssertionError: assert [...] != [...]
+FAILED ...::test_sample_calls_is_reproducible
+1 failed in 0.09s                                 [V5-mutation-red.txt]
+
+## Labelling
+
+Every evidence line was opened in the checkout. Verdict rule: TP when an
+evidence line is a real call (or instantiation) from caller to callee, FP
+otherwise.
+
+| repo | call edges | sampled | TP | FP | precision |
+|---|---|---|---|---|---|
+| webscrapper (e1901a1, local checkout) | 219 | 30 | 24 | 6 | 0.800 |
+| ky (3541888, samples.lock) | 238 | 30 | 26 | 4 | 0.867 |
+| both | 457 | 60 | 50 | 10 | 0.833 |
+
+All ten FPs are the Rank 1 rule: an attribute reference inside a call
+expression is classified as a call, and the callee is the symbol enclosing the
+attribute's definition.
+
+- four `test_* -> setUp` edges, because `self.parser` is assigned in `setUp`
+  (tests/test_parser.py:106/189/202/214);
+- `Fetcher.close -> Fetcher.__init__`, because `self.session` is assigned in
+  `__init__` (scraper/core/fetcher.py:106);
+- `Scraper._looks_js_rendered -> ScrapeResponse`, because `response.raw_html`
+  is a dataclass field (scraper/core/scraper.py:194);
+- three `Ky.#method -> Ky` edges, because `this.#retryLimit`,
+  `this.#hookResponses` and `this.#abortController` are class fields
+  (Ky.ts:1225/1057/937);
+- `Ky.create -> Ky` at Ky.ts:367 is a private-field read. The real
+  `new Ky(input, initHookOptions)` is at Ky.ts:357 and is a `references` edge to
+  `Ky.constructor`, not a `calls` edge - the `calls` edge exists only because
+  of the field reads.
+
+The full 60-row JSON with one reason per FP is
+`docs/dev/verification/call-sample.json`; the test recomputes every count and
+precision from the verdicts.
+
+## Recall scans
+
+Command: venv\Scripts\python.exe .scratch\v5_fn2.py
+141 call sites name an in-repo function; 7 have no matching edge
+  main.py:86 | parser.parse_args (argparse)
+  fetcher.py:106 | self.session.close (requests)
+  fetcher.py:272 | browser.close (Playwright)
+  json_storage.py:108/148 | filepath.exists (pathlib)
+  json_storage.py:113/178 | json.load (stdlib)
+                                             [V5-fn-web.txt]
+
+All 7 are methods of external objects whose name collides with an in-repo name;
+0 genuine misses among the 141 sites.
+
+Command: venv\Scripts\python.exe .scratch\v5_fn_ky2.py
+108 `this.x(...)` call sites; 26 have no call edge
+                                             [V5-fn-ky.txt]
+
+21 are calls on field values (`WeakSet`/`Headers`/`Map`/`AbortController`),
+3 + 2 are calls whose edge exists with the evidence list capped at three
+entries, and 1 is the recursive `this.#decorateResponse(...)` at Ky.ts:777,
+dropped by the same-function self-call guard. Separately,
+`throwIfTotalTimeoutReached` (Ky.ts:819) is a local arrow function, so the
+calls at Ky.ts:832/848 have no symbol to point at.
+
+## Docs checks
+
+Command: venv\Scripts\python.exe -m pytest tests\test_docs_links.py
+         tests\test_docs_consistency.py tests\test_recall_sample.py -q
+7 passed in 0.32s
+
+## Goldens unchanged
+
+Command: venv\Scripts\python.exe scripts\golden.py --check
+click: 0 differences / flask: 0 differences / ky: 0 differences
+0 differences                                [V5-golden.txt]
+
+## Full suite
+
+Command: venv\Scripts\python.exe -m pytest tests\ -q
+251 passed, 1 warning in 212.58s (0:03:32)     [V5-suite.txt]
+
+Start 248 -> end 251 (+3 new tests; none removed, none skipped).
+Command: venv\Scripts\python.exe -m ruff check .
+All checks passed!

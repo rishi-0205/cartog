@@ -1,0 +1,41 @@
+F                                                                        [100%]
+================================== FAILURES ===================================
+______________________ test_sample_calls_is_reproducible ______________________
+
+    def test_sample_calls_is_reproducible():
+        """The sampler is a pure function of the graph, the limit and the seed."""
+        module = _load_script()
+        nodes = [
+            {
+                "id": f"n{i}",
+                "kind": "function",
+                "name": f"f{i}",
+                "qualified_name": f"mod.f{i}",
+                "path": f"mod{i}.py",
+            }
+            for i in range(12)
+        ]
+        edges = [
+            {
+                "kind": "calls",
+                "source": f"n{i}",
+                "target": f"n{(i + 1) % 12}",
+                "confidence": "resolved",
+                "evidence": [f"mod{i}.py:{i + 1}", f"mod{i}.py:{i + 50}"],
+            }
+            for i in range(12)
+        ]
+        edges.append({"kind": "imports", "source": "n0", "target": "n5", "evidence": ["a.py:1"]})
+        graph = {"nodes": nodes, "edges": edges}
+    
+        first = module.sample_edges(graph, limit=5, seed=7)
+        assert first == module.sample_edges(graph, limit=5, seed=7)
+>       assert first != module.sample_edges(graph, limit=5, seed=8)
+E       AssertionError: assert [{'caller': 'mod.f4', 'callee': 'mod.f5', 'caller_path': 'mod4.py', 'callee_path': 'mod5.py', ...}, {'caller': 'mod.f9...h': 'mod3.py', ...}, {'caller': 'mod.f5', 'callee': 'mod.f6', 'caller_path': 'mod5.py', 'callee_path': 'mod6.py', ...}] != [{'caller': 'mod.f4', 'callee': 'mod.f5', 'caller_path': 'mod4.py', 'callee_path': 'mod5.py', ...}, {'caller': 'mod.f9...h': 'mod3.py', ...}, {'caller': 'mod.f5', 'callee': 'mod.f6', 'caller_path': 'mod5.py', 'callee_path': 'mod6.py', ...}]
+E        +  where [{'caller': 'mod.f4', 'callee': 'mod.f5', 'caller_path': 'mod4.py', 'callee_path': 'mod5.py', ...}, {'caller': 'mod.f9...h': 'mod3.py', ...}, {'caller': 'mod.f5', 'callee': 'mod.f6', 'caller_path': 'mod5.py', 'callee_path': 'mod6.py', ...}] = <function sample_edges at 0x000001AD91E61EE0>({'nodes': [{'id': 'n0', 'kind': 'function', 'name': 'f0', 'qualified_name': 'mod.f0', ...}, {'id': 'n1', 'kind': 'func...'confidence': 'resolved', ...}, {'kind': 'calls', 'source': 'n5', 'target': 'n6', 'confidence': 'resolved', ...}, ...]}, limit=5, seed=8)
+E        +    where <function sample_edges at 0x000001AD91E61EE0> = <module 'cartog_sample_calls' from 'C:\\Users\\rishi\\OneDrive\\Desktop\\Dev\\cartog\\scripts\\sample_calls.py'>.sample_edges
+
+tests\test_recall_sample.py:116: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_recall_sample.py::test_sample_calls_is_reproducible - Asser...
+1 failed in 0.09s

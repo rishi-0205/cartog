@@ -1,0 +1,78 @@
+FF.                                                                      [100%]
+================================== FAILURES ===================================
+_____________________ test_recall_sample_file_is_complete _____________________
+
+    def test_recall_sample_file_is_complete():
+        """Counts, verdicts and precision agree with each other, and rows are usable."""
+>       data = _sample()
+               ^^^^^^^^^
+
+tests\test_recall_sample.py:41: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_recall_sample.py:36: in _sample
+    return json.loads(SAMPLE_FILE.read_text(encoding="utf-8"))
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Python313\Lib\pathlib\_local.py:546: in read_text
+    return PathBase.read_text(self, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Python313\Lib\pathlib\_abc.py:632: in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/Users/rishi/OneDrive/Desktop/Dev/cartog/docs/dev/verification/call-sample.json')
+mode = 'r', buffering = -1, encoding = 'utf-8', errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\rishi\\OneDrive\\Desktop\\Dev\\cartog\\docs\\dev\\verification\\call-sample.json'
+
+C:\Python313\Lib\pathlib\_local.py:537: FileNotFoundError
+___________________ test_recall_sample_evidence_lines_exist ___________________
+
+    def test_recall_sample_evidence_lines_exist():
+        """Every sampled ``path:line`` is a real line in the recorded sample commit."""
+>       for name, repo in _sample()["repos"].items():
+                          ^^^^^^^^^
+
+tests\test_recall_sample.py:77: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_recall_sample.py:36: in _sample
+    return json.loads(SAMPLE_FILE.read_text(encoding="utf-8"))
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Python313\Lib\pathlib\_local.py:546: in read_text
+    return PathBase.read_text(self, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Python313\Lib\pathlib\_abc.py:632: in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/Users/rishi/OneDrive/Desktop/Dev/cartog/docs/dev/verification/call-sample.json')
+mode = 'r', buffering = -1, encoding = 'utf-8', errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\rishi\\OneDrive\\Desktop\\Dev\\cartog\\docs\\dev\\verification\\call-sample.json'
+
+C:\Python313\Lib\pathlib\_local.py:537: FileNotFoundError
+=========================== short test summary info ===========================
+FAILED tests/test_recall_sample.py::test_recall_sample_file_is_complete - Fil...
+FAILED tests/test_recall_sample.py::test_recall_sample_evidence_lines_exist
+2 failed, 1 passed in 0.18s

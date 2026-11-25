@@ -6,16 +6,20 @@ This document tracks known issues, architectural limits, discrepancies, and reso
 
 ## Active / Deferred Issues
 
-### Rank 1: Attribute Member Method Calls Attributed to Member Class
-- **Milestone / Area:** M5/M6 (SCIP Call Classification)
-- **Severity:** Low
+### Rank 1: Attribute references inside a call are promoted to call edges
+- **Milestone / Area:** M5/M6 (SCIP Call Classification); measured in E4/V5.
+- **Severity:** Medium — 10 of 60 sampled call edges (16.7%) are false positives (E4/V5).
 - **Symptoms:**
-  When a method call is performed on an in-repo class attribute (e.g., `self.copy_to.flush()` in `src/click/testing.py:131`, where `copy_to: io.BytesIO` is defined on class `BytesIOCopy`), Tree-sitter identifies the expression as a function call, while SCIP records both the in-repo attribute reference (`BytesIOCopy#copy_to.`) and the external method call (`io.IOBase#flush().`). Because external stdlib definitions are excluded from the repo graph, the call edge is attributed to the class defining the attribute (`BytesIOCopy`) rather than being treated as an external method call on that attribute.
+  When an occurrence is an attribute or property reference and that reference sits inside a call expression, `classify_occurrence()` returns `calls`. The callee is then the symbol that encloses the attribute's *definition*, which is not what the line calls:
+  - a field assigned in a method body gives that method (`self.parser` in `setUp` → `tests…setUp`; `self.session` in `Fetcher.__init__` → `Fetcher.__init__`);
+  - a field declared in a class body gives the class (`response.raw_html` → `ScrapeResponse`; `this.#abortController?.abort()` → `Ky`);
+  - the original case (`self.copy_to.flush()` in `src/click/testing.py:131`) attributes an external method call to `BytesIOCopy`.
+  The rule is language-independent: it fires on Python attributes and TypeScript private fields.
 - **Evidence:**
-  In `samples/click/src/click/testing.py:131`, `self.copy_to.flush()` produces a `calls` edge `flush -> BytesIOCopy` with evidence `['src/click/testing.py:131']`.
+  `docs/dev/verification/call-sample.json` (all ten FP rows, each with a reason) and `docs/dev/VERIFICATION.md` §5.3. The ten: four `test → setUp`, one `Fetcher.close → Fetcher.__init__`, one `Scraper._looks_js_rendered → ScrapeResponse`, three `Ky.#method → Ky`, one `Ky.create → Ky`. The original click case is at `samples/click/src/click/testing.py:131`.
 - **Proposed Fix:**
-  In `classify_occurrence()`, differentiate between the target of the call (the called function/method selector) and the receiver object (the attribute expression), avoiding promoting receiver attribute references to `calls` edges when the called method resolves to an external symbol.
-- **Status:** DEFERRED (low impact, does not affect core architecture boundaries).
+  In `classify_occurrence()`, distinguish the call *selector* from its *receiver*: when the occurrence is the receiver (or a receiver sub-expression) of a call, return `references`/`other` unless the selector itself resolves to an in-repo symbol. Add a regression test for each of the three shapes above.
+- **Status:** OPEN (measured in V5, 2026-11-24/25).
 
 ### Rank 2: Dynamic Dispatch and Closure Resolution
 - **Milestone / Area:** M5/M6 (SCIP Static Analysis Limit)
@@ -60,6 +64,17 @@ This document tracks known issues, architectural limits, discrepancies, and reso
 - **Proposed Fix:**
   Idle unless it becomes a support problem: make `cartog analyze --python` detect that the chosen environment has no `python3` on its first `PATH` entry and print a warning (or stage a `python3` alias in a cartog-controlled directory that precedes `PATH`). Any fix must not write into the analyzed repository.
 - **Status:** OPEN (found during V3, 2026-11-24); fail-fast validation for a missing interpreter was added in V3, the lookup itself is unchanged.
+
+### Rank 7: TypeScript/JavaScript `new X(...)` is not a call edge
+- **Milestone / Area:** E4 (V5, call-edge sample); SCIP call classification.
+- **Severity:** Low–Medium — constructor calls are absent from `calls` in TS/JS graphs.
+- **Symptoms:**
+  `classify_occurrence()` handles tree-sitter `call` and `call_expression` nodes but not `new_expression`, so `new Ky(input, initHookOptions)` (`samples/ky/source/core/Ky.ts:357`) walks up to the enclosing declaration and is classified `references`/`other`. The occurrence resolves to the constructor symbol, so the graph gets a `references` edge `Ky.create → Ky.constructor` instead of a `calls` edge.
+- **Evidence:**
+  `docs/dev/verification/call-sample.json` (ky row 8): the `Ky.create → Ky` `calls` edge exists only because of three private-field reads at `Ky.ts:367/374/387`; the real instantiation is `references` at `Ky.ts:357`. See `docs/dev/VERIFICATION.md` §5.4.
+- **Proposed Fix:**
+  Treat `new_expression` as a call in `classify_occurrence()` (callee = the constructor) and add a test asserting `new X()` produces a `calls` edge to `X`/`X.constructor`.
+- **Status:** OPEN (found in V5, 2026-11-25).
 
 ---
 
