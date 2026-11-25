@@ -45,7 +45,7 @@ The roadmap narrative is [`docs/IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.m
 | V2 | index.scip never left in the analyzed repo | E4 | `feature/verification` | U4 | S | E4-S1 | DONE | `c1422ab` |
 | V3 | SCIP environment investigation | E4 | `feature/verification` | V2 | M | E4-S2 | DONE | `17f245a` |
 | V4 | Compare imports with grimp and madge | E4 | `feature/verification` | V3 | M | E4-S3 | DONE | `b0adfa3` |
-| V5 | Call-edge recall sample | E4 | `feature/verification` | V4 | S | E4-S4 | TODO | — |
+| V5 | Call-edge recall sample | E4 | `feature/verification` | V4 | S | E4-S4 | DONE | `9048721` |
 | L0 | LLM spike kit and results | E5 | `feature/llm-layer` | E3, E4 accepted | S | E5-S1 | TODO | — |
 | L1 | Overlay schema design | E5 | `feature/llm-layer` | L0 | S | E5-S2 | TODO | — |
 | L2 | LLM plumbing | E5 | `feature/llm-layer` | L1 | M | E5-S3 | TODO | — |
@@ -81,7 +81,7 @@ The roadmap narrative is [`docs/IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.m
 | E1b | `refactor/drop-compat-shims` | E1 | 1 / 1 | ACCEPTED | 2026-11-17 |
 | E2 | `feature/unified-command-and-output` | E1b | 6 / 6 | ACCEPTED | 2026-11-19 |
 | E3 | `feature/security-baseline` | E2 | 9 / 9 | ACCEPTED | 2026-11-22 |
-| E4 | `feature/verification` | E2 | 4 / 5 | IN PROGRESS | no |
+| E4 | `feature/verification` | E2 | 5 / 5 | READY FOR EPIC REVIEW | no |
 | E5 | `feature/llm-layer` | E2, E3 | 0 / 11 | NOT STARTED | no |
 | E6 | `feature/gallery` | E3 | 0 / 4 | NOT STARTED | no |
 | E7 | `feature/analysis-service` | E3, E4 | 0 / 9 | NOT STARTED | no |
@@ -1021,12 +1021,13 @@ At most one epic per session; within that epic, finish and commit each task befo
 - **Tests (red-green):** `test_recall_sample_file_is_complete`
 - **Acceptance criteria:** A labeled sample with counts and limits.
 - **User check (epic review):** Inspect the sample table.
-- **Evidence files:** `docs/evidence/V5-call-recall.txt`
-- **Planned commit message:** `V5: record call-edge recall samples`
-- **Status:** TODO
-- **Commit hash:** —
-- **Failure log:** —
-- **Change log:** —
+- **Evidence files:** `docs/evidence/V5-recall-sample.txt`
+- **Planned commit message:** `V5: publish a labelled call-edge sample and its recall scans`
+- **Status:** DONE
+- **Commit hash:** `9048721` (encoding follow-up: `06d7303`)
+- **Failure log:** Red run (`docs/evidence/V5-recall-sample-red.txt`): `docs/dev/verification/call-sample.json` did not exist, so both sample tests failed with `FileNotFoundError`. The sampler script was prototyped before its test, so `test_sample_calls_is_reproducible` was proved able to fail by mutation (`random.Random(seed)` -> `random.Random(0)`, `V5-mutation-red.txt`), then reverted. The two recall-scan transcripts were first written as UTF-16 by a PowerShell redirect and were re-encoded as UTF-8 in `06d7303`.
+- **Change log:**
+  - 2026-11-25: Added `scripts/sample_calls.py` (sorted, seeded, reproducible sampler) and sampled 30 `calls` edges each from `samples/webscrapper` (`e1901a1`, local checkout) and `samples/ky` (`3541888`, pinned). Labelled every evidence line: webscrapper 24/30 TP (precision 0.800), ky 26/30 TP (0.867), overall 50/60 (0.833). All ten FPs are the Rank 1 rule (attribute reference inside a call expression becomes a call, attributed to the symbol enclosing the field definition), measured in three shapes: field assigned in a method (`setUp`, `Fetcher.__init__`), field declared in a class (`ScrapeResponse`, `Ky`), and `new Ky(...)` filed as a `references` edge (new Rank 7). Recall scans: 141 in-repo-named Python call sites, 7 without an edge, all external methods with colliding names (0 genuine misses); 108 `this.x(...)` sites in ky, 26 without an edge, all field-method calls, evidence-capped duplicates, or one recursive self-call. Published `docs/dev/verification/call-sample.json`, `tests/test_recall_sample.py`, VERIFICATION.md §5, KNOWN_ISSUES Rank 1 rewrite + Rank 7. Suite 248 -> 251; golden 0 differences; ruff clean.
 
 ### L0: LLM spike kit and results
 
