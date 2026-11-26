@@ -1,0 +1,52 @@
+# Adversarial Conformance Test Suite — Evidence
+
+Date: 2026-11-26
+Branch: `test/adversarial-samples`
+
+## Command
+
+```
+venv\Scripts\python.exe -m pytest tests/ -q
+```
+
+## Result
+
+```
+290 passed, 4 skipped, 10 xfailed, 1 warning in 118.57s (0:01:58)
+```
+
+Adversarial-only run (`-m adversarial`): **36 passed, 10 xfailed**.
+
+## Test modules added
+
+| Module | Tests | Purpose |
+|---|---|---|
+| `tests/test_adversarial_nodes.py` | 7 | Node-kind catalog coverage; specific channels/workers/processors/commands; no duplicate IDs |
+| `tests/test_adversarial_edges.py` | 6 | Edge-kind coverage; ref_kinds; endpoint validity; confidence values |
+| `tests/test_adversarial_flows.py` | 14 | Spine connectivity (BFS from entry): 6 JS + 6 Python working spines; 6 gap spines (strict xfail); deep flow assertion |
+| `tests/test_adversarial_mq.py` | 5 | Channel pairing rule; worker/processor nodes; unpaired decoys in `unresolved` |
+| `tests/test_adversarial_decorators.py` | 2 | `references` edges with `ref_kind: decorator` |
+| `tests/test_adversarial_graph.py` | 4 | Entrypoints; graph validation (strict xfail for known validator gaps); deterministic analysis |
+
+## Fixtures
+
+Session-scoped `torture_js_graph` / `torture_py_graph` run `cartog analyze` with
+SCIP once per session into `tmp_path` (never writes into the repo). `samples/`
+is committed (no longer gitignored).
+
+## Strict xfails (auto-flip when fixed)
+
+1. JS CLI command nodes not detected (commander/yargs)
+2. Python middleware nodes not detected (FastAPI/ASGI/Django)
+3. JS entrypoint `starts` edges missing
+4. Python `uses` edges missing
+5. JS controller→MQ trace through re-export
+6. JS `publish` spine
+7. Celery/Redis/RabbitMQ/Kafka producer spines (external calls unresolved)
+8. Graph validation: `receiver` ref_kind + `inferred` calls flagged as errors (KNOWN_ISSUES Rank 1)
+
+## What this replaces
+
+No manual flow/node checking needed. The suite asserts catalog coverage,
+real cross-file flow connectivity with SCIP, decorator detection, MQ pairing
+rules, and deterministic graphs on every PR/Push.

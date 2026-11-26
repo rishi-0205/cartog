@@ -1,0 +1,120 @@
+# Conformance: cartog-torture-py (--no-scip)
+
+## 1. Catalog coverage
+  node file             OK       95
+  node folder           OK       31
+  node class            OK       23
+  node function         OK       82
+  node method           OK       27
+  node route            OK       5
+  node command          OK       9
+  node entrypoint       OK       2
+  node middleware       MISSING  0
+  node service          OK       4
+  node ci_job           OK       2
+  node dependency       OK       27
+  node channel          OK       1
+  node worker           MISSING  0
+  node processor        MISSING  0
+  node script           MISSING  0
+  node npm_script       MISSING  0
+  node gui_script       MISSING  0
+  node subsystem        MISSING  0
+  node helper_group     MISSING  0
+  edge contains         MISSING  0
+  edge imports          OK       15
+  edge depends_on       OK       54
+  edge calls            MISSING  0
+  edge references       MISSING  0
+  edge overrides        MISSING  0
+  edge serves           OK       14
+  edge starts           OK       2
+  edge uses             MISSING  0
+  edge produces         OK       2
+  edge consumes         OK       1
+  ref_kind decorator    MISSING  0
+  ref_kind exception    MISSING  0
+  ref_kind isinstance   MISSING  0
+  ref_kind inheritance  MISSING  0
+  ref_kind type         MISSING  0
+  ref_kind callback     MISSING  0
+  ref_kind other        MISSING  0
+  confidence resolved   OK       16
+  confidence reconciled MISSING  0
+  confidence import     OK       69
+  confidence heuristic  MISSING  0
+  confidence inferred   OK       3
+
+  COVERAGE: nodes 12/20, edges 6/11, ref_kinds 0/7
+
+## 2. Per-pattern results
+  MISS ENTRY-MODULE-01          want nodes=['entrypoint'] edges=['starts'] file=cartog/__main__.py
+  MISS ENTRY-CLI-01             want nodes=['entrypoint'] edges=['starts'] file=cli/app.py
+  MISS CLI-DYNAMIC-01           want nodes=['command'] edges=['serves'] file=cli/registry.py
+  MISS CALL-DOTTED-01           want nodes=['function'] edges=['calls'] file=cli/shared.py
+  MISS EVENT-BLINKER-01         want nodes=['function'] edges=['calls'] file=src/events/blinker_signals.py
+  MISS EVENT-DJANGO-01          want nodes=['function'] edges=['calls'] file=src/events/django_signals.py
+  MISS EVENT-PYEE-01            want nodes=['function'] edges=['calls'] file=src/events/pyee_events.py
+  MISS MIDDLEWARE-ASGI-01       want nodes=['middleware'] edges=['uses'] file=src/middleware/asgi_middleware.py
+  MISS MIDDLEWARE-DJANGO-01     want nodes=['middleware'] edges=['uses'] file=src/middleware/django_middleware.py
+  MISS MIDDLEWARE-FASTAPI-01    want nodes=['middleware'] edges=['uses'] file=src/middleware/fastapi_middleware.py
+  MISS OOP-CBV-01               want nodes=['class'] edges=['overrides'] file=src/oop/class_based_views.py
+  MISS OOP-OVERRIDE-01          want nodes=['class'] edges=['overrides'] file=src/oop/derived.py
+  MISS OOP-DESCRIPTOR-01        want nodes=['class'] edges=['overrides'] file=src/oop/descriptors.py
+  MISS MQ-CELERY-01             want nodes=['channel'] edges=['produces'] file=src/queues/celery_app.py
+  MISS MQ-KAFKA-01              want nodes=['channel'] edges=['produces'] file=src/queues/kafka.py
+  MISS MQ-RABBITMQ-01           want nodes=['channel'] edges=['produces'] file=src/queues/rabbitmq.py
+  MISS MQ-REDIS-01              want nodes=['channel'] edges=['produces'] file=src/queues/redis_pubsub.py
+  MISS MQ-SQS-01                want nodes=['channel'] edges=['produces'] file=src/queues/sqs.py
+  MISS ROUTE-DJANGO-01          want nodes=['route'] edges=['serves'] file=src/routes/django_urls.py
+  MISS RPC-GRAPHQL-01           want nodes=['function'] edges=['calls'] file=src/rpc/graphql_resolvers.py
+  MISS RPC-GRPC-01              want nodes=['function'] edges=['calls'] file=src/rpc/grpc_stub.py
+  MISS RPC-HTTP-01              want nodes=['function'] edges=['calls'] file=src/rpc/service_http.py
+  MISS SCHED-APS-01             want nodes=['function'] edges=['calls'] file=src/scheduler/apscheduler.py
+  MISS SCHED-BG-01              want nodes=['function'] edges=['calls'] file=src/scheduler/background_tasks.py
+  MISS SCHED-BEAT-01            want nodes=['function'] edges=['calls'] file=src/scheduler/celery_beat.py
+  MISS WS-CHANNELS-01           want nodes=['function'] edges=['calls'] file=src/websocket/channels_consumer.py
+  MISS CLI-CHECK-01             want nodes=['command'] edges=['serves'] file=cli/commands/check.py
+  MISS CLI-DOCTOR-01            want nodes=['command'] edges=['serves'] file=cli/commands/doctor.py
+  MISS CLI-PARSE-01             want nodes=['command'] edges=['serves'] file=cli/commands/parse.py
+  MISS CLI-QUERY-01             want nodes=['command'] edges=['serves'] file=cli/commands/query.py
+  MISS EXPORT-BARREL-02         want nodes=['file'] edges=['imports'] file=cli/commands/__init__.py
+  MISS CORE-CONFIG              want nodes=['function'] edges=[] file=cartog/core/config.py
+  MISS CORE-DIAGNOSTICS         want nodes=['function'] edges=[] file=cartog/core/diagnostics.py
+  MISS REF-OTHER-01             want nodes=['function'] edges=['references'] file=cartog/core/diagnostics.py
+  MISS CORE-JSONC               want nodes=['function'] edges=[] file=cartog/core/jsonc.py
+  MISS CALL-ARROW-01            want nodes=['function'] edges=['calls'] file=cartog/core/jsonc.py
+  MISS REF-ISINSTANCE-01        want nodes=['function'] edges=['references'] file=cartog/core/limits.py
+  MISS CORE-MODEL               want nodes=['function'] edges=[] file=cartog/core/model.py
+  MISS OOP-CLASS-01             want nodes=['class'] edges=['overrides'] file=cartog/core/model.py
+  MISS REF-TYPE-01              want nodes=['function'] edges=['references'] file=cartog/core/output.py
+  MISS REF-EXCEPTION-01         want nodes=['function'] edges=['references'] file=cartog/core/proc.py
+  MISS CALL-PROMISE-01          want nodes=['function'] edges=['calls'] file=cartog/core/proc.py
+  MISS CALL-CALLBACK-01         want nodes=['function'] edges=['calls'] file=cartog/core/text.py
+  MISS CALL-GENERATOR-01        want nodes=['function'] edges=['calls'] file=cartog/core/timing.py
+  MISS CORE-TOOLCHAIN           want nodes=['function'] edges=[] file=cartog/core/toolchain.py
+  MISS EXPORT-BARREL-03         want nodes=['file'] edges=['imports'] file=cartog/core/__init__.py
+  MISS CALL-DOTTED-02           want nodes=['function'] edges=['calls'] file=cartog/graph/merge.py
+  MISS OOP-STATIC-01            want nodes=['class'] edges=['overrides'] file=cartog/graph/validate.py
+  MISS OOP-ABSTRACT-01          want nodes=['class'] edges=['overrides'] file=cartog/parse/base.py
+  MISS CALL-DOTTED-03           want nodes=['function'] edges=['calls'] file=cartog/parse/js_adapter.py
+  MISS REF-INHERITANCE-01       want nodes=['function'] edges=['references'] file=cartog/parse/python_adapter.py
+  MISS CALL-ASYNC-02            want nodes=['function'] edges=['calls'] file=cartog/render/export_html.py
+  MISS REF-CALLBACK-01          want nodes=['function'] edges=['references'] file=cartog/render/export_json.py
+  MISS CALL-MEMBER-01           want nodes=['function'] edges=['calls'] file=cartog/render/export_mermaid.py
+  MISS OOP-GETTER-01            want nodes=['class'] edges=['overrides'] file=cartog/render/views.py
+  MISS EXPORT-BARREL-08         want nodes=['file'] edges=['imports'] file=cartog/render/__init__.py
+  MISS CALL-DYNAMIC-IMPORT-01   want nodes=['function'] edges=['calls'] file=cartog/scan/cache.py
+  MISS REF-DECORATOR-01         want nodes=['function'] edges=['references'] file=cartog/scan/manifests.py
+  MISS CALL-IMPORT-01           want nodes=['function'] edges=['calls'] file=cartog/scan/walk.py
+  MISS EXPORT-BARREL-07         want nodes=['file'] edges=['imports'] file=cartog/scan/__init__.py
+  MISS CALL-ASYNC-01            want nodes=['function'] edges=['calls'] file=cartog/scip/runner.py
+  MISS CALL-PARTIAL-01          want nodes=['function'] edges=['calls'] file=cartog/scip/static_calls.py
+  MISS EXPORT-BARREL-06         want nodes=['file'] edges=['imports'] file=cartog/scip/__init__.py
+  MISS FILE-ASSET-02            want nodes=['file'] edges=[] file=cartog/render/view_assets/viewer.css
+
+  matched=25 missing=64 false_positives=0
+  precision=0.281 recall=0.281
+  abstention: correct=15/15 wrong=0
+
+  totals: nodes=308 edges=88 unresolved=19

@@ -1,0 +1,8 @@
+{
+  "compilerOptions": {
+    "target": "ES2022", "module": "NodeNext",
+    "baseUrl": ".", "paths": { "@core/*": ["src/core/*"], "@/*": ["src/*"], "@scope/*": ["monorepo/packages/*/src"] },
+    "experimentalDecorators": true, "emitDecoratorMetadata": true, "jsx": "react-jsx"
+  },
+  "include": ["src/**/*", "bin/**/*", "monorepo/**/*"]
+}

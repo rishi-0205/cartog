@@ -1,0 +1,1 @@
+{ "routes": [{ "path": "/config", "method": "GET" }] }

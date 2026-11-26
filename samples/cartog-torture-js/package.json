@@ -1,0 +1,15 @@
+{
+  "name": "cartog-torture-js",
+  "version": "0.1.0",
+  "description": "Adversarial conformance sample: catalog of every cartog node/edge kind plus ~55 connected call spines.",
+  "bin": { "cartog-torture-js": "./bin/cli.js", "ctj": "./bin/cli.js" },
+  "scripts": { "build": "tsc", "test": "node --test", "lint": "eslint src" },
+  "dependencies": {
+    "commander": "12.1.0", "yargs": "17.7.2", "express": "4.21.2",
+    "bullmq": "5.52.0", "ioredis": "5.4.2", "kafkajs": "2.2.4",
+    "amqplib": "0.10.5", "socket.io": "4.8.1", "ws": "8.18.0",
+    "node-cron": "3.0.3", "agenda": "5.0.0", "inversify": "6.2.2",
+    "@grpc/grpc-js": "1.11.3", "@apollo/server": "4.12.0",
+    "@google-cloud/pubsub": "4.10.0", "mqtt": "5.10.3", "nats": "2.29.3"
+  }
+}
