@@ -1,0 +1,7 @@
+services:
+  redis: { image: redis:7-alpine }
+  rabbitmq: { image: rabbitmq:3-management }
+  kafka: { image: bitnami/kafka }
+  worker: { build: ., command: python -m cartog }
+  web: { build: ., command: python src/routes/fastapi_app.py }
+  scheduler: { build: ., command: python src/scheduler/apscheduler.py }

@@ -1,20 +1,17 @@
 {
-  "version": 1,
+  "version": 2,
   "samples": {
+    "cartog-torture-js": {
+      "generator": "scripts/gen_torture_js.py",
+      "description": "JS/TS adversarial conformance sample — every node/edge kind + ~55 connected spines"
+    },
+    "cartog-torture-py": {
+      "generator": "scripts/gen_torture_py.py",
+      "description": "Python adversarial conformance sample — every node/edge kind + ~55 connected spines"
+    },
     "click": {
-      "url": "https://github.com/pallets/click.git",
-      "sha": "2247b35ea1c47c727d7a06e51fa280e12a863ff6",
-      "license": "BSD-3-Clause"
-    },
-    "flask": {
-      "url": "https://github.com/pallets/flask.git",
-      "sha": "d086db856be187255b8ec61ef409357393020f32",
-      "license": "BSD-3-Clause"
-    },
-    "ky": {
-      "url": "https://github.com/sindresorhus/ky.git",
-      "sha": "3541888878c4d303a8bc2ad61815f4e048f55a5d",
-      "license": "MIT"
+      "generator": "scripts/gen_compat_stubs.py",
+      "description": "Minimal stub for the legacy reconciliation fallback test"
     }
   }
 }

@@ -1,0 +1,128 @@
+# Conformance: cartog-torture-js (with SCIP)
+
+## 1. Catalog coverage
+  node file             OK       92
+  node folder           OK       39
+  node class            OK       13
+  node function         OK       77
+  node method           OK       21
+  node route            OK       10
+  node command          MISSING  0
+  node entrypoint       OK       5
+  node middleware       OK       2
+  node service          OK       4
+  node ci_job           OK       2
+  node dependency       OK       15
+  node channel          OK       1
+  node worker           OK       1
+  node processor        OK       1
+  node script           MISSING  0
+  node npm_script       MISSING  0
+  node gui_script       MISSING  0
+  node subsystem        MISSING  0
+  node helper_group     MISSING  0
+  edge contains         OK       2
+  edge imports          OK       18
+  edge depends_on       OK       38
+  edge calls            OK       26
+  edge references       OK       36
+  edge overrides        OK       4
+  edge serves           OK       7
+  edge starts           MISSING  0
+  edge uses             OK       2
+  edge produces         OK       2
+  edge consumes         OK       1
+  ref_kind decorator    OK       1
+  ref_kind exception    MISSING  0
+  ref_kind isinstance   MISSING  0
+  ref_kind inheritance  OK       2
+  ref_kind type         MISSING  0
+  ref_kind callback     OK       23
+  ref_kind other        OK       6
+  confidence resolved   OK       75
+  confidence reconciled MISSING  0
+  confidence import     OK       56
+  confidence heuristic  MISSING  0
+  confidence inferred   OK       5
+
+  COVERAGE: nodes 14/20, edges 10/11, ref_kinds 4/7
+
+## 2. Per-pattern results
+  MISS ENTRY-CLI-01             want nodes=['entrypoint'] edges=['starts'] file=bin/cli.js
+  MISS ENTRY-CLI-02             want nodes=['entrypoint'] edges=['starts'] file=bin/cli.ts
+  MISS ENTRY-APP-01             want nodes=['entrypoint'] edges=['starts'] file=src/app.ts
+  MISS CLI-HOOK-01              want nodes=['command'] edges=['serves'] file=src/cli/middleware.ts
+  MISS CLI-DYNAMIC-01           want nodes=['command'] edges=['serves'] file=src/cli/registry.ts
+  MISS CLI-DIRECTORY-01         want nodes=['command'] edges=['serves'] file=src/cli/registry.ts
+  MISS REF-OTHER-01             want nodes=['function'] edges=['references'] file=src/core/diagnostics.ts
+  MISS CALL-ARROW-01            want nodes=['function'] edges=['calls'] file=src/core/jsonc.ts
+  MISS CALL-BIND-01             want nodes=['function'] edges=['calls'] file=src/core/jsonc.ts
+  MISS REF-ISINSTANCE-01        want nodes=['function'] edges=['references'] file=src/core/limits.ts
+  MISS CALL-NEW-01              want nodes=['function'] edges=['calls'] file=src/core/model.ts
+  MISS REF-TYPE-01              want nodes=['function'] edges=['references'] file=src/core/output.ts
+  MISS REF-EXCEPTION-01         want nodes=['function'] edges=['references'] file=src/core/proc.ts
+  MISS CALL-CALLBACK-01         want nodes=['function'] edges=['calls'] file=src/core/text.ts
+  MISS CALL-GENERATOR-01        want nodes=['function'] edges=['calls'] file=src/core/timing.ts
+  MISS EVENT-EMITTER-01         want nodes=['function'] edges=['calls'] file=src/events/emitter.ts
+  MISS EVENT-DYNAMIC-01         want nodes=['function'] edges=['calls'] file=src/events/signals.ts
+  MISS CALL-DOTTED-02           want nodes=['function'] edges=['calls'] file=src/graph/merge.ts
+  MISS OOP-STATIC-01            want nodes=['class'] edges=['overrides'] file=src/graph/validate.ts
+  MISS MIDDLEWARE-CHAIN-01      want nodes=['middleware'] edges=['uses'] file=src/middleware/chain.ts
+  MISS MIDDLEWARE-ERROR-02      want nodes=['middleware'] edges=['uses'] file=src/middleware/error.ts
+  MISS OOP-ABSTRACT-02          want nodes=['class'] edges=['overrides'] file=src/oop/abstract.ts
+  MISS OOP-BASE-01              want nodes=['class'] edges=['overrides'] file=src/oop/base.ts
+  MISS OOP-MIXIN-01             want nodes=['class'] edges=['overrides'] file=src/oop/mixins.ts
+  MISS OOP-ABSTRACT-01          want nodes=['class'] edges=['overrides'] file=src/parse/base.ts
+  MISS REF-INHERITANCE-01       want nodes=['function'] edges=['references'] file=src/parse/ts-adapter.ts
+  MISS MQ-WORKER-01             want nodes=['channel'] edges=['produces'] file=src/queues/bullmq-worker.ts
+  MISS MQ-EVENT-01              want nodes=['channel'] edges=['produces'] file=src/queues/bullmq-worker.ts
+  MISS MQ-KAFKA-01              want nodes=['channel'] edges=['produces'] file=src/queues/kafka.ts
+  MISS MQ-KAFKA-CONSUMER-01     want nodes=['channel'] edges=['produces'] file=src/queues/kafka.ts
+  MISS MQ-REDIS-PUB-01          want nodes=['channel'] edges=['produces'] file=src/queues/redis-pubsub.ts
+  MISS MQ-REDIS-SUB-01          want nodes=['channel'] edges=['produces'] file=src/queues/redis-pubsub.ts
+  MISS CALL-ASYNC-02            want nodes=['function'] edges=['calls'] file=src/render/export-html.ts
+  MISS REF-CALLBACK-01          want nodes=['function'] edges=['references'] file=src/render/export-json.ts
+  MISS OOP-GETTER-01            want nodes=['class'] edges=['overrides'] file=src/render/views.ts
+  MISS ENTRY-COMMONJS-01        want nodes=['entrypoint'] edges=['starts'] file=src/routes/commonjs-entry.ts
+  MISS RPC-GRAPHQL-01           want nodes=['function'] edges=['calls'] file=src/rpc/graphql-resolvers.ts
+  MISS RPC-GRPC-STUB-01         want nodes=['function'] edges=['calls'] file=src/rpc/grpc-stub.ts
+  MISS RPC-TRPC-01              want nodes=['function'] edges=['calls'] file=src/rpc/trpc-router.ts
+  MISS CALL-DYNAMIC-IMPORT-01   want nodes=['function'] edges=['calls'] file=src/scan/cache.ts
+  MISS SCHED-CRON-01            want nodes=['function'] edges=['calls'] file=src/scheduler/cron.ts
+  MISS SCHED-TIMER-01           want nodes=['function'] edges=['calls'] file=src/scheduler/timers.ts
+  MISS CALL-PARTIAL-01          want nodes=['function'] edges=['calls'] file=src/scip/static-calls.ts
+  MISS WS-SOCKETIO-01           want nodes=['function'] edges=['calls'] file=src/websocket/socket-io.ts
+  MISS WS-WS-01                 want nodes=['function'] edges=['calls'] file=src/websocket/ws.ts
+  MISS ROUTE-NEXT-APP-01        want nodes=['route'] edges=['serves'] file=src/routes/next-app/route.ts
+  MISS ROUTE-NEXT-NESTED-01     want nodes=['route'] edges=['serves'] file=src/routes/next-app/users/route.ts
+  MISS FILE-ASSET-02            want nodes=['file'] edges=[] file=src/render/view-assets/viewer.css
+  MISS CLI-ANALYZE-01           want nodes=['command'] edges=['serves'] file=src/cli/commands/analyze.command.ts
+  MISS CLI-ANALYZE-02           want nodes=['command'] edges=['serves'] file=src/cli/commands/analyze.command.ts
+  MISS CLI-BUILD-01             want nodes=['command'] edges=['serves'] file=src/cli/commands/build.command.ts
+  MISS CLI-BUILD-02             want nodes=['command'] edges=['serves'] file=src/cli/commands/build.command.ts
+  MISS CLI-CHECK-01             want nodes=['command'] edges=['serves'] file=src/cli/commands/check.command.ts
+  MISS CLI-CHECK-02             want nodes=['command'] edges=['serves'] file=src/cli/commands/check.command.ts
+  MISS CLI-DIGEST-01            want nodes=['command'] edges=['serves'] file=src/cli/commands/digest.command.ts
+  MISS CLI-DIGEST-02            want nodes=['command'] edges=['serves'] file=src/cli/commands/digest.command.ts
+  MISS CLI-DOCTOR-01            want nodes=['command'] edges=['serves'] file=src/cli/commands/doctor.command.ts
+  MISS CLI-DOCTOR-02            want nodes=['command'] edges=['serves'] file=src/cli/commands/doctor.command.ts
+  MISS CLI-FLOW-01              want nodes=['command'] edges=['serves'] file=src/cli/commands/flow.command.ts
+  MISS CLI-FLOW-02              want nodes=['command'] edges=['serves'] file=src/cli/commands/flow.command.ts
+  MISS CLI-MAP-01               want nodes=['command'] edges=['serves'] file=src/cli/commands/map.command.ts
+  MISS CLI-MAP-02               want nodes=['command'] edges=['serves'] file=src/cli/commands/map.command.ts
+  MISS CLI-PARSE-01             want nodes=['command'] edges=['serves'] file=src/cli/commands/parse.command.ts
+  MISS CLI-PARSE-02             want nodes=['command'] edges=['serves'] file=src/cli/commands/parse.command.ts
+  MISS CLI-QUERY-01             want nodes=['command'] edges=['serves'] file=src/cli/commands/query.command.ts
+  MISS CLI-QUERY-02             want nodes=['command'] edges=['serves'] file=src/cli/commands/query.command.ts
+  MISS CLI-SCIP-01              want nodes=['command'] edges=['serves'] file=src/cli/commands/scip.command.ts
+  MISS CLI-SCIP-02              want nodes=['command'] edges=['serves'] file=src/cli/commands/scip.command.ts
+  MISS CLI-VIEW-01              want nodes=['command'] edges=['serves'] file=src/cli/commands/view.command.ts
+  MISS CLI-VIEW-02              want nodes=['command'] edges=['serves'] file=src/cli/commands/view.command.ts
+  MISS MONOREPO-B-01            want nodes=['function'] edges=['imports'] file=monorepo/packages/b/src/index.ts
+  MISS MONOREPO-A-01            want nodes=['function'] edges=['imports'] file=monorepo/packages/a/src/index.ts
+
+  matched=27 missing=72 false_positives=0
+  precision=0.273 recall=0.273
+  abstention: correct=16/16 wrong=0
+
+  totals: nodes=283 edges=136 unresolved=4

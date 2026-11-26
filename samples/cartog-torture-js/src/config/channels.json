@@ -1,0 +1,1 @@
+{ "channels": ["${REDIS_CHANNEL}"] }

@@ -735,7 +735,8 @@ class PythonAdapter(LanguageAdapter):
                         # Check kwargs
                         kw_ch = _kwarg_channel(node)
                         channel_name = first_str if first_str is not None else kw_ch
-                        if channel_name is not None:
+                        fn_name = _get_node_text(fn_node).strip()
+                        if channel_name is not None and fn_name not in ("print", "len", "range", "open", "sorted", "map", "filter", "zip", "enumerate", "str", "int", "float", "bool", "list", "dict", "set", "tuple", "type", "isinstance", "hasattr", "getattr", "setattr", "input", "format", "repr", "abs", "min", "max", "sum", "any", "all", "next", "iter", "round", "pow", "divmod", "hex", "oct", "bin", "chr", "ord", "hash", "id", "vars", "dir", "help", "exit", "quit"):
                             has_payload = len(named_args) > 1 and any(
                                 c.type not in ("lambda", "function_definition", "string")
                                 for c in named_args[1:]
@@ -744,13 +745,11 @@ class PythonAdapter(LanguageAdapter):
                                 c.type in ("lambda", "function_definition")
                                 for c in named_args[1:]
                             )
-                            # Also check if any arg is a function/lambda
                             if not has_function and not has_payload and len(named_args) > 1:
-                                # Could be producer with payload that's a variable
                                 has_payload = True
                             candidates.append({
                                 "kind": "direct_call",
-                                "function_name": _get_node_text(fn_node).strip().lower(),
+                                "function_name": fn_name,
                                 "channel": channel_name,
                                 "has_payload": has_payload,
                                 "has_function": has_function,

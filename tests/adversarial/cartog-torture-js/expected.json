@@ -1,0 +1,1840 @@
+{
+  "repo": "cartog-torture-js",
+  "schema": "1.0",
+  "catalog": {
+    "node_kinds": [
+      "file",
+      "folder",
+      "class",
+      "function",
+      "method",
+      "route",
+      "command",
+      "entrypoint",
+      "middleware",
+      "service",
+      "ci_job",
+      "dependency",
+      "channel",
+      "worker",
+      "processor",
+      "script",
+      "npm_script",
+      "gui_script",
+      "subsystem",
+      "helper_group"
+    ],
+    "edge_kinds": [
+      "contains",
+      "imports",
+      "depends_on",
+      "calls",
+      "references",
+      "overrides",
+      "serves",
+      "starts",
+      "uses",
+      "produces",
+      "consumes"
+    ],
+    "ref_kinds": [
+      "decorator",
+      "exception",
+      "isinstance",
+      "inheritance",
+      "type",
+      "callback",
+      "other"
+    ],
+    "confidence": [
+      "resolved",
+      "reconciled",
+      "import",
+      "heuristic",
+      "inferred"
+    ]
+  },
+  "patterns": [
+    {
+      "id": "FIXTURE-TINY-01",
+      "marker": "samples/cartog-torture-js/tests/fixtures/tiny-repo/index.ts:1",
+      "desc": "nested fixture file",
+      "expect_nodes": [
+        {
+          "kind": "file"
+        }
+      ],
+      "expect_edges": [],
+      "expect_abstain": false
+    },
+    {
+      "id": "EXPORT-BARREL-02",
+      "marker": "samples/cartog-torture-js/src/cli/index.ts:1",
+      "desc": "cli barrel",
+      "expect_nodes": [
+        {
+          "kind": "file"
+        }
+      ],
+      "expect_edges": [
+        {
+          "kind": "imports"
+        }
+      ],
+      "expect_abstain": false
+    },
+    {
+      "id": "CLI-HOOK-01",
+      "marker": "samples/cartog-torture-js/src/cli/middleware.ts:1",
+      "desc": "preAction hook middleware",
+      "expect_nodes": [
+        {
+          "kind": "command"
+        }
+      ],
+      "expect_edges": [
+        {
+          "kind": "serves"
+        }
+      ],
+      "expect_abstain": false
+    },
+    {
+      "id": "CLI-DYNAMIC-01",
+      "marker": "samples/cartog-torture-js/src/cli/registry.ts:7",
+      "desc": "dynamic registration in loop",
+      "expect_nodes": [
+        {
+          "kind": "command"
+        }
+      ],
+      "expect_edges": [
+        {
+          "kind": "serves"
+        }
+      ],
+      "expect_abstain": false
+    },
+    {
+      "id": "CLI-DIRECTORY-01",
+      "marker": "samples/cartog-torture-js/src/cli/registry.ts:9",
+      "desc": "command loading from directory",
+      "expect_nodes": [
+        {
+          "kind": "command"
+        }
+      ],
+      "expect_edges": [
+        {
+          "kind": "serves"
+        }
+      ],
+      "expect_abstain": false
+    },
+    {
+      "id": "CALL-DOTTED-01",
+      "marker": "samples/cartog-torture-js/src/cli/shared.ts:1",
+      "desc": "dotted chain A.B.C() via import",
+      "expect_nodes": [
+        {
+          "kind": "function"
+        }
+      ],
+      "expect_edges": [
+        {
+          "kind": "calls"
+        }
+      ],
+      "expect_abstain": false
+    },
+    {
+      "id": "CONFIG-FEATURE-01",
+      "marker": "samples/cartog-torture-js/src/config/feature-flags.ts:1",
+      "desc": "conditional command registration",
+      "expect_nodes": [],
+      "expect_edges": [],
+      "expect_abstain": true
+    },
+    {
+      "id": "API-S1",
+      "marker": "samples/cartog-torture-js/src/controllers/scoreUpdate.controller.ts:4",
+      "desc": "controller \u2192 service call",
+      "expect_nodes": [],
+      "expect_edges": [],
+      "expect_abstain": true
+    },
+    {
+      "id": "CALL-RECURSION-01",
+      "marker": "samples/cartog-torture-js/src/core/base-decl.ts:1",
+      "desc": "recursive and mutual recursion",
+      "expect_nodes": [
+        {
+          "kind": "function"
+        }
+      ],
+      "expect_edges": [
+        {
+          "kind": "calls"
+        }
+      ],
+      "expect_abstain": false
+    },
+    {
+      "id": "CALL-ARROW-01",
+      "marker": "samples/cartog-torture-js/src/core/jsonc.ts:1",
+      "desc": "arrow function assigned to const",
+      "expect_nodes": [
+        {
+          "kind": "function"
+        }
+      ],
+      "expect_edges": [
+        {
+          "kind": "calls"
+        }
+      ],
+      "expect_abstain": false
+    },
+    {
+      "id": "CALL-BIND-01",
+      "marker": "samples/cartog-torture-js/src/core/jsonc.ts:3",
+      "desc": ".bind()/.call()/.apply()",
+      "expect_nodes": [
+        {
+          "kind": "function"
+        }
+      ],
+      "expect_edges": [
+        {
+          "kind": "calls"
+        }
+      ],
+      "expect_abstain": false
+    },
+    {
+      "id": "REF-ISINSTANCE-01",
+      "marker": "samples/cartog-torture-js/src/core/limits.ts:1",
+      "desc": "isinstance-style type check reference",
+      "expect_nodes": [
+        {
+          "kind": "function"
+        }
+      ],
+      "expect_edges": [
+        {
+          "kind": "references",
+          "ref_kind": "isinstance"
+        }
+      ],
+      "expect_abstain": false
+    },
+    {
+      "id": "CALL-NEW-01",
+      "marker": "samples/cartog-torture-js/src/core/model.ts:10",
+      "desc": "new X() constructor (references, not calls)",
+      "expect_nodes": [
+        {
+          "kind": "function"
+        }
+      ],
+      "expect_edges": [
+        {
+          "kind": "calls"
+        }
+      ],
+      "expect_abstain": false
+    },
+    {
+      "id": "CALL-CALLBACK-01",
+      "marker": "samples/cartog-torture-js/src/core/text.ts:1",
+      "desc": "callback passed as arg",
+      "expect_nodes": [
+        {
+          "kind": "function"
+        }
+      ],
+      "expect_edges": [
+        {
+          "kind": "calls"
+        }
+      ],
+      "expect_abstain": false
+    },
+    {
+      "id": "CALL-GENERATOR-01",
+      "marker": "samples/cartog-torture-js/src/core/timing.ts:1",
+      "desc": "generator / async generator",
+      "expect_nodes": [
+        {
+          "kind": "function"
+        }
+      ],
+      "expect_edges": [
+        {
+          "kind": "calls"
+        }
+      ],
+      "expect_abstain": false
+    },
+    {
+      "id": "DYN-ASSIGN-01",
+      "marker": "samples/cartog-torture-js/src/dynamic/assign.ts:1",
+      "desc": "Object.assign (abstain)",
+      "expect_nodes": [],
+      "expect_edges": [],
+      "expect_abstain": true
+    },
+    {
+      "id": "DYN-COMPUTED-01",
+      "marker": "samples/cartog-torture-js/src/dynamic/computed.ts:1",
+      "desc": "computed dynamic keys (abstain)",
+      "expect_nodes": [],
+      "expect_edges": [],
+      "expect_abstain": true
+    },
+    {
+      "id": "DYN-PROXY-01",
+      "marker": "samples/cartog-torture-js/src/dynamic/proxy.ts:1",
+      "desc": "Proxy / Reflect (abstain)",
+      "expect_nodes": [],
+      "expect_edges": [],
+      "expect_abstain": true
+    },
+    {
+      "id": "DYN-SPREAD-01",
+      "marker": "samples/cartog-torture-js/src/dynamic/spreads.ts:1",
+      "desc": "object spread (abstain)",
+      "expect_nodes": [],
+      "expect_edges": [],
+      "expect_abstain": true
+    },
+    {
+      "id": "EVENT-DYNAMIC-01",
+      "marker": "samples/cartog-torture-js/src/events/signals.ts:1",
+      "desc": "dynamic event name (abstain)",
+      "expect_nodes": [
+        {
+          "kind": "function"
+        }
+      ],
+      "expect_edges": [
+        {
+          "kind": "calls"
+        }
+      ],
+      "expect_abstain": false
+    },
+    {
+      "id": "EXPORT-BARREL-03",
+      "marker": "samples/cartog-torture-js/src/graph/index.ts:1",
+      "desc": "graph re-export barrel",
+      "expect_nodes": [
+        {
+          "kind": "file"
+        }
+      ],
+      "expect_edges": [
+        {
+          "kind": "imports"
+        }
+      ],
+      "expect_abstain": false
+    },
+    {
+      "id": "CALL-DOTTED-02",
+      "marker": "samples/cartog-torture-js/src/graph/merge.ts:4",
+      "desc": "A.B.C() through re-export",
+      "expect_nodes": [
+        {
+          "kind": "function"
+        }
+      ],
+      "expect_edges": [
+        {
+          "kind": "calls"
+        }
+      ],
+      "expect_abstain": false
+    },
+    {
+      "id": "REF-TYPE-01",
+      "marker": "samples/cartog-torture-js/src/graph/validate.ts:3",
+      "desc": "type-annotation reference",
+      "expect_nodes": [
+        {
+          "kind": "function"
+        }
+      ],
+      "expect_edges": [
+        {
+          "kind": "references",
+          "ref_kind": "type"
+        }
+      ],
+      "expect_abstain": false
+    },
+    {
+      "id": "MIDDLEWARE-CHAIN-01",
+      "marker": "samples/cartog-torture-js/src/middleware/chain.ts:1",
+      "desc": "middleware chain uses edges",
+      "expect_nodes": [
+        {
+          "kind": "middleware"
+        }
+      ],
+      "expect_edges": [
+        {
+          "kind": "uses"
+        }
+      ],
+      "expect_abstain": false
+    },
+    {
+      "id": "MIDDLEWARE-ERROR-02",
+      "marker": "samples/cartog-torture-js/src/middleware/error.ts:1",
+      "desc": "error middleware form",
+      "expect_nodes": [
+        {
+          "kind": "middleware"
+        }
+      ],
+      "expect_edges": [
+        {
+          "kind": "uses"
+        }
+      ],
+      "expect_abstain": false
+    },
+    {
+      "id": "OOP-ABSTRACT-02",
+      "marker": "samples/cartog-torture-js/src/oop/abstract.ts:1",
+      "desc": "abstract class",
+      "expect_nodes": [
+        {
+          "kind": "class"
+        }
+      ],
+      "expect_edges": [
+        {
+          "kind": "overrides"
+        }
+      ],
+      "expect_abstain": false
+    },
+    {
+      "id": "OOP-BASE-01",
+      "marker": "samples/cartog-torture-js/src/oop/base.ts:1",
+      "desc": "base class",
+      "expect_nodes": [
+        {
+          "kind": "class"
+        }
+      ],
+      "expect_edges": [
+        {
+          "kind": "overrides"
+        }
+      ],
+      "expect_abstain": false
+    },
+    {
+      "id": "OOP-OVERRIDE-01",
+      "marker": "samples/cartog-torture-js/src/oop/derived.ts:1",
+      "desc": "super.method override edge",
+      "expect_nodes": [
+        {
+          "kind": "class"
+        }
+      ],
+      "expect_edges": [
+        {
+          "kind": "overrides"
+        }
+      ],
+      "expect_abstain": false
+    },
+    {
+      "id": "OOP-MIXIN-01",
+      "marker": "samples/cartog-torture-js/src/oop/mixins.ts:1",
+      "desc": "mixin composition",
+      "expect_nodes": [
+        {
+          "kind": "class"
+        }
+      ],
+      "expect_edges": [
+        {
+          "kind": "overrides"
+        }
+      ],
+      "expect_abstain": false
+    },
+    {
+      "id": "OOP-ABSTRACT-01",
+      "marker": "samples/cartog-torture-js/src/parse/base.ts:1",
+      "desc": "abstract class + subclasses",
+      "expect_nodes": [
+        {
+          "kind": "class"
+        }
+      ],
+      "expect_edges": [
+        {
+          "kind": "overrides"
+        }
+      ],
+      "expect_abstain": false
+    },
+    {
+      "id": "EXPORT-BARREL-04",
+      "marker": "samples/cartog-torture-js/src/parse/index.ts:1",
+      "desc": "parse barrel",
+      "expect_nodes": [
+        {
+          "kind": "file"
+        }
+      ],
+      "expect_edges": [
+        {
+          "kind": "imports"
+        }
+      ],
+      "expect_abstain": false
+    },
+    {
+      "id": "CALL-CHAIN-REEXPORT-01",
+      "marker": "samples/cartog-torture-js/src/parse/js-adapter.ts:1",
+      "desc": "A.B.C() through import alias",
+      "expect_nodes": [
+        {
+          "kind": "function"
+        }
+      ],
+      "expect_edges": [
+        {
+          "kind": "calls"
+        }
+      ],
+      "expect_abstain": false
+    },
+    {
+      "id": "REF-INHERITANCE-01",
+      "marker": "samples/cartog-torture-js/src/parse/ts-adapter.ts:1",
+      "desc": "inheritance reference",
+      "expect_nodes": [
+        {
+          "kind": "function"
+        }
+      ],
+      "expect_edges": [
+        {
+          "kind": "references",
+          "ref_kind": "inheritance"
+        }
+      ],
+      "expect_abstain": false
+    },
+    {
+      "id": "PLUGIN-DIRECTORY-01",
+      "marker": "samples/cartog-torture-js/src/plugin/directory.ts:1",
+      "desc": "load plugins from directory",
+      "expect_nodes": [],
+      "expect_edges": [],
+      "expect_abstain": true
+    },
+    {
+      "id": "PLUGIN-DYNAMIC-REQUIRE-01",
+      "marker": "samples/cartog-torture-js/src/plugin/loader.ts:1",
+      "desc": "require(variable) (abstain)",
+      "expect_nodes": [],
+      "expect_edges": [],
+      "expect_abstain": true
+    },
+    {
+      "id": "REF-CALLBACK-01",
+      "marker": "samples/cartog-torture-js/src/render/export-json.ts:1",
+      "desc": "callback reference",
+      "expect_nodes": [
+        {
+          "kind": "function"
+        }
+      ],
+      "expect_edges": [
+        {
+          "kind": "references",
+          "ref_kind": "callback"
+        }
+      ],
+      "expect_abstain": false
+    },
+    {
+      "id": "CALL-MEMBER-01",
+      "marker": "samples/cartog-torture-js/src/render/views.ts:3",
+      "desc": "member call chain",
+      "expect_nodes": [
+        {
+          "kind": "function"
+        }
+      ],
+      "expect_edges": [
+        {
+          "kind": "calls"
+        }
+      ],
+      "expect_abstain": false
+    },
+    {
+      "id": "ENTRY-COMMONJS-01",
+      "marker": "samples/cartog-torture-js/src/routes/commonjs-entry.ts:1",
+      "desc": "require.main === module",
+      "expect_nodes": [
+        {
+          "kind": "entrypoint"
+        }
+      ],
+      "expect_edges": [
+        {
+          "kind": "starts"
+        }
+      ],
+      "expect_abstain": false
+    },
+    {
+      "id": "ROUTE-MOUNT-01",
+      "marker": "samples/cartog-torture-js/src/routes/express-app.ts:10",
+      "desc": "app.use default import (Rank 9)",
+      "expect_nodes": [
+        {
+          "kind": "route"
+        }
+      ],
+      "expect_edges": [
+        {
+          "kind": "serves"
+        }
+      ],
+      "expect_abstain": false
+    },
+    {
+      "id": "ROUTE-INLINE-01",
+      "marker": "samples/cartog-torture-js/src/routes/express-app.ts:14",
+      "desc": "inline arrow handler (Rank 9)",
+      "expect_nodes": [
+        {
+          "kind": "route"
+        }
+      ],
+      "expect_edges": [
+        {
+          "kind": "serves"
+        }
+      ],
+      "expect_abstain": false
+    },
+    {
+      "id": "RPC-GRPC-STUB-01",
+      "marker": "samples/cartog-torture-js/src/rpc/grpc-stub.ts:1",
+      "desc": "generated-style stub",
+      "expect_nodes": [
+        {
+          "kind": "function"
+        }
+      ],
+      "expect_edges": [
+        {
+          "kind": "calls"
+        }
+      ],
+      "expect_abstain": false
+    },
+    {
+      "id": "CALL-DYNAMIC-IMPORT-01",
+      "marker": "samples/cartog-torture-js/src/scan/cache.ts:1",
+      "desc": "dynamic import(var) (abstain)",
+      "expect_nodes": [
+        {
+          "kind": "function"
+        }
+      ],
+      "expect_edges": [
+        {
+          "kind": "calls"
+        }
+      ],
+      "expect_abstain": false
+    },
+    {
+      "id": "REF-DECORATOR-01",
+      "marker": "samples/cartog-torture-js/src/scan/manifests.ts:1",
+      "desc": "decorator reference",
+      "expect_nodes": [
+        {
+          "kind": "function"
+        }
+      ],
+      "expect_edges": [
+        {
+          "kind": "references",
+          "ref_kind": "decorator"
+        }
+      ],
+      "expect_abstain": false
+    },
+    {
+      "id": "CALL-IMPORT-01",
+      "marker": "samples/cartog-torture-js/src/scan/walk.ts:1",
+      "desc": "imports edge via internal import",
+      "expect_nodes": [
+        {
+          "kind": "function"
+        }
+      ],
+      "expect_edges": [
+        {
+          "kind": "calls"
+        }
+      ],
+      "expect_abstain": false
+    },
+    {
+      "id": "FILE-GENERATED-01",
+      "marker": "samples/cartog-torture-js/src/scip/proto.ts:1",
+      "desc": "generated-style protobuf stub",
+      "expect_nodes": [
+        {
+          "kind": "file"
+        }
+      ],
+      "expect_edges": [],
+      "expect_abstain": false
+    },
+    {
+      "id": "CALL-ASYNC-01",
+      "marker": "samples/cartog-torture-js/src/scip/runner.ts:4",
+      "desc": "async/await chain",
+      "expect_nodes": [
+        {
+          "kind": "function"
+        }
+      ],
+      "expect_edges": [
+        {
+          "kind": "calls"
+        }
+      ],
+      "expect_abstain": false
+    },
+    {
+      "id": "CALL-PARTIAL-01",
+      "marker": "samples/cartog-torture-js/src/scip/static-calls.ts:1",
+      "desc": "bound/partial-style call",
+      "expect_nodes": [
+        {
+          "kind": "function"
+        }
+      ],
+      "expect_edges": [
+        {
+          "kind": "calls"
+        }
+      ],
+      "expect_abstain": false
+    },
+    {
+      "id": "API-S5",
+      "marker": "samples/cartog-torture-js/src/services/admin.service.ts:17",
+      "desc": "admin.service service call chain",
+      "expect_nodes": [],
+      "expect_edges": [],
+      "expect_abstain": true
+    },
+    {
+      "id": "SCHED-AGENDA-01",
+      "marker": "samples/cartog-torture-js/src/services/agenda.job.service.ts:16",
+      "desc": "agenda.job.service service call chain",
+      "expect_nodes": [
+        {
+          "kind": "function"
+        }
+      ],
+      "expect_edges": [
+        {
+          "kind": "calls"
+        }
+      ],
+      "expect_abstain": false
+    },
+    {
+      "id": "DB-BATCH-01",
+      "marker": "samples/cartog-torture-js/src/services/batch.db.service.ts:16",
+      "desc": "batch.db.service service call chain",
+      "expect_nodes": [
+        {
+          "kind": "function"
+        }
+      ],
+      "expect_edges": [
+        {
+          "kind": "calls"
+        }
+      ],
+      "expect_abstain": false
+    },
+    {
+      "id": "MQ-BULLMQ-01",
+      "marker": "samples/cartog-torture-js/src/services/bullmq.producer.service.ts:16",
+      "desc": "bullmq.producer.service service call chain",
+      "expect_nodes": [
+        {
+          "kind": "channel"
+        }
+      ],
+      "expect_edges": [
+        {
+          "kind": "produces"
+        }
+      ],
+      "expect_abstain": false
+    },
+    {
+      "id": "MQ-BULLMQ-02",
+      "marker": "samples/cartog-torture-js/src/services/bullmq.worker.service.ts:17",
+      "desc": "bullmq.worker.service service call chain",
+      "expect_nodes": [
+        {
+          "kind": "channel"
+        }
+      ],
+      "expect_edges": [
+        {
+          "kind": "produces"
+        }
+      ],
+      "expect_abstain": false
+    },
+    {
+      "id": "DI-CONSTRUCTOR-01",
+      "marker": "samples/cartog-torture-js/src/services/constructor.di.service.ts:16",
+      "desc": "constructor.di.service service call chain",
+      "expect_nodes": [],
+      "expect_edges": [],
+      "expect_abstain": false
+    },
+    {
+      "id": "SCHED-CRON-01",
+      "marker": "samples/cartog-torture-js/src/services/cron.job.service.ts:16",
+      "desc": "cron.job.service service call chain",
+      "expect_nodes": [
+        {
+          "kind": "function"
+        }
+      ],
+      "expect_edges": [
+        {
+          "kind": "calls"
+        }
+      ],
+      "expect_abstain": false
+    },
+    {
+      "id": "DI-DECORATOR-01",
+      "marker": "samples/cartog-torture-js/src/services/decorator.di.service.ts:16",
+      "desc": "decorator.di.service service call chain",
+      "expect_nodes": [],
+      "expect_edges": [],
+      "expect_abstain": false
+    },
+    {
+      "id": "EVENT-EMIT-01",
+      "marker": "samples/cartog-torture-js/src/services/emit.event.service.ts:16",
+      "desc": "emit.event.service service call chain",
+      "expect_nodes": [
+        {
+          "kind": "function"
+        }
+      ],
+      "expect_edges": [
+        {
+          "kind": "calls"
+        }
+      ],
+      "expect_abstain": false
+    },
+    {
+      "id": "MQ-GCP-01",
+      "marker": "samples/cartog-torture-js/src/services/gpubsub.service.ts:16",
+      "desc": "gpubsub.service service call chain",
+      "expect_nodes": [
+        {
+          "kind": "channel"
+        }
+      ],
+      "expect_edges": [
+        {
+          "kind": "produces"
+        }
+      ],
+      "expect_abstain": false
+    },
+    {
+      "id": "RPC-GRAPHQL-01",
+      "marker": "samples/cartog-torture-js/src/services/graphql.service.ts:16",
+      "desc": "graphql.service service call chain",
+      "expect_nodes": [
+        {
+          "kind": "function"
+        }
+      ],
+      "expect_edges": [
+        {
+          "kind": "calls"
+        }
+      ],
+      "expect_abstain": false
+    },
+    {
+      "id": "RPC-GRPC-01",
+      "marker": "samples/cartog-torture-js/src/services/grpc.client.service.ts:17",
+      "desc": "grpc.client.service service call chain",
+      "expect_nodes": [
+        {
+          "kind": "function"
+        }
+      ],
+      "expect_edges": [
+        {
+          "kind": "calls"
+        }
+      ],
+      "expect_abstain": false
+    },
+    {
+      "id": "API-S6",
+      "marker": "samples/cartog-torture-js/src/services/health.service.ts:16",
+      "desc": "health.service service call chain",
+      "expect_nodes": [],
+      "expect_edges": [],
+      "expect_abstain": true
+    },
+    {
+      "id": "CACHE-INVALIDATE-01",
+      "marker": "samples/cartog-torture-js/src/services/invalidate.cache.service.ts:16",
+      "desc": "invalidate.cache.service service call chain",
+      "expect_nodes": [
+        {
+          "kind": "function"
+        }
+      ],
+      "expect_edges": [
+        {
+          "kind": "calls"
+        }
+      ],
+      "expect_abstain": false
+    },
+    {
+      "id": "MQ-KAFKA-02",
+      "marker": "samples/cartog-torture-js/src/services/kafka.consumer.service.ts:17",
+      "desc": "kafka.consumer.service service call chain",
+      "expect_nodes": [
+        {
+          "kind": "channel"
+        }
+      ],
+      "expect_edges": [
+        {
+          "kind": "produces"
+        }
+      ],
+      "expect_abstain": false
+    },
+    {
+      "id": "MQ-KAFKA-01",
+      "marker": "samples/cartog-torture-js/src/services/kafka.producer.service.ts:16",
+      "desc": "kafka.producer.service service call chain",
+      "expect_nodes": [
+        {
+          "kind": "channel"
+        }
+      ],
+      "expect_edges": [
+        {
+          "kind": "produces"
+        }
+      ],
+      "expect_abstain": false
+    },
+    {
+      "id": "API-S1",
+      "marker": "samples/cartog-torture-js/src/services/match.service.ts:19",
+      "desc": "match.service service call chain",
+      "expect_nodes": [],
+      "expect_edges": [],
+      "expect_abstain": true
+    },
+    {
+      "id": "WS-MESSAGE-01",
+      "marker": "samples/cartog-torture-js/src/services/message.ws.service.ts:17",
+      "desc": "message.ws.service service call chain",
+      "expect_nodes": [
+        {
+          "kind": "function"
+        }
+      ],
+      "expect_edges": [
+        {
+          "kind": "calls"
+        }
+      ],
+      "expect_abstain": false
+    },
+    {
+      "id": "MQ-MQTT-01",
+      "marker": "samples/cartog-torture-js/src/services/mqtt.service.ts:16",
+      "desc": "mqtt.service service call chain",
+      "expect_nodes": [
+        {
+          "kind": "channel"
+        }
+      ],
+      "expect_edges": [
+        {
+          "kind": "produces"
+        }
+      ],
+      "expect_abstain": false
+    },
+    {
+      "id": "EVENT-NAMED-01",
+      "marker": "samples/cartog-torture-js/src/services/named.event.service.ts:16",
+      "desc": "named.event.service service call chain",
+      "expect_nodes": [
+        {
+          "kind": "function"
+        }
+      ],
+      "expect_edges": [
+        {
+          "kind": "calls"
+        }
+      ],
+      "expect_abstain": false
+    },
+    {
+      "id": "MQ-NATS-01",
+      "marker": "samples/cartog-torture-js/src/services/nats.service.ts:16",
+      "desc": "nats.service service call chain",
+      "expect_nodes": [
+        {
+          "kind": "channel"
+        }
+      ],
+      "expect_edges": [
+        {
+          "kind": "produces"
+        }
+      ],
+      "expect_abstain": false
+    },
+    {
+      "id": "EVENT-ONCE-01",
+      "marker": "samples/cartog-torture-js/src/services/once.event.service.ts:16",
+      "desc": "once.event.service service call chain",
+      "expect_nodes": [
+        {
+          "kind": "function"
+        }
+      ],
+      "expect_edges": [
+        {
+          "kind": "calls"
+        }
+      ],
+      "expect_abstain": false
+    },
+    {
+      "id": "DB-ORM-01",
+      "marker": "samples/cartog-torture-js/src/services/orm.db.service.ts:16",
+      "desc": "orm.db.service service call chain",
+      "expect_nodes": [
+        {
+          "kind": "function"
+        }
+      ],
+      "expect_edges": [
+        {
+          "kind": "calls"
+        }
+      ],
+      "expect_abstain": false
+    },
+    {
+      "id": "DB-QUERY-01",
+      "marker": "samples/cartog-torture-js/src/services/query.db.service.ts:16",
+      "desc": "query.db.service service call chain",
+      "expect_nodes": [
+        {
+          "kind": "function"
+        }
+      ],
+      "expect_edges": [
+        {
+          "kind": "calls"
+        }
+      ],
+      "expect_abstain": false
+    },
+    {
+      "id": "MQ-RABBITMQ-02",
+      "marker": "samples/cartog-torture-js/src/services/rabbitmq.consumer.service.ts:17",
+      "desc": "rabbitmq.consumer.service service call chain",
+      "expect_nodes": [
+        {
+          "kind": "channel"
+        }
+      ],
+      "expect_edges": [
+        {
+          "kind": "produces"
+        }
+      ],
+      "expect_abstain": false
+    },
+    {
+      "id": "MQ-RABBITMQ-01",
+      "marker": "samples/cartog-torture-js/src/services/rabbitmq.producer.service.ts:16",
+      "desc": "rabbitmq.producer.service service call chain",
+      "expect_nodes": [
+        {
+          "kind": "channel"
+        }
+      ],
+      "expect_edges": [
+        {
+          "kind": "produces"
+        }
+      ],
+      "expect_abstain": false
+    },
+    {
+      "id": "CACHE-READ-01",
+      "marker": "samples/cartog-torture-js/src/services/read.cache.service.ts:17",
+      "desc": "read.cache.service service call chain",
+      "expect_nodes": [
+        {
+          "kind": "function"
+        }
+      ],
+      "expect_edges": [
+        {
+          "kind": "calls"
+        }
+      ],
+      "expect_abstain": false
+    },
+    {
+      "id": "FILE-READ-01",
+      "marker": "samples/cartog-torture-js/src/services/read.file.service.ts:16",
+      "desc": "read.file.service service call chain",
+      "expect_nodes": [
+        {
+          "kind": "file"
+        }
+      ],
+      "expect_edges": [],
+      "expect_abstain": false
+    },
+    {
+      "id": "MQ-REDIS-01",
+      "marker": "samples/cartog-torture-js/src/services/redis.pubsub.service.ts:16",
+      "desc": "redis.pubsub.service service call chain",
+      "expect_nodes": [
+        {
+          "kind": "channel"
+        }
+      ],
+      "expect_edges": [
+        {
+          "kind": "produces"
+        }
+      ],
+      "expect_abstain": false
+    },
+    {
+      "id": "SCHED-REPEAT-01",
+      "marker": "samples/cartog-torture-js/src/services/repeat.job.service.ts:16",
+      "desc": "repeat.job.service service call chain",
+      "expect_nodes": [
+        {
+          "kind": "function"
+        }
+      ],
+      "expect_edges": [
+        {
+          "kind": "calls"
+        }
+      ],
+      "expect_abstain": false
+    },
+    {
+      "id": "RPC-REST-01",
+      "marker": "samples/cartog-torture-js/src/services/rest.service.ts:16",
+      "desc": "rest.service service call chain",
+      "expect_nodes": [
+        {
+          "kind": "function"
+        }
+      ],
+      "expect_edges": [
+        {
+          "kind": "calls"
+        }
+      ],
+      "expect_abstain": false
+    },
+    {
+      "id": "WS-ROOM-01",
+      "marker": "samples/cartog-torture-js/src/services/room.ws.service.ts:16",
+      "desc": "room.ws.service service call chain",
+      "expect_nodes": [
+        {
+          "kind": "function"
+        }
+      ],
+      "expect_edges": [
+        {
+          "kind": "calls"
+        }
+      ],
+      "expect_abstain": false
+    },
+    {
+      "id": "MQ-AZURE-01",
+      "marker": "samples/cartog-torture-js/src/services/servicebus.service.ts:16",
+      "desc": "servicebus.service service call chain",
+      "expect_nodes": [
+        {
+          "kind": "channel"
+        }
+      ],
+      "expect_edges": [
+        {
+          "kind": "produces"
+        }
+      ],
+      "expect_abstain": false
+    },
+    {
+      "id": "MQ-SQS-01",
+      "marker": "samples/cartog-torture-js/src/services/sqs.service.ts:16",
+      "desc": "sqs.service service call chain",
+      "expect_nodes": [
+        {
+          "kind": "channel"
+        }
+      ],
+      "expect_edges": [
+        {
+          "kind": "produces"
+        }
+      ],
+      "expect_abstain": false
+    },
+    {
+      "id": "SCHED-TIMER-01",
+      "marker": "samples/cartog-torture-js/src/services/timer.job.service.ts:16",
+      "desc": "timer.job.service service call chain",
+      "expect_nodes": [
+        {
+          "kind": "function"
+        }
+      ],
+      "expect_edges": [
+        {
+          "kind": "calls"
+        }
+      ],
+      "expect_abstain": false
+    },
+    {
+      "id": "DB-TX-01",
+      "marker": "samples/cartog-torture-js/src/services/transaction.db.service.ts:17",
+      "desc": "transaction.db.service service call chain",
+      "expect_nodes": [
+        {
+          "kind": "function"
+        }
+      ],
+      "expect_edges": [
+        {
+          "kind": "calls"
+        }
+      ],
+      "expect_abstain": false
+    },
+    {
+      "id": "RPC-TRPC-01",
+      "marker": "samples/cartog-torture-js/src/services/trpc.service.ts:16",
+      "desc": "trpc.service service call chain",
+      "expect_nodes": [
+        {
+          "kind": "function"
+        }
+      ],
+      "expect_edges": [
+        {
+          "kind": "calls"
+        }
+      ],
+      "expect_abstain": false
+    },
+    {
+      "id": "CACHE-TTL-01",
+      "marker": "samples/cartog-torture-js/src/services/ttl.cache.service.ts:16",
+      "desc": "ttl.cache.service service call chain",
+      "expect_nodes": [
+        {
+          "kind": "function"
+        }
+      ],
+      "expect_edges": [
+        {
+          "kind": "calls"
+        }
+      ],
+      "expect_abstain": false
+    },
+    {
+      "id": "FILE-UPLOAD-01",
+      "marker": "samples/cartog-torture-js/src/services/upload.file.service.ts:16",
+      "desc": "upload.file.service service call chain",
+      "expect_nodes": [
+        {
+          "kind": "file"
+        }
+      ],
+      "expect_edges": [],
+      "expect_abstain": false
+    },
+    {
+      "id": "API-S2",
+      "marker": "samples/cartog-torture-js/src/services/user.service.ts:17",
+      "desc": "user.service service call chain",
+      "expect_nodes": [],
+      "expect_edges": [],
+      "expect_abstain": true
+    },
+    {
+      "id": "TRAP-ARRAY-ADD-01",
+      "marker": "samples/cartog-torture-js/src/traps/builtins.ts:1",
+      "desc": "array.add (builtin, not channel)",
+      "expect_nodes": [],
+      "expect_edges": [],
+      "expect_abstain": true
+    },
+    {
+      "id": "TRAP-LOCAL-CLASS-01",
+      "marker": "samples/cartog-torture-js/src/traps/local-queue.ts:1",
+      "desc": "local class used as broker",
+      "expect_nodes": [],
+      "expect_edges": [],
+      "expect_abstain": true
+    },
+    {
+      "id": "TRAP-USER-PUBLISH-01",
+      "marker": "samples/cartog-torture-js/src/traps/user-methods.ts:1",
+      "desc": "ordinary publish() with no channel context",
+      "expect_nodes": [],
+      "expect_edges": [],
+      "expect_abstain": true
+    },
+    {
+      "id": "ROUTE-NEXT-NESTED-01",
+      "marker": "samples/cartog-torture-js/src/routes/next-app/users/route.ts:1",
+      "desc": "nested app router",
+      "expect_nodes": [
+        {
+          "kind": "route"
+        }
+      ],
+      "expect_edges": [
+        {
+          "kind": "serves"
+        }
+      ],
+      "expect_abstain": false
+    },
+    {
+      "id": "FILE-ASSET-02",
+      "marker": "samples/cartog-torture-js/src/render/view-assets/viewer.css:1",
+      "desc": "bundled CSS asset */",
+      "expect_nodes": [
+        {
+          "kind": "file"
+        }
+      ],
+      "expect_edges": [],
+      "expect_abstain": false
+    },
+    {
+      "id": "FILE-ASSET-01",
+      "marker": "samples/cartog-torture-js/src/render/view-assets/viewer.js:1",
+      "desc": "bundled viewer asset",
+      "expect_nodes": [
+        {
+          "kind": "file"
+        }
+      ],
+      "expect_edges": [],
+      "expect_abstain": false
+    },
+    {
+      "id": "CLI-ANALYZE",
+      "marker": "samples/cartog-torture-js/src/cli/commands/analyze.command.ts:2",
+      "desc": "01",
+      "expect_nodes": [
+        {
+          "kind": "command"
+        }
+      ],
+      "expect_edges": [
+        {
+          "kind": "serves"
+        }
+      ],
+      "expect_abstain": false
+    },
+    {
+      "id": "CLI-ANALYZE-02",
+      "marker": "samples/cartog-torture-js/src/cli/commands/analyze.command.ts:10",
+      "desc": "command \u2192 service call",
+      "expect_nodes": [
+        {
+          "kind": "command"
+        }
+      ],
+      "expect_edges": [
+        {
+          "kind": "serves"
+        }
+      ],
+      "expect_abstain": false
+    },
+    {
+      "id": "CLI-BUILD",
+      "marker": "samples/cartog-torture-js/src/cli/commands/build.command.ts:2",
+      "desc": "01",
+      "expect_nodes": [
+        {
+          "kind": "command"
+        }
+      ],
+      "expect_edges": [
+        {
+          "kind": "serves"
+        }
+      ],
+      "expect_abstain": false
+    },
+    {
+      "id": "CLI-BUILD-02",
+      "marker": "samples/cartog-torture-js/src/cli/commands/build.command.ts:10",
+      "desc": "command \u2192 service call",
+      "expect_nodes": [
+        {
+          "kind": "command"
+        }
+      ],
+      "expect_edges": [
+        {
+          "kind": "serves"
+        }
+      ],
+      "expect_abstain": false
+    },
+    {
+      "id": "CLI-CHECK",
+      "marker": "samples/cartog-torture-js/src/cli/commands/check.command.ts:2",
+      "desc": "01",
+      "expect_nodes": [
+        {
+          "kind": "command"
+        }
+      ],
+      "expect_edges": [
+        {
+          "kind": "serves"
+        }
+      ],
+      "expect_abstain": false
+    },
+    {
+      "id": "CLI-CHECK-02",
+      "marker": "samples/cartog-torture-js/src/cli/commands/check.command.ts:10",
+      "desc": "command \u2192 service call",
+      "expect_nodes": [
+        {
+          "kind": "command"
+        }
+      ],
+      "expect_edges": [
+        {
+          "kind": "serves"
+        }
+      ],
+      "expect_abstain": false
+    },
+    {
+      "id": "CLI-DIGEST",
+      "marker": "samples/cartog-torture-js/src/cli/commands/digest.command.ts:2",
+      "desc": "01",
+      "expect_nodes": [
+        {
+          "kind": "command"
+        }
+      ],
+      "expect_edges": [
+        {
+          "kind": "serves"
+        }
+      ],
+      "expect_abstain": false
+    },
+    {
+      "id": "CLI-DIGEST-02",
+      "marker": "samples/cartog-torture-js/src/cli/commands/digest.command.ts:10",
+      "desc": "command \u2192 service call",
+      "expect_nodes": [
+        {
+          "kind": "command"
+        }
+      ],
+      "expect_edges": [
+        {
+          "kind": "serves"
+        }
+      ],
+      "expect_abstain": false
+    },
+    {
+      "id": "CLI-DOCTOR",
+      "marker": "samples/cartog-torture-js/src/cli/commands/doctor.command.ts:2",
+      "desc": "01",
+      "expect_nodes": [
+        {
+          "kind": "command"
+        }
+      ],
+      "expect_edges": [
+        {
+          "kind": "serves"
+        }
+      ],
+      "expect_abstain": false
+    },
+    {
+      "id": "CLI-DOCTOR-02",
+      "marker": "samples/cartog-torture-js/src/cli/commands/doctor.command.ts:10",
+      "desc": "command \u2192 service call",
+      "expect_nodes": [
+        {
+          "kind": "command"
+        }
+      ],
+      "expect_edges": [
+        {
+          "kind": "serves"
+        }
+      ],
+      "expect_abstain": false
+    },
+    {
+      "id": "CLI-FLOW",
+      "marker": "samples/cartog-torture-js/src/cli/commands/flow.command.ts:2",
+      "desc": "01",
+      "expect_nodes": [
+        {
+          "kind": "command"
+        }
+      ],
+      "expect_edges": [
+        {
+          "kind": "serves"
+        }
+      ],
+      "expect_abstain": false
+    },
+    {
+      "id": "CLI-FLOW-02",
+      "marker": "samples/cartog-torture-js/src/cli/commands/flow.command.ts:10",
+      "desc": "command \u2192 service call",
+      "expect_nodes": [
+        {
+          "kind": "command"
+        }
+      ],
+      "expect_edges": [
+        {
+          "kind": "serves"
+        }
+      ],
+      "expect_abstain": false
+    },
+    {
+      "id": "CLI-MAP",
+      "marker": "samples/cartog-torture-js/src/cli/commands/map.command.ts:2",
+      "desc": "01",
+      "expect_nodes": [
+        {
+          "kind": "command"
+        }
+      ],
+      "expect_edges": [
+        {
+          "kind": "serves"
+        }
+      ],
+      "expect_abstain": false
+    },
+    {
+      "id": "CLI-MAP-02",
+      "marker": "samples/cartog-torture-js/src/cli/commands/map.command.ts:10",
+      "desc": "command \u2192 service call",
+      "expect_nodes": [
+        {
+          "kind": "command"
+        }
+      ],
+      "expect_edges": [
+        {
+          "kind": "serves"
+        }
+      ],
+      "expect_abstain": false
+    },
+    {
+      "id": "CLI-PARSE",
+      "marker": "samples/cartog-torture-js/src/cli/commands/parse.command.ts:2",
+      "desc": "01",
+      "expect_nodes": [
+        {
+          "kind": "command"
+        }
+      ],
+      "expect_edges": [
+        {
+          "kind": "serves"
+        }
+      ],
+      "expect_abstain": false
+    },
+    {
+      "id": "CLI-PARSE-02",
+      "marker": "samples/cartog-torture-js/src/cli/commands/parse.command.ts:10",
+      "desc": "command \u2192 service call",
+      "expect_nodes": [
+        {
+          "kind": "command"
+        }
+      ],
+      "expect_edges": [
+        {
+          "kind": "serves"
+        }
+      ],
+      "expect_abstain": false
+    },
+    {
+      "id": "CLI-QUERY",
+      "marker": "samples/cartog-torture-js/src/cli/commands/query.command.ts:2",
+      "desc": "01",
+      "expect_nodes": [
+        {
+          "kind": "command"
+        }
+      ],
+      "expect_edges": [
+        {
+          "kind": "serves"
+        }
+      ],
+      "expect_abstain": false
+    },
+    {
+      "id": "CLI-QUERY-02",
+      "marker": "samples/cartog-torture-js/src/cli/commands/query.command.ts:10",
+      "desc": "command \u2192 service call",
+      "expect_nodes": [
+        {
+          "kind": "command"
+        }
+      ],
+      "expect_edges": [
+        {
+          "kind": "serves"
+        }
+      ],
+      "expect_abstain": false
+    },
+    {
+      "id": "CLI-SCIP",
+      "marker": "samples/cartog-torture-js/src/cli/commands/scip.command.ts:2",
+      "desc": "01",
+      "expect_nodes": [
+        {
+          "kind": "command"
+        }
+      ],
+      "expect_edges": [
+        {
+          "kind": "serves"
+        }
+      ],
+      "expect_abstain": false
+    },
+    {
+      "id": "CLI-SCIP-02",
+      "marker": "samples/cartog-torture-js/src/cli/commands/scip.command.ts:10",
+      "desc": "command \u2192 service call",
+      "expect_nodes": [
+        {
+          "kind": "command"
+        }
+      ],
+      "expect_edges": [
+        {
+          "kind": "serves"
+        }
+      ],
+      "expect_abstain": false
+    },
+    {
+      "id": "CLI-VIEW",
+      "marker": "samples/cartog-torture-js/src/cli/commands/view.command.ts:2",
+      "desc": "01",
+      "expect_nodes": [
+        {
+          "kind": "command"
+        }
+      ],
+      "expect_edges": [
+        {
+          "kind": "serves"
+        }
+      ],
+      "expect_abstain": false
+    },
+    {
+      "id": "CLI-VIEW-02",
+      "marker": "samples/cartog-torture-js/src/cli/commands/view.command.ts:10",
+      "desc": "command \u2192 service call",
+      "expect_nodes": [
+        {
+          "kind": "command"
+        }
+      ],
+      "expect_edges": [
+        {
+          "kind": "serves"
+        }
+      ],
+      "expect_abstain": false
+    },
+    {
+      "id": "CLI-S-ANALYZE-01",
+      "marker": "samples/cartog-torture-js/src/cli/services/analyze.service.ts:17",
+      "desc": "analyze cli service call chain",
+      "expect_nodes": [
+        {
+          "kind": "command"
+        }
+      ],
+      "expect_edges": [
+        {
+          "kind": "serves"
+        }
+      ],
+      "expect_abstain": false
+    },
+    {
+      "id": "CLI-S-CHECK-01",
+      "marker": "samples/cartog-torture-js/src/cli/services/check.service.ts:17",
+      "desc": "check cli service call chain",
+      "expect_nodes": [
+        {
+          "kind": "command"
+        }
+      ],
+      "expect_edges": [
+        {
+          "kind": "serves"
+        }
+      ],
+      "expect_abstain": false
+    },
+    {
+      "id": "CLI-S-DOCTOR-01",
+      "marker": "samples/cartog-torture-js/src/cli/services/doctor.service.ts:17",
+      "desc": "doctor cli service call chain",
+      "expect_nodes": [
+        {
+          "kind": "command"
+        }
+      ],
+      "expect_edges": [
+        {
+          "kind": "serves"
+        }
+      ],
+      "expect_abstain": false
+    },
+    {
+      "id": "CLI-S-FLOW-01",
+      "marker": "samples/cartog-torture-js/src/cli/services/flow.service.ts:17",
+      "desc": "flow cli service call chain",
+      "expect_nodes": [
+        {
+          "kind": "command"
+        }
+      ],
+      "expect_edges": [
+        {
+          "kind": "serves"
+        }
+      ],
+      "expect_abstain": false
+    },
+    {
+      "id": "CLI-S-MAP-01",
+      "marker": "samples/cartog-torture-js/src/cli/services/map.service.ts:17",
+      "desc": "map cli service call chain",
+      "expect_nodes": [
+        {
+          "kind": "command"
+        }
+      ],
+      "expect_edges": [
+        {
+          "kind": "serves"
+        }
+      ],
+      "expect_abstain": false
+    },
+    {
+      "id": "CLI-S-VIEW-01",
+      "marker": "samples/cartog-torture-js/src/cli/services/view.service.ts:17",
+      "desc": "view cli service call chain",
+      "expect_nodes": [
+        {
+          "kind": "command"
+        }
+      ],
+      "expect_edges": [
+        {
+          "kind": "serves"
+        }
+      ],
+      "expect_abstain": false
+    }
+  ]
+}

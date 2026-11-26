@@ -1,17 +1,14 @@
-"""Clone the pinned sample repositories used by integration tests.
+"""Materialize the pinned adversarial sample repositories.
 
-``samples/`` is gitignored, so a fresh clone of Cartog has no real-world
-repositories. Integration tests skip when a sample is missing (see
-``tests/conftest.py``); run this script to enable them.
+``samples/`` is gitignored, so a fresh clone of Cartog has no sample repos.
+The two torture samples are generated locally by scripts in ``scripts/`` —
+there is no network clone. Integration tests skip when a sample is missing
+(see ``tests/conftest.py``); run this script to generate them.
 
 Usage:
-    python scripts/fetch_samples.py                  # fetch every pinned sample
-    python scripts/fetch_samples.py click flask      # fetch selected samples
-    python scripts/fetch_samples.py --samples-dir D  # alternative destination
-
-Each repository is cloned from ``scripts/samples.lock`` and checked out at the
-recorded commit. Existing directories are verified but never modified; if the
-checkout differs from the lock the script fails and tells you why.
+    python scripts/fetch_samples.py                  # generate all pinned samples
+    python scripts/fetch_samples.py cartog-torture-js  # generate one
+    python scripts/fetch_samples.py --samples-dir D    # alternative destination
 """
 
 from __future__ import annotations
@@ -26,57 +23,27 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 LOCK_FILE = Path(__file__).resolve().parent / "samples.lock"
 
 
-def run_git(*args: str, cwd: Path | None = None) -> str:
-    """Run git with a list of arguments (never a shell string)."""
+def generate_one(name: str, spec: dict[str, str], samples_dir: Path) -> str:
+    """Generate one sample by running its pinned generator script."""
+    dest = samples_dir / name
+    if dest.is_dir() and any(dest.rglob("*")):
+        count = sum(1 for _ in dest.rglob("*") if _.is_file())
+        return f"{name}: already present ({count} files)"
+    generator = REPO_ROOT / spec["generator"]
+    if not generator.is_file():
+        raise RuntimeError(f"missing generator: {generator}")
+    samples_dir.mkdir(parents=True, exist_ok=True)
+    print(f"{name}: generating via {spec['generator']}")
     proc = subprocess.run(
-        ["git", *args],
-        cwd=str(cwd) if cwd else None,
+        [sys.executable, str(generator)],
+        cwd=REPO_ROOT,
         capture_output=True,
         text=True,
         check=False,
     )
     if proc.returncode != 0:
-        detail = (proc.stderr or proc.stdout).strip()
-        raise RuntimeError(f"git {' '.join(args)} failed ({proc.returncode}): {detail}")
-    return proc.stdout.strip()
-
-
-def head_sha(dest: Path) -> str | None:
-    if not (dest / ".git").exists():
-        return None
-    try:
-        return run_git("rev-parse", "HEAD", cwd=dest)
-    except RuntimeError:
-        return None
-
-
-def fetch_one(name: str, spec: dict[str, str], samples_dir: Path) -> str:
-    """Fetch one sample and return a one-line status."""
-    dest = samples_dir / name
-    expected = spec["sha"]
-
-    if dest.exists():
-        actual = head_sha(dest)
-        if actual is None:
-            raise RuntimeError(
-                f"{dest} exists but is not a git checkout; move it away and rerun"
-            )
-        if actual != expected:
-            raise RuntimeError(
-                f"{dest} is at {actual}, lock expects {expected}; "
-                "move it away and rerun (the script never rewrites a checkout)"
-            )
-        return f"{name}: already at {expected[:12]}"
-
-    samples_dir.mkdir(parents=True, exist_ok=True)
-    print(f"{name}: cloning {spec['url']} -> {dest}")
-    run_git("clone", "--no-checkout", spec["url"], str(dest))
-    run_git("checkout", "--detach", expected, cwd=dest)
-
-    actual = head_sha(dest)
-    if actual != expected:
-        raise RuntimeError(f"{name}: checkout ended at {actual}, expected {expected}")
-    return f"{name}: checked out {expected[:12]}"
+        raise RuntimeError(f"generator failed: {(proc.stderr or proc.stdout).strip()}")
+    return f"{name}: generated"
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -100,7 +67,7 @@ def main(argv: list[str] | None = None) -> int:
     failures = 0
     for name in names:
         try:
-            print(fetch_one(name, samples[name], samples_dir))
+            print(generate_one(name, samples[name], samples_dir))
         except RuntimeError as exc:
             failures += 1
             print(f"error: {exc}", file=sys.stderr)

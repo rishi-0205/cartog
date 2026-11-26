@@ -1,0 +1,7 @@
+services:
+  redis: { image: redis:7-alpine }
+  rabbitmq: { image: rabbitmq:3-management }
+  kafka: { image: bitnami/kafka }
+  worker: { build: ., command: node bin/cli.js }
+  web: { build: ., command: node src/routes/express-app.ts }
+  scheduler: { build: ., command: node src/scheduler/cron.ts }

@@ -1,0 +1,7 @@
+[[subsystem]]
+name = "CLI"
+pattern = "src/cli/**"
+
+[[subsystem]]
+name = "Messaging"
+pattern = "src/queues/**"

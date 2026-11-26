@@ -26,8 +26,12 @@ cartog-out/
 # Session scratch space (deleted at the end of every session)
 .scratch/
 
-# Real repo samples for manual verification (Section 11.2)
-samples/
+# Adversarial conformance samples are committed as test fixtures.
+# Keep generated outputs out of them.
+samples/**/cartog-out/
+samples/**/__pycache__/
+samples/**/.pytest_cache/
+samples/**/node_modules/
 
 # Node
 node_modules/
