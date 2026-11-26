@@ -944,13 +944,13 @@ class JsAdapter(LanguageAdapter):
     ) -> list[dict[str, Any]]:
         """Extract message-broker channel candidates from JS/TS source.
 
-        Detects:
-        - ``new X("name", ...)`` where X is not a builtin → binding candidate.
-        - ``new Worker("name", fn)`` → worker candidate (worker + processor).
-        - Calls on a channel binding with a payload argument → producer candidate.
-        - Calls on a channel binding with a function argument → consumer candidate.
-        - Direct-name calls ``publish("name", data)`` / ``subscribe("name", fn)``
-          classified by argument shape.
+        Returns raw candidates that are classified and paired in merge.py:
+        - ``binding``: a variable bound to a channel name via
+          ``new X("name", ...)`` (X not a builtin).
+        - ``member_call``: a call ``obj.method(...args)`` where obj is a
+          potential channel binding (resolved cross-file in merge.py).
+        - ``direct_call``: a call ``fn("name", ...)`` with a string first arg.
+        - ``worker``: ``new Worker("name", fn)``.
         """
         candidates: list[dict[str, Any]] = []
 
@@ -990,8 +990,7 @@ class JsAdapter(LanguageAdapter):
                 cur = cur.parent
             return None
 
-        channel_bindings: dict[str, str] = {}
-
+        # First pass: bindings and workers.
         def _walk_first_pass(node: tree_sitter.Node):
             if node.type == "variable_declarator":
                 name_node = node.child_by_field_name("name")
@@ -1034,13 +1033,25 @@ class JsAdapter(LanguageAdapter):
                                         "processor_is_arrow": processor_node is not None and processor_node.type == "arrow_function",
                                     })
                                 elif ctor_name not in ("Set", "Map", "Array", "Object", "Date", "RegExp", "Error", "Promise"):
-                                    channel_bindings[var_name] = channel_name
+                                    candidates.append({
+                                        "kind": "binding",
+                                        "binding": var_name,
+                                        "channel": channel_name,
+                                        "file": path,
+                                        "range": [
+                                            value_node.start_point.row + 1,
+                                            value_node.start_point.column,
+                                            value_node.end_point.row + 1,
+                                            value_node.end_point.column,
+                                        ],
+                                    })
 
             for child in node.children:
                 _walk_first_pass(child)
 
         _walk_first_pass(tree.root_node)
 
+        # Second pass: member calls and direct calls.
         def _walk_second_pass(node: tree_sitter.Node):
             if node.type == "call_expression":
                 fn_node = node.child_by_field_name("function")
@@ -1051,46 +1062,35 @@ class JsAdapter(LanguageAdapter):
                         if c.type not in ("(", ")", ",")
                     ]
 
+                    rng = [
+                        node.start_point.row + 1,
+                        node.start_point.column,
+                        node.end_point.row + 1,
+                        node.end_point.column,
+                    ]
+
                     if fn_node.type == "member_expression":
                         obj_node = fn_node.child_by_field_name("object")
                         prop_node = fn_node.child_by_field_name("property")
                         if obj_node and prop_node:
-                            obj_name = _get_node_text(obj_node).strip()
-                            if obj_name in channel_bindings:
-                                channel_name = channel_bindings[obj_name]
-                                has_payload = any(
+                            candidates.append({
+                                "kind": "member_call",
+                                "object": _get_node_text(obj_node).strip(),
+                                "method": _get_node_text(prop_node).strip(),
+                                "has_payload": any(
                                     c.type not in ("arrow_function", "function_expression", "function")
                                     for c in named_args
-                                )
-                                has_function = any(
+                                ),
+                                "has_function": any(
                                     c.type in ("arrow_function", "function_expression", "function")
                                     for c in named_args
-                                )
-                                rng = [
-                                    node.start_point.row + 1,
-                                    node.start_point.column,
-                                    node.end_point.row + 1,
-                                    node.end_point.column,
-                                ]
-                                if has_payload and not has_function:
-                                    candidates.append({
-                                        "kind": "producer",
-                                        "channel": channel_name,
-                                        "file": path,
-                                        "function": _enclosing_function(node),
-                                        "range": rng,
-                                    })
-                                elif has_function and not has_payload:
-                                    candidates.append({
-                                        "kind": "consumer",
-                                        "channel": channel_name,
-                                        "file": path,
-                                        "function": _enclosing_function(node),
-                                        "range": rng,
-                                    })
+                                ),
+                                "function": _enclosing_function(node),
+                                "file": path,
+                                "range": rng,
+                            })
 
-                    if fn_node.type == "identifier":
-                        fn_name = _get_node_text(fn_node).strip().lower()
+                    elif fn_node.type == "identifier":
                         if named_args and named_args[0].type == "string":
                             channel_name = _clean_str(named_args[0])
                             if channel_name is not None:
@@ -1102,28 +1102,16 @@ class JsAdapter(LanguageAdapter):
                                     c.type in ("arrow_function", "function_expression", "function")
                                     for c in named_args[1:]
                                 )
-                                rng = [
-                                    node.start_point.row + 1,
-                                    node.start_point.column,
-                                    node.end_point.row + 1,
-                                    node.end_point.column,
-                                ]
-                                if has_payload and not has_function:
-                                    candidates.append({
-                                        "kind": "producer",
-                                        "channel": channel_name,
-                                        "file": path,
-                                        "function": _enclosing_function(node),
-                                        "range": rng,
-                                    })
-                                elif has_function and not has_payload:
-                                    candidates.append({
-                                        "kind": "consumer",
-                                        "channel": channel_name,
-                                        "file": path,
-                                        "function": _enclosing_function(node),
-                                        "range": rng,
-                                    })
+                                candidates.append({
+                                    "kind": "direct_call",
+                                    "function_name": _get_node_text(fn_node).strip().lower(),
+                                    "channel": channel_name,
+                                    "has_payload": has_payload,
+                                    "has_function": has_function,
+                                    "function": _enclosing_function(node),
+                                    "file": path,
+                                    "range": rng,
+                                })
 
             for child in node.children:
                 _walk_second_pass(child)
