@@ -939,6 +939,187 @@ class JsAdapter(LanguageAdapter):
 
         return None
 
+    def extract_channel_candidates(
+        self, tree: tree_sitter.Tree, source_bytes: bytes, path: str
+    ) -> list[dict[str, Any]]:
+        """Extract message-broker channel candidates from JS/TS source.
+
+        Returns raw candidates that are classified and paired in merge.py:
+        - ``binding``: a variable bound to a channel name via
+          ``new X("name", ...)`` (X not a builtin).
+        - ``member_call``: a call ``obj.method(...args)`` where obj is a
+          potential channel binding (resolved cross-file in merge.py).
+        - ``direct_call``: a call ``fn("name", ...)`` with a string first arg.
+        - ``worker``: ``new Worker("name", fn)``.
+        """
+        candidates: list[dict[str, Any]] = []
+
+        def _get_node_text(node: tree_sitter.Node) -> str:
+            return source_bytes[node.start_byte : node.end_byte].decode(
+                "utf-8", errors="replace"
+            )
+
+        def _clean_str(node: tree_sitter.Node) -> str | None:
+            text = _get_node_text(node).strip()
+            if (text.startswith('"') and text.endswith('"')) or (
+                text.startswith("'") and text.endswith("'")
+            ):
+                return text[1:-1]
+            if text.startswith("`") and text.endswith("`"):
+                return text[1:-1]
+            return None
+
+        def _enclosing_function(node: tree_sitter.Node) -> str | None:
+            cur = node.parent
+            while cur is not None:
+                if cur.type in (
+                    "function_declaration",
+                    "generator_function_declaration",
+                    "method_definition",
+                    "arrow_function",
+                    "function_expression",
+                ):
+                    name_node = cur.child_by_field_name("name")
+                    if name_node:
+                        return _get_node_text(name_node).strip()
+                    if cur.type == "arrow_function" and cur.parent and cur.parent.type == "variable_declarator":
+                        vn = cur.parent.child_by_field_name("name")
+                        if vn and vn.type == "identifier":
+                            return _get_node_text(vn).strip()
+                    return None
+                cur = cur.parent
+            return None
+
+        # First pass: bindings and workers.
+        def _walk_first_pass(node: tree_sitter.Node):
+            if node.type == "variable_declarator":
+                name_node = node.child_by_field_name("name")
+                value_node = node.child_by_field_name("value")
+                if name_node and value_node and value_node.type == "new_expression":
+                    var_name = _get_node_text(name_node).strip()
+                    callee = value_node.child_by_field_name("constructor")
+                    args = value_node.child_by_field_name("arguments")
+                    if callee and args:
+                        callee_text = _get_node_text(callee).strip()
+                        named_args = [
+                            c for c in args.children
+                            if c.type not in ("(", ")", ",")
+                        ]
+                        if named_args and named_args[0].type == "string":
+                            channel_name = _clean_str(named_args[0])
+                            if channel_name is not None:
+                                ctor_name = callee_text.split(".")[-1] if "." in callee_text else callee_text
+                                if ctor_name == "Worker":
+                                    processor_node = named_args[1] if len(named_args) > 1 else None
+                                    processor_range = None
+                                    if processor_node:
+                                        processor_range = [
+                                            processor_node.start_point.row + 1,
+                                            processor_node.start_point.column,
+                                            processor_node.end_point.row + 1,
+                                            processor_node.end_point.column,
+                                        ]
+                                    candidates.append({
+                                        "kind": "worker",
+                                        "channel": channel_name,
+                                        "file": path,
+                                        "range": [
+                                            value_node.start_point.row + 1,
+                                            value_node.start_point.column,
+                                            value_node.end_point.row + 1,
+                                            value_node.end_point.column,
+                                        ],
+                                        "processor_range": processor_range,
+                                        "processor_is_arrow": processor_node is not None and processor_node.type == "arrow_function",
+                                    })
+                                elif ctor_name not in ("Set", "Map", "Array", "Object", "Date", "RegExp", "Error", "Promise"):
+                                    candidates.append({
+                                        "kind": "binding",
+                                        "binding": var_name,
+                                        "channel": channel_name,
+                                        "file": path,
+                                        "range": [
+                                            value_node.start_point.row + 1,
+                                            value_node.start_point.column,
+                                            value_node.end_point.row + 1,
+                                            value_node.end_point.column,
+                                        ],
+                                    })
+
+            for child in node.children:
+                _walk_first_pass(child)
+
+        _walk_first_pass(tree.root_node)
+
+        # Second pass: member calls and direct calls.
+        def _walk_second_pass(node: tree_sitter.Node):
+            if node.type == "call_expression":
+                fn_node = node.child_by_field_name("function")
+                args_node = node.child_by_field_name("arguments")
+                if fn_node and args_node:
+                    named_args = [
+                        c for c in args_node.children
+                        if c.type not in ("(", ")", ",")
+                    ]
+
+                    rng = [
+                        node.start_point.row + 1,
+                        node.start_point.column,
+                        node.end_point.row + 1,
+                        node.end_point.column,
+                    ]
+
+                    if fn_node.type == "member_expression":
+                        obj_node = fn_node.child_by_field_name("object")
+                        prop_node = fn_node.child_by_field_name("property")
+                        if obj_node and prop_node:
+                            candidates.append({
+                                "kind": "member_call",
+                                "object": _get_node_text(obj_node).strip(),
+                                "method": _get_node_text(prop_node).strip(),
+                                "has_payload": any(
+                                    c.type not in ("arrow_function", "function_expression", "function")
+                                    for c in named_args
+                                ),
+                                "has_function": any(
+                                    c.type in ("arrow_function", "function_expression", "function")
+                                    for c in named_args
+                                ),
+                                "function": _enclosing_function(node),
+                                "file": path,
+                                "range": rng,
+                            })
+
+                    elif fn_node.type == "identifier":
+                        if named_args and named_args[0].type == "string":
+                            channel_name = _clean_str(named_args[0])
+                            if channel_name is not None:
+                                has_payload = len(named_args) > 1 and any(
+                                    c.type not in ("arrow_function", "function_expression", "function")
+                                    for c in named_args[1:]
+                                )
+                                has_function = len(named_args) > 1 and any(
+                                    c.type in ("arrow_function", "function_expression", "function")
+                                    for c in named_args[1:]
+                                )
+                                candidates.append({
+                                    "kind": "direct_call",
+                                    "function_name": _get_node_text(fn_node).strip().lower(),
+                                    "channel": channel_name,
+                                    "has_payload": has_payload,
+                                    "has_function": has_function,
+                                    "function": _enclosing_function(node),
+                                    "file": path,
+                                    "range": rng,
+                                })
+
+            for child in node.children:
+                _walk_second_pass(child)
+
+        _walk_second_pass(tree.root_node)
+
+        return candidates
+
     def extract_patterns(
         self, tree: tree_sitter.Tree, source_bytes: bytes, path: str
     ) -> list[dict[str, Any]]:

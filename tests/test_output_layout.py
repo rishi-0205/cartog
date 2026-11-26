@@ -74,7 +74,7 @@ def test_output_layout_paths(tmp_path):
     assert layout.location.latest_dir is not None
     assert (layout.location.latest_dir / "graph.json").is_file()
     meta = json.loads((layout.run_dir / "meta.json").read_text(encoding="utf-8"))
-    assert meta["schema_version"] == "2.1.0"
+    assert meta["schema_version"] == "2.2.0"
     assert meta["cartog_version"] == __version__
     assert meta["started_at"] and meta["finished_at"]
     assert meta["timings"]["total_ms"] == 12.5
@@ -109,7 +109,7 @@ def test_meta_json_has_versions_and_timings(tmp_path):
     meta = _meta(layout.location.run_id)
     layout.write_json("meta.json", meta, pretty=True)
     loaded = json.loads((layout.run_dir / "meta.json").read_text(encoding="utf-8"))
-    assert loaded["schema_version"] == "2.1.0"
+    assert loaded["schema_version"] == "2.2.0"
     assert loaded["cartog_version"] == __version__
     assert loaded["run_id"] == "20261118T100002Z"
     assert loaded["started_at"] <= loaded["finished_at"]
