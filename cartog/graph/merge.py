@@ -335,7 +335,7 @@ def build_graph(
             kind = pat["kind"]
             # Channel candidates are collected for a cross-file pairing pass
             # (Part 2, messaging) and are not turned into nodes here.
-            if kind in ("binding", "producer", "consumer", "worker", "member_call", "direct_call"):
+            if kind in ("binding", "producer", "consumer", "worker", "member_call", "direct_call", "for_loop_consumer"):
                 channel_candidates.append(pat)
                 continue
             name = pat["name"]
@@ -544,17 +544,30 @@ def build_graph(
             ch_name = global_bindings.get(f"{cand['file']}:{obj}")
             if ch_name is None:
                 ch_name = binding_by_var.get(obj)
+            # Generic heuristic: if object is not a binding but the call has
+            # a string first arg, use that string as a potential channel name.
+            if ch_name is None and cand.get("first_str") is not None:
+                ch_name = cand["first_str"]
             if ch_name is None:
                 continue
             if cand["has_payload"] and not cand["has_function"]:
                 classified.append({**cand, "kind": "producer", "channel": ch_name})
             elif cand["has_function"] and not cand["has_payload"]:
                 classified.append({**cand, "kind": "consumer", "channel": ch_name})
+            elif cand.get("first_str") is not None and not cand["has_function"]:
+                classified.append({**cand, "kind": "producer", "channel": ch_name})
         elif kind == "direct_call":
             ch_name = cand["channel"]
             if cand["has_payload"] and not cand["has_function"]:
                 classified.append({**cand, "kind": "producer", "channel": ch_name})
             elif cand["has_function"] and not cand["has_payload"]:
+                classified.append({**cand, "kind": "consumer", "channel": ch_name})
+        elif kind == "for_loop_consumer":
+            obj = cand["object"]
+            ch_name = global_bindings.get(f"{cand['file']}:{obj}")
+            if ch_name is None:
+                ch_name = binding_by_var.get(obj)
+            if ch_name is not None:
                 classified.append({**cand, "kind": "consumer", "channel": ch_name})
 
     # Step 3: Group by channel name and apply pairing rule.

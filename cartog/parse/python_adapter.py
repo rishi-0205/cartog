@@ -518,6 +518,288 @@ class PythonAdapter(LanguageAdapter):
         patterns.sort(key=lambda p: (p["range"][0], p["name"]))
         return patterns
 
+    def extract_channel_candidates(
+        self, tree: tree_sitter.Tree, source_bytes: bytes, path: str
+    ) -> list[dict[str, Any]]:
+        """Extract message-broker channel candidates from Python source.
+
+        Uses the same generic structural detector as the JS adapter:
+        1. Binding: ``X("name", ...)`` where X is not a builtin -> binding (X -> "name")
+        2. Member call: ``obj.method(...args)`` -> classified in merge.py via global binding map
+        3. Direct call: ``fn("name", ...)`` with string first arg
+        4. Decorator: ``@decorator(name="...")`` on a function -> processor candidate
+        5. For-loop consumer: ``for x in binding:`` -> enclosing function is consumer
+        6. Worker: ``X("name", fn)`` where X name contains "Worker"
+        """
+        candidates: list[dict[str, Any]] = []
+
+        def _get_node_text(node: tree_sitter.Node) -> str:
+            return source_bytes[node.start_byte : node.end_byte].decode(
+                "utf-8", errors="replace"
+            )
+
+        def _clean_str(node: tree_sitter.Node) -> str | None:
+            text = _get_node_text(node).strip()
+            if (text.startswith('"') and text.endswith('"')) or (
+                text.startswith("'") and text.endswith("'")
+            ):
+                return text[1:-1]
+            if text.startswith('"""') and text.endswith('"""'):
+                return text[3:-3]
+            if text.startswith("'''") and text.endswith("'''"):
+                return text[3:-3]
+            return None
+
+        def _kwarg_channel(call_node: tree_sitter.Node) -> str | None:
+            """Extract channel name from common kwargs (routing_key, queue, topic, channel, name)."""
+            for child in call_node.children:
+                if child.type == "keyword_argument":
+                    key_node = child.child_by_field_name("name")
+                    val_node = child.child_by_field_name("value")
+                    if key_node and val_node:
+                        key = _get_node_text(key_node).strip()
+                        if key in ("routing_key", "queue", "topic", "channel", "name"):
+                            ch = _clean_str(val_node)
+                            if ch is not None:
+                                return ch
+            return None
+
+        def _enclosing_function(node: tree_sitter.Node) -> str | None:
+            cur = node.parent
+            while cur is not None:
+                if cur.type == "function_definition":
+                    name_node = cur.child_by_field_name("name")
+                    if name_node:
+                        return _get_node_text(name_node).strip()
+                    return None
+                cur = cur.parent
+            return None
+
+        # First pass: bindings, workers, decorators.
+        def _walk_first_pass(node: tree_sitter.Node):
+            # Binding or worker: X = X("name", ...) or X = X("name", fn)
+            if node.type == "assignment":
+                left = node.child_by_field_name("left")
+                right = node.child_by_field_name("right")
+                if left and right and right.type == "call":
+                    var_name = _get_node_text(left).strip()
+                    fn_node = right.child_by_field_name("function")
+                    args_node = right.child_by_field_name("arguments")
+                    if fn_node and args_node:
+                        if fn_node.type == "identifier":
+                            callee_name = _get_node_text(fn_node).strip()
+                        elif fn_node.type == "attribute":
+                            attr = fn_node.child_by_field_name("attribute")
+                            callee_name = _get_node_text(attr).strip() if attr else ""
+                        else:
+                            callee_name = ""
+
+                        named_args = [
+                            c for c in args_node.children
+                            if c.type not in ("(", ")", ",")
+                        ]
+
+                        # Check first positional string arg
+                        first_str = None
+                        if named_args and named_args[0].type == "string":
+                            first_str = _clean_str(named_args[0])
+
+                        # Also check kwargs for channel name
+                        kw_ch = _kwarg_channel(right)
+
+                        if first_str is not None or kw_ch is not None:
+                            channel_name = first_str if first_str is not None else kw_ch
+                            if channel_name is not None:
+                                # Worker detection
+                                if "worker" in callee_name.lower():
+                                    processor_node = None
+                                    processor_range = None
+                                    if len(named_args) > 1:
+                                        processor_node = named_args[1]
+                                        processor_range = [
+                                            processor_node.start_point.row + 1,
+                                            processor_node.start_point.column,
+                                            processor_node.end_point.row + 1,
+                                            processor_node.end_point.column,
+                                        ]
+                                    candidates.append({
+                                        "kind": "worker",
+                                        "channel": channel_name,
+                                        "file": path,
+                                        "range": [
+                                            right.start_point.row + 1,
+                                            right.start_point.column,
+                                            right.end_point.row + 1,
+                                            right.end_point.column,
+                                        ],
+                                        "processor_range": processor_range,
+                                        "processor_is_arrow": False,
+                                    })
+                                elif callee_name not in ("set", "dict", "list", "tuple", "str", "int", "float", "bool", "bytes", "print", "len", "range", "open", "sorted", "map", "filter", "zip", "enumerate"):
+                                    candidates.append({
+                                        "kind": "binding",
+                                        "binding": var_name,
+                                        "channel": channel_name,
+                                        "file": path,
+                                        "range": [
+                                            right.start_point.row + 1,
+                                            right.start_point.column,
+                                            right.end_point.row + 1,
+                                            right.end_point.column,
+                                        ],
+                                    })
+
+            # Decorator detection: @decorator(name="...") on a function
+            if node.type == "decorated_definition":
+                for child in node.children:
+                    if child.type == "decorator":
+                        dec_text = _get_node_text(child).strip()
+                        m = re.search(r'name\s*=\s*["\']([^"\']+)["\']', dec_text)
+                        if m:
+                            channel_name = m.group(1)
+                            for c in node.children:
+                                if c.type == "function_definition":
+                                    fn_name_node = c.child_by_field_name("name")
+                                    if fn_name_node:
+                                        candidates.append({
+                                            "kind": "worker",
+                                            "channel": channel_name,
+                                            "file": path,
+                                            "range": [
+                                                c.start_point.row + 1,
+                                                c.start_point.column,
+                                                c.end_point.row + 1,
+                                                c.end_point.column,
+                                            ],
+                                            "processor_range": [
+                                                c.start_point.row + 1,
+                                                c.start_point.column,
+                                                c.end_point.row + 1,
+                                                c.end_point.column,
+                                            ],
+                                            "processor_is_arrow": False,
+                                        })
+
+            for child in node.children:
+                _walk_first_pass(child)
+
+        _walk_first_pass(tree.root_node)
+
+        # Second pass: member calls and direct calls.
+        def _walk_second_pass(node: tree_sitter.Node):
+            if node.type == "call":
+                fn_node = node.child_by_field_name("function")
+                args_node = node.child_by_field_name("arguments")
+                if fn_node and args_node:
+                    named_args = [
+                        c for c in args_node.children
+                        if c.type not in ("(", ")", ",")
+                    ]
+
+                    rng = [
+                        node.start_point.row + 1,
+                        node.start_point.column,
+                        node.end_point.row + 1,
+                        node.end_point.column,
+                    ]
+
+                    if fn_node.type == "attribute":
+                        # member call: obj.method(...args)
+                        obj_node = fn_node.child_by_field_name("object")
+                        attr_node = fn_node.child_by_field_name("attribute")
+                        if obj_node and attr_node:
+                            candidates.append({
+                                "kind": "member_call",
+                                "object": _get_node_text(obj_node).strip(),
+                                "method": _get_node_text(attr_node).strip(),
+                                "has_payload": any(
+                                    c.type not in ("lambda", "function_definition")
+                                    for c in named_args
+                                ),
+                                "has_function": any(
+                                    c.type in ("lambda", "function_definition")
+                                    for c in named_args
+                                ),
+                                "first_str": _clean_str(named_args[0]) if named_args and named_args[0].type == "string" else None,
+                                "function": _enclosing_function(node),
+                                "file": path,
+                                "range": rng,
+                            })
+
+                    elif fn_node.type == "identifier":
+                        # direct call: fn("name", ...) or fn(..., name="...")
+                        # Check first positional string
+                        first_str = None
+                        if named_args and named_args[0].type == "string":
+                            first_str = _clean_str(named_args[0])
+                        # Check kwargs
+                        kw_ch = _kwarg_channel(node)
+                        channel_name = first_str if first_str is not None else kw_ch
+                        if channel_name is not None:
+                            has_payload = len(named_args) > 1 and any(
+                                c.type not in ("lambda", "function_definition", "string")
+                                for c in named_args[1:]
+                            )
+                            has_function = len(named_args) > 1 and any(
+                                c.type in ("lambda", "function_definition")
+                                for c in named_args[1:]
+                            )
+                            # Also check if any arg is a function/lambda
+                            if not has_function and not has_payload and len(named_args) > 1:
+                                # Could be producer with payload that's a variable
+                                has_payload = True
+                            candidates.append({
+                                "kind": "direct_call",
+                                "function_name": _get_node_text(fn_node).strip().lower(),
+                                "channel": channel_name,
+                                "has_payload": has_payload,
+                                "has_function": has_function,
+                                "function": _enclosing_function(node),
+                                "file": path,
+                                "range": rng,
+                            })
+
+            # For-loop consumer detection: for x in binding: -> enclosing function is consumer
+            if node.type == "for_statement":
+                # for_statement: for X in Y: body
+                # children: for, X, in, Y, :, body
+                # The iterable is the node after 'in'
+                iterable = None
+                found_in = False
+                for child in node.children:
+                    if child.type == "in":
+                        found_in = True
+                        continue
+                    if found_in and child.type not in (":",):
+                        iterable = child
+                        break
+                if iterable and iterable.type == "identifier":
+                    binding_name = _get_node_text(iterable).strip()
+                    # Record as a member_call-like candidate so merge.py can
+                    # resolve it via the global binding map. We use a special
+                    # kind "for_loop_consumer" that merge.py handles.
+                    candidates.append({
+                        "kind": "for_loop_consumer",
+                        "object": binding_name,
+                        "has_payload": False,
+                        "has_function": True,
+                        "function": _enclosing_function(node),
+                        "file": path,
+                        "range": [
+                            node.start_point.row + 1,
+                            node.start_point.column,
+                            node.end_point.row + 1,
+                            node.end_point.column,
+                        ],
+                    })
+
+            for child in node.children:
+                _walk_second_pass(child)
+
+        _walk_second_pass(tree.root_node)
+
+        return candidates
+
     def resolve_import(
         self, record: ImportRecord, from_file: str, project_context: ProjectContext
     ) -> str:
