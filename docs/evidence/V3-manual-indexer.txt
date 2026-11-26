@@ -1,0 +1,11 @@
+.scratch/v3/manual-venv850.scip docs 91 {'click 2247b35ea1c47c727d7a06e51fa280e12a863ff6': 17323, 'python-stdlib 3.11': 6303, 'click 8.1.7': 4806}
+.scratch/v3/manual-venv850-python3.scip docs 91 {'click 2247b35ea1c47c727d7a06e51fa280e12a863ff6': 17323, 'python-stdlib 3.11': 6303, 'click 8.5.0': 4857}
+
+Commands (PowerShell, NODE_OPTIONS loads cartog\scip\windows_shim.js):
+  $env:VIRTUAL_ENV = <repo>\.scratch\v3\venv-click850
+  $env:PATH = "$env:VIRTUAL_ENV\Scripts;$env:PATH"
+  scip-python index --cwd <abs samples\click> --project-name click --output <abs>\.scratch\v3\manual-venv850.scip
+  copy .scratch\v3\venv-click850\Scripts\python.exe .scratch\v3\venv-click850\Scripts\python3.exe
+  scip-python index --cwd <abs samples\click> --project-name click --output <abs>\.scratch\v3\manual-venv850-python3.scip
+
+Both runs report the same 91 files in the log; the only environment difference is the python3.exe copy.

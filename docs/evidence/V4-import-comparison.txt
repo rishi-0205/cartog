@@ -1,0 +1,103 @@
+# V4 evidence - raw import edges compared with grimp and madge
+Date: 2026-11-24
+Branch: feature/verification
+
+Scope: `scripts/compare_imports.py` scores cartog's file-to-file import edges
+against grimp (Python) and madge (JS/TS), prints precision/recall plus the
+discrepancies, and the results and exclusions are written into
+`docs/dev/VERIFICATION.md` §4.
+
+Files touched:
+- `scripts/compare_imports.py` (new).
+- `tests/test_compare_imports.py` (new): `test_compare_imports_matches_fixture_edges`,
+  `test_compare_imports_reports_precision_recall`.
+- `docs/dev/VERIFICATION.md`: §2 bullet and the new §4.
+
+## Start state
+
+Suite before V4: 246 passed (`docs/evidence/V3-suite.txt`).
+Tool versions checked before use:
+
+Command: venv\Scripts\python.exe -c "import grimp; print(grimp.__version__)"
+3.17
+Command: madge --version
+8.0.0
+
+## Test design note (no red for the script itself)
+
+The script was prototyped while exploring grimp and madge, before its tests were
+written. There is therefore no honest "red" transcript of the form "the script
+does not exist yet". Instead the test is proved able to fail by mutation:
+dropping one pair from `grimp_edges` (`pairs.discard(sorted(pairs)[-1])`) makes
+`test_compare_imports_matches_fixture_edges` fail, and the mutation was reverted
+before the final run.
+
+Command: venv\Scripts\python.exe -m pytest tests\test_compare_imports.py -q
+E       AssertionError: {'only_cartog': [('pkg/sub/mod.py', 'pkg/core.py')], 'only_grimp': []}
+E       assert {('pkg/__init...pkg/core.py')} == {('pkg/__init.../sub/mod.py')}
+FAILED tests/test_compare_imports.py::test_compare_imports_matches_fixture_edges
+1 failed, 1 passed in 1.02s                  [V4-mutation-red.txt]
+
+## Green: tests pass with the script restored
+
+Command: venv\Scripts\python.exe -m pytest tests\test_compare_imports.py -q
+2 passed in 1.26s                            [V4-compare-tests-green2.txt]
+(First green run before the mutation: [V4-compare-tests-green.txt])
+
+`test_compare_imports_matches_fixture_edges` builds a package with a re-exporting
+`__init__`, relative imports and a subpackage, asserts `cartog_edges(repo) ==
+grimp_edges(repo)` (4 pairs), and asserts the report is `excluded == 0`,
+precision 1.0, recall 1.0 with no discrepancy lists.
+`test_compare_imports_reports_precision_recall` pins the set arithmetic
+(3 vs 3 pairs, 2 shared -> 2/3 precision and recall, only_ours/only_theirs
+lists) and that an empty side reports `None` instead of dividing by zero.
+
+## Sample results
+
+Command: venv\Scripts\python.exe scripts\compare_imports.py samples\click
+click vs grimp   cartog 61, grimp 61, shared 61, precision 1.000, recall 1.000, excluded 106
+                                             [V4-click.txt]
+
+Command: venv\Scripts\python.exe scripts\compare_imports.py samples\flask
+flask vs grimp   cartog 69, grimp 69, shared 69, precision 1.000, recall 1.000, excluded 116
+                                             [V4-flask.txt]
+
+Command: venv\Scripts\python.exe scripts\compare_imports.py samples\ky
+ky vs madge      cartog 93, madge 93, shared 93, precision 1.000, recall 1.000, excluded 110
+                                             [V4-ky.txt]
+
+Command: venv\Scripts\python.exe scripts\compare_imports.py samples\flask --json
+{"ours": 69, "theirs": 69, "true_positives": 69, "precision": 1.0, "recall": 1.0,
+ "tool": "grimp", "repo": "flask", "excluded": 116}
+
+## Every excluded pair, bucketed
+
+Command: venv\Scripts\python.exe .scratch\v4_excluded.py
+== click (grimp): 167 pairs, 106 excluded
+   files outside the reference index, by top directory: {'tests': 56, 'examples': 12}
+== flask (grimp): 185 pairs, 116 excluded
+   files outside the reference index, by top directory: {'examples': 17, 'tests': 37, 'src': 3}
+   pairs touching flask.sansio (no __init__.py, grimp skips it): 26
+== ky (madge): 203 pairs, 110 excluded
+   files outside the reference index, by top directory: {'test': 46, 'test-d': 21}
+   pairs to source/index.ts (self-reference 'ky'): 58
+                                             [V4-excluded.txt]
+
+Explanations are in VERIFICATION.md §4.3: grimp indexes one importable package
+and skips namespace packages (`flask.sansio`, `flask.json`); madge is run on
+`source/` and does not resolve the self-reference `from 'ky'`.
+
+## Goldens unchanged
+
+Command: venv\Scripts\python.exe scripts\golden.py --check
+click: 0 differences / flask: 0 differences / ky: 0 differences
+0 differences                                [V4-golden.txt]
+
+## Full suite
+
+Command: venv\Scripts\python.exe -m pytest tests\ -q
+248 passed, 1 warning in 203.87s (0:03:23)   [V4-suite.txt]
+
+Start 246 -> end 248 (+2 new tests; none removed, none skipped).
+Command: venv\Scripts\python.exe -m ruff check .
+All checks passed!

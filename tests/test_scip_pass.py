@@ -1,6 +1,8 @@
 """Unit tests for SCIP decoding, range translation, occurrence extraction, and call linking."""
 
+import sys
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 from conftest import requires_sample
@@ -772,4 +774,68 @@ def test_reconciliation_strict_prefix_matching(tmp_path):
     assert len(candidates) == 0
 
 
+
+
+
+def _pretend_indexer_ran(monkeypatch):
+    """Make run_scip_indexer believe a working indexer wrote a valid index."""
+    import cartog.scip.runner as runner_mod
+    from cartog.scip.scip_pb2 import Index
+
+    monkeypatch.setattr(runner_mod.shutil, "which", lambda name: f"/fake/{name}")
+
+    def fake_run(cmd, **kwargs):
+        if "--output" in cmd:
+            out = Path(cmd[cmd.index("--output") + 1])
+            out.parent.mkdir(parents=True, exist_ok=True)
+            out.write_bytes(Index().SerializeToString())
+        return SimpleNamespace(returncode=0, stdout="", stderr="", timed_out=False)
+
+    monkeypatch.setattr(runner_mod, "run_process", fake_run)
+
+
+def test_stray_index_scip_is_removed(tmp_path, monkeypatch):
+    """A stray index.scip in the analyzed repository is deleted after a successful run."""
+    _pretend_indexer_ran(monkeypatch)
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    (repo / "app.py").write_text("def helper():\n    return 1\n", encoding="utf-8")
+    stray = repo / "index.scip"
+    stray.write_bytes(b"stale index from an earlier run")
+
+    result = run_scip_indexer(
+        repo, tmp_path / "out", language="python", python_path=sys.executable
+    )
+
+    assert result.ran is True, result.error
+    assert not stray.exists(), "index.scip was left in the analyzed repository"
+
+
+def test_cleanup_failure_is_detected(tmp_path, monkeypatch):
+    """A stray index.scip that cannot be deleted is reported, not silently ignored."""
+    _pretend_indexer_ran(monkeypatch)
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    (repo / "app.py").write_text("def helper():\n    return 1\n", encoding="utf-8")
+    stray = repo / "index.scip"
+    stray.write_bytes(b"stale index from an earlier run")
+
+    real_unlink = Path.unlink
+
+    def refuse(self, *args, **kwargs):
+        if self.name == "index.scip" and self.parent == repo:
+            raise PermissionError("file is locked")
+        return real_unlink(self, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "unlink", refuse)
+
+    result = run_scip_indexer(
+        repo, tmp_path / "out", language="python", python_path=sys.executable
+    )
+
+    assert result.ran is True, result.error
+    joined = " ".join(result.warnings)
+    assert "index.scip" in joined, result.warnings
+    assert "locked" in joined, result.warnings
+    assert stray.exists(), "the test did not actually block the cleanup"
 

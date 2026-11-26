@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import json
 import re
+import shutil
 import time
 import webbrowser
 from pathlib import Path
@@ -41,6 +42,7 @@ from cartog.core.output import (
     sanitize_project_name,
     utc_timestamp,
 )
+from cartog.core.timing import StageTimer
 from cartog.graph.merge import build_graph
 from cartog.graph.validate import (
     cross_check_imports_and_calls,
@@ -253,14 +255,23 @@ def analyze(
     ),
     no_digest: bool = typer.Option(False, "--no-digest", help="Skip digest.md."),
     no_view: bool = typer.Option(False, "--no-view", help="Skip view/map.html."),
+    mermaid: bool = typer.Option(
+        False, "--mermaid", help="Emit Mermaid sources (.mmd) and overview.png (default off)."
+    ),
     no_render: bool = typer.Option(
         False, "--no-render", help="Skip PNG rendering; Mermaid sources are still written."
+    ),
+    timings: bool = typer.Option(
+        False,
+        "--timings",
+        help="Record per-stage wall time and peak memory in meta.json.",
     ),
     verbose: bool = typer.Option(False, "--verbose", "-V", help="Verbose stage logging."),
 ) -> None:
     """Run the whole pipeline and write the stable per-user output tree."""
     started = time.perf_counter()
     started_at = utc_timestamp()
+    clock = StageTimer(track_memory=timings)
     target_path = Path(path).expanduser()
     if not target_path.exists() or not target_path.is_dir():
         console.print(f"[bold red]Error:[/bold red] Target directory not found: {path}")
@@ -273,6 +284,19 @@ def analyze(
     if layout_engine not in ("dagre", "elk"):
         console.print("[bold red]Error:[/bold red] --layout must be 'dagre' or 'elk'.")
         raise typer.Exit(code=2)
+
+    if python_path:
+        candidate = Path(python_path).expanduser()
+        if candidate.is_file():
+            python_path = str(candidate.resolve())
+        else:
+            found = shutil.which(python_path)
+            if not found:
+                console.print(
+                    f"[bold red]Error:[/bold red] --python: no such interpreter: {python_path}"
+                )
+                raise typer.Exit(code=2)
+            python_path = str(Path(found).resolve())
 
     location = resolve_run_location(target_path, out=out)
     layout = RunLayout(location)
@@ -294,6 +318,7 @@ def analyze(
     }
 
     try:
+        stage_start = clock.now()
         target_path, stage_dir, scan_result, parsed_files, _, _, _, _, manifest_facts = (
             _execute_parse(
                 path=str(target_path),
@@ -308,7 +333,9 @@ def analyze(
                 max_files=max_files,
             )
         )
+        clock.record("parse", stage_start)
 
+        stage_start = clock.now()
         scip_res = _resolve_scip(
             target_path,
             stage_dir,
@@ -318,7 +345,9 @@ def analyze(
             roots=scan_result.roots,
             verbose=verbose,
         )
+        clock.record("scip", stage_start)
 
+        stage_start = clock.now()
         ignored_paths = {s.path for s in scan_result.skipped if "matched" in s.reason}
         graph = build_graph(
             parsed_files=parsed_files,
@@ -348,39 +377,44 @@ def analyze(
         layout.write_text(
             "graph.json", graph.to_json(indent=2 if pretty else None)
         )
+        clock.record("build", stage_start)
 
+        stage_start = clock.now()
         include_set: set[str] = set()
         if include_tests:
             include_set.add("tests")
         if include_examples:
             include_set.add("examples")
-        overview = generate_overview_mermaid(
-            graph,
-            max_nodes=max_nodes,
-            include=include_set or None,
-            show_manifests=show_manifests,
-            show_noise=show_noise,
-            layout=layout_engine,
-            show_references=show_references,
-            show_imports=show_imports,
-            level=level or "function",
-        )
-        layout.write_text("diagrams/overview.mmd", overview)
 
-        folder_counts: dict[str, int] = {}
-        for node in graph.nodes.values():
-            if node.kind == "file" and node.path:
-                folder = Path(node.path).parent.as_posix()
-                if folder != ".":
-                    folder_counts[folder] = folder_counts.get(folder, 0) + 1
-        for folder, count in sorted(folder_counts.items()):
-            if count >= 2:
-                slug = folder.replace("/", "_").replace("\\", "_")
-                layout.write_text(
-                    f"diagrams/folder_{slug}.mmd",
-                    generate_folder_mermaid(graph, folder, layout=layout_engine),
-                )
+        if mermaid:
+            overview = generate_overview_mermaid(
+                graph,
+                max_nodes=max_nodes,
+                include=include_set or None,
+                show_manifests=show_manifests,
+                show_noise=show_noise,
+                layout=layout_engine,
+                show_references=show_references,
+                show_imports=show_imports,
+                level=level or "function",
+            )
+            layout.write_text("diagrams/overview.mmd", overview)
 
+            folder_counts: dict[str, int] = {}
+            for node in graph.nodes.values():
+                if node.kind == "file" and node.path:
+                    folder = Path(node.path).parent.as_posix()
+                    if folder != ".":
+                        folder_counts[folder] = folder_counts.get(folder, 0) + 1
+            for folder, count in sorted(folder_counts.items()):
+                if count >= 2:
+                    slug = folder.replace("/", "_").replace("\\", "_")
+                    layout.write_text(
+                        f"diagrams/folder_{slug}.mmd",
+                        generate_folder_mermaid(graph, folder, layout=layout_engine),
+                    )
+
+        # Flow (validation + tracing; .mmd only if --mermaid; HTML always)
         if flow:
             scoped, excluded = find_flow_candidates(
                 graph,
@@ -412,17 +446,33 @@ def analyze(
             visited_nodes, traversed_edges = trace_call_flow(
                 graph, starts=selected, max_depth=depth
             )
-            layout.write_text(
-                f"diagrams/flow_{_flow_slug(flow)}.mmd",
-                generate_flow_mermaid(
-                    visited_nodes,
-                    traversed_edges,
-                    target_name=target_path.name,
-                    start_node_ids=[node.id for node in selected],
-                ),
-            )
+            if mermaid:
+                layout.write_text(
+                    f"diagrams/flow_{_flow_slug(flow)}.mmd",
+                    generate_flow_mermaid(
+                        visited_nodes,
+                        traversed_edges,
+                        target_name=target_path.name,
+                        start_node_ids=[node.id for node in selected],
+                    ),
+                )
+            if not no_view:
+                flow_html = generate_html_map(
+                    graph,
+                    show_noise=show_noise,
+                    show_manifests=show_manifests,
+                    max_nodes=max_nodes,
+                    include_helpers=include_helpers,
+                    stats={},
+                    flow_nodes=visited_nodes,
+                    flow_edges=traversed_edges,
+                )
+                layout.write_text(f"view/flow_{_flow_slug(flow)}.html", flow_html)
 
-        if not no_render:
+        clock.record("diagrams", stage_start)
+
+        stage_start = clock.now()
+        if mermaid and not no_render and (layout.run_dir / "diagrams" / "overview.mmd").is_file():
             rendered, message = render_mermaid(
                 layout.run_dir / "diagrams" / "overview.mmd",
                 layout.run_dir / "diagrams" / "overview.png",
@@ -431,7 +481,9 @@ def analyze(
                 "logs/render.log",
                 f"rendered={rendered}\n{message}\n",
             )
+        clock.record("render", stage_start)
 
+        stage_start = clock.now()
         if not no_digest:
             layout.write_text(
                 "digest.md",
@@ -439,20 +491,59 @@ def analyze(
                     graph, include_tests=include_tests, include_examples=include_examples
                 ),
             )
+        clock.record("digest", stage_start)
 
+        stage_start = clock.now()
         if not no_view:
-            layout.write_text(
-                "view/map.html",
-                generate_html_map(
-                    graph,
-                    show_noise=show_noise,
-                    show_manifests=show_manifests,
-                    max_nodes=max_nodes,
-                    include_helpers=include_helpers,
-                    stats={},
-                ),
+            html = generate_html_map(
+                graph,
+                show_noise=show_noise,
+                show_manifests=show_manifests,
+                max_nodes=max_nodes,
+                include_helpers=include_helpers,
+                stats={},
             )
+            layout.write_text("view/overview.html", html)
+            # One-release alias for backwards compatibility.
+            layout.write_text("view/map.html", html)
 
+            # Combined flow.html: trace every entry point (route/command/entrypoint)
+            # into one interactive view. No depth cap (full reachable subgraph).
+            entry_starts = [
+                n for n in graph.nodes.values()
+                if n.kind in ("route", "command", "entrypoint")
+            ]
+            if entry_starts:
+                try:
+                    visited_nodes, traversed_edges = trace_call_flow(
+                        graph, starts=entry_starts
+                    )
+                    # Per-entry-point visited sets for the dropdown filter.
+                    entry_points_payload = []
+                    for start in entry_starts:
+                        v_nodes, _ = trace_call_flow(graph, starts=[start])
+                        entry_points_payload.append({
+                            "id": start.id,
+                            "name": f"{start.name or start.qualified_name}  ({start.path})",
+                            "visited": [n.id for n in v_nodes],
+                        })
+                    flow_html = generate_html_map(
+                        graph,
+                        show_noise=show_noise,
+                        show_manifests=show_manifests,
+                        max_nodes=max_nodes,
+                        include_helpers=include_helpers,
+                        stats={},
+                        flow_nodes=visited_nodes,
+                        flow_edges=traversed_edges,
+                        entry_points=entry_points_payload,
+                    )
+                    layout.write_text("view/flow.html", flow_html)
+                except Exception as exc:  # never break the run on flow failure
+                    layout.write_text("logs/flow.log", f"flow generation failed: {exc}\n")
+        clock.record("view", stage_start)
+
+        stage_start = clock.now()
         if no_check:
             check_payload: dict[str, Any] = {
                 "status": "skipped",
@@ -477,6 +568,7 @@ def analyze(
                 graph, target_path=target_path, strict=strict, no_scip=no_scip
             )
         layout.write_json("check.json", check_payload, pretty=True)
+        clock.record("check", stage_start)
 
         languages = sorted(
             {node.language for node in graph.nodes.values() if node.language}
@@ -499,6 +591,9 @@ def analyze(
         layout.write_text("logs/scip.log", scip_log)
         layout.write_text("logs/check.log", json.dumps(check_payload, indent=2) + "\n")
 
+        timing_payload = clock.payload(
+            total_ms=(time.perf_counter() - started) * 1000
+        )
         meta = build_meta(
             run_id=location.run_id,
             status="complete",
@@ -518,7 +613,7 @@ def analyze(
             started_at=started_at,
             finished_at=utc_timestamp(),
             cartog_version=__version__,
-            timings={"total_ms": round((time.perf_counter() - started) * 1000, 2)},
+            timings=timing_payload,
             limits=limits,
         )
         layout.write_json("meta.json", meta, pretty=True)
@@ -545,9 +640,9 @@ def analyze(
                     started_at=started_at,
                     finished_at=utc_timestamp(),
                     cartog_version=__version__,
-                    timings={
-                        "total_ms": round((time.perf_counter() - started) * 1000, 2)
-                    },
+                    timings=clock.payload(
+                        total_ms=(time.perf_counter() - started) * 1000
+                    ),
                     limits=limits,
                 ),
                 pretty=True,
@@ -566,6 +661,16 @@ def analyze(
     console.print()
     console.print(summary)
 
+    if timings:
+        timing_table = Table(title="Timings", show_header=True, header_style="bold cyan")
+        timing_table.add_column("Measurement")
+        timing_table.add_column("Value", justify="right")
+        for name in sorted(timing_payload):
+            value = timing_payload[name]
+            shown = f"{value:,.1f} MB" if name == "peak_memory_mb" else f"{value:,.2f} ms"
+            timing_table.add_row(name, shown)
+        console.print(timing_table)
+
     if not no_scip and scip_res is not None and not scip_res.ran:
         console.print(f"[bold red]{_format_scip_fail_line(scip_res.error)}[/bold red]")
     if not check_ok:
@@ -573,7 +678,7 @@ def analyze(
             "[bold yellow]Check failed;[/bold yellow] the complete run is on disk."
         )
 
-    view_file = layout.run_dir / "view" / "map.html"
+    view_file = layout.run_dir / "view" / "overview.html"
     if open_browser and view_file.is_file():
         webbrowser.open(view_file.resolve().as_uri())
 

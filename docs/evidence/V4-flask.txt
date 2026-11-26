@@ -1,0 +1,7 @@
+flask vs grimp
+  cartog edges : 69
+  grimp        : 69
+  shared       : 69
+  precision    : 1.000
+  recall       : 1.000
+  excluded     : 116 (outside the files grimp indexes)

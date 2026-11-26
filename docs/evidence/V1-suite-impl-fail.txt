@@ -1,0 +1,33 @@
+........................................................................ [ 29%]
+.......................................................................F [ 59%]
+........................................................................ [ 88%]
+...........................                                              [100%]
+================================== FAILURES ===================================
+_____________________ test_layout_doc_covers_every_module _____________________
+
+    def test_layout_doc_covers_every_module() -> None:
+        rows = _rows()
+        assert rows, f"no mapping table found in {LAYOUT}"
+    
+        current = {src for src, _, _ in rows if src != "(new)"}
+        targets = {dst for _, dst, _ in rows}
+    
+        missing_source = [p for p in _package_files() if not _covered(p, current | targets)]
+>       assert not missing_source, (
+            "these files under cartog/ have no destination in docs/dev/PACKAGE_LAYOUT.md:\n"
+            + "\n".join(missing_source)
+        )
+E       AssertionError: these files under cartog/ have no destination in docs/dev/PACKAGE_LAYOUT.md:
+E         cartog/core/timing.py
+E       assert not ['cartog/core/timing.py']
+
+tests\test_package_layout.py:121: AssertionError
+============================== warnings summary ===============================
+tests/test_jsonc.py::test_jsonc_unterminated_block_comment
+  C:\Users\rishi\OneDrive\Desktop\Dev\cartog\cartog\core\jsonc.py:142: UserWarning: Unterminated block comment in 'C:/Users/rishi/AppData/Local/Temp/pytest-of-rishi/pytest-421/test_jsonc_unterminated_block_0/tsconfig.json' starting at line 3
+    clean = strip_jsonc_comments_and_trailing_commas(raw, filename=p.as_posix())
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/test_package_layout.py::test_layout_doc_covers_every_module - As...
+1 failed, 242 passed, 1 warning in 189.37s (0:03:09)

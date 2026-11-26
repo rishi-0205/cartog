@@ -68,6 +68,7 @@ NEW_HOMES = (
     "cartog.parse.js_adapter",
     "cartog.scip",
     "cartog.scip.runner",
+    "cartog.scip.static_calls",
     "cartog.scip.scip_pb2",
     "cartog.graph",
     "cartog.graph.merge",

@@ -18,7 +18,6 @@ runner = CliRunner()
 RUN_FILES = (
     "graph.json",
     "view/map.html",
-    "diagrams/overview.mmd",
     "digest.md",
     "check.json",
     "meta.json",

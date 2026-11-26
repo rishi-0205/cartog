@@ -8,7 +8,7 @@ from cartog import __version__ as CARTOG_VERSION
 
 __all__ = ["DEFAULT_EXTRACTOR_SCHEMA_VERSION", "ParseCache"]
 
-DEFAULT_EXTRACTOR_SCHEMA_VERSION = f"cartog-v{CARTOG_VERSION}-m10"
+DEFAULT_EXTRACTOR_SCHEMA_VERSION = f"cartog-v{CARTOG_VERSION}-m11"
 
 
 class ParseCache:

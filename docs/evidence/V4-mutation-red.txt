@@ -1,0 +1,29 @@
+F.                                                                       [100%]
+================================== FAILURES ===================================
+_________________ test_compare_imports_matches_fixture_edges __________________
+
+tmp_path = WindowsPath('C:/Users/rishi/AppData/Local/Temp/pytest-of-rishi/pytest-436/test_compare_imports_matches_f0')
+
+    def test_compare_imports_matches_fixture_edges(tmp_path):
+        """Cartog's import pairs equal grimp's on the fixture, and the report says so."""
+        module = _load()
+        repo = _fixture(tmp_path)
+    
+        ours = module.cartog_edges(repo)
+        theirs = module.grimp_edges(repo)
+    
+>       assert ours == theirs, {
+            "only_cartog": sorted(ours - theirs),
+            "only_grimp": sorted(theirs - ours),
+        }
+E       AssertionError: {'only_cartog': [('pkg/sub/mod.py', 'pkg/core.py')], 'only_grimp': []}
+E       assert {('pkg/__init...pkg/core.py')} == {('pkg/__init.../sub/mod.py')}
+E         
+E         Extra items in the left set:
+E         ('pkg/sub/mod.py', 'pkg/core.py')
+E         Use -v to get more diff
+
+tests\test_compare_imports.py:53: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_compare_imports.py::test_compare_imports_matches_fixture_edges
+1 failed, 1 passed in 1.02s

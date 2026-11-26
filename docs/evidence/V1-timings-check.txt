@@ -1,0 +1,42 @@
+
+Cartog Stage 1 (Parse): Scanning 
+C:/Users/rishi/OneDrive/Desktop/Dev/cartog/tests/fixtures/mixed_repo...
+Discovered 5 source files (2 skipped).
+
+                               Analysis Summary                                
++-----------------------------------------------------------------------------+
+| Item                  | Value                                               |
+|-----------------------+-----------------------------------------------------|
+| Output                | C:/Users/rishi/OneDrive/Desktop/Dev/cartog/.scratc… |
+| Files / Nodes / Edges | 7 / 22 / 9                                          |
+| Check                 | fail                                                |
+| Latest                | —                                                   |
++-----------------------------------------------------------------------------+
+           Timings            
++----------------------------+
+| Measurement    |     Value |
+|----------------+-----------|
+| build_ms       |  12.65 ms |
+| check_ms       |   5.02 ms |
+| diagrams_ms    |  13.81 ms |
+| digest_ms      |   4.09 ms |
+| parse_ms       |  87.62 ms |
+| peak_memory_mb |    4.6 MB |
+| render_ms      |   0.00 ms |
+| scip_ms        |   0.00 ms |
+| total_ms       | 148.27 ms |
+| view_ms        |  13.35 ms |
++----------------------------+
+Check failed; the complete run is on disk.
+{
+  "total_ms": 148.27,
+  "peak_memory_mb": 4.614,
+  "parse_ms": 87.62,
+  "scip_ms": 0.0,
+  "build_ms": 12.65,
+  "diagrams_ms": 13.81,
+  "render_ms": 0.0,
+  "digest_ms": 4.09,
+  "view_ms": 13.35,
+  "check_ms": 5.02
+}

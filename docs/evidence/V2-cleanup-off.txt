@@ -1,0 +1,41 @@
+F                                                                        [100%]
+================================== FAILURES ===================================
+__________ test_stray_index_scip_is_removed_when_cleanup_is_disabled __________
+
+tmp_path = WindowsPath('C:/Users/rishi/AppData/Local/Temp/pytest-of-rishi/pytest-428/test_stray_index_scip_is_remov0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x0000020B27CD9480>
+
+    def test_stray_index_scip_is_removed_when_cleanup_is_disabled(tmp_path, monkeypatch):
+        monkeypatch.setattr(runner_mod.shutil, "which", lambda name: f"/fake/{name}")
+    
+        def fake_run(cmd, **kwargs):
+            if "--output" in cmd:
+                out = Path(cmd[cmd.index("--output") + 1])
+                out.parent.mkdir(parents=True, exist_ok=True)
+                out.write_bytes(Index().SerializeToString())
+            return SimpleNamespace(returncode=0, stdout="", stderr="", timed_out=False)
+    
+        monkeypatch.setattr(runner_mod, "run_process", fake_run)
+        monkeypatch.setattr(runner_mod, "_remove_stray_index", lambda target: None)
+    
+        repo = tmp_path / "repo"
+        repo.mkdir()
+        (repo / "app.py").write_text("def helper():\n    return 1\n", encoding="utf-8")
+        stray = repo / "index.scip"
+        stray.write_bytes(b"stale index from an earlier run")
+    
+        result = run_scip_indexer(
+            repo, tmp_path / "out", language="python", python_path=sys.executable
+        )
+    
+        assert result.ran is True, result.error
+>       assert not stray.exists(), "index.scip was left in the analyzed repository"
+E       AssertionError: index.scip was left in the analyzed repository
+E       assert not True
+E        +  where True = exists()
+E        +    where exists = WindowsPath('C:/Users/rishi/AppData/Local/Temp/pytest-of-rishi/pytest-428/test_stray_index_scip_is_remov0/repo/index.scip').exists
+
+.scratch\v2_cleanup_off.py:36: AssertionError
+=========================== short test summary info ===========================
+FAILED .scratch/v2_cleanup_off.py::test_stray_index_scip_is_removed_when_cleanup_is_disabled
+1 failed in 0.22s

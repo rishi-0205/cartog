@@ -1,0 +1,242 @@
+[
+  {
+    "caller": "tests.test_fetcher.TestFetcherStaticFetch.test_browser_flag_routes_to_playwright",
+    "callee": "scraper.core.fetcher.Fetcher.fetch",
+    "caller_path": "tests/test_fetcher.py",
+    "callee_path": "scraper/core/fetcher.py",
+    "evidence": "tests/test_fetcher.py:192",
+    "confidence": "resolved"
+  },
+  {
+    "caller": "scraper.core.scraper.Scraper.scrape",
+    "callee": "scraper.core.scraper.Scraper._looks_js_rendered",
+    "caller_path": "scraper/core/scraper.py",
+    "callee_path": "scraper/core/scraper.py",
+    "evidence": "scraper/core/scraper.py:117",
+    "confidence": "resolved"
+  },
+  {
+    "caller": "tests.test_parser.TestParserContentExtraction.test_custom_content_tags_are_respected",
+    "callee": "tests.test_parser.make_response",
+    "caller_path": "tests/test_parser.py",
+    "callee_path": "tests/test_parser.py",
+    "evidence": "tests/test_parser.py:155",
+    "confidence": "resolved"
+  },
+  {
+    "caller": "tests.test_parser.TestParserTitleExtraction.test_returns_empty_string_when_no_title_found",
+    "callee": "scraper.core.parser.Parser.parse",
+    "caller_path": "tests/test_parser.py",
+    "callee_path": "scraper/core/parser.py",
+    "evidence": "tests/test_parser.py:117",
+    "confidence": "resolved"
+  },
+  {
+    "caller": "scraper.core.fetcher.Fetcher._fetch_with_playwright",
+    "callee": "scraper.utils.headers.merge_headers",
+    "caller_path": "scraper/core/fetcher.py",
+    "callee_path": "scraper/utils/headers.py",
+    "evidence": "scraper/core/fetcher.py:253",
+    "confidence": "resolved"
+  },
+  {
+    "caller": "scraper.core.fetcher.Fetcher.fetch",
+    "callee": "scraper.core.fetcher.Fetcher._fetch_with_playwright",
+    "caller_path": "scraper/core/fetcher.py",
+    "callee_path": "scraper/core/fetcher.py",
+    "evidence": "scraper/core/fetcher.py:97",
+    "confidence": "resolved"
+  },
+  {
+    "caller": "tests.test_scraper.TestScraperPipeline.test_parser_is_called_with_fetch_result",
+    "callee": "scraper.core.scraper.Scraper.scrape",
+    "caller_path": "tests/test_scraper.py",
+    "callee_path": "scraper/core/scraper.py",
+    "evidence": "tests/test_scraper.py:121",
+    "confidence": "resolved"
+  },
+  {
+    "caller": "tests.test_parser.TestParserLinkExtraction.test_javascript_links_are_excluded",
+    "callee": "scraper.core.parser.Parser.parse",
+    "caller_path": "tests/test_parser.py",
+    "callee_path": "scraper/core/parser.py",
+    "evidence": "tests/test_parser.py:208",
+    "confidence": "resolved"
+  },
+  {
+    "caller": "scraper.core.parser.Parser.parse",
+    "callee": "scraper.core.parser.Parser._extract_content",
+    "caller_path": "scraper/core/parser.py",
+    "callee_path": "scraper/core/parser.py",
+    "evidence": "scraper/core/parser.py:103",
+    "confidence": "resolved"
+  },
+  {
+    "caller": "tests.test_fetcher.TestFetcherStaticFetch.test_successful_fetch_returns_success_response",
+    "callee": "scraper.core.fetcher.Fetcher.fetch",
+    "caller_path": "tests/test_fetcher.py",
+    "callee_path": "scraper/core/fetcher.py",
+    "evidence": "tests/test_fetcher.py:47",
+    "confidence": "resolved"
+  },
+  {
+    "caller": "tests.test_parser.TestParserTextCleaning.test_multiple_spaces_are_collapsed",
+    "callee": "tests.test_parser.make_response",
+    "caller_path": "tests/test_parser.py",
+    "callee_path": "tests/test_parser.py",
+    "evidence": "tests/test_parser.py:241",
+    "confidence": "resolved"
+  },
+  {
+    "caller": "scraper.core.fetcher.Fetcher._fetch_with_requests",
+    "callee": "scraper.models.response.ScrapeResponse",
+    "caller_path": "scraper/core/fetcher.py",
+    "callee_path": "scraper/models/response.py",
+    "evidence": "scraper/core/fetcher.py:150",
+    "confidence": "resolved"
+  },
+  {
+    "caller": "tests.test_parser.TestParserLinkExtraction.test_empty_href_links_are_excluded",
+    "callee": "tests.test_parser.TestParserLinkExtraction.setUp",
+    "caller_path": "tests/test_parser.py",
+    "callee_path": "tests/test_parser.py",
+    "evidence": "tests/test_parser.py:214",
+    "confidence": "resolved"
+  },
+  {
+    "caller": "scraper.storage.json_storage.JsonStorage.load",
+    "callee": "scraper.storage.json_storage.JsonStorage._url_to_filepath",
+    "caller_path": "scraper/storage/json_storage.py",
+    "callee_path": "scraper/storage/json_storage.py",
+    "evidence": "scraper/storage/json_storage.py:106",
+    "confidence": "resolved"
+  },
+  {
+    "caller": "scraper.core.fetcher.Fetcher.__init__",
+    "callee": "scraper.core.fetcher.Fetcher._create_session",
+    "caller_path": "scraper/core/fetcher.py",
+    "callee_path": "scraper/core/fetcher.py",
+    "evidence": "scraper/core/fetcher.py:74",
+    "confidence": "resolved"
+  },
+  {
+    "caller": "scraper.core.parser.Parser._extract_links",
+    "callee": "scraper.utils.url.resolve_relative_url",
+    "caller_path": "scraper/core/parser.py",
+    "callee_path": "scraper/utils/url.py",
+    "evidence": "scraper/core/parser.py:252",
+    "confidence": "resolved"
+  },
+  {
+    "caller": "tests.test_parser.TestParserContentExtraction.test_noise_tags_are_removed_from_content",
+    "callee": "scraper.core.parser.Parser.parse",
+    "caller_path": "tests/test_parser.py",
+    "callee_path": "scraper/core/parser.py",
+    "evidence": "tests/test_parser.py:135",
+    "confidence": "resolved"
+  },
+  {
+    "caller": "tests.test_parser.TestParserContentExtraction.test_extracts_paragraph_content",
+    "callee": "tests.test_parser.make_response",
+    "caller_path": "tests/test_parser.py",
+    "callee_path": "tests/test_parser.py",
+    "evidence": "tests/test_parser.py:129",
+    "confidence": "resolved"
+  },
+  {
+    "caller": "scraper.core.fetcher.Fetcher.close",
+    "callee": "scraper.core.fetcher.Fetcher.__init__",
+    "caller_path": "scraper/core/fetcher.py",
+    "callee_path": "scraper/core/fetcher.py",
+    "evidence": "scraper/core/fetcher.py:106",
+    "confidence": "resolved"
+  },
+  {
+    "caller": "scraper.utils.url.normalize_url",
+    "callee": "scraper.utils.url.is_valid_url",
+    "caller_path": "scraper/utils/url.py",
+    "callee_path": "scraper/utils/url.py",
+    "evidence": "scraper/utils/url.py:82",
+    "confidence": "resolved"
+  },
+  {
+    "caller": "scraper.core.parser.Parser._extract_title",
+    "callee": "scraper.core.parser.Parser._clean_text",
+    "caller_path": "scraper/core/parser.py",
+    "callee_path": "scraper/core/parser.py",
+    "evidence": "scraper/core/parser.py:170",
+    "confidence": "resolved"
+  },
+  {
+    "caller": "tests.test_parser.TestParserLinkExtraction.test_mailto_links_are_excluded",
+    "callee": "tests.test_parser.TestParserLinkExtraction.setUp",
+    "caller_path": "tests/test_parser.py",
+    "callee_path": "tests/test_parser.py",
+    "evidence": "tests/test_parser.py:202",
+    "confidence": "resolved"
+  },
+  {
+    "caller": "tests.test_parser.TestParserContentExtraction.test_headings_are_included_in_content",
+    "callee": "scraper.core.parser.Parser.parse",
+    "caller_path": "tests/test_parser.py",
+    "callee_path": "scraper/core/parser.py",
+    "evidence": "tests/test_parser.py:169",
+    "confidence": "resolved"
+  },
+  {
+    "caller": "scraper.core.fetcher.Fetcher._fetch_with_requests",
+    "callee": "scraper.utils.headers.get_headers_for_url",
+    "caller_path": "scraper/core/fetcher.py",
+    "callee_path": "scraper/utils/headers.py",
+    "evidence": "scraper/core/fetcher.py:125",
+    "confidence": "resolved"
+  },
+  {
+    "caller": "tests.test_parser.TestParserLinkExtraction.test_resolves_relative_links_to_absolute",
+    "callee": "tests.test_parser.TestParserLinkExtraction.setUp",
+    "caller_path": "tests/test_parser.py",
+    "callee_path": "tests/test_parser.py",
+    "evidence": "tests/test_parser.py:189",
+    "confidence": "resolved"
+  },
+  {
+    "caller": "scraper.core.scraper.Scraper._looks_js_rendered",
+    "callee": "scraper.models.response.ScrapeResponse",
+    "caller_path": "scraper/core/scraper.py",
+    "callee_path": "scraper/models/response.py",
+    "evidence": "scraper/core/scraper.py:194",
+    "confidence": "resolved"
+  },
+  {
+    "caller": "scraper.storage.json_storage.JsonStorage.save",
+    "callee": "scraper.storage.json_storage.JsonStorage._url_to_filepath",
+    "caller_path": "scraper/storage/json_storage.py",
+    "callee_path": "scraper/storage/json_storage.py",
+    "evidence": "scraper/storage/json_storage.py:82",
+    "confidence": "resolved"
+  },
+  {
+    "caller": "tests.test_parser.TestParserTitleExtraction.test_falls_back_to_h1_when_no_title_tag",
+    "callee": "tests.test_parser.TestParserTitleExtraction.setUp",
+    "caller_path": "tests/test_parser.py",
+    "callee_path": "tests/test_parser.py",
+    "evidence": "tests/test_parser.py:106",
+    "confidence": "resolved"
+  },
+  {
+    "caller": "tests.test_parser.TestParserTitleExtraction.test_falls_back_to_h1_when_no_title_tag",
+    "callee": "scraper.core.parser.Parser.parse",
+    "caller_path": "tests/test_parser.py",
+    "callee_path": "scraper/core/parser.py",
+    "evidence": "tests/test_parser.py:106",
+    "confidence": "resolved"
+  },
+  {
+    "caller": "tests.test_scraper.TestScraperPipeline.test_fetch_failure_skips_parser",
+    "callee": "tests.test_scraper.make_fetch_response",
+    "caller_path": "tests/test_scraper.py",
+    "callee_path": "tests/test_scraper.py",
+    "evidence": "tests/test_scraper.py:93",
+    "confidence": "resolved"
+  }
+]

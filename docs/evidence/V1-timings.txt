@@ -1,0 +1,91 @@
+# V1 evidence - per-stage timings and peak memory in meta.json
+Date: 2026-11-22
+Branch: feature/verification
+
+Scope: `cartog analyze --timings` records one wall-time duration per pipeline
+stage plus process peak memory in `meta.json`, prints a timing table, and leaves
+every deterministic artefact byte-identical when the flag is off or on.
+
+Files touched:
+- `cartog/core/timing.py` (new): `StageTimer.now()/record()/payload()`.
+- `cartog/cli/commands/analyze.py`: `--timings` option, stage markers around
+  parse, scip, build, diagrams, render, digest, view, check; timings table.
+- `tests/test_timings.py` (new): the two tests below.
+- `docs/dev/PACKAGE_LAYOUT.md`: `cartog/core/timing.py` row (layout guard).
+
+## Start baseline
+
+Command: venv\Scripts\python.exe -m pytest tests\ -q
+241 passed, 1 warning in 186.57s (0:03:06)   [V1-suite-start.txt]
+
+Command: venv\Scripts\python.exe scripts\golden.py --check
+click: 0 differences / flask: 0 differences / ky: 0 differences
+0 differences                                [V1-golden-start.txt]
+
+## Red: the tests fail before the flag exists
+
+Command: venv\Scripts\python.exe -m pytest tests\test_timings.py -q
+FAILED tests/test_timings.py::test_meta_json_records_stage_timings
+FAILED tests/test_timings.py::test_timings_do_not_change_goldens
+AssertionError: assert 2 == 0   +  where 2 = <Result SystemExit(2)>.exit_code
+2 failed in 0.63s                            [V1-timings-red.txt]
+
+Both failed because `--timings` is not a known option (exit code 2), which is
+the right reason: the flag under test does not exist yet.
+
+## Green: the tests pass
+
+Command: venv\Scripts\python.exe -m pytest tests\test_timings.py -q
+2 passed in 1.37s                            [V1-timings-green.txt]
+
+## CLI check: meta.json carries the measurements
+
+Command: venv\Scripts\python.exe -m cartog analyze tests\fixtures\mixed_repo
+         --out .scratch\v1-check --no-scip --no-render --timings
+Exit code 1 (the fixture's check fails by design); the complete run is written.
+meta.json `timings`:
+{
+  "total_ms": 148.27,
+  "peak_memory_mb": 4.614,
+  "parse_ms": 87.62,
+  "scip_ms": 0.0,
+  "build_ms": 12.65,
+  "diagrams_ms": 13.81,
+  "render_ms": 0.0,
+  "digest_ms": 4.09,
+  "view_ms": 13.35,
+  "check_ms": 5.02
+}
+                                             [V1-timings-check.txt]
+
+## Implementation failure kept on record
+
+The first full-suite run after implementation failed the package-layout guard
+because the new module was not listed in `docs/dev/PACKAGE_LAYOUT.md`
+(`FAILED tests/test_package_layout.py::test_layout_doc_covers_every_module`,
+1 failed, 242 passed). The document was updated; no test was changed.
+                                             [V1-suite-impl-fail.txt]
+Command: venv\Scripts\python.exe -m pytest tests\test_package_layout.py -q
+3 passed in 0.45s                            [V1-layout-test.txt]
+
+## Goldens unchanged
+
+Command: venv\Scripts\python.exe scripts\golden.py --check
+click: 0 differences / flask: 0 differences / ky: 0 differences
+0 differences                                [V1-golden.txt]
+
+## Commit hygiene note
+
+The first V1 commit accidentally staged `.scratch/v1-check/` because `.scratch/`
+was not in `.gitignore`. The tree is never rewritten: a follow-up commit
+(`git rm -r --cached .scratch`, plus `.scratch/` in `.gitignore`) removes the
+scratch output from the index so later tasks cannot repeat it.
+
+## Full suite
+
+Command: venv\Scripts\python.exe -m pytest tests\ -q
+243 passed, 1 warning in 210.69s (0:03:30)   [V1-suite.txt]
+
+Start 241 -> end 243 (+2 new tests in tests/test_timings.py; none removed).
+Command: venv\Scripts\python.exe -m ruff check .
+All checks passed!

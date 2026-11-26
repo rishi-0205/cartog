@@ -1,6 +1,6 @@
 # Cartog — Handoff Document
 
-**Last updated:** 2026-11-22 (E3 **ACCEPTED** by the author and merged into `main`; next epic is E4 `feature/verification`; suite is 241 tests passing)  
+**Last updated:** 2026-11-26 (E4 `feature/verification` is **ACCEPTED** by the author and merged into `main`; suite is 258 tests passing)  
 **Role:** Single entry point for any model or developer picking up this project.  
 **Active Working Tasks:** See [`docs/WORKING_TASKS.md`](./WORKING_TASKS.md) for the live epic board and command loop. The historical T0–T21 board is [`docs/archive/WORKING_TASKS_T0-T21.md`](./archive/WORKING_TASKS_T0-T21.md).  
 **Git rules:** [`docs/dev/GIT_WORKFLOW.md`](./dev/GIT_WORKFLOW.md) — one branch per epic, commit per task, never push, merge only after `Accept <epic id>`.  
@@ -18,7 +18,7 @@ Cartog is a **code-mapping CLI tool** that produces:
 5. Validation reports (`cartog check`) with configurable strictness.
 
 Input: any Python, JS, or TS project directory.  
-Output: `cartog analyze` writes a per-user run tree (see §3) with `graph.json`, `diagrams/`, `view/map.html`, `digest.md`, `check.json`, `meta.json`, `logs/`, and `stage/`; the stage commands keep `cartog-out/`.
+Output: `cartog analyze` writes a per-user run tree (see §3) with `graph.json`, `diagrams/`, `view/overview.html` (and `view/flow.html`), `digest.md`, `check.json`, `meta.json`, `logs/`, and `stage/`; the stage commands keep `cartog-out/`.
 
 ---
 
@@ -75,11 +75,11 @@ Epic order is **E0 → E1 → E1b → E2 → E3 → E4 → E5 → E6 → E7 → 
 | **Phase E: Polish** | T13, T14, T15, T16 | Added visible legends and summary subgraphs in Mermaid; ranked digest files by connectivity and attributed constructors to enclosing classes; completed noise filtering with `if t.TYPE_CHECKING:` guard support; benchmarked compact serialization (44–50% reduction) and token budgets (<2,000 tokens). |
 | **Milestone 11: Interactive Viewer** | T11 | Packaged offline Cytoscape stack in `cartog/view_assets/`; implemented `cartog view` generating offline `map.html`; implemented orthogonal Manhattan edge routing (`taxi`), edge rollup (`N calls`), reference filter toggle (`References: Off / On`), compound padding (35-50px) & layout physics, and internal helper expansion & linking with toggle. |
 
-**Test suite:** 241 passed, 1 warning (2026-11-22, `pytest tests/` in venv; E3 added 24 tests in `tests/test_security.py` across the runner, hostile canary, HTML/Mermaid escaping, terminal controls, path confinement, vendor pins, limits and the threat model, moving the count from 216 to 240 with 0 regressions; the review follow-up added `test_rich_dependency_is_pinned`, 240 → 241).
+**Test suite:** 241 passed, 1 warning (2026-11-22, `pytest tests/` in venv; E3 added 24 tests in `tests/test_security.py` across the runner, hostile canary, HTML/Mermaid escaping, terminal controls, path confinement, vendor pins, limits and the threat model, moving the count from 216 to 240 with 0 regressions; the review follow-up added `test_rich_dependency_is_pinned`, 240 → 241). **E4:** 251 passed (2026-11-25; V1 +2, V2 +2, V3 +1, V4 +2, V5 +3), goldens `0 differences`, ruff clean.
 
 ---
 
-## 3. Next Tasks (E3 accepted; E4 is next)
+## 3. Next Tasks (E3 accepted; E4 ready for epic review)
 
 E0 (`fix/baseline-correctness`) was **ACCEPTED by the author on 2026-11-15** and merged into `main` with `git merge --no-ff`. H1–H5 are all DONE; the branch was deleted after the merge. E0 was built from `docs/task-plan` HEAD (`fcb11f2`), so that merge also brought the T22 documentation restructure into `main` (Decision 29 in `docs/ISSUES_AND_DECISIONS.md`).
 
@@ -111,6 +111,16 @@ E3 (`feature/security-baseline`) was **ACCEPTED by the author on 2026-11-22** an
 The four review questions were closed on 2026-11-22 (Decision 42): `rich>=13,<16>` is a direct dependency because the console sanitiser rewrites Rich's private `Column._cells`; the S5 `path_` test names stay and the stale names in the S5 spec are corrected; `SECURITY.md` now states that its non-protections are the floor every later epic must keep; and `E501`, `B008` plus the wider static-analysis tooling are deferred to the **post-E8 backlog (BI-1 to BI-6 in [`docs/KNOWN_ISSUES.md`](./KNOWN_ISSUES.md))**, which D1 carries forward.
 
 Next: E4 (`feature/verification`) starts from the accepted `main`. Its five tasks are V1 (timings and peak memory), V2 (`index.scip` never left in the analysed repo), V3 (SCIP environment investigation), V4 (compare imports with `grimp` and `madge`) and V5 (call-edge recall sample). Full task fields, tests, and acceptance criteria are in [`docs/WORKING_TASKS.md`](./WORKING_TASKS.md); user-facing examples are in [`docs/USAGE.md`](./USAGE.md).
+
+E4 (`feature/verification`) is **READY FOR EPIC REVIEW** on branch `feature/verification` (not merged; only the author's `Accept E4` permits the merge). All five tasks are DONE, each with red-green evidence under `docs/evidence/`:
+
+- V1 (`29a2ae4`, `b0a4161`, `8a817be`, `e104b55`) `--timings` prints a per-stage table and `meta.json.timings` records every stage plus peak memory (`cartog/core/timing.py`, `tests/test_timings.py`).
+- V2 (`c1422ab`, `121e61f`) every indexer run removes a stray `index.scip` from the analysed repository; a failed removal is reported as a warning (`tests/test_scip_pass.py`).
+- V3 (`17f245a`, `85c5be5`, `e5994d6`) measured the SCIP environment (910 vs ~2 750 call edges on click depending on the interpreter), wrote `docs/dev/VERIFICATION.md` §3, and made `--python` fail fast and record an absolute path (`tests/test_scip_python.py`, KNOWN_ISSUES Rank 6).
+- V4 (`b0adfa3`, `e61cb7b`) `scripts/compare_imports.py` scores file-to-file imports against grimp 3.17 and madge 8.0.0: precision and recall 1.000 on click, flask and ky over the files those tools index (VERIFICATION.md §4).
+- V5 (`9048721`, `06d7303`) `scripts/sample_calls.py` and 60 hand-labelled call edges: originally 50 TP / 10 FP (precision 0.833); after tree-sitter verification and chain repair the same seed/limit yields 60/60 (precision 1.000), with the original baseline kept in `call-sample.json` under `history`. Follow-up (`CALLVERIFY` task): `is_call_selector()` demotes Rank 1 receivers, `cartog/scip/static_calls.py` resolves `A.B.C(...)` chains through imports/re-exports into `inferred` call edges; all 7 scorer routes now reach services (VERIFICATION.md §5, KNOWN_ISSUES Ranks 1, 8–11).
+
+After `Accept E4`, merge `feature/verification` into `main` with `--no-ff` and delete the branch. The next epic is E5 (`feature/llm-layer`); its L0 gate needs the author to run the spike model by hand.
 
 ---
 
@@ -177,7 +187,7 @@ On Windows, always use `venv\Scripts\python.exe` inside the repo venv. Cartog's 
 - **Windows only:** `scip_windows_shim.js` required for `scip-python`. `scip-typescript` works without shim.
 - **Dynamic dispatch:** SCIP resolves static call targets only. Python closures, metaclass dispatch, and `super()` to overridden methods in subclasses are not resolved.
 - **Click self-map:** Cartog maps `samples/click` with Click installed as a system package (8.5.0 on Python313). Running without `--python` picks up a different Python and produces commit-hash symbols.
-- **Receiver Attribute Member Calls:** When a method call is performed on an in-repo class attribute (e.g. `self.copy_to.flush()`), receiver attribute reference may be attributed to enclosing member class rather than external method selector (see `docs/KNOWN_ISSUES.md` Rank 1).
+- **Receiver attribute calls:** an attribute or property read inside a call becomes a `calls` edge attributed to the symbol enclosing the attribute's definition — measured at 10 of 60 sampled edges in E4/V5. In TypeScript/JavaScript, `new X(...)` is a `references` edge rather than a call. See `docs/dev/VERIFICATION.md` §5 and `docs/KNOWN_ISSUES.md` Ranks 1 and 7.
 - **Baseline test hygiene:** fixed by H1 — `samples/` is gitignored, sample-dependent tests now skip with a fetch hint (`scripts/fetch_samples.py`), and the E2E flow test writes only to `tmp_path`.
 - **Viewer edge rollup:** fixed by H3 — hidden endpoints now roll up to the nearest visible ancestor, aggregate by kind, and surface the count; self-edges are dropped and counted.
 
@@ -206,6 +216,8 @@ On Windows, always use `venv\Scripts\python.exe` inside the repo venv. Cartog's 
 | `docs/dev/REPORTING.md` | Status vocabulary, board updates, report format |
 | `docs/dev/CODE_STANDARDS.md` | Code standards, repository map, key invariants |
 | `docs/dev/UNIFIED_COMMAND.md` | E2 unified-command contract: command, options, exit codes, output tree, migration (approved 2026-11-18) |
+| `docs/dev/VERIFICATION.md` | E4 measurements: SCIP environment study, import precision/recall vs grimp and madge, labelled call-edge sample |
+| `docs/dev/verification/call-sample.json` | The 60 labelled call edges (verdicts and reasons) from E4/V5 |
 | `opencode.jsonc` | Permission deny rules for destructive git commands |
 | `GEMINI.md` | Gemini entry point → AGENTS.md |
 | `CLAUDE.md` | Claude entry point → AGENTS.md |

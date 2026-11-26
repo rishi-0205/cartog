@@ -19,6 +19,7 @@ commands) and [`docs/WORKING_TASKS.md`](docs/WORKING_TASKS.md) (the live board).
 | Package layout: every module's destination, import rules, migration order | [`docs/dev/PACKAGE_LAYOUT.md`](docs/dev/PACKAGE_LAYOUT.md) |
 | Unified command design: name, options, exit codes, output tree, migration (E2/U1) | [`docs/dev/UNIFIED_COMMAND.md`](docs/dev/UNIFIED_COMMAND.md) |
 | Toolchain pins: vendored asset hashes, minimum Node tool versions (E3/S7) | [`docs/dev/TOOLCHAIN.md`](docs/dev/TOOLCHAIN.md) |
+| Measurements: SCIP environment, import precision/recall, call-edge sample (E4) | [`docs/dev/VERIFICATION.md`](docs/dev/VERIFICATION.md) |
 
 ## Non-negotiables
 

@@ -314,9 +314,9 @@
       });
       window.cyExpandCollapseApi = api;
 
-      // Start with file and class containers collapsed for a clean high-level view
+      // Start with folder, file and class containers collapsed for a clean high-level view
       setTimeout(() => {
-        const compoundsToCollapse = cy.nodes(':parent[kind = "file"], :parent[kind = "class"]');
+        const compoundsToCollapse = cy.nodes(':parent[kind = "folder"], :parent[kind = "file"], :parent[kind = "class"]');
         if (compoundsToCollapse.length > 0) {
           api.collapse(compoundsToCollapse);
         }
@@ -661,6 +661,43 @@
           });
           cy.edges().style('opacity', 0.15);
         });
+      });
+    }
+
+    const entryFilter = document.getElementById('entry-filter');
+    const entryPoints = (data.entry_points || []);
+    if (entryFilter && entryPoints.length > 0) {
+      entryFilter.style.display = '';
+      const allOpt = document.createElement('option');
+      allOpt.value = '__all__';
+      allOpt.textContent = 'All entry points';
+      entryFilter.appendChild(allOpt);
+      entryPoints.forEach((ep) => {
+        const opt = document.createElement('option');
+        opt.value = ep.id || ep.name;
+        opt.textContent = ep.name;
+        entryFilter.appendChild(opt);
+      });
+      const visitedById = new Map(entryPoints.map((ep) => [ep.id || ep.name, new Set(ep.visited || [])]));
+      entryFilter.addEventListener('change', (e) => {
+        const val = e.target.value;
+        cy.batch(() => {
+          if (val === '__all__') {
+            cy.nodes().style('display', 'element');
+            cy.edges().style('display', 'element');
+          } else {
+            const visited = visitedById.get(val) || new Set();
+            cy.nodes().each((node) => {
+              node.style('display', visited.has(node.id()) ? 'element' : 'none');
+            });
+            cy.edges().each((edge) => {
+              const s = edge.source().id();
+              const t = edge.target().id();
+              edge.style('display', (visited.has(s) && visited.has(t)) ? 'element' : 'none');
+            });
+          }
+        });
+        try { cy.fit(cy.nodes(':visible'), 60); } catch (err) { /* ignore */ }
       });
     }
 

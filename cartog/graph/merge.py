@@ -3,14 +3,33 @@
 Merges AST parsed files, symbols, and resolved imports into a unified Graph model.
 """
 
+
 from collections import defaultdict
 from pathlib import Path
 from typing import Any
 
+from cartog.core.diagnostics import get_logger
 from cartog.core.model import SCHEMA_VERSION, Edge, Graph, ManifestFacts, Node, SourceRange, make_node_id
 from cartog.parse import get_adapter
 from cartog.parse.base import ParseFileResult, ProjectContext
 from cartog.parse.python_adapter import get_enclosing_root, path_to_module_name
+
+logger = get_logger(__name__)
+
+
+def _resolve_import_target(imp, f, context):
+    """Resolve an import to a target file path, or None if external/unresolved."""
+    adapter = get_adapter(f.language)
+    if not adapter:
+        return None
+    try:
+        resolved = adapter.resolve_import(imp, f.path, context)
+    except Exception:
+        return None
+    if not resolved or resolved == "unresolved" or resolved.startswith("external:"):
+        return None
+    return resolved
+
 
 
 def _pick_handler(
@@ -166,6 +185,12 @@ def build_graph(
         return fid
 
     # 2. Add files, folders, and symbols
+    # Cross-file symbol indexes (built during the file loop below) and deferred
+    # route-serves linking (needs the full symbol index + import resolution).
+    global_symbols_by_file: dict[str, dict[str, Node]] = {}
+    global_symbols_by_name: dict[str, list[Node]] = defaultdict(list)
+    pending_routes: list[tuple[Any, dict[str, Any], Node, str, Any]] = []
+
     for f in parsed_files:
         # File node
         file_node = Node.create(
@@ -257,6 +282,8 @@ def build_graph(
             symbols_by_name_list[s.name].append(sym_node)
             symbols_by_qname[s.qualified_name] = sym_node
             symbols_by_def_line[s.start_line] = sym_node
+            global_symbols_by_file.setdefault(f.path, {})[s.name] = sym_node
+            global_symbols_by_name[s.name].append(sym_node)
 
             # Containment: parent symbol -> child symbol, or file -> top-level symbol
             parent_sym = None
@@ -351,17 +378,63 @@ def build_graph(
                         handler_name, dec_end_line, symbols_by_name_list, symbols_by_name
                     )
 
-                if handler_node:
+                if handler_name:
                     ev_line = f"{f.path}:{pat['range'][0]}" if pat.get("range") else f"{f.path}:1"
-                    graph.add_edge(
-                        Edge(
-                            source=pat_node.id,
-                            target=handler_node.id,
-                            kind="serves",
-                            confidence="resolved",
-                            evidence=[ev_line],
-                        )
+                    # Defer cross-file serves resolution to the pending pass below.
+                    pending_routes.append(
+                        {
+                            "file": f,
+                            "pat": pat,
+                            "pat_node": pat_node,
+                            "file_node": file_node,
+                            "enc_root": enc_root,
+                            "pat_range": pat_range,
+                            "handler_name": handler_name,
+                            "handler_qname": handler_qname,
+                            "handler_line": handler_line,
+                            "dec_end_line": dec_end_line,
+                        }
                     )
+                # Middleware chain for routes (Express): each middleware becomes a
+                # node linked to the route (and to the next middleware in chain order).
+                if kind == "route":
+                    mw_names = pat.get("middleware") or []
+                    prev_id = pat_node.id
+                    for mw_name in mw_names:
+                        mw_qname = f"{f.path}:{pat['name']}:middleware:{mw_name}"
+                        mw_nid = make_node_id("middleware", f.path, mw_qname)
+                        if mw_nid not in graph.nodes:
+                            mw_node = Node.create(
+                                kind="middleware",
+                                name=mw_name,
+                                qualified_name=mw_qname,
+                                path=f.path,
+                                range=pat_range,
+                                language=f.language,
+                                root=enc_root,
+                                attrs={"middleware": mw_name},
+                                parent=file_node.id,
+                            )
+                            graph.add_node(mw_node)
+                            if emit_contains_edges:
+                                graph.add_edge(
+                                    Edge(
+                                        source=file_node.id,
+                                        target=mw_node.id,
+                                        kind="contains",
+                                        confidence="resolved",
+                                    )
+                                )
+                        graph.add_edge(
+                            Edge(
+                                source=prev_id,
+                                target=mw_nid,
+                                kind="uses",
+                                confidence="resolved",
+                                evidence=[f"{f.path}:{pat['range'][0]}"] if pat.get("range") else [],
+                            )
+                        )
+                        prev_id = mw_nid
             elif kind == "entrypoint":
                 target_name = pat.get("target")
                 if target_name and target_name in symbols_by_name:
@@ -376,6 +449,67 @@ def build_graph(
                             evidence=[ev_line],
                         )
                     )
+
+    # 2b. Resolve deferred serves edges (cross-file handlers).
+    for entry in pending_routes:
+        f = entry["file"]
+        pat = entry["pat"]
+        pat_node = entry["pat_node"]
+        handler_name = entry["handler_name"]
+        handler_qname = entry["handler_qname"]
+        handler_line = entry["handler_line"]
+        dec_end_line = entry["dec_end_line"]
+        pat_range = entry["pat_range"]
+        ev_line = f"{f.path}:{pat['range'][0]}" if pat.get("range") else f"{f.path}:1"
+
+        handler_node = None
+        # Same-file resolution first.
+        same_file_syms = global_symbols_by_file.get(f.path, {})
+        if handler_name and "." not in handler_name:
+            cands = [n for n in global_symbols_by_name.get(handler_name, []) if n.path == f.path]
+            if not cands:
+                # Try imported target file.
+                for imp in f.imports:
+                    if handler_name in (imp.names or []):
+                        target = _resolve_import_target(imp, f, context)
+                        if target:
+                            cands = [n for n in global_symbols_by_name.get(handler_name, []) if n.path == target]
+                        break
+            if not cands:
+                cands = global_symbols_by_name.get(handler_name, [])
+            if cands:
+                handler_node = _pick_handler(handler_name, dec_end_line, {handler_name: cands}, None)
+        elif handler_name and "." in handler_name:
+            obj, method = handler_name.split(".", 1)
+            # same file class
+            cls_node = same_file_syms.get(obj)
+            target_file = f.path
+            if cls_node is None:
+                for imp in f.imports:
+                    if obj in (imp.names or []):
+                        t = _resolve_import_target(imp, f, context)
+                        if t:
+                            target_file = t
+                            cls_node = global_symbols_by_file.get(t, {}).get(obj)
+                        break
+            if cls_node is not None and cls_node.kind == "class":
+                for cand in global_symbols_by_name.get(method, []):
+                    if cand.parent == cls_node.id:
+                        handler_node = cand
+                        break
+            if handler_node is None and target_file in global_symbols_by_file:
+                handler_node = global_symbols_by_file[target_file].get(method)
+
+        if handler_node:
+            graph.add_edge(
+                Edge(
+                    source=pat_node.id,
+                    target=handler_node.id,
+                    kind="serves",
+                    confidence="resolved",
+                    evidence=[ev_line],
+                )
+            )
 
     # 3. Resolve imports and create dependency edges
     for f in parsed_files:
@@ -647,6 +781,29 @@ def build_graph(
             ignored_paths=ignored_paths,
             ignore_metrics=ignore_metrics,
         )
+        # Tree-sitter repair: resolve dotted chains SCIP left without a callee.
+        try:
+            from cartog.scip.static_calls import resolve_chain_calls
+
+            static_candidates = resolve_chain_calls(
+                parsed_files,
+                context,
+                target_path=target_path,
+                language=detected_langs[0] if detected_langs else "python",
+            )
+            existing = {
+                (c.caller_path, c.caller_qualified_name or c.caller_symbol,
+                 c.callee_path, c.callee_qualified_name or c.callee_symbol, c.kind)
+                for c in candidates
+            }
+            for cand in static_candidates:
+                key = (cand.caller_path, cand.caller_qualified_name or cand.caller_symbol,
+                       cand.callee_path, cand.callee_qualified_name or cand.callee_symbol, cand.kind)
+                if key not in existing:
+                    existing.add(key)
+                    candidates.append(cand)
+        except Exception as exc:
+            logger.debug(f"static call-chain repair skipped: {exc}")
 
         sym_node_map: dict[tuple[str, ...], str] = {}
         sym_nodes_by_name: dict[tuple[str, str], list[Node]] = defaultdict(list)

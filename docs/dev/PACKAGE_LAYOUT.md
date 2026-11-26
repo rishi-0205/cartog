@@ -20,6 +20,7 @@ cartog/
     jsonc.py               JSONC tokenizer + strict JSON loader
     diagnostics.py         get_logger() / warn(): the one place logging and warnings enter
     output.py              output home, project keys, run layout (E2)
+    timing.py              per-stage wall time and peak memory (E4/V1)
     proc.py                the one subprocess boundary: allowlist, timeouts (E3/S1)
   scan/
     __init__.py            re-exports walk_files, hash_file, IgnoreMetrics, ...
@@ -89,6 +90,7 @@ the list is preserved in [§6](#6-removed-by-c1).
 | `cartog/langs/js_adapter.py` | `cartog/parse/js_adapter.py` | R7 |
 | `cartog/scip_pass.py` | `cartog/scip/runner.py` | R8 |
 | `cartog/scip_pb2.py` | `cartog/scip/scip_pb2.py` | R8 |
+| `(new)` | `cartog/scip/static_calls.py` | R8 |
 | `cartog/scip.proto` | `cartog/scip/scip.proto` | R8 |
 | `cartog/scip_windows_shim.js` | `cartog/scip/windows_shim.js` | R8 |
 | `cartog/merge.py` | `cartog/graph/merge.py` | R9 |
@@ -107,6 +109,7 @@ the list is preserved in [§6](#6-removed-by-c1).
 | `(new)` | `cartog/cli/shared.py` | R11 |
 | `(new)` | `cartog/core/diagnostics.py` | R12 |
 | `(new)` | `cartog/core/output.py` | — |
+| `(new)` | `cartog/core/timing.py` | — |
 | `(new)` | `cartog/core/proc.py` | — |
 | `(new)` | `cartog/core/text.py` | — |
 | `(new)` | `cartog/core/toolchain.py` | — |

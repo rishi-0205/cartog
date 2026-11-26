@@ -1,0 +1,8 @@
+141 call sites name an in-repo function; 7 have no matching edge
+main.py:86 | main.parse_args -> parser.parse_args | parser.parse_args()
+scraper/core/fetcher.py:106 | scraper.core.fetcher.Fetcher.close -> self.session.close | self.session.close()
+scraper/core/fetcher.py:272 | scraper.core.fetcher.Fetcher._fetch_with_playwright -> browser.close | browser.close()
+scraper/storage/json_storage.py:108 | scraper.storage.json_storage.JsonStorage.load -> filepath.exists | filepath.exists()
+scraper/storage/json_storage.py:113 | scraper.storage.json_storage.JsonStorage.load -> json.load | json.load(f)
+scraper/storage/json_storage.py:148 | scraper.storage.json_storage.JsonStorage.delete -> filepath.exists | filepath.exists()
+scraper/storage/json_storage.py:178 | scraper.storage.json_storage.JsonStorage.all -> json.load | json.load(f)

@@ -1,0 +1,27 @@
+108 `this.x(...)` call sites; 26 have no call edge
+source/core/Ky.ts:1360 | set | this.#responseRequests.set
+source/core/Ky.ts:1356 | get | this.#responseRequests.get
+source/core/Ky.ts:1278 | throwIfAborted | this.#userProvidedAbortSignal?.throwIfAborted
+source/core/Ky.ts:1264 | abort | this.#abortController?.abort
+source/core/Ky.ts:1255 | abort | this.#abortController?.abort
+source/core/Ky.ts:1225 | clone | this.request.clone
+source/core/Ky.ts:1197 | add | this.#hookResponses.add
+source/core/Ky.ts:1179 | add | this.#beforeRetryHookErrors.add
+source/core/Ky.ts:1057 | add | this.#hookResponses.add
+source/core/Ky.ts:994 | abort | this.#abortController?.abort
+source/core/Ky.ts:971 | abort | this.#abortController?.abort
+source/core/Ky.ts:937 | abort | this.#abortController?.abort
+source/core/Ky.ts:925 | #throwProcessedError | this.#throwProcessedError
+source/core/Ky.ts:924 | abort | this.#abortController?.abort
+source/core/Ky.ts:917 | #throwProcessedError | this.#throwProcessedError
+source/core/Ky.ts:909 | #throwProcessedError | this.#throwProcessedError
+source/core/Ky.ts:790 | has | this.#beforeRetryHookErrors.has
+source/core/Ky.ts:777 | #decorateResponse | this.#decorateResponse
+source/core/Ky.ts:770 | add | this.#decoratedResponses.add
+source/core/Ky.ts:766 | has | this.#decoratedResponses.has
+source/core/Ky.ts:762 | #calculateDelay | this.#calculateDelay
+source/core/Ky.ts:754 | #calculateDelay | this.#calculateDelay
+source/core/Ky.ts:607 | has | this.#hookResponses.has
+source/core/Ky.ts:541 | delete | this.#options.headers.delete
+source/core/Ky.ts:530 | set | this.#options.headers.set
+source/core/Ky.ts:528 | stringifyJson | this.#options.stringifyJson

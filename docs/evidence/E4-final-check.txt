@@ -1,0 +1,52 @@
+# E4 final check - feature/verification
+Date: 2026-11-25
+Branch: feature/verification
+Base: main @ 5feb966 (E3 accepted)
+Epic status: READY FOR EPIC REVIEW (not merged; awaiting `Accept E4`)
+
+## Tasks
+
+| task | commits | tests added | suite after |
+|---|---|---|---|
+| V1 timings and peak memory | `29a2ae4`, `b0a4161`, `8a817be`, `e104b55` | 2 | 243 |
+| V2 `index.scip` confinement | `c1422ab`, `121e61f` | 2 | 245 |
+| V3 SCIP environment study | `17f245a`, `85c5be5`, `e5994d6` | 1 | 246 |
+| V4 imports vs grimp and madge | `b0adfa3`, `e61cb7b` | 2 | 248 |
+| V5 labelled call-edge sample | `9048721`, `06d7303`, `d2efc8a` | 3 | 251 |
+
+Start: 241 passed. End: 251 passed. No test removed, skipped, or weakened.
+
+## Final full suite
+
+Command: venv\Scripts\python.exe -m pytest tests\ -q
+251 passed, 1 warning in 195.78s (0:03:15)
+
+## Final goldens
+
+Command: venv\Scripts\python.exe scripts\golden.py --check
+click: 0 differences
+flask: 0 differences
+ky: 0 differences
+0 differences
+
+## Final lint
+
+Command: venv\Scripts\python.exe -m ruff check .
+All checks passed!
+
+## Deliverables
+
+- `cartog/core/timing.py`, `--timings`, `meta.json.timings` (V1).
+- `cartog/scip/runner.py`: `_remove_stray_index`, warnings (V2).
+- `cartog/cli/commands/analyze.py`: `--python` fail-fast and absolute path (V3).
+- `docs/dev/VERIFICATION.md` sections 3-5 (V3, V4, V5).
+- `scripts/compare_imports.py` and `tests/test_compare_imports.py` (V4).
+- `scripts/sample_calls.py`, `docs/dev/verification/call-sample.json`,
+  `tests/test_recall_sample.py` (V5).
+- `docs/KNOWN_ISSUES.md`: Rank 1 rewritten with the measured rate, Rank 6 added
+  by V3, Rank 7 added by V5.
+
+## Working tree
+
+`git status --porcelain` is empty after the final commit; `.scratch/` (untracked,
+gitignored) is deleted at session end.

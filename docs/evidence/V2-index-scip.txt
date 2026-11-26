@@ -1,0 +1,78 @@
+# V2 evidence - index.scip never left in the analyzed repository
+Date: 2026-11-23
+Branch: feature/verification
+
+Scope: `run_scip_indexer` deletes any `index.scip` that an indexer dropped in
+the analyzed repository, and reports it (instead of hiding it) when the file
+cannot be deleted. Two tests in `tests/test_scip_pass.py` pin both behaviours.
+
+Files touched:
+- `cartog/scip/runner.py`: new `_remove_stray_index()`, called after every
+  indexer run; a failed removal is appended to `ScipIndexResult.warnings`.
+- `tests/test_scip_pass.py`: `test_stray_index_scip_is_removed`,
+  `test_cleanup_failure_is_detected`.
+
+## Red: the tests fail before the cleanup exists
+
+Command: venv\Scripts\python.exe -m pytest tests\test_scip_pass.py
+         -k "stray or cleanup" -q
+FAILED tests/test_scip_pass.py::test_stray_index_scip_is_removed
+FAILED tests/test_scip_pass.py::test_cleanup_failure_is_detected
+E       AssertionError: []          # test_cleanup_failure_is_detected
+E       assert 'index.scip' in ''
+E       AssertionError: index.scip was left in the analyzed repository
+2 failed, 16 deselected in 0.90s            [V2-index-scip-red.txt]
+
+## Green: the tests pass with the cleanup in place
+
+Command: venv\Scripts\python.exe -m pytest tests\test_scip_pass.py
+         -k "stray or cleanup" -q
+2 passed, 16 deselected in 0.17s            [V2-index-scip-green.txt]
+
+## Proof the confinement test can fail when cleanup is switched off
+
+Command: venv\Scripts\python.exe -m pytest .scratch\v2_cleanup_off.py -q
+         -p no:cacheprovider
+The same scenario with `_remove_stray_index` monkeypatched to a no-op:
+FAILED .scratch\v2_cleanup_off.py::test_stray_index_scip_is_removed_when_cleanup_is_disabled
+E       AssertionError: index.scip was left in the analyzed repository
+E       assert not True
+1 failed in 0.22s                           [V2-cleanup-off.txt]
+
+The scratch file is not part of the suite; it exists only to show the test is
+not vacuous.
+
+## Tests
+
+Command: venv\Scripts\python.exe -m pytest tests\test_scip_pass.py -k "stray or cleanup" -q
+2 passed, 16 deselected in 0.17s            [V2-index-scip-green.txt]
+
+`test_stray_index_scip_is_removed` plants `index.scip` in the target, replaces
+`shutil.which` and `run_process` with a fake indexer that writes a valid empty
+protobuf index at `--output`, runs `run_scip_indexer`, and asserts the planted
+file is gone. `test_cleanup_failure_is_detected` makes `Path.unlink` raise
+`PermissionError` for that one file and asserts the run still succeeds but the
+warning names `index.scip` and the OS error.
+
+End-to-end note: `scip-python` itself cannot start on this Windows box (see V3,
+`node_modules/@sourcegraph/scip-python/.../PythonEnvironment.ts:4` builds
+`new RegExp(path.sep, 'g')` from `\` and throws at startup), so the real indexer
+path cannot be exercised here. The CLI-level invariant test
+`tests/test_cli.py::test_pipeline_leaves_analyzed_repo_untouched` still runs in
+the suite with `--no-scip`; the indexer path is proven at unit level with a fake
+process boundary, which is exactly the seam V2 changes.
+
+## Goldens unchanged
+
+Command: venv\Scripts\python.exe scripts\golden.py --check
+click: 0 differences / flask: 0 differences / ky: 0 differences
+0 differences                               [V2-golden.txt]
+
+## Full suite
+
+Command: venv\Scripts\python.exe -m pytest tests\ -q
+245 passed, 1 warning in 206.10s (0:03:26)  [V2-suite.txt]
+
+Start 243 -> end 245 (+2 new tests; none removed, none skipped).
+Command: venv\Scripts\python.exe -m ruff check .
+All checks passed!

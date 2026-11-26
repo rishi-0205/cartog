@@ -303,6 +303,30 @@ def get_indexer_env(
     return env
 
 
+def _remove_stray_index(target_p: Path) -> str | None:
+    """Delete an ``index.scip`` left in the analyzed repository, if any.
+
+    The indexer must write only into the output directory. Some indexers ignore
+    ``--output`` and drop ``index.scip`` next to the sources instead; V2 makes
+    that residue impossible to leave behind unnoticed. Returns an error message
+    when the file survives, ``None`` when nothing was there or it was removed.
+    """
+    stray = target_p / "index.scip"
+    try:
+        stray.unlink()
+    except FileNotFoundError:
+        return None
+    except OSError as exc:
+        message = (
+            "Could not remove stray index.scip from the analyzed repository "
+            f"({stray}): {exc}"
+        )
+        logger.warning(message)
+        return message
+    logger.info("Removed stray index.scip from the analyzed repository.")
+    return None
+
+
 def run_scip_indexer(
     target_path: str | Path,
     out_dir: str | Path,
@@ -458,10 +482,14 @@ def run_scip_indexer(
                 if l_clean and any(k in l_clean.lower() for k in ("warning", "error", "toml", "warn")):
                     indexer_warnings.append(l_clean)
 
-        # Fallback check if indexer placed output in local index.scip
+        # The indexer must leave nothing behind in the analyzed repository.
+        # If it ignored --output and dropped index.scip next to the sources,
+        # move that copy out; then remove any residue and report a failure.
         local_index = target_p / "index.scip"
         if not scip_out_file.is_file() and local_index.is_file():
             shutil.move(local_index, scip_out_file)
+
+        stray_error = _remove_stray_index(target_p)
 
         if not scip_out_file.is_file():
             reason = "SCIP indexer completed but output index.scip was not produced."
@@ -478,6 +506,8 @@ def run_scip_indexer(
     result.interpreter_path = resolved_python
     result.python_version = python_version
     result.warnings = indexer_warnings[:20]
+    if stray_error:
+        result.warnings.append(stray_error)
     return result
 
 
@@ -502,6 +532,36 @@ def find_enclosing_symbol(
                 best_span = span
 
     return best_match
+
+
+def is_call_selector(node: Any, language: str = "python") -> bool:
+    """True when ``node`` is the callee selector of an enclosing call.
+
+    A dotted callee ``a.b.c()`` has selector ``c``; ``a`` and ``b`` are
+    receivers. Returns True when verification is not possible so that SCIP
+    edges are only demoted on positive evidence from the tree.
+    """
+    if node is None:
+        return True
+    call = None
+    cur = node
+    while cur is not None:
+        if cur.type in ("call", "call_expression", "new_expression"):
+            call = cur
+            break
+        cur = cur.parent
+    if call is None:
+        return True
+    func = call.child_by_field_name("function") or call.child_by_field_name("constructor")
+    if func is None:
+        return True
+    selector = func
+    while selector.type in ("member_expression", "attribute"):
+        prop = selector.child_by_field_name("property") or selector.child_by_field_name("attribute")
+        if prop is None:
+            break
+        selector = prop
+    return selector.start_byte <= node.start_byte and node.end_byte <= selector.end_byte
 
 
 def classify_occurrence(tree: Any, line: int, col: int, language: str = "python") -> tuple[str, str | None]:
@@ -544,7 +604,9 @@ def classify_occurrence(tree: Any, line: int, col: int, language: str = "python"
             if args and args.start_byte <= node.start_byte <= args.end_byte:
                 return ("references", "callback")
             if func and func.start_byte <= node.start_byte <= func.end_byte:
-                return ("calls", None)
+                if is_call_selector(node, language):
+                    return ("calls", None)
+                return ("references", "receiver")
             return ("calls", None)
         if t == "binary_expression":
             op = curr.child_by_field_name("operator")

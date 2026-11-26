@@ -1,0 +1,7 @@
+ky vs madge
+  cartog edges : 93
+  madge        : 93
+  shared       : 93
+  precision    : 1.000
+  recall       : 1.000
+  excluded     : 110 (outside the files madge indexes)

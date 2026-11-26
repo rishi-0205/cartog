@@ -41,11 +41,11 @@ The roadmap narrative is [`docs/IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.m
 | S7 | Pin and checksum vendored libraries | E3 | `feature/security-baseline` | - | S | E3-S4 | DONE | ff8a2eb |
 | S8 | Configurable limits | E3 | `feature/security-baseline` | U2 | S | E3-S4 | DONE | 6c98f80 |
 | S9 | SECURITY.md | E3 | `feature/security-baseline` | S1-S8 | S | E3-S5 | DONE | fe854ed |
-| V1 | Timings and peak memory | E4 | `feature/verification` | U3 | S | E4-S1 | TODO | — |
-| V2 | index.scip never left in the analyzed repo | E4 | `feature/verification` | U4 | S | E4-S1 | TODO | — |
-| V3 | SCIP environment investigation | E4 | `feature/verification` | V2 | M | E4-S2 | TODO | — |
-| V4 | Compare imports with grimp and madge | E4 | `feature/verification` | V3 | M | E4-S3 | TODO | — |
-| V5 | Call-edge recall sample | E4 | `feature/verification` | V4 | S | E4-S4 | TODO | — |
+| V1 | Timings and peak memory | E4 | `feature/verification` | U3 | S | E4-S1 | DONE | `29a2ae4` |
+| V2 | index.scip never left in the analyzed repo | E4 | `feature/verification` | U4 | S | E4-S1 | DONE | `c1422ab` |
+| V3 | SCIP environment investigation | E4 | `feature/verification` | V2 | M | E4-S2 | DONE | `17f245a` |
+| V4 | Compare imports with grimp and madge | E4 | `feature/verification` | V3 | M | E4-S3 | DONE | `b0adfa3` |
+| V5 | Call-edge recall sample | E4 | `feature/verification` | V4 | S | E4-S4 | DONE | `9048721` |
 | L0 | LLM spike kit and results | E5 | `feature/llm-layer` | E3, E4 accepted | S | E5-S1 | TODO | — |
 | L1 | Overlay schema design | E5 | `feature/llm-layer` | L0 | S | E5-S2 | TODO | — |
 | L2 | LLM plumbing | E5 | `feature/llm-layer` | L1 | M | E5-S3 | TODO | — |
@@ -81,7 +81,7 @@ The roadmap narrative is [`docs/IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.m
 | E1b | `refactor/drop-compat-shims` | E1 | 1 / 1 | ACCEPTED | 2026-11-17 |
 | E2 | `feature/unified-command-and-output` | E1b | 6 / 6 | ACCEPTED | 2026-11-19 |
 | E3 | `feature/security-baseline` | E2 | 9 / 9 | ACCEPTED | 2026-11-22 |
-| E4 | `feature/verification` | E2 | 0 / 5 | NOT STARTED | no |
+| E4 | `feature/verification` | E2 | 5 / 5 | ACCEPTED | 2026-11-26 |
 | E5 | `feature/llm-layer` | E2, E3 | 0 / 11 | NOT STARTED | no |
 | E6 | `feature/gallery` | E3 | 0 / 4 | NOT STARTED | no |
 | E7 | `feature/analysis-service` | E3, E4 | 0 / 9 | NOT STARTED | no |
@@ -937,10 +937,11 @@ At most one epic per session; within that epic, finish and commit each task befo
 - **User check (epic review):** `cartog <fixture> --timings`; inspect `meta.json`.
 - **Evidence files:** `docs/evidence/V1-timings.txt`
 - **Planned commit message:** `V1: record stage timings and peak memory`
-- **Status:** TODO
-- **Commit hash:** —
-- **Failure log:** —
-- **Change log:** —
+- **Status:** DONE
+- **Commit hash:** `29a2ae4` (follow-ups: `b0a4161`, `8a817be`)
+- **Failure log:** Red run (`docs/evidence/V1-timings-red.txt`): both tests failed with exit code 2 because `--timings` did not exist. The first full-suite run after implementation failed the package-layout guard (`test_layout_doc_covers_every_module`, 1 failed, 242 passed) because `cartog/core/timing.py` was not listed in `docs/dev/PACKAGE_LAYOUT.md`; the document was updated, no test changed. The first commit also staged `.scratch/`; a follow-up commit removed it from the index and `.scratch/` is now in `.gitignore`.
+- **Change log:**
+  - 2026-11-22: Added `cartog/core/timing.py` (`StageTimer`: monotonic stage markers, `tracemalloc` peak), wired `--timings` through `analyze` with eight stage markers (parse, scip, build, diagrams, render, digest, view, check) and a console timing table, and recorded `timings` in `meta.json`. Without the flag the payload is `total_ms` only, so the default `meta.json` does not grow. Two new tests: stage keys plus `peak_memory_mb` present under `--timings`, and five deterministic artefacts byte-identical with and without it. Suite 241 -> 243; golden 0 differences; ruff clean.
 
 ### V2: index.scip never left in the analyzed repo
 
@@ -957,10 +958,11 @@ At most one epic per session; within that epic, finish and commit each task befo
 - **User check (epic review):** `pytest tests/test_scip_pass.py -k stray -q`
 - **Evidence files:** `docs/evidence/V2-index-scip.txt`
 - **Planned commit message:** `V2: enforce index.scip confinement`
-- **Status:** TODO
-- **Commit hash:** —
-- **Failure log:** —
-- **Change log:** —
+- **Status:** DONE
+- **Commit hash:** `c1422ab`
+- **Failure log:** Red run (`docs/evidence/V2-index-scip-red.txt`): both tests failed on the missing cleanup, the confinement test with `index.scip was left in the analyzed repository` and the detection test with `assert 'index.scip' in ''`. The adversarial scratch run (`V2-cleanup-off.txt`) shows the confinement test fails again when `_remove_stray_index` is monkeypatched to a no-op, so it is not vacuous.
+- **Change log:**
+  - 2026-11-23: `run_scip_indexer` now calls `_remove_stray_index(target_p)` after every run: the fallback move of a local `index.scip` is unchanged, and any residue that survives (for example when the indexer wrote both copies) is deleted. A failed deletion becomes a `ScipIndexResult.warnings` entry naming the file and the OS error instead of being swallowed. Two tests drive the real function through `shutil.which`/`run_process` fakes. Suite 243 -> 245; golden 0 differences; ruff clean.
 
 ### V3: SCIP environment investigation
 
@@ -978,10 +980,11 @@ At most one epic per session; within that epic, finish and commit each task befo
 - **User check (epic review):** Read the table in `docs/dev/VERIFICATION.md`.
 - **Evidence files:** `docs/evidence/V3-scip-environment.txt`
 - **Planned commit message:** `V3: document SCIP environment behaviour`
-- **Status:** TODO
-- **Commit hash:** —
-- **Failure log:** —
-- **Change log:** —
+- **Status:** DONE
+- **Commit hash:** `17f245a` (encoding follow-up: `85c5be5`)
+- **Failure log:** Red run (`docs/evidence/V3-scip-python-red.txt`): a nonexistent `--python` was accepted (exit 0) and the run completed. The docs-links guard then failed with `AGENTS.md does not link to every docs/dev document: ['VERIFICATION.md']`; AGENTS.md was updated. The first `scip-python --help` capture was written as UTF-16 by a `cmd` redirect, so it showed as a binary file; it was re-captured as UTF-8 in a follow-up commit.
+- **Change log:**
+  - 2026-11-24: Ran `cartog analyze` with `--timings --no-render` on click and flask in a clean environment (910 and 594 call edges, 0 and 38 reconciled) and on click with four contaminated interpreters (2 687–2 755 call edges, 1 750–1 813 reconciled). Decoded every `index.scip` to attribute symbols: clean runs show no third-party `click`; contaminated runs attribute 4 755–4 857 occurrences to an *installed* `click`. Proved the mechanism with two manual `scip-python` 0.6.6 runs that differ only by a `python3.exe` copy (4 806 × `click 8.1.7` -> 4 857 × `click 8.5.0`, same 91 documents, same call count). `scip-python --version` is 0.6.6 and its `index --help` has no interpreter flag. Wrote `docs/dev/VERIFICATION.md` (method, table, `click 8.1.7` origin, `python3` lookup explanation, what cartog guarantees) and KNOWN_ISSUES Rank 6 for the limitation. `--python` now resolves to an absolute path and aborts with exit 2 when it names no interpreter; `test_scip_python_flag_selects_interpreter` pins both. Suite 245 -> 246; golden 0 differences; ruff clean.
 
 ### V4: Compare imports with grimp and madge
 
@@ -999,10 +1002,11 @@ At most one epic per session; within that epic, finish and commit each task befo
 - **User check (epic review):** `python scripts/compare_imports.py samples/click` and `samples/ky`.
 - **Evidence files:** `docs/evidence/V4-import-comparison.txt`
 - **Planned commit message:** `V4: compare raw import edges with grimp and madge`
-- **Status:** TODO
-- **Commit hash:** —
-- **Failure log:** —
-- **Change log:** —
+- **Status:** DONE
+- **Commit hash:** `b0adfa3`
+- **Failure log:** The script was prototyped before its tests were written, so there is no red transcript for "the script does not exist". The test is proved able to fail by mutation instead: `pairs.discard(sorted(pairs)[-1])` in `grimp_edges` makes the fixture equality test fail (`V4-mutation-red.txt`), and the mutation was reverted. The first design scored flask at precision 0.726 because grimp cannot index the `flask.sansio` namespace package and cannot see `tests/`; comparing on the reference tool's universe (and counting the rest as `excluded`) was the correction, recorded in VERIFICATION.md §4.1/§4.3.
+- **Change log:**
+  - 2026-11-24: Added `scripts/compare_imports.py` (cartog `imports` edges from a `--no-scip` run; grimp 3.17 for Python, madge 8.0.0 for JS/TS; precision/recall, discrepancy lists, `--json`). Results: click 61/61, flask 69/69, ky 93/93, precision and recall 1.000 on the shared universe; 106/116/110 pairs excluded because grimp indexes one package (and skips namespace packages) and madge is run on `source/`. Two tests pin the fixture equality and the set arithmetic. VERIFICATION.md §4 gained the method, table, and a per-repository explanation of every excluded pair. Suite 246 -> 248; golden 0 differences; ruff clean.
 
 ### V5: Call-edge recall sample
 
@@ -1017,12 +1021,13 @@ At most one epic per session; within that epic, finish and commit each task befo
 - **Tests (red-green):** `test_recall_sample_file_is_complete`
 - **Acceptance criteria:** A labeled sample with counts and limits.
 - **User check (epic review):** Inspect the sample table.
-- **Evidence files:** `docs/evidence/V5-call-recall.txt`
-- **Planned commit message:** `V5: record call-edge recall samples`
-- **Status:** TODO
-- **Commit hash:** —
-- **Failure log:** —
-- **Change log:** —
+- **Evidence files:** `docs/evidence/V5-recall-sample.txt`
+- **Planned commit message:** `V5: publish a labelled call-edge sample and its recall scans`
+- **Status:** DONE
+- **Commit hash:** `9048721` (encoding follow-up: `06d7303`)
+- **Failure log:** Red run (`docs/evidence/V5-recall-sample-red.txt`): `docs/dev/verification/call-sample.json` did not exist, so both sample tests failed with `FileNotFoundError`. The sampler script was prototyped before its test, so `test_sample_calls_is_reproducible` was proved able to fail by mutation (`random.Random(seed)` -> `random.Random(0)`, `V5-mutation-red.txt`), then reverted. The two recall-scan transcripts were first written as UTF-16 by a PowerShell redirect and were re-encoded as UTF-8 in `06d7303`.
+- **Change log:**
+  - 2026-11-25: Added `scripts/sample_calls.py` (sorted, seeded, reproducible sampler) and sampled 30 `calls` edges each from `samples/webscrapper` (`e1901a1`, local checkout) and `samples/ky` (`3541888`, pinned). Labelled every evidence line: webscrapper 24/30 TP (precision 0.800), ky 26/30 TP (0.867), overall 50/60 (0.833). All ten FPs are the Rank 1 rule (attribute reference inside a call expression becomes a call, attributed to the symbol enclosing the field definition), measured in three shapes: field assigned in a method (`setUp`, `Fetcher.__init__`), field declared in a class (`ScrapeResponse`, `Ky`), and `new Ky(...)` filed as a `references` edge (new Rank 7). Recall scans: 141 in-repo-named Python call sites, 7 without an edge, all external methods with colliding names (0 genuine misses); 108 `this.x(...)` sites in ky, 26 without an edge, all field-method calls, evidence-capped duplicates, or one recursive self-call. Published `docs/dev/verification/call-sample.json`, `tests/test_recall_sample.py`, VERIFICATION.md §5, KNOWN_ISSUES Rank 1 rewrite + Rank 7. Suite 248 -> 251; golden 0 differences; ruff clean.
 
 ### L0: LLM spike kit and results
 
