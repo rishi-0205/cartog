@@ -81,7 +81,7 @@ The roadmap narrative is [`docs/IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.m
 | E1b | `refactor/drop-compat-shims` | E1 | 1 / 1 | ACCEPTED | 2026-11-17 |
 | E2 | `feature/unified-command-and-output` | E1b | 6 / 6 | ACCEPTED | 2026-11-19 |
 | E3 | `feature/security-baseline` | E2 | 9 / 9 | ACCEPTED | 2026-11-22 |
-| E4 | `feature/verification` | E2 | 5 / 5 | READY FOR EPIC REVIEW | no |
+| E4 | `feature/verification` | E2 | 5 / 5 | ACCEPTED | 2026-11-26 |
 | E5 | `feature/llm-layer` | E2, E3 | 0 / 11 | NOT STARTED | no |
 | E6 | `feature/gallery` | E3 | 0 / 4 | NOT STARTED | no |
 | E7 | `feature/analysis-service` | E3, E4 | 0 / 9 | NOT STARTED | no |
