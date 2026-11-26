@@ -124,6 +124,13 @@ def parse_source_file(
     symbols = adapter.extract_symbols(tree, source_bytes, file_info.path)
     imports = adapter.extract_imports(tree, source_bytes, file_info.path)
     patterns = adapter.extract_patterns(tree, source_bytes, file_info.path)
+    # Channel candidates (message brokers) are stored as patterns with
+    # kind in {"binding", "producer", "consumer", "worker"} so they flow
+    # through the same pipeline without a schema change to ParseFileResult.
+    if hasattr(adapter, "extract_channel_candidates"):
+        channel_cands = adapter.extract_channel_candidates(tree, source_bytes, file_info.path)
+        if channel_cands:
+            patterns = patterns + channel_cands
     has_error = tree.root_node.has_error
 
     result = ParseFileResult(

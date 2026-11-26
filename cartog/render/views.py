@@ -1062,9 +1062,9 @@ def trace_call_flow(
 ) -> tuple[list[Node], list[Edge]]:
     """Perform BFS call-flow tracing starting from entrypoints, routes, or named functions.
 
-    Follows outgoing 'serves', 'starts', 'calls', and 'overrides' edges. By default
-    there is no depth cap (full reachable subgraph); pass max_depth to bound it.
-    Returns (visited_nodes, traversed_edges).
+    Follows outgoing 'serves', 'starts', 'calls', 'overrides', 'uses', 'produces',
+    and 'consumes' edges. By default there is no depth cap (full reachable
+    subgraph); pass max_depth to bound it. Returns (visited_nodes, traversed_edges).
     """
     if starts is not None:
         matched_nodes = list(starts)
@@ -1080,7 +1080,7 @@ def trace_call_flow(
 
     outgoing_edges: dict[str, list[Edge]] = defaultdict(list)
     for e in graph.edges:
-        if e.kind in ("serves", "starts", "calls", "overrides", "uses"):
+        if e.kind in ("serves", "starts", "calls", "overrides", "uses", "produces", "consumes"):
             outgoing_edges[e.source].append(e)
 
     visited_nodes: dict[str, Node] = {}

@@ -104,6 +104,30 @@ This document tracks known issues, architectural limits, discrepancies, and reso
   Typed cases still require `scip-typescript`; if it is absent or fails, only `inferred` chain edges are produced. SCIP reports UTF-16 columns while tree-sitter uses byte offsets; a mismatch must cause the verifier to abstain rather than wrongly demote a SCIP edge. Consumers that filter to `confidence=resolved` will not see `inferred` edges.
 - **Status:** MONITORED (implementation guard, 2026-11-25).
 
+### Rank 12: Local classes as brokers are excluded (recall limitation)
+- **Milestone / Area:** Message brokers (`docs/dev/MESSAGE_BROKERS.md`); detection in JS/TS adapter.
+- **Severity:** Low — recall only.
+- **Symptoms:**
+  If we detect `new X("name")` where `X` is a locally-defined class, we cannot tell whether `X` is a broker (`class EventBus`) or a plain data class (`class Foo`). A local class used as a broker in a single file, with no cross-file producer/consumer pair, is missed. The pairing rule protects against false positives: a local class only becomes a `channel` when the same name appears on both a send side and a handler side. Local classes are excluded at first; the pairing rule can relax this later.
+- **Proposed Fix:** Include local classes in the binding → channel map once the pairing rule is proven to filter out plain DTOs.
+- **Status:** DEFERRED (recall limitation; documented in `docs/dev/MESSAGE_BROKERS.md` §1.2).
+
+### Rank 13: Prisma schema files are skipped
+- **Milestone / Area:** Scanner / file walking; out of scope for control-flow work.
+- **Severity:** Low — data models are invisible.
+- **Symptoms:**
+  `.prisma` files are currently skipped (Cricklo skip list records `unsupported file extension '.prisma'`). Prisma models are therefore invisible, and `prisma.user.findMany()` is only a chain call that the resolver might catch. Parsing the Prisma schema language needs a new grammar/parser, and modelling data definitions (models, fields, relations) is a different kind of node from control flow.
+- **Proposed Fix:** Add a Prisma schema parser as a separate node kind in a future data-model epic. Not part of the control-flow or messaging work.
+- **Status:** DEFERRED (out of scope; documented in `docs/dev/MESSAGE_BROKERS.md` §1.3).
+
+### Rank 14: DTOs, types and data models are not modelled
+- **Milestone / Area:** Node kinds / view semantics; out of scope.
+- **Severity:** Low — data is not control flow.
+- **Symptoms:**
+  Types, interfaces, DTOs, Zod schemas, Prisma models and class-validator decorators are **data**, not control flow. They need new node kinds, new detection, and new view semantics. Keeping scope on control flow first avoids diluting the call-graph work.
+- **Proposed Fix:** A separate data-model epic that introduces `type`, `interface`, `dto`, `schema` node kinds and view semantics for them.
+- **Status:** DEFERRED (out of scope; documented in `docs/dev/MESSAGE_BROKERS.md` §1.4).
+
 ---
 
 ## Review Findings F1–F9 (2026-11-12)

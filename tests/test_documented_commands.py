@@ -91,7 +91,7 @@ def test_documented_examples_run(tmp_path):
     meta = json.loads((out / "meta.json").read_text(encoding="utf-8"))
     assert meta["status"] == "complete"
     assert meta["run_id"]
-    assert meta["schema_version"] == "2.1.0"
+    assert meta["schema_version"] == "2.2.0"
 
     checked = runner.invoke(
         app, ["check", str(out / "graph.json"), "--no-scip"]

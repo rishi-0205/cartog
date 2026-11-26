@@ -121,6 +121,18 @@ class LanguageAdapter(ABC):
         """Extract framework patterns (routes, CLI commands, entrypoints). Stubs in M1."""
         return []
 
+    def extract_channel_candidates(self, tree: tree_sitter.Tree, source_bytes: bytes, path: str) -> list[dict[str, Any]]:
+        """Extract message-broker channel candidates (bindings, producers, consumers, workers).
+
+        Returns a list of candidate dicts, each with at least:
+        - ``kind``: one of ``"binding"``, ``"producer"``, ``"consumer"``, ``"worker"``
+        - ``channel``: the channel name (string)
+        - ``file``: the source file path
+        - ``range``: ``[start_line, start_col, end_line, end_col]``
+        Subclasses may add ``binding``, ``function``, ``processor``, ``payload`` etc.
+        """
+        return []
+
     def resolve_import(self, record: ImportRecord, from_file: str, project_context: Any) -> str:
         """Resolve an import record to a repo file, external package, or unresolved. Stubs in M1."""
         return "unresolved"

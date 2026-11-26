@@ -49,7 +49,7 @@ def test_graph_serialization(tmp_path: Path):
 
     # Reload and verify
     reloaded = Graph.load(json_path)
-    assert reloaded.schema_version == "2.1.0"
+    assert reloaded.schema_version == "2.2.0"
     assert len(reloaded.nodes) == 2
     assert len(reloaded.edges) == 1
     assert reloaded.get_node(n1.id) is not None
