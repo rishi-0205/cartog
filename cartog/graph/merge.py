@@ -335,7 +335,7 @@ def build_graph(
             kind = pat["kind"]
             # Channel candidates are collected for a cross-file pairing pass
             # (Part 2, messaging) and are not turned into nodes here.
-            if kind in ("binding", "producer", "consumer", "worker"):
+            if kind in ("binding", "producer", "consumer", "worker", "member_call", "direct_call"):
                 channel_candidates.append(pat)
                 continue
             name = pat["name"]
@@ -519,147 +519,168 @@ def build_graph(
             )
 
     # 2c. Message-broker channel pairing (Part 2, messaging).
-    # Collect producer/consumer sites and worker definitions, then materialise
-    # a `channel` node only when the same name appears on both a producer-like
-    # and a consumer-like site (ideally in different files). This is the
-    # pairing rule that prevents false positives.
-    if channel_candidates:
-        # Group candidates by channel name.
-        by_channel: dict[str, list[dict[str, Any]]] = defaultdict(list)
-        for cand in channel_candidates:
-            by_channel[cand["channel"]].append(cand)
+    # Step 1: Build a global binding map (variable name -> channel name)
+    # from all files, so cross-file references resolve correctly.
+    global_bindings: dict[str, str] = {}
+    binding_by_var: dict[str, str] = {}
+    for cand in channel_candidates:
+        if cand["kind"] == "binding":
+            var = cand["binding"]
+            ch = cand["channel"]
+            binding_by_var[var] = ch
+            global_bindings[f"{cand['file']}:{var}"] = ch
 
-        for ch_name, cands in by_channel.items():
-            producers = [c for c in cands if c["kind"] == "producer"]
-            consumers = [c for c in cands if c["kind"] in ("consumer", "worker")]
-            workers = [c for c in cands if c["kind"] == "worker"]
-
-            # Pairing rule: materialise only when both sides exist.
-            if not producers or not consumers:
-                # Record abstention in unresolved.
-                graph.unresolved.append({
-                    "reason": "unpaired_channel",
-                    "channel": ch_name,
-                    "producers": len(producers),
-                    "consumers": len(consumers),
-                })
+    # Step 2: Classify member_call and direct_call candidates.
+    classified: list[dict[str, Any]] = []
+    for cand in channel_candidates:
+        kind = cand["kind"]
+        if kind == "worker":
+            classified.append(cand)
+            continue
+        if kind == "binding":
+            continue
+        if kind == "member_call":
+            obj = cand["object"]
+            ch_name = global_bindings.get(f"{cand['file']}:{obj}")
+            if ch_name is None:
+                ch_name = binding_by_var.get(obj)
+            if ch_name is None:
                 continue
+            if cand["has_payload"] and not cand["has_function"]:
+                classified.append({**cand, "kind": "producer", "channel": ch_name})
+            elif cand["has_function"] and not cand["has_payload"]:
+                classified.append({**cand, "kind": "consumer", "channel": ch_name})
+        elif kind == "direct_call":
+            ch_name = cand["channel"]
+            if cand["has_payload"] and not cand["has_function"]:
+                classified.append({**cand, "kind": "producer", "channel": ch_name})
+            elif cand["has_function"] and not cand["has_payload"]:
+                classified.append({**cand, "kind": "consumer", "channel": ch_name})
 
-            # Create the channel node.
-            ch_path = producers[0].get("file")
-            ch_qual = f"channel:{ch_name}"
-            ch_nid = make_node_id("channel", ch_path, ch_qual)
-            if ch_nid not in graph.nodes:
-                ch_node = Node.create(
-                    kind="channel",
-                    name=ch_name,
-                    qualified_name=ch_qual,
-                    path=ch_path,
-                    attrs={"channel_name": ch_name},
+    # Step 3: Group by channel name and apply pairing rule.
+    by_channel: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    for cand in classified:
+        by_channel[cand["channel"]].append(cand)
+
+    for ch_name, cands in by_channel.items():
+        producers = [c for c in cands if c["kind"] == "producer"]
+        consumers = [c for c in cands if c["kind"] in ("consumer", "worker")]
+        workers = [c for c in cands if c["kind"] == "worker"]
+
+        # Pairing rule: materialise only when both sides exist.
+        if not producers or not consumers:
+            graph.unresolved.append({
+                "reason": "unpaired_channel",
+                "channel": ch_name,
+                "producers": len(producers),
+                "consumers": len(consumers),
+            })
+            continue
+
+        # Create the channel node.
+        ch_path = producers[0].get("file")
+        ch_qual = f"channel:{ch_name}"
+        ch_nid = make_node_id("channel", ch_path, ch_qual)
+        if ch_nid not in graph.nodes:
+            ch_node = Node.create(
+                kind="channel",
+                name=ch_name,
+                qualified_name=ch_qual,
+                path=ch_path,
+                attrs={"channel_name": ch_name},
+            )
+            graph.add_node(ch_node)
+
+        # Create worker + processor nodes and consumes edges.
+        for w in workers:
+            w_qual = f"worker:{ch_name}"
+            w_nid = make_node_id("worker", w.get("file"), w_qual)
+            if w_nid not in graph.nodes:
+                w_node = Node.create(
+                    kind="worker",
+                    name=f"worker:{ch_name}",
+                    qualified_name=w_qual,
+                    path=w.get("file"),
+                    range=SourceRange.from_list(w["range"]) if w.get("range") else None,
+                    attrs={"channel": ch_name},
                 )
-                graph.add_node(ch_node)
+                graph.add_node(w_node)
+                if w.get("file"):
+                    fid = make_node_id("file", w["file"], w["file"])
+                    if fid in graph.nodes:
+                        w_node.parent = fid
+                        graph.add_edge(Edge(
+                            source=fid, target=w_nid, kind="contains",
+                            confidence="resolved",
+                        ))
 
-            # Create worker + processor nodes and consumes edges.
-            for w in workers:
-                w_qual = f"worker:{ch_name}"
-                w_nid = make_node_id("worker", w.get("file"), w_qual)
-                if w_nid not in graph.nodes:
-                    w_node = Node.create(
-                        kind="worker",
-                        name=f"worker:{ch_name}",
-                        qualified_name=w_qual,
-                        path=w.get("file"),
-                        range=SourceRange.from_list(w["range"]) if w.get("range") else None,
-                        attrs={"channel": ch_name},
-                    )
-                    graph.add_node(w_node)
-                    if w.get("file"):
-                        fid = make_node_id("file", w["file"], w["file"])
-                        if fid in graph.nodes:
-                            w_node.parent = fid
-                            if True:  # emit_contains_edges default
-                                graph.add_edge(Edge(
-                                    source=fid, target=w_nid, kind="contains",
-                                    confidence="resolved",
-                                ))
-
-                # Processor node for the worker's callback.
-                proc_qual = f"processor:{ch_name}"
-                proc_nid = make_node_id("processor", w.get("file"), proc_qual)
-                if proc_nid not in graph.nodes:
-                    proc_range = w.get("processor_range")
-                    proc_node = Node.create(
-                        kind="processor",
-                        name=f"processor:{ch_name}",
-                        qualified_name=proc_qual,
-                        path=w.get("file"),
-                        range=SourceRange.from_list(proc_range) if proc_range else None,
-                        attrs={"channel": ch_name, "inline_arrow": w.get("processor_is_arrow", False)},
-                    )
-                    graph.add_node(proc_node)
-                    # contains edge from worker to processor
-                    graph.add_edge(Edge(
-                        source=w_nid, target=proc_nid, kind="contains",
-                        confidence="resolved",
-                    ))
-
-                # consumes edge: channel → processor
+            # Processor node for the worker's callback.
+            proc_qual = f"processor:{ch_name}"
+            proc_nid = make_node_id("processor", w.get("file"), proc_qual)
+            if proc_nid not in graph.nodes:
+                proc_range = w.get("processor_range")
+                proc_node = Node.create(
+                    kind="processor",
+                    name=f"processor:{ch_name}",
+                    qualified_name=proc_qual,
+                    path=w.get("file"),
+                    range=SourceRange.from_list(proc_range) if proc_range else None,
+                    attrs={"channel": ch_name, "inline_arrow": w.get("processor_is_arrow", False)},
+                )
+                graph.add_node(proc_node)
                 graph.add_edge(Edge(
-                    source=ch_nid, target=proc_nid, kind="consumes",
-                    confidence="inferred",
-                    evidence=[f"{w['file']}:{w['range'][0]}"] if w.get("range") else [],
+                    source=w_nid, target=proc_nid, kind="contains",
+                    confidence="resolved",
                 ))
 
-            # produces edges: enclosing function → channel
-            for p in producers:
-                func_name = p.get("function")
-                # Resolve the producer's function node.
-                src_id = None
-                if func_name:
-                    # Find the symbol node in the same file.
-                    for node in graph.nodes.values():
-                        if node.path == p.get("file") and node.name == func_name and node.kind in ("function", "method"):
-                            src_id = node.id
-                            break
-                if src_id is None:
-                    # Fall back to file node.
-                    src_id = make_node_id("file", p["file"], p["file"])
-                if src_id in graph.nodes:
-                    graph.add_edge(Edge(
-                        source=src_id, target=ch_nid, kind="produces",
-                        confidence="inferred",
-                        evidence=[f"{p['file']}:{p['range'][0]}"] if p.get("range") else [],
-                    ))
+            # consumes edge: channel -> processor
+            graph.add_edge(Edge(
+                source=ch_nid, target=proc_nid, kind="consumes",
+                confidence="inferred",
+                evidence=[f"{w['file']}:{w['range'][0]}"] if w.get("range") else [],
+            ))
 
-            # consumes edges for consumer-side sites that are not workers.
-            # (consumer calls on channel bindings where the handler is a function arg)
-            if not workers:
-                for c in consumers:
-                    func_name = c.get("function")
-                    # The consumer's handler is the function argument; we don't have
-                    # a separate processor node unless a worker was created. Create
-                    # a processor node for the enclosing function if not already present.
-                    # For simplicity, link channel → enclosing function as consumes.
-                    tgt_id = None
-                    if func_name:
-                        for node in graph.nodes.values():
-                            if node.path == c.get("file") and node.name == func_name and node.kind in ("function", "method"):
-                                tgt_id = node.id
-                                break
-                    if tgt_id is None:
-                        tgt_id = make_node_id("file", c["file"], c["file"])
-                    if tgt_id in graph.nodes and tgt_id != ch_nid:
-                        # Only add if not already connected via a worker processor.
-                        existing = any(
-                            e.source == ch_nid and e.target == tgt_id and e.kind == "consumes"
-                            for e in graph.edges
-                        )
-                        if not existing:
-                            graph.add_edge(Edge(
-                                source=ch_nid, target=tgt_id, kind="consumes",
-                                confidence="inferred",
-                                evidence=[f"{c['file']}:{c['range'][0]}"] if c.get("range") else [],
-                            ))
+        # produces edges: enclosing function -> channel
+        for p in producers:
+            func_name = p.get("function")
+            src_id = None
+            if func_name:
+                for node in graph.nodes.values():
+                    if node.path == p.get("file") and node.name == func_name and node.kind in ("function", "method"):
+                        src_id = node.id
+                        break
+            if src_id is None:
+                src_id = make_node_id("file", p["file"], p["file"])
+            if src_id in graph.nodes:
+                graph.add_edge(Edge(
+                    source=src_id, target=ch_nid, kind="produces",
+                    confidence="inferred",
+                    evidence=[f"{p['file']}:{p['range'][0]}"] if p.get("range") else [],
+                ))
+
+        # consumes edges for consumer-side sites that are not workers.
+        if not workers:
+            for c in consumers:
+                func_name = c.get("function")
+                tgt_id = None
+                if func_name:
+                    for node in graph.nodes.values():
+                        if node.path == c.get("file") and node.name == func_name and node.kind in ("function", "method"):
+                            tgt_id = node.id
+                            break
+                if tgt_id is None:
+                    tgt_id = make_node_id("file", c["file"], c["file"])
+                if tgt_id in graph.nodes and tgt_id != ch_nid:
+                    existing = any(
+                        e.source == ch_nid and e.target == tgt_id and e.kind == "consumes"
+                        for e in graph.edges
+                    )
+                    if not existing:
+                        graph.add_edge(Edge(
+                            source=ch_nid, target=tgt_id, kind="consumes",
+                            confidence="inferred",
+                            evidence=[f"{c['file']}:{c['range'][0]}"] if c.get("range") else [],
+                        ))
 
     # 3. Resolve imports and create dependency edges
     for f in parsed_files:
