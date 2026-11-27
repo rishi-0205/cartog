@@ -453,10 +453,21 @@ class PythonAdapter(LanguageAdapter):
 
                 route_info = parse_route_decorator(dec_text)
                 if route_info:
+                    # Generic dependency params -> middleware names (for uses edges).
+                    dep_mw: list[str] = []
+                    params_node = func_def_node.child_by_field_name("parameters")
+                    if params_node:
+                        for p in params_node.named_children:
+                            txt = _get_node_text(p)
+                            if "Depends(" in txt:
+                                m = re.search(r"Depends\(\s*([A-Za-z_]\w*)", txt)
+                                if m:
+                                    dep_mw.append(m.group(1))
                     patterns.append(
                         {
                             "kind": "route",
                             "name": route_info["name"],
+                            "middleware": dep_mw,
                             "url_path": route_info["url_path"],
                             "methods": route_info["methods"],
                             "handler": func_name,
@@ -583,6 +594,68 @@ class PythonAdapter(LanguageAdapter):
                     "range": [1, 0, 1, 0],
                     "raw_text": "module-level CLI invocation",
                 })
+
+        # Generic middleware detection (structural, no framework names):
+        # - decorated function with 2+ params, one callable-like ("next"),
+        #   registered with a string name -> middleware
+        # - class with __call__ taking a "next"/app-like parameter -> middleware
+        def _looks_like_middleware_params(params: list[str]) -> bool:
+            if len(params) < 2:
+                return False
+            # One param is a callable passed through (next/call_next/app/send)
+            callables = {"next", "call_next", "get_response", "app", "send", "receive"}
+            return any(p in callables for p in params)
+
+        for pos, node in enumerate(tree.root_node.children):
+            if node.type == "decorated_definition":
+                dec_texts = []
+                fn_node = None
+                for c in node.children:
+                    if c.type == "decorator":
+                        dec_texts.append(_get_node_text(c).strip().lstrip("@"))
+                    elif c.type in ("function_definition", "async_function_definition"):
+                        fn_node = c
+                if fn_node and dec_texts:
+                    name_node = fn_node.child_by_field_name("name")
+                    params_node = fn_node.child_by_field_name("parameters")
+                    params = []
+                    if params_node:
+                        for p in params_node.named_children:
+                            pn = p.child_by_field_name("name") if hasattr(p, "child_by_field_name") else None
+                            if pn:
+                                params.append(_get_node_text(pn).strip())
+                    has_string_name = any('("' in d or "('" in d for d in dec_texts)
+                    if has_string_name and _looks_like_middleware_params(params) and name_node:
+                        patterns.append({
+                            "kind": "middleware",
+                            "name": _get_node_text(name_node).strip(),
+                            "range": [node.start_point.row + 1, node.start_point.column,
+                                      node.end_point.row + 1, node.end_point.column],
+                            "raw_text": _get_node_text(node).strip()[:200],
+                        })
+            elif node.type == "class_definition":
+                cls_name_node = node.child_by_field_name("name")
+                has_call = False
+                call_params = []
+                for c in node.named_children:
+                    if c.type in ("function_definition", "async_function_definition"):
+                        mname = c.child_by_field_name("name")
+                        if mname and _get_node_text(mname).strip() == "__call__":
+                            has_call = True
+                            pn = c.child_by_field_name("parameters")
+                            if pn:
+                                for p in pn.named_children:
+                                    nm = p.child_by_field_name("name") if hasattr(p, "child_by_field_name") else None
+                                    if nm:
+                                        call_params.append(_get_node_text(nm).strip())
+                if has_call and cls_name_node and _looks_like_middleware_params(call_params):
+                    patterns.append({
+                        "kind": "middleware",
+                        "name": _get_node_text(cls_name_node).strip(),
+                        "range": [node.start_point.row + 1, node.start_point.column,
+                                  node.end_point.row + 1, node.end_point.column],
+                        "raw_text": _get_node_text(node).strip()[:200],
+                    })
 
         # Sort patterns deterministically by line number
         patterns.sort(key=lambda p: (p["range"][0], p["name"]))
