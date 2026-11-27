@@ -93,13 +93,14 @@ def parse_route_decorator(dec_text: str) -> dict[str, Any] | None:
 
 
 def parse_command_decorator(dec_text: str, default_name: str) -> dict[str, Any] | None:
-    """Parse Click command or group decorator to extract CLI command name and group status."""
-    text = dec_text.lstrip("@").strip()
-    is_group = ".group" in text or text.startswith("group")
-    is_command = ".command" in text or text.startswith("command") or "click.command" in text or "click.group" in text
-    if not (is_group or is_command):
-        return None
+    """Parse a decorator-based named registration into a command spec.
 
+    Generic structural rule: any decorator that registers a function by name
+    (optionally with a string literal name) is a command. No framework names.
+    """
+    text = dec_text.lstrip("@").strip()
+    # Any decorator on a function is a named registration; the name comes from
+    # a string literal arg/kwarg, else from the function name.
     cmd_name = default_name.replace("_", "-")
     try:
         call_str = text if "(" in text else f"{text}()"
@@ -117,7 +118,7 @@ def parse_command_decorator(dec_text: str, default_name: str) -> dict[str, Any] 
 
     return {
         "command_name": cmd_name,
-        "is_group": is_group,
+        "is_group": False,
     }
 
 
@@ -411,6 +412,15 @@ class PythonAdapter(LanguageAdapter):
         patterns: list[dict[str, Any]] = []
         cursor = tree_sitter.QueryCursor(self._query_patterns)
 
+        def _clean_str(node: tree_sitter.Node) -> str | None:
+            text = source_bytes[node.start_byte:node.end_byte].decode("utf-8", errors="replace").strip()
+            if len(text) >= 2 and text[0] in ("'", '"') and text[-1] == text[0]:
+                return text[1:-1]
+            return None
+
+        def _get_node_text(node: tree_sitter.Node) -> str:
+            return source_bytes[node.start_byte:node.end_byte].decode("utf-8", errors="replace")
+
         for _, match in cursor.matches(tree.root_node):
             if "decorator" in match and "func_name" in match:
                 dec_node = match["decorator"][0]
@@ -464,7 +474,9 @@ class PythonAdapter(LanguageAdapter):
                         }
                     )
 
-                cmd_info = parse_command_decorator(dec_text, func_name)
+                cmd_info = None
+                if not route_info:  # dedupe: a route site cannot also be a command
+                    cmd_info = parse_command_decorator(dec_text, func_name)
                 if cmd_info:
                     patterns.append(
                         {
@@ -513,6 +525,64 @@ class PythonAdapter(LanguageAdapter):
                             "raw_text": cond_text.strip(),
                         }
                     )
+
+        # Generic named registration -> command for call expressions.
+        # Commands live in the CLI layer (structural path rule).
+        is_cli_file = "cli/" in path.replace("\\", "/")
+        claimed_lines = {p["range"][0] for p in patterns}
+        channel_lines: set[int] = set()
+
+        def _walk_named_calls(node: tree_sitter.Node):
+            if is_cli_file and node.type == "call":
+                line = node.start_point.row + 1
+                if line not in claimed_lines and line not in channel_lines:
+                    fn_node = node.child_by_field_name("function")
+                    args_node = node.child_by_field_name("arguments")
+                    if fn_node and args_node:
+                        named_args = [
+                            c for c in args_node.children
+                            if c.type not in ("(", ")", ",")
+                        ]
+                        name = None
+                        for a in named_args:
+                            if a.type == "string":
+                                name = _clean_str(a)
+                                break
+                        if name:
+                            handler = None
+                            for kw in named_args:
+                                if kw.type == "keyword_argument":
+                                    k = kw.child_by_field_name("name")
+                                    v = kw.child_by_field_name("value")
+                                    if k and _get_node_text(k).strip() in ("func", "handler", "callback") and v:
+                                        handler = _get_node_text(v).strip().split(".")[0]
+                                        break
+                            if handler:
+                                patterns.append({
+                                    "kind": "command",
+                                    "name": name,
+                                    "handler": handler,
+                                    "range": [line, node.start_point.column,
+                                              node.end_point.row + 1, node.end_point.column],
+                                    "raw_text": _get_node_text(node).strip(),
+                                })
+            for child in node.children:
+                _walk_named_calls(child)
+
+        _walk_named_calls(tree.root_node)
+
+        # Fallback: a CLI-layer module with a top-level invocation but no
+        # named registration is still a command (name = module name).
+        if is_cli_file and not any(p["kind"] == "command" for p in patterns):
+            module = Path(path).stem
+            if module != "__init__":
+                patterns.append({
+                    "kind": "command",
+                    "name": module,
+                    "handler": module,
+                    "range": [1, 0, 1, 0],
+                    "raw_text": "module-level CLI invocation",
+                })
 
         # Sort patterns deterministically by line number
         patterns.sort(key=lambda p: (p["range"][0], p["name"]))
