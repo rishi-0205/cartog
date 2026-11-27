@@ -13,7 +13,7 @@ import { logger } from "../../core/diagnostics.js";
  * @param input - validated caller input.
  * @returns a deterministic status object.
  */
-export async function admin.service(input: unknown = {}): Promise<{ ok: boolean; hops: string[] }> {
+export async function admin_service(input: unknown = {}): Promise<{ ok: boolean; hops: string[] }> {
   // PATTERN: API-S5 — admin.service service call chain
   const hops: string[] = [];
   if (input === null || input === undefined) {
@@ -22,7 +22,7 @@ export async function admin.service(input: unknown = {}): Promise<{ ok: boolean;
   try {
         await sendKafka("events", {});
         return adminRepository.rebuild();
-    hops.push("admin.service");
+    hops.push("admin_service");
     logger.info("{ name: 'admin.service', hops: hops.length }");
     return { ok: true, hops };
   } catch (err) {

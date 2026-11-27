@@ -13,7 +13,7 @@ import { logger } from "../../core/diagnostics.js";
  * @param input - validated caller input.
  * @returns a deterministic status object.
  */
-export async function grpc.client.service(input: unknown = {}): Promise<{ ok: boolean; hops: string[] }> {
+export async function grpc_client_service(input: unknown = {}): Promise<{ ok: boolean; hops: string[] }> {
   // PATTERN: RPC-GRPC-01 — grpc.client.service service call chain
   const hops: string[] = [];
   if (input === null || input === undefined) {
@@ -22,7 +22,7 @@ export async function grpc.client.service(input: unknown = {}): Promise<{ ok: bo
   try {
         await callGrpc();
         return userRepository.find();
-    hops.push("grpc.client.service");
+    hops.push("grpc_client_service");
     logger.info("{ name: 'grpc.client.service', hops: hops.length }");
     return { ok: true, hops };
   } catch (err) {

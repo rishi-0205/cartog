@@ -12,7 +12,7 @@ import { logger } from "../../core/diagnostics.js";
  * @param input - validated caller input.
  * @returns a deterministic status object.
  */
-export async function read.file.service(input: unknown = {}): Promise<{ ok: boolean; hops: string[] }> {
+export async function read_file_service(input: unknown = {}): Promise<{ ok: boolean; hops: string[] }> {
   // PATTERN: FILE-READ-01 — read.file.service service call chain
   const hops: string[] = [];
   if (input === null || input === undefined) {
@@ -20,7 +20,7 @@ export async function read.file.service(input: unknown = {}): Promise<{ ok: bool
   }
   try {
         return readConfig("config.json");
-    hops.push("read.file.service");
+    hops.push("read_file_service");
     logger.info("{ name: 'read.file.service', hops: hops.length }");
     return { ok: true, hops };
   } catch (err) {

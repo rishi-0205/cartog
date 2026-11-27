@@ -12,7 +12,7 @@ import { logger } from "../../core/diagnostics.js";
  * @param input - validated caller input.
  * @returns a deterministic status object.
  */
-export async function sqs.service(input: unknown = {}): Promise<{ ok: boolean; hops: string[] }> {
+export async function sqs_service(input: unknown = {}): Promise<{ ok: boolean; hops: string[] }> {
   // PATTERN: MQ-SQS-01 — sqs.service service call chain
   const hops: string[] = [];
   if (input === null || input === undefined) {
@@ -20,7 +20,7 @@ export async function sqs.service(input: unknown = {}): Promise<{ ok: boolean; h
   }
   try {
         await sendSqs("body");
-    hops.push("sqs.service");
+    hops.push("sqs_service");
     logger.info("{ name: 'sqs.service', hops: hops.length }");
     return { ok: true, hops };
   } catch (err) {

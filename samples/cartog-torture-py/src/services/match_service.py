@@ -3,6 +3,7 @@
 Part of the 'API-S1' torture spine. Documents a realistic call path through
 validation, logging, and the next architectural layer.
 """
+from src.utils.deep_chain import step_0
 from src.queues.celery_app import send_task
 from src.queues.redis_pubsub import publish
 from src.websocket.channels_consumer import broadcast
@@ -26,6 +27,7 @@ async def match_service(input: object = None) -> dict:
     if input is None:
         logger.warning("match_service: empty input, using defaults")
     try:
+        step_0(data)
         send_task("score.persist", [data])
         publish("notifications", data)
         await broadcast("room", data)

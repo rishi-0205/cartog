@@ -12,7 +12,7 @@ import { logger } from "../../core/diagnostics.js";
  * @param input - validated caller input.
  * @returns a deterministic status object.
  */
-export async function nats.service(input: unknown = {}): Promise<{ ok: boolean; hops: string[] }> {
+export async function nats_service(input: unknown = {}): Promise<{ ok: boolean; hops: string[] }> {
   // PATTERN: MQ-NATS-01 — nats.service service call chain
   const hops: string[] = [];
   if (input === null || input === undefined) {
@@ -20,7 +20,7 @@ export async function nats.service(input: unknown = {}): Promise<{ ok: boolean; 
   }
   try {
         publishNats("subject", {});
-    hops.push("nats.service");
+    hops.push("nats_service");
     logger.info("{ name: 'nats.service', hops: hops.length }");
     return { ok: true, hops };
   } catch (err) {

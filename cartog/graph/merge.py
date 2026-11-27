@@ -566,11 +566,13 @@ def build_graph(
                 ch_name = cand["kw_channel"]
             if ch_name is None:
                 continue
-            if cand["has_payload"] and not cand["has_function"]:
-                classified.append({**cand, "kind": "producer", "channel": ch_name})
-            elif cand["has_function"] and not cand["has_payload"]:
+            if cand.get("has_function"):
+                # A function/callback argument is the consumer discriminator,
+                # even when kwargs also look like payload (e.g. queue=..., callback=cb).
                 classified.append({**cand, "kind": "consumer", "channel": ch_name})
-            elif cand.get("first_str") is not None and not cand["has_function"]:
+            elif cand["has_payload"]:
+                classified.append({**cand, "kind": "producer", "channel": ch_name})
+            elif cand.get("first_str") is not None:
                 classified.append({**cand, "kind": "producer", "channel": ch_name})
         elif kind == "direct_call":
             ch_name = cand["channel"]
@@ -579,10 +581,12 @@ def build_graph(
             elif cand["has_function"] and not cand["has_payload"]:
                 classified.append({**cand, "kind": "consumer", "channel": ch_name})
         elif kind == "for_loop_consumer":
-            obj = cand["object"]
-            ch_name = global_bindings.get(f"{cand['file']}:{obj}")
-            if ch_name is None:
-                ch_name = binding_by_var.get(obj)
+            obj = cand.get("object")
+            ch_name = cand.get("channel_name")
+            if ch_name is None and obj:
+                ch_name = global_bindings.get(f"{cand['file']}:{obj}")
+                if ch_name is None:
+                    ch_name = binding_by_var.get(obj)
             if ch_name is not None:
                 classified.append({**cand, "kind": "consumer", "channel": ch_name})
 

@@ -12,7 +12,7 @@ import { logger } from "../../core/diagnostics.js";
  * @param input - validated caller input.
  * @returns a deterministic status object.
  */
-export async function bullmq.producer.service(input: unknown = {}): Promise<{ ok: boolean; hops: string[] }> {
+export async function bullmq_producer_service(input: unknown = {}): Promise<{ ok: boolean; hops: string[] }> {
   // PATTERN: MQ-BULLMQ-01 — bullmq.producer.service service call chain
   const hops: string[] = [];
   if (input === null || input === undefined) {
@@ -21,7 +21,7 @@ export async function bullmq.producer.service(input: unknown = {}): Promise<{ ok
   try {
         await addJob("persist", {});
         await addBulkJobs([{ name: "x", data: {} }]);
-    hops.push("bullmq.producer.service");
+    hops.push("bullmq_producer_service");
     logger.info("{ name: 'bullmq.producer.service', hops: hops.length }");
     return { ok: true, hops };
   } catch (err) {

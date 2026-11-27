@@ -12,7 +12,7 @@ import { logger } from "../../core/diagnostics.js";
  * @param input - validated caller input.
  * @returns a deterministic status object.
  */
-export async function graphql.service(input: unknown = {}): Promise<{ ok: boolean; hops: string[] }> {
+export async function graphql_service(input: unknown = {}): Promise<{ ok: boolean; hops: string[] }> {
   // PATTERN: RPC-GRAPHQL-01 — graphql.service service call chain
   const hops: string[] = [];
   if (input === null || input === undefined) {
@@ -20,7 +20,7 @@ export async function graphql.service(input: unknown = {}): Promise<{ ok: boolea
   }
   try {
         return resolveUser();
-    hops.push("graphql.service");
+    hops.push("graphql_service");
     logger.info("{ name: 'graphql.service', hops: hops.length }");
     return { ok: true, hops };
   } catch (err) {

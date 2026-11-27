@@ -15,7 +15,7 @@ import { logger } from "../../core/diagnostics.js";
  * @param input - validated caller input.
  * @returns a deterministic status object.
  */
-export async function match.service(input: unknown = {}): Promise<{ ok: boolean; hops: string[] }> {
+export async function match_service(input: unknown = {}): Promise<{ ok: boolean; hops: string[] }> {
   // PATTERN: API-S1 — match.service service call chain
   const hops: string[] = [];
   if (input === null || input === undefined) {
@@ -26,7 +26,7 @@ export async function match.service(input: unknown = {}): Promise<{ ok: boolean;
         publish("notifications", {});
         broadcast("room", {});
         return matchRepository.find();
-    hops.push("match.service");
+    hops.push("match_service");
     logger.info("{ name: 'match.service', hops: hops.length }");
     return { ok: true, hops };
   } catch (err) {

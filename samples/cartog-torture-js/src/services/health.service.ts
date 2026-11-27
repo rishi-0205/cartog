@@ -12,7 +12,7 @@ import { logger } from "../../core/diagnostics.js";
  * @param input - validated caller input.
  * @returns a deterministic status object.
  */
-export async function health.service(input: unknown = {}): Promise<{ ok: boolean; hops: string[] }> {
+export async function health_service(input: unknown = {}): Promise<{ ok: boolean; hops: string[] }> {
   // PATTERN: API-S6 — health.service service call chain
   const hops: string[] = [];
   if (input === null || input === undefined) {
@@ -20,7 +20,7 @@ export async function health.service(input: unknown = {}): Promise<{ ok: boolean
   }
   try {
         return cacheGet("health");
-    hops.push("health.service");
+    hops.push("health_service");
     logger.info("{ name: 'health.service', hops: hops.length }");
     return { ok: true, hops };
   } catch (err) {

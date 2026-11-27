@@ -13,7 +13,7 @@ import { logger } from "../../core/diagnostics.js";
  * @param input - validated caller input.
  * @returns a deterministic status object.
  */
-export async function message.ws.service(input: unknown = {}): Promise<{ ok: boolean; hops: string[] }> {
+export async function message_ws_service(input: unknown = {}): Promise<{ ok: boolean; hops: string[] }> {
   // PATTERN: WS-MESSAGE-01 — message.ws.service service call chain
   const hops: string[] = [];
   if (input === null || input === undefined) {
@@ -22,7 +22,7 @@ export async function message.ws.service(input: unknown = {}): Promise<{ ok: boo
   try {
         onMessage("data");
         return eventRepository.save();
-    hops.push("message.ws.service");
+    hops.push("message_ws_service");
     logger.info("{ name: 'message.ws.service', hops: hops.length }");
     return { ok: true, hops };
   } catch (err) {

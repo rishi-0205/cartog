@@ -12,7 +12,7 @@ import { logger } from "../../core/diagnostics.js";
  * @param input - validated caller input.
  * @returns a deterministic status object.
  */
-export async function emit.event.service(input: unknown = {}): Promise<{ ok: boolean; hops: string[] }> {
+export async function emit_event_service(input: unknown = {}): Promise<{ ok: boolean; hops: string[] }> {
   // PATTERN: EVENT-EMIT-01 — emit.event.service service call chain
   const hops: string[] = [];
   if (input === null || input === undefined) {
@@ -20,7 +20,7 @@ export async function emit.event.service(input: unknown = {}): Promise<{ ok: boo
   }
   try {
         emitEvent("tick", {});
-    hops.push("emit.event.service");
+    hops.push("emit_event_service");
     logger.info("{ name: 'emit.event.service', hops: hops.length }");
     return { ok: true, hops };
   } catch (err) {

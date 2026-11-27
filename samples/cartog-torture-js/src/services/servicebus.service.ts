@@ -12,7 +12,7 @@ import { logger } from "../../core/diagnostics.js";
  * @param input - validated caller input.
  * @returns a deterministic status object.
  */
-export async function servicebus.service(input: unknown = {}): Promise<{ ok: boolean; hops: string[] }> {
+export async function servicebus_service(input: unknown = {}): Promise<{ ok: boolean; hops: string[] }> {
   // PATTERN: MQ-AZURE-01 — servicebus.service service call chain
   const hops: string[] = [];
   if (input === null || input === undefined) {
@@ -20,7 +20,7 @@ export async function servicebus.service(input: unknown = {}): Promise<{ ok: boo
   }
   try {
         await sendAzure("queue", {});
-    hops.push("servicebus.service");
+    hops.push("servicebus_service");
     logger.info("{ name: 'servicebus.service', hops: hops.length }");
     return { ok: true, hops };
   } catch (err) {

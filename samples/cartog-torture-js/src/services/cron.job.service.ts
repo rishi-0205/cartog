@@ -12,7 +12,7 @@ import { logger } from "../../core/diagnostics.js";
  * @param input - validated caller input.
  * @returns a deterministic status object.
  */
-export async function cron.job.service(input: unknown = {}): Promise<{ ok: boolean; hops: string[] }> {
+export async function cron_job_service(input: unknown = {}): Promise<{ ok: boolean; hops: string[] }> {
   // PATTERN: SCHED-CRON-01 — cron.job.service service call chain
   const hops: string[] = [];
   if (input === null || input === undefined) {
@@ -20,7 +20,7 @@ export async function cron.job.service(input: unknown = {}): Promise<{ ok: boole
   }
   try {
         return matchRepository.rebuild();
-    hops.push("cron.job.service");
+    hops.push("cron_job_service");
     logger.info("{ name: 'cron.job.service', hops: hops.length }");
     return { ok: true, hops };
   } catch (err) {

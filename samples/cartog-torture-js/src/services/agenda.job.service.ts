@@ -12,7 +12,7 @@ import { logger } from "../../core/diagnostics.js";
  * @param input - validated caller input.
  * @returns a deterministic status object.
  */
-export async function agenda.job.service(input: unknown = {}): Promise<{ ok: boolean; hops: string[] }> {
+export async function agenda_job_service(input: unknown = {}): Promise<{ ok: boolean; hops: string[] }> {
   // PATTERN: SCHED-AGENDA-01 — agenda.job.service service call chain
   const hops: string[] = [];
   if (input === null || input === undefined) {
@@ -20,7 +20,7 @@ export async function agenda.job.service(input: unknown = {}): Promise<{ ok: boo
   }
   try {
         return eventRepository.save();
-    hops.push("agenda.job.service");
+    hops.push("agenda_job_service");
     logger.info("{ name: 'agenda.job.service', hops: hops.length }");
     return { ok: true, hops };
   } catch (err) {

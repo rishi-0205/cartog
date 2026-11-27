@@ -13,7 +13,7 @@ import { logger } from "../../core/diagnostics.js";
  * @param input - validated caller input.
  * @returns a deterministic status object.
  */
-export async function read.cache.service(input: unknown = {}): Promise<{ ok: boolean; hops: string[] }> {
+export async function read_cache_service(input: unknown = {}): Promise<{ ok: boolean; hops: string[] }> {
   // PATTERN: CACHE-READ-01 — read.cache.service service call chain
   const hops: string[] = [];
   if (input === null || input === undefined) {
@@ -22,7 +22,7 @@ export async function read.cache.service(input: unknown = {}): Promise<{ ok: boo
   try {
         const v = cacheGet("k");
         if (!v) { cacheSet("k", matchRepository.find()); }
-    hops.push("read.cache.service");
+    hops.push("read_cache_service");
     logger.info("{ name: 'read.cache.service', hops: hops.length }");
     return { ok: true, hops };
   } catch (err) {

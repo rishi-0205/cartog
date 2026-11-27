@@ -12,7 +12,7 @@ import { logger } from "../../core/diagnostics.js";
  * @param input - validated caller input.
  * @returns a deterministic status object.
  */
-export async function rabbitmq.producer.service(input: unknown = {}): Promise<{ ok: boolean; hops: string[] }> {
+export async function rabbitmq_producer_service(input: unknown = {}): Promise<{ ok: boolean; hops: string[] }> {
   // PATTERN: MQ-RABBITMQ-01 — rabbitmq.producer.service service call chain
   const hops: string[] = [];
   if (input === null || input === undefined) {
@@ -20,7 +20,7 @@ export async function rabbitmq.producer.service(input: unknown = {}): Promise<{ 
   }
   try {
         basicPublish("", "q1", "body");
-    hops.push("rabbitmq.producer.service");
+    hops.push("rabbitmq_producer_service");
     logger.info("{ name: 'rabbitmq.producer.service', hops: hops.length }");
     return { ok: true, hops };
   } catch (err) {

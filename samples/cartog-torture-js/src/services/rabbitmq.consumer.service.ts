@@ -13,7 +13,7 @@ import { logger } from "../../core/diagnostics.js";
  * @param input - validated caller input.
  * @returns a deterministic status object.
  */
-export async function rabbitmq.consumer.service(input: unknown = {}): Promise<{ ok: boolean; hops: string[] }> {
+export async function rabbitmq_consumer_service(input: unknown = {}): Promise<{ ok: boolean; hops: string[] }> {
   // PATTERN: MQ-RABBITMQ-02 — rabbitmq.consumer.service service call chain
   const hops: string[] = [];
   if (input === null || input === undefined) {
@@ -22,7 +22,7 @@ export async function rabbitmq.consumer.service(input: unknown = {}): Promise<{ 
   try {
         onMessage({}, {}, {}, "body");
         return matchRepository.persist();
-    hops.push("rabbitmq.consumer.service");
+    hops.push("rabbitmq_consumer_service");
     logger.info("{ name: 'rabbitmq.consumer.service', hops: hops.length }");
     return { ok: true, hops };
   } catch (err) {

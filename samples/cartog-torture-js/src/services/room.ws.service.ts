@@ -12,7 +12,7 @@ import { logger } from "../../core/diagnostics.js";
  * @param input - validated caller input.
  * @returns a deterministic status object.
  */
-export async function room.ws.service(input: unknown = {}): Promise<{ ok: boolean; hops: string[] }> {
+export async function room_ws_service(input: unknown = {}): Promise<{ ok: boolean; hops: string[] }> {
   // PATTERN: WS-ROOM-01 — room.ws.service service call chain
   const hops: string[] = [];
   if (input === null || input === undefined) {
@@ -20,7 +20,7 @@ export async function room.ws.service(input: unknown = {}): Promise<{ ok: boolea
   }
   try {
         broadcast("room", {});
-    hops.push("room.ws.service");
+    hops.push("room_ws_service");
     logger.info("{ name: 'room.ws.service', hops: hops.length }");
     return { ok: true, hops };
   } catch (err) {

@@ -12,7 +12,7 @@ import { logger } from "../../core/diagnostics.js";
  * @param input - validated caller input.
  * @returns a deterministic status object.
  */
-export async function redis.pubsub.service(input: unknown = {}): Promise<{ ok: boolean; hops: string[] }> {
+export async function redis_pubsub_service(input: unknown = {}): Promise<{ ok: boolean; hops: string[] }> {
   // PATTERN: MQ-REDIS-01 — redis.pubsub.service service call chain
   const hops: string[] = [];
   if (input === null || input === undefined) {
@@ -21,7 +21,7 @@ export async function redis.pubsub.service(input: unknown = {}): Promise<{ ok: b
   try {
         publish("notifications", {});
         subscribe("notifications", () => {});
-    hops.push("redis.pubsub.service");
+    hops.push("redis_pubsub_service");
     logger.info("{ name: 'redis.pubsub.service', hops: hops.length }");
     return { ok: true, hops };
   } catch (err) {

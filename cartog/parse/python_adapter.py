@@ -99,6 +99,7 @@ def parse_command_decorator(dec_text: str, default_name: str) -> dict[str, Any] 
     (optionally with a string literal name) is a command. No framework names.
     """
     text = dec_text.lstrip("@").strip()
+    is_group = text.startswith("group") or ".group" in text or "group(" in text
     # Any decorator on a function is a named registration; the name comes from
     # a string literal arg/kwarg, else from the function name.
     cmd_name = default_name.replace("_", "-")
@@ -118,7 +119,7 @@ def parse_command_decorator(dec_text: str, default_name: str) -> dict[str, Any] 
 
     return {
         "command_name": cmd_name,
-        "is_group": False,
+        "is_group": is_group,
     }
 
 
@@ -930,25 +931,36 @@ class PythonAdapter(LanguageAdapter):
                     if found_in and child.type not in (":",):
                         iterable = child
                         break
-                if iterable and iterable.type == "identifier":
-                    binding_name = _get_node_text(iterable).strip()
-                    # Record as a member_call-like candidate so merge.py can
-                    # resolve it via the global binding map. We use a special
-                    # kind "for_loop_consumer" that merge.py handles.
-                    candidates.append({
-                        "kind": "for_loop_consumer",
-                        "object": binding_name,
-                        "has_payload": False,
-                        "has_function": True,
-                        "function": _enclosing_function(node),
-                        "file": path,
-                        "range": [
-                            node.start_point.row + 1,
-                            node.start_point.column,
-                            node.end_point.row + 1,
-                            node.end_point.column,
-                        ],
-                    })
+                if iterable:
+                    channel_name = None
+                    binding_name = None
+                    if iterable.type == "identifier":
+                        binding_name = _get_node_text(iterable).strip()
+                    elif iterable.type == "call":
+                        # for msg in consume("events") — channel name is the
+                        # string literal argument of the call.
+                        ia = iterable.child_by_field_name("arguments")
+                        if ia:
+                            for a in ia.named_children:
+                                if a.type == "string":
+                                    channel_name = _clean_str(a)
+                                    break
+                    if binding_name or channel_name:
+                        candidates.append({
+                            "kind": "for_loop_consumer",
+                            "object": binding_name,
+                            "channel_name": channel_name,
+                            "has_payload": False,
+                            "has_function": True,
+                            "function": _enclosing_function(node),
+                            "file": path,
+                            "range": [
+                                node.start_point.row + 1,
+                                node.start_point.column,
+                                node.end_point.row + 1,
+                                node.end_point.column,
+                            ],
+                        })
 
             for child in node.children:
                 _walk_second_pass(child)

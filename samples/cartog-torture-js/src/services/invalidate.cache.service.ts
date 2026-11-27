@@ -12,7 +12,7 @@ import { logger } from "../../core/diagnostics.js";
  * @param input - validated caller input.
  * @returns a deterministic status object.
  */
-export async function invalidate.cache.service(input: unknown = {}): Promise<{ ok: boolean; hops: string[] }> {
+export async function invalidate_cache_service(input: unknown = {}): Promise<{ ok: boolean; hops: string[] }> {
   // PATTERN: CACHE-INVALIDATE-01 — invalidate.cache.service service call chain
   const hops: string[] = [];
   if (input === null || input === undefined) {
@@ -20,7 +20,7 @@ export async function invalidate.cache.service(input: unknown = {}): Promise<{ o
   }
   try {
         cacheDel("k");
-    hops.push("invalidate.cache.service");
+    hops.push("invalidate_cache_service");
     logger.info("{ name: 'invalidate.cache.service', hops: hops.length }");
     return { ok: true, hops };
   } catch (err) {

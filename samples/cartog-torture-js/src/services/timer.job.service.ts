@@ -12,7 +12,7 @@ import { logger } from "../../core/diagnostics.js";
  * @param input - validated caller input.
  * @returns a deterministic status object.
  */
-export async function timer.job.service(input: unknown = {}): Promise<{ ok: boolean; hops: string[] }> {
+export async function timer_job_service(input: unknown = {}): Promise<{ ok: boolean; hops: string[] }> {
   // PATTERN: SCHED-TIMER-01 — timer.job.service service call chain
   const hops: string[] = [];
   if (input === null || input === undefined) {
@@ -20,7 +20,7 @@ export async function timer.job.service(input: unknown = {}): Promise<{ ok: bool
   }
   try {
         cacheSet("ttl", 1);
-    hops.push("timer.job.service");
+    hops.push("timer_job_service");
     logger.info("{ name: 'timer.job.service', hops: hops.length }");
     return { ok: true, hops };
   } catch (err) {
