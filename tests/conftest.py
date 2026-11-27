@@ -84,6 +84,40 @@ def torture_py_graph(tmp_path_factory) -> dict:
     return analyze_repo("cartog-torture-py", tmp_path_factory.mktemp("torture-py") / "out")
 
 
+@pytest.fixture(scope="session")
+def torture_js_view(request) -> dict:
+    """Build the view tree from the JS torture graph (in-process, no extra analyze)."""
+    from cartog.core.model import Graph
+    from cartog.render.views import ViewNode, build_universal_view_tree
+    graph = request.getfixturevalue("torture_js_graph")
+    g = Graph.from_dict(graph)
+    root = build_universal_view_tree(g, max_nodes=1000)
+    nodes = []
+    def walk(n):
+        nodes.append({"kind": n.kind, "name": n.name})
+        for c in n.children:
+            walk(c)
+    walk(root)
+    return {"nodes": nodes}
+
+
+@pytest.fixture(scope="session")
+def torture_py_view(request) -> dict:
+    """Build the view tree from the Python torture graph."""
+    from cartog.core.model import Graph
+    from cartog.render.views import build_universal_view_tree
+    graph = request.getfixturevalue("torture_py_graph")
+    g = Graph.from_dict(graph)
+    root = build_universal_view_tree(g, max_nodes=1000)
+    nodes = []
+    def walk(n):
+        nodes.append({"kind": n.kind, "name": n.name})
+        for c in n.children:
+            walk(c)
+    walk(root)
+    return {"nodes": nodes}
+
+
 def expected(repo_name: str) -> dict:
     """Load the ground-truth expected.json for a torture repo."""
     path = REPO_ROOT / "tests" / "adversarial" / repo_name / "expected.json"
