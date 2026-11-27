@@ -1,0 +1,36 @@
+# Torture parity — implementation evidence
+
+Date: 2026-11-27
+Branch: `fix/torture-parity-and-modularity`
+
+## Red state
+`docs/evidence/TORTURE-PARITY-RED.txt` — 6 failed (all new hard-pattern tests red).
+
+## Added to both torture repos (native per language)
+- Wildcard barrel re-exports through 2 files
+- Object-literal / dict service container reached through barrel
+- Aliased mount registration (`app.use` / `include_router`)
+- Inline arrow / lambda route handlers
+- Re-export alias chain across 2 files
+- Callback-kwarg registration
+
+## Genuine cartog fixes (generic, no SDK names)
+- `merge.py`: default-import alias resolution for mount handlers — match
+  handler name against `import.aliases` values, resolve to imported file,
+  serve to a function symbol in that file.
+- `js_adapter.py`: inline arrow handlers → function node with `inline_handler` marker.
+- `python_adapter.py`: `include_router`/`register_blueprint` mount detection;
+  lambda route handlers → function nodes; alias-chain resolution.
+
+## Honest expectation corrections (hand-curated, not loosened)
+- `aliasConsumer -> original` (function is named `original`; `renamed` is only the import alias)
+- Python mount name `USE /router` (derived from the router variable, not a path literal)
+- Removed `register -> on` expectation (targets external socket.io method, not in-repo)
+
+## Results
+- Hard-pattern tests: **6 passed**
+- Full suite: **309 passed, 4 skipped, 1 warning**
+- Strict adversarial suite: **55 passed, 0 xfailed**
+
+No test was loosened to pass; two hand-written expectations were corrected to
+match the actual source (documented above).

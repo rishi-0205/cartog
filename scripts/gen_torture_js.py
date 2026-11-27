@@ -579,6 +579,56 @@ import type { B } from "./classes.js";
 export async function load(n: string): Promise<void> { await import(n); require(n); }
 ''')
 
+# ============ ADVERSARIAL HARD PATTERNS (parity with Cricklo) ============
+add('src/adversarial/barrel.ts', '''/** Wildcard barrel: export * from 2 files. */
+export * from "./svc-object.js";
+export * from "./svc-util.js";
+''')
+add('src/adversarial/svc-object.ts', '''/** Object-literal service container reached through wildcard barrel. */
+export const svc = {
+  handle(data: unknown): unknown { return validateData(data); },
+};
+function validateData(d: unknown): unknown { return d; }
+''')
+add('src/adversarial/svc-util.ts', '''/** Second wildcard export target. */
+export function helper(x: unknown): unknown { return x; }
+''')
+add('src/adversarial/barrel-controller.ts', '''/** Controller calling svc.handle through wildcard barrel. */
+import { svc } from "./barrel.js";
+export function barrelController(data: unknown): unknown { return svc.handle(data); }
+''')
+add('src/adversarial/aliased-router.ts', '''/** Router imported as default alias. */
+import { Router } from "express";
+export function innerHandler(req: unknown, res: unknown): unknown { return res; }
+const r = Router();
+r.get("/inner", innerHandler);
+export default r;
+''')
+add('src/adversarial/mount-app.ts', '''/** app.use with aliased default import + inline arrow handler. */
+import express from "express";
+import aliasedRouter from "./aliased-router.js";
+const app = express();
+app.use("/api/v1/adversarial", aliasedRouter);
+app.get("/api/v1/adversarial/health", (req, res) => res.send("ok"));
+''')
+add('src/adversarial/alias-a.ts', '''/** Alias chain source. */
+export function original(x: unknown): unknown { return x; }
+''')
+add('src/adversarial/alias-b.ts', '''/** Alias chain middle. */
+export { original as renamed } from "./alias-a.js";
+''')
+add('src/adversarial/alias-consumer.ts', '''/** Alias chain consumer. */
+import { renamed } from "./alias-b.js";
+export function aliasConsumer(x: unknown): unknown { return renamed(x); }
+''')
+add('src/adversarial/callback-route.ts', '''/** Route registration with callback kwarg. */
+import { Server } from "socket.io";
+const io = new Server();
+export function register() {
+  io.on("connection", (socket) => socket.on("join", (room) => socket.join(room)));
+}
+''')
+
 # ============ MONOREPO ============
 for p in ('a','b'):
     add(f'monorepo/packages/{p}/package.json', f'{{ "name": "@scope/{p}", "version": "1.0.0" }}\n')

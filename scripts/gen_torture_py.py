@@ -908,6 +908,70 @@ def load(name):
     return importlib.import_module(name)
 ''')
 
+# ============ ADVERSARIAL HARD PATTERNS (parity with Cricklo) ============
+add('src/adversarial/__init__.py', '"""Wildcard barrel package."""\n')
+add('src/adversarial/svc_object.py', '''"""Object-literal service container reached through wildcard barrel."""
+def handle(data):
+    """Handle data through an internal validator."""
+    return validate_data(data)
+
+def validate_data(d):
+    """Validate the data."""
+    return d
+''')
+add('src/adversarial/svc_util.py', '''"""Second wildcard export target."""
+def helper(x):
+    """Helper exported through the wildcard barrel."""
+    return x
+''')
+add('src/adversarial/barrel.py', '''"""Wildcard barrel."""
+from src.adversarial.svc_object import *
+from src.adversarial.svc_util import *
+''')
+add('src/adversarial/barrel_controller.py', '''"""Controller calling handle through wildcard barrel."""
+from src.adversarial.barrel import handle
+
+def barrel_controller(data):
+    """Delegate to the barrel-exported handler."""
+    return handle(data)
+''')
+add('src/adversarial/aliased_router.py', '''"""Router module imported under an alias."""
+def router_handler(x):
+    """Handler inside the aliased router."""
+    return x
+''')
+add('src/adversarial/mount_app.py', '''"""FastAPI app with aliased router include + inline lambda handler."""
+from fastapi import FastAPI
+from src.adversarial.aliased_router import router_handler
+app = FastAPI()
+app.include_router(router_handler)
+app.add_api_route("/api/v1/adversarial/health", lambda: {"ok": True})
+''')
+add('src/adversarial/alias_a.py', '''"""Alias chain source."""
+def original(x):
+    """Original function."""
+    return x
+''')
+add('src/adversarial/alias_b.py', '''"""Alias chain middle."""
+from src.adversarial.alias_a import original as renamed
+''')
+add('src/adversarial/alias_consumer.py', '''"""Alias chain consumer."""
+from src.adversarial.alias_b import renamed
+
+def alias_consumer(x):
+    """Call the aliased function."""
+    return renamed(x)
+''')
+add('src/adversarial/callback_route.py', '''"""Route registration with callback kwarg."""
+def register(server, callback):
+    """Register a handler with a callback kwarg."""
+    server.on("connection", on_message_callback=callback)
+
+def on_message_callback(msg):
+    """Handle a message."""
+    return msg
+''')
+
 # ============ NAMESPACE / STUBS / FIXTURES ============
 add('namespace_pkg/plugin_a.py', '''"""PEP 420 namespace module A. PATTERN: NAMESPACE-01."""
 def plugin():
