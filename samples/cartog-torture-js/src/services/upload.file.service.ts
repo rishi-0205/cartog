@@ -12,7 +12,7 @@ import { logger } from "../../core/diagnostics.js";
  * @param input - validated caller input.
  * @returns a deterministic status object.
  */
-export async function upload.file.service(input: unknown = {}): Promise<{ ok: boolean; hops: string[] }> {
+export async function upload_file_service(input: unknown = {}): Promise<{ ok: boolean; hops: string[] }> {
   // PATTERN: FILE-UPLOAD-01 — upload.file.service service call chain
   const hops: string[] = [];
   if (input === null || input === undefined) {
@@ -20,7 +20,7 @@ export async function upload.file.service(input: unknown = {}): Promise<{ ok: bo
   }
   try {
         await uploadObject("key", "body");
-    hops.push("upload.file.service");
+    hops.push("upload_file_service");
     logger.info("{ name: 'upload.file.service', hops: hops.length }");
     return { ok: true, hops };
   } catch (err) {

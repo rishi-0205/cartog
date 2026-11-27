@@ -6,7 +6,7 @@ from src.controllers.user_controller import user_controller
 app = FastAPI()
 router = APIRouter()
 
-@app.post("/api/v1/match/score-update")
+@app.post("/api/v1/match/score_update")
 async def score_update(payload: dict, dep=Depends(provide)) -> dict:
     """Score update endpoint with DI dependency (must emit decorator ref)."""
     return await score_update_controller(payload)

@@ -12,7 +12,7 @@ import { logger } from "../../core/diagnostics.js";
  * @param input - validated caller input.
  * @returns a deterministic status object.
  */
-export async function trpc.service(input: unknown = {}): Promise<{ ok: boolean; hops: string[] }> {
+export async function trpc_service(input: unknown = {}): Promise<{ ok: boolean; hops: string[] }> {
   // PATTERN: RPC-TRPC-01 — trpc.service service call chain
   const hops: string[] = [];
   if (input === null || input === undefined) {
@@ -20,7 +20,7 @@ export async function trpc.service(input: unknown = {}): Promise<{ ok: boolean; 
   }
   try {
         return queryTrpc();
-    hops.push("trpc.service");
+    hops.push("trpc_service");
     logger.info("{ name: 'trpc.service', hops: hops.length }");
     return { ok: true, hops };
   } catch (err) {

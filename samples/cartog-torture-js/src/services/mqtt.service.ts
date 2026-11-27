@@ -12,7 +12,7 @@ import { logger } from "../../core/diagnostics.js";
  * @param input - validated caller input.
  * @returns a deterministic status object.
  */
-export async function mqtt.service(input: unknown = {}): Promise<{ ok: boolean; hops: string[] }> {
+export async function mqtt_service(input: unknown = {}): Promise<{ ok: boolean; hops: string[] }> {
   // PATTERN: MQ-MQTT-01 — mqtt.service service call chain
   const hops: string[] = [];
   if (input === null || input === undefined) {
@@ -20,7 +20,7 @@ export async function mqtt.service(input: unknown = {}): Promise<{ ok: boolean; 
   }
   try {
         publishMqtt("topic", "payload");
-    hops.push("mqtt.service");
+    hops.push("mqtt_service");
     logger.info("{ name: 'mqtt.service', hops: hops.length }");
     return { ok: true, hops };
   } catch (err) {

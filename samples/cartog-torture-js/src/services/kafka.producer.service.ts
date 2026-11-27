@@ -12,7 +12,7 @@ import { logger } from "../../core/diagnostics.js";
  * @param input - validated caller input.
  * @returns a deterministic status object.
  */
-export async function kafka.producer.service(input: unknown = {}): Promise<{ ok: boolean; hops: string[] }> {
+export async function kafka_producer_service(input: unknown = {}): Promise<{ ok: boolean; hops: string[] }> {
   // PATTERN: MQ-KAFKA-01 — kafka.producer.service service call chain
   const hops: string[] = [];
   if (input === null || input === undefined) {
@@ -20,7 +20,7 @@ export async function kafka.producer.service(input: unknown = {}): Promise<{ ok:
   }
   try {
         await sendKafka("events", {});
-    hops.push("kafka.producer.service");
+    hops.push("kafka_producer_service");
     logger.info("{ name: 'kafka.producer.service', hops: hops.length }");
     return { ok: true, hops };
   } catch (err) {

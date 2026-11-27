@@ -13,7 +13,7 @@ import { logger } from "../../core/diagnostics.js";
  * @param input - validated caller input.
  * @returns a deterministic status object.
  */
-export async function user.service(input: unknown = {}): Promise<{ ok: boolean; hops: string[] }> {
+export async function user_service(input: unknown = {}): Promise<{ ok: boolean; hops: string[] }> {
   // PATTERN: API-S2 — user.service service call chain
   const hops: string[] = [];
   if (input === null || input === undefined) {
@@ -22,7 +22,7 @@ export async function user.service(input: unknown = {}): Promise<{ ok: boolean; 
   try {
         publish("user-events", {});
         return userRepository.find();
-    hops.push("user.service");
+    hops.push("user_service");
     logger.info("{ name: 'user.service', hops: hops.length }");
     return { ok: true, hops };
   } catch (err) {

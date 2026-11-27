@@ -377,7 +377,7 @@ from src.controllers.user_controller import user_controller
 app = FastAPI()
 router = APIRouter()
 
-@app.post("/api/v1/match/score-update")
+@app.post("/api/v1/match/score_update")
 async def score_update(payload: dict, dep=Depends(provide)) -> dict:
     """Score update endpoint with DI dependency (must emit decorator ref)."""
     return await score_update_controller(payload)
@@ -442,9 +442,22 @@ async def {name}_controller(payload: object = None) -> dict:
     return await {target}_service(payload)
 ''')
 
+# ============ DEEP UTILITY CHAIN (long cross-file calls) ============
+deep_lines = ['"""Deep utility chain — tests long cross-file call tracing."""', '']
+for i in range(20):
+    nxt = f"step_{i+1}" if i < 19 else "None"
+    deep_lines.append(f'def step_{i}(data: object) -> object:')
+    deep_lines.append(f'    """Step {i} of the deep chain."""')
+    if i < 19:
+        deep_lines.append(f'    return {nxt}(data)')
+    else:
+        deep_lines.append('    return data')
+    deep_lines.append('')
+add("src/utils/deep_chain.py", "\n".join(deep_lines))
+
 # ============ SERVICE SPINES ============
 svc_specs = {
- 'match_service': (['from src.queues.celery_app import send_task', 'from src.queues.redis_pubsub import publish', 'from src.websocket.channels_consumer import broadcast', 'from src.repositories.match_repository import persist'], ['    send_task("score.persist", [data])', '    publish("notifications", data)', '    await broadcast("room", data)', '    return persist(data)'], 'API-S1', True),
+ 'match_service': (['from src.utils.deep_chain import step_0', 'from src.queues.celery_app import send_task', 'from src.queues.redis_pubsub import publish', 'from src.websocket.channels_consumer import broadcast', 'from src.repositories.match_repository import persist'], ['    step_0(data)', '    send_task("score.persist", [data])', '    publish("notifications", data)', '    await broadcast("room", data)', '    return persist(data)'], 'API-S1', True),
  'user_service': (['from src.queues.redis_pubsub import publish', 'from src.repositories.user_repository import find'], ['    publish("user-events", data)', '    return find()'], 'API-S2', False),
  'profile_service': (['from src.queues.rabbitmq import basic_publish', 'from src.repositories.user_repository import find'], ['    basic_publish("q1", data)', '    return find()'], 'API-S3', False),
  'health_service': (['from src.utils.cache_util import cache_get'], ['    return cache_get("health")'], 'API-S6', False),
@@ -578,8 +591,15 @@ def rebuild(wrapper):
     """Rebuild match stats."""
     return None
 
+def validate_task_name(name):
+    """Validate a task name before enqueueing."""
+    if not isinstance(name, str) or not name:
+        return False
+    return True
+
 def send_task(name, args):
     """Send a task by name."""
+    validate_task_name(name)
     return app.send_task(name, args=args)
 
 def delay_task(data):

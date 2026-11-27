@@ -13,8 +13,15 @@ def rebuild(wrapper):
     """Rebuild match stats."""
     return None
 
+def validate_task_name(name):
+    """Validate a task name before enqueueing."""
+    if not isinstance(name, str) or not name:
+        return False
+    return True
+
 def send_task(name, args):
     """Send a task by name."""
+    validate_task_name(name)
     return app.send_task(name, args=args)
 
 def delay_task(data):

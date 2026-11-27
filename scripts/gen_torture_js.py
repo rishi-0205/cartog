@@ -15,7 +15,7 @@ def add(path, content):
 
 def svc(name, layer, imports, chain, pattern, extra=''):
     """Generate a realistic service/util/repository file with a documented call chain."""
-    fn = name.replace('-', '_').replace('/', '_')
+    fn = name.replace('-', '_').replace('/', '_').replace('.', '_')
     imp = '\n'.join(imports)
     calls = '\n'.join(f'    {c}' for c in chain)
     return f'''/**
@@ -313,10 +313,10 @@ import { healthService } from "../../../services/health.service.js";
 export default function handler(): unknown { return healthService.check(); }
 ''')
 add('src/controllers/scoreUpdate.controller.ts', '''/** Controller for score-update API spine. */
-import { scoreUpdateService } from "../services/match.service.js";
+import { match_service } from "../services/match.service.js";
 export async function scoreUpdateController(req: unknown): Promise<unknown> {
   // PATTERN: API-S1 — controller → service call
-  return scoreUpdateService.handle(req);
+  return match_service(req);
 }
 ''')
 add('src/controllers/match.controller.ts', '''/** Controller for match lookup API spine. */

@@ -12,7 +12,7 @@ import { logger } from "../../core/diagnostics.js";
  * @param input - validated caller input.
  * @returns a deterministic status object.
  */
-export async function gpubsub.service(input: unknown = {}): Promise<{ ok: boolean; hops: string[] }> {
+export async function gpubsub_service(input: unknown = {}): Promise<{ ok: boolean; hops: string[] }> {
   // PATTERN: MQ-GCP-01 — gpubsub.service service call chain
   const hops: string[] = [];
   if (input === null || input === undefined) {
@@ -20,7 +20,7 @@ export async function gpubsub.service(input: unknown = {}): Promise<{ ok: boolea
   }
   try {
         await publishGcp("topic", {});
-    hops.push("gpubsub.service");
+    hops.push("gpubsub_service");
     logger.info("{ name: 'gpubsub.service', hops: hops.length }");
     return { ok: true, hops };
   } catch (err) {

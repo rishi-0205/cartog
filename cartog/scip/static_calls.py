@@ -89,12 +89,27 @@ def _import_target(
     return None
 
 
-def _find_exports(tree: Any, name: str) -> list[tuple[str, Any]]:
-    """Find every exported binding with the given name."""
+def _find_exports(tree: Any, name: str, _depth: int = 0, _seen: set | None = None) -> list[tuple[str, Any]]:
+    """Find every exported binding with the given name, following export * from."""
+    if _depth > 4:
+        return []
+    if _seen is None:
+        _seen = set()
     hits: list[tuple[str, Any]] = []
     for node in _walk(tree.root_node):
         if node.type == "export_statement":
             source = node.child_by_field_name("source")
+            # Wildcard re-export: export * from "./mod.js"
+            is_wildcard = "*" in _text(node) and source is not None
+            if source is not None and is_wildcard:
+                spec = _clean_specifier(_text(source))
+                if spec not in _seen:
+                    _seen.add(spec)
+                    adapter = None
+                    from cartog.parse import get_adapter
+                    # We only need the specifier here; full resolution happens in _enter_module.
+                    hits.append(("wildcard", spec))
+                continue
             for child in _walk(node):
                 if child.type == "export_specifier":
                     orig = child.child_by_field_name("original") or child.named_children[0]
@@ -218,6 +233,27 @@ def _enter_module(
     targets = {h[1] for h in hits if h[0] in ("reexport", "local")}
     if len(targets) > 1:
         return ("abort", file, None)
+    wildcard_hits = [h for h in hits if h[0] == "wildcard"]
+    if wildcard_hits:
+        cur_rec = files_by_path.get(file)
+        if cur_rec is not None:
+            for wh in wildcard_hits:
+                imp = type("Imp", (), {})()
+                imp.specifier = wh[1]
+                imp.names = [name]
+                imp.aliases = {}
+                imp.kind = "standard"
+                imp.line = 1
+                imp.level = 0
+                imp.raw_text = wh[1]
+                imp.is_type_only = False
+                nxt = _import_target(name, [imp], language, file, context)
+                if nxt is None:
+                    continue
+                sub = _enter_module(nxt, name, trees, files_by_path, context, language, target_p, depth + 1)
+                if sub[0] not in ("abort", "module"):
+                    return sub
+        return ("abort", file, None)
     hit = hits[0]
     if hit[0] == "object":
         return ("object", file, hit[1])
@@ -287,7 +323,23 @@ def resolve_chain_calls(
                     hits = _find_exports(cur_tree, seg) if cur_tree else []
                     ambiguous = len({h[1] for h in hits if h[0] in ("reexport", "local")}) > 1
                     hit = hits[0] if hits else None
-                    if ambiguous:
+                    if hit and hit[0] == "wildcard":
+                        cur_rec = files_by_path.get(cur_file)
+                        imp = type("Imp", (), {})()
+                        imp.specifier = hit[1]
+                        imp.names = [seg]
+                        imp.aliases = {}
+                        imp.kind = "standard"
+                        imp.line = 1
+                        imp.level = 0
+                        imp.raw_text = hit[1]
+                        imp.is_type_only = False
+                        nxt = _import_target(seg, [imp], language, cur_file, context) if cur_rec else None
+                        container = (
+                            _enter_module(nxt, seg, trees, files_by_path, context, language, target_p)
+                            if nxt else ("abort", cur_file, None)
+                        )
+                    elif ambiguous:
                         container = ("abort", cur_file, None)
                     elif hit and hit[0] == "reexport":
                         cur_rec = files_by_path.get(cur_file)
@@ -338,7 +390,23 @@ def resolve_chain_calls(
             target_sym: SymbolRecord | None = None
             if kind == "module":
                 hit = _find_export(cur_tree, final)
-                if hit and hit[0] in ("symbol", "object"):
+                if hit and hit[0] == "wildcard":
+                    imp = type("Imp", (), {})()
+                    imp.specifier = hit[1]
+                    imp.names = [final]
+                    imp.aliases = {}
+                    imp.kind = "standard"
+                    imp.line = 1
+                    imp.level = 0
+                    imp.raw_text = hit[1]
+                    imp.is_type_only = False
+                    nxt = _import_target(final, [imp], language, cur_file, context)
+                    if nxt:
+                        sub = _enter_module(nxt, final, trees, files_by_path, context, language, target_p)
+                        sub_rec = files_by_path.get(sub[1])
+                        if sub[0] in ("symbol", "object") and sub_rec is not None:
+                            target_sym = _symbol_for(sub[2], sub_rec)
+                elif hit and hit[0] in ("symbol", "object"):
                     target_sym = _symbol_for(hit[1], cur_file_rec)
             elif kind == "object":
                 member = _object_member(node, final)
@@ -357,6 +425,49 @@ def resolve_chain_calls(
                     caller_path=caller.path,
                     caller_symbol=caller_sym.name,
                     callee_path=cur_file,
+                    callee_symbol=target_sym.name,
+                    evidence=[f"{caller.path}:{call.start_point[0] + 1}"],
+                    count=1,
+                    caller_qualified_name=caller_sym.qualified_name,
+                    callee_qualified_name=target_sym.qualified_name,
+                    kind="calls",
+                    ref_kind=None,
+                    confidence="inferred",
+                )
+            )
+
+        # Generic single-segment imported call: foo() where foo is imported
+        # from an internal file. Resolve to the exported symbol foo in that file.
+        for call in _walk(tree.root_node):
+            if call.type not in _WALK_KINDS:
+                continue
+            segs = _segments(call)
+            if len(segs) != 1:
+                continue
+            name = segs[0]
+            if name in ("require", "import", "console", "logger", "print"):
+                continue
+            target_file = _import_target(name, caller.imports, caller.language, caller.path, context)
+            if not target_file:
+                continue
+            target_tree = _tree_for(target_file, caller.language, target_p, trees)
+            target_rec = files_by_path.get(target_file)
+            if target_tree is None or target_rec is None:
+                continue
+            hit = _find_export(target_tree, name)
+            if not hit or hit[0] not in ("symbol", "object"):
+                continue
+            target_sym = _symbol_for(hit[1], target_rec)
+            if target_sym is None:
+                continue
+            caller_sym = _enclosing_symbol(call, caller)
+            if caller_sym is None:
+                continue
+            out.append(
+                CallEdgeCandidate(
+                    caller_path=caller.path,
+                    caller_symbol=caller_sym.name,
+                    callee_path=target_file,
                     callee_symbol=target_sym.name,
                     evidence=[f"{caller.path}:{call.start_point[0] + 1}"],
                     count=1,

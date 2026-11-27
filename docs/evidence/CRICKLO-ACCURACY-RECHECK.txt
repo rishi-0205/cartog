@@ -1,0 +1,16 @@
+# Cricklo accuracy re-check after call-resolution fixes
+
+Date: 2026-11-27
+Branch: `fix/call-resolution-and-mounts`
+Command: `cartog analyze C:/Users/rishi/OneDrive/Desktop/Dev/Cricklo --out cartog-out/cricklo-accuracy`
+
+Before: 295 files / 1146 nodes / 2141 edges / 394 calls
+After:  295 files / 1146 nodes / 2168 edges / 421 calls (+27 call edges)
+
+Previously shallow controllers now resolved via wildcard export * from barrels:
+- getTeamController → getTeamById
+- getAllTournamentsController → getAllTournaments
+- applyTeamController → applyToTournament
+
+No new nodes or fabricated edges — only recovered call edges.
+.score-update, /forgot-password flows unchanged and still accurate.

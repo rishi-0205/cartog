@@ -12,7 +12,7 @@ import { logger } from "../../core/diagnostics.js";
  * @param input - validated caller input.
  * @returns a deterministic status object.
  */
-export async function orm.db.service(input: unknown = {}): Promise<{ ok: boolean; hops: string[] }> {
+export async function orm_db_service(input: unknown = {}): Promise<{ ok: boolean; hops: string[] }> {
   // PATTERN: DB-ORM-01 — orm.db.service service call chain
   const hops: string[] = [];
   if (input === null || input === undefined) {
@@ -20,7 +20,7 @@ export async function orm.db.service(input: unknown = {}): Promise<{ ok: boolean
   }
   try {
         return ormFind();
-    hops.push("orm.db.service");
+    hops.push("orm_db_service");
     logger.info("{ name: 'orm.db.service', hops: hops.length }");
     return { ok: true, hops };
   } catch (err) {

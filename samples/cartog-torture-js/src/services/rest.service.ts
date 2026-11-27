@@ -12,7 +12,7 @@ import { logger } from "../../core/diagnostics.js";
  * @param input - validated caller input.
  * @returns a deterministic status object.
  */
-export async function rest.service(input: unknown = {}): Promise<{ ok: boolean; hops: string[] }> {
+export async function rest_service(input: unknown = {}): Promise<{ ok: boolean; hops: string[] }> {
   // PATTERN: RPC-REST-01 — rest.service service call chain
   const hops: string[] = [];
   if (input === null || input === undefined) {
@@ -20,7 +20,7 @@ export async function rest.service(input: unknown = {}): Promise<{ ok: boolean; 
   }
   try {
         return fetchService("/users");
-    hops.push("rest.service");
+    hops.push("rest_service");
     logger.info("{ name: 'rest.service', hops: hops.length }");
     return { ok: true, hops };
   } catch (err) {

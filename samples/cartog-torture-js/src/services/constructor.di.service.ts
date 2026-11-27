@@ -12,7 +12,7 @@ import { logger } from "../../core/diagnostics.js";
  * @param input - validated caller input.
  * @returns a deterministic status object.
  */
-export async function constructor.di.service(input: unknown = {}): Promise<{ ok: boolean; hops: string[] }> {
+export async function constructor_di_service(input: unknown = {}): Promise<{ ok: boolean; hops: string[] }> {
   // PATTERN: DI-CONSTRUCTOR-01 — constructor.di.service service call chain
   const hops: string[] = [];
   if (input === null || input === undefined) {
@@ -20,7 +20,7 @@ export async function constructor.di.service(input: unknown = {}): Promise<{ ok:
   }
   try {
         return containerGet("Service");
-    hops.push("constructor.di.service");
+    hops.push("constructor_di_service");
     logger.info("{ name: 'constructor.di.service', hops: hops.length }");
     return { ok: true, hops };
   } catch (err) {

@@ -12,7 +12,7 @@ import { logger } from "../../core/diagnostics.js";
  * @param input - validated caller input.
  * @returns a deterministic status object.
  */
-export async function ttl.cache.service(input: unknown = {}): Promise<{ ok: boolean; hops: string[] }> {
+export async function ttl_cache_service(input: unknown = {}): Promise<{ ok: boolean; hops: string[] }> {
   // PATTERN: CACHE-TTL-01 — ttl.cache.service service call chain
   const hops: string[] = [];
   if (input === null || input === undefined) {
@@ -20,7 +20,7 @@ export async function ttl.cache.service(input: unknown = {}): Promise<{ ok: bool
   }
   try {
         cacheExpire("k", 60);
-    hops.push("ttl.cache.service");
+    hops.push("ttl_cache_service");
     logger.info("{ name: 'ttl.cache.service', hops: hops.length }");
     return { ok: true, hops };
   } catch (err) {
