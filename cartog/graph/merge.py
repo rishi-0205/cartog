@@ -676,9 +676,18 @@ def build_graph(
                     if node.path == p.get("file") and node.name == func_name and node.kind in ("function", "method"):
                         src_id = node.id
                         break
-            if src_id is None:
-                src_id = make_node_id("file", p["file"], p["file"])
-            if src_id in graph.nodes:
+            # Range-based fallback: find the smallest enclosing function by evidence line.
+            if src_id is None and p.get("range"):
+                line = p["range"][0]
+                candidates = [
+                    n for n in graph.nodes.values()
+                    if n.path == p.get("file") and n.kind in ("function", "method")
+                    and n.range and n.range.start_line <= line <= n.range.end_line
+                ]
+                if candidates:
+                    src_id = min(candidates, key=lambda n: n.range.end_line - n.range.start_line).id
+            # If still unresolvable, abstain — never fabricate a file-level endpoint.
+            if src_id is not None and src_id in graph.nodes:
                 graph.add_edge(Edge(
                     source=src_id, target=ch_nid, kind="produces",
                     confidence="inferred",
@@ -695,9 +704,16 @@ def build_graph(
                         if node.path == c.get("file") and node.name == func_name and node.kind in ("function", "method"):
                             tgt_id = node.id
                             break
-                if tgt_id is None:
-                    tgt_id = make_node_id("file", c["file"], c["file"])
-                if tgt_id in graph.nodes and tgt_id != ch_nid:
+                if tgt_id is None and c.get("range"):
+                    line = c["range"][0]
+                    candidates = [
+                        n for n in graph.nodes.values()
+                        if n.path == c.get("file") and n.kind in ("function", "method")
+                        and n.range and n.range.start_line <= line <= n.range.end_line
+                    ]
+                    if candidates:
+                        tgt_id = min(candidates, key=lambda n: n.range.end_line - n.range.start_line).id
+                if tgt_id is not None and tgt_id in graph.nodes and tgt_id != ch_nid:
                     existing = any(
                         e.source == ch_nid and e.target == tgt_id and e.kind == "consumes"
                         for e in graph.edges
