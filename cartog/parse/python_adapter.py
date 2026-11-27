@@ -583,6 +583,82 @@ class PythonAdapter(LanguageAdapter):
 
         _walk_named_calls(tree.root_node)
 
+        # Generic route registration via call: obj.method("/path", handler).
+        # A string path arg + a function reference = a route registration.
+        def _walk_route_calls(node: tree_sitter.Node):
+            if node.type == "call":
+                fn_node = node.child_by_field_name("function")
+                args_node = node.child_by_field_name("arguments")
+                if fn_node and args_node and fn_node.type == "attribute":
+                    named_args = [c for c in args_node.children
+                                  if c.type not in ("(", ")", ",")]
+                    for a in named_args:
+                        if a.type == "string":
+                            path = _clean_str(a)
+                            handler = None
+                            for other in named_args:
+                                if other is a:
+                                    continue
+                                if other.type in ("identifier", "lambda"):
+                                    handler = f"inline_{path.strip('/').replace('/', '_')}" if other.type == "lambda" else _get_node_text(other).strip().split(".")[0]
+                                    if other.type == "lambda":
+                                        patterns.append({
+                                            "kind": "function",
+                                            "name": handler,
+                                            "inline_handler": True,
+                                            "range": [other.start_point.row + 1, other.start_point.column,
+                                                      other.end_point.row + 1, other.end_point.column],
+                                            "raw_text": _get_node_text(other).strip(),
+                                        })
+                                    break
+                            if path and handler and any(
+                                (n["path"] == path or n["name"] == path)
+                                for n in patterns if n["kind"] == "route"
+                            ) is False:
+                                patterns.append({
+                                    "kind": "route",
+                                    "name": f"USE {path}" if "include_router" in _get_node_text(fn_node) else f"GET {path}",
+                                    "handler": handler,
+                                    "range": [node.start_point.row + 1, node.start_point.column,
+                                              node.end_point.row + 1, node.end_point.column],
+                                    "raw_text": _get_node_text(node).strip(),
+                                })
+                            break
+            for child in node.children:
+                _walk_route_calls(child)
+
+        _walk_route_calls(tree.root_node)
+
+        # include_router / register_blueprint: a call whose function name
+        # contains "include" or "register" and takes a router/blueprint arg.
+        def _walk_mounts(node: tree_sitter.Node):
+            if node.type == "call":
+                fn_node = node.child_by_field_name("function")
+                args_node = node.child_by_field_name("arguments")
+                if fn_node and args_node:
+                    fn_text = _get_node_text(fn_node).strip()
+                    if "include_router" in fn_text or "register_blueprint" in fn_text:
+                        named_args = [c for c in args_node.children
+                                      if c.type not in ("(", ")", ",")]
+                        handler = None
+                        for a in named_args:
+                            if a.type == "identifier":
+                                handler = _get_node_text(a).strip()
+                                break
+                        if handler:
+                            patterns.append({
+                                "kind": "route",
+                                "name": f"USE /{handler}",
+                                "handler": handler,
+                                "range": [node.start_point.row + 1, node.start_point.column,
+                                          node.end_point.row + 1, node.end_point.column],
+                                "raw_text": _get_node_text(node).strip(),
+                            })
+            for child in node.children:
+                _walk_mounts(child)
+
+        _walk_mounts(tree.root_node)
+
         # Fallback: a CLI-layer module with a top-level invocation but no
         # named registration is still a command (name = module name).
         if is_cli_file and not any(p["kind"] == "command" for p in patterns):

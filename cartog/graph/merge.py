@@ -477,10 +477,20 @@ def build_graph(
             if not cands:
                 # Try imported target file.
                 for imp in f.imports:
-                    if handler_name in (imp.names or []):
+                    names = list(imp.names or [])
+                    alias_values = list((imp.aliases or {}).values())
+                    if handler_name in names or handler_name in alias_values:
                         target = _resolve_import_target(imp, f, context)
                         if target:
                             cands = [n for n in global_symbols_by_name.get(handler_name, []) if n.path == target]
+                            if not cands:
+                                # Default import of a router/module: serve the
+                                # first function symbol in the imported file.
+                                cands = sorted(
+                                    [n for n in graph.nodes.values()
+                                     if n.path == target and n.kind in ("function", "method")],
+                                    key=lambda n: (n.range.start_line if n.range else 0),
+                                )[:1]
                         break
             if not cands:
                 cands = global_symbols_by_name.get(handler_name, [])

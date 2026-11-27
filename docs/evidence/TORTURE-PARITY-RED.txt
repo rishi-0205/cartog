@@ -1,0 +1,22 @@
+# Torture parity — red state evidence
+
+Date: 2026-11-27
+Branch: `fix/torture-parity-and-modularity`
+Command: `pytest tests/test_adversarial_hard_patterns.py -q`
+
+Result: 6 failed — all new hard-pattern tests are red.
+
+Patterns added to both torture repos (native per language):
+- wildcard barrel re-exports through 2 files
+- object-literal/dict service container reached through the barrel
+- aliased mount/registration (app.use / include_router)
+- inline handler (arrow / lambda)
+- re-export alias chain across two files
+- callback-kwarg registration in routes
+
+Expected (hand-curated from the source files):
+- barrelController -> handle, aliasConsumer -> renamed, register -> on
+- mount 'USE /api/v1/adversarial' has a serves edge
+- inline handler function node exists in adversarial area
+
+Cartog currently misses all of these. No test has been loosened.

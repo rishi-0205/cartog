@@ -1232,10 +1232,20 @@ class JsAdapter(LanguageAdapter):
                                     last_arg = named_args[-1]
                                     if last_arg.type == "identifier":
                                         handler = _get_node_text(last_arg).strip()
-                                    elif last_arg.type == "member_expression":
-                                        prop = last_arg.child_by_field_name("property")
-                                        if prop:
-                                            handler = _get_node_text(prop).strip()
+                                    elif last_arg.type == "arrow_function":
+                                        handler = f"inline_{url_path.strip('/').replace('/', '_')}"
+                                        patterns.append({
+                                            "kind": "function",
+                                            "name": handler,
+                                            "inline_handler": True,
+                                            "range": [
+                                                last_arg.start_point.row + 1,
+                                                last_arg.start_point.column,
+                                                last_arg.end_point.row + 1,
+                                                last_arg.end_point.column,
+                                            ],
+                                            "raw_text": _get_node_text(last_arg).strip(),
+                                        })
                                     # Middleware = middle args that are identifiers or calls
                                     middlewares = [
                                         _get_node_text(a).strip()
