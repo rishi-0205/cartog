@@ -851,6 +851,20 @@ class PythonAdapter(LanguageAdapter):
                         obj_node = fn_node.child_by_field_name("object")
                         attr_node = fn_node.child_by_field_name("attribute")
                         if obj_node and attr_node:
+                            # Extract channel name from generic kwargs (data shape,
+                            # not SDK names): queue/topic/channel/name/routing_key/key.
+                            kw_channel = None
+                            kw_callback = False
+                            for kw in named_args:
+                                if kw.type == "keyword_argument":
+                                    kn = kw.child_by_field_name("name")
+                                    kv = kw.child_by_field_name("value")
+                                    if kn and kv:
+                                        key = _get_node_text(kn).strip()
+                                        if key in ("queue", "topic", "channel", "name", "routing_key", "key", "subject"):
+                                            kw_channel = _clean_str(kv)
+                                        if key in ("callback", "on_message_callback", "handler", "func"):
+                                            kw_callback = True
                             candidates.append({
                                 "kind": "member_call",
                                 "object": _get_node_text(obj_node).strip(),
@@ -859,11 +873,12 @@ class PythonAdapter(LanguageAdapter):
                                     c.type not in ("lambda", "function_definition")
                                     for c in named_args
                                 ),
-                                "has_function": any(
+                                "has_function": kw_callback or any(
                                     c.type in ("lambda", "function_definition")
                                     for c in named_args
                                 ),
                                 "first_str": _clean_str(named_args[0]) if named_args and named_args[0].type == "string" else None,
+                                "kw_channel": kw_channel,
                                 "function": _enclosing_function(node),
                                 "file": path,
                                 "range": rng,
