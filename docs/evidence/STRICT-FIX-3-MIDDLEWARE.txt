@@ -1,0 +1,23 @@
+# Work Item 3 — Python middleware + uses (green)
+
+Date: 2026-11-27
+Branch: `test/strict-adversarial`
+
+## Changes (generic structural rules, no SDK names)
+
+- `cartog/parse/python_adapter.py`:
+  - Decorated function with a string-name decorator and 2+ params including
+    a callable/pass-through param (next/call_next/get_response/app/send) →
+    `middleware` node.
+  - Class with `__call__` taking a callable/pass-through param → `middleware` node.
+  - Route params containing `Depends(name)` → middleware names on the route
+    pattern, which merge.py converts into `uses` edges (same mechanism Express
+    middleware already uses).
+
+## Result
+
+`pytest tests/test_adversarial_nodes.py tests/test_adversarial_edges.py -m adversarial -q`
+before: 2 failed (Py middleware, Py uses)
+after: 1 failed (`test_edge_endpoint_validity` js — Work item 5), 16 passed
+
+Remaining strict failures: 11.

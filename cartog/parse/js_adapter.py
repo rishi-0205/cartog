@@ -1292,6 +1292,93 @@ class JsAdapter(LanguageAdapter):
 
         _walk_patterns(tree.root_node)
 
+        # 3. Generic named registration -> command (no SDK/verb list).
+        # Commands live in the CLI layer (structural path rule); other files
+        # with string+handler calls (events, logs, cron) are not commands.
+        is_cli_file = ("cli/" in path.replace("\\", "/") or
+                       path.replace("\\", "/").startswith("bin/"))
+        route_lines: set[int] = {p["range"][0] for p in patterns if p["kind"] == "route"}
+
+        def _find_handler(named_args: list[tree_sitter.Node]) -> str | None:
+            for a in named_args:
+                if a.type in ("identifier", "arrow_function", "function_expression", "function"):
+                    return _get_node_text(a).strip().split(".")[0]
+                if a.type == "call_expression":
+                    f = a.child_by_field_name("function")
+                    if f:
+                        return _get_node_text(f).strip().split(".")[0]
+            return None
+
+        def _walk_commands(node: tree_sitter.Node):
+            if is_cli_file and node.type == "call_expression":
+                line = node.start_point.row + 1
+                if line not in route_lines:
+                    fn_node = node.child_by_field_name("function")
+                    args_node = node.child_by_field_name("arguments")
+                    if fn_node and args_node:
+                        named_args = [
+                            c for c in args_node.children
+                            if c.type not in ("(", ")", ",")
+                        ]
+                        # Name = first string literal argument.
+                        name = None
+                        if named_args and named_args[0].type == "string":
+                            name = clean_string_literal(_get_node_text(named_args[0]))
+                        # Chained form: X.command("name").action(handler) —
+                        # the outer call has the handler, the inner has the name.
+                        if name is None and fn_node.type == "member_expression":
+                            obj = fn_node.child_by_field_name("object")
+                            if obj and obj.type == "call_expression":
+                                inner_fn = obj.child_by_field_name("function")
+                                inner_args = obj.child_by_field_name("arguments")
+                                if inner_fn and inner_args:
+                                    inner_named = [
+                                        c for c in inner_args.children
+                                        if c.type not in ("(", ")", ",")
+                                    ]
+                                    if inner_named and inner_named[0].type == "string":
+                                        name = clean_string_literal(_get_node_text(inner_named[0]))
+                        handler = _find_handler(named_args)
+                        if name and handler:
+                            patterns.append({
+                                "kind": "command",
+                                "name": name,
+                                "handler": handler,
+                                "range": [line, node.start_point.column,
+                                          node.end_point.row + 1, node.end_point.column],
+                                "raw_text": _get_node_text(node).strip(),
+                            })
+            for child in node.children:
+                _walk_commands(child)
+
+        _walk_commands(tree.root_node)
+
+        # 4. Source-level entrypoint: shebang or explicit parse() invocation.
+        source_text = source_bytes.decode("utf-8", errors="replace")
+        if source_text.startswith("#!") or re.search(r"\b(program|app|cli)\.parse\s*\(", source_text):
+            # Link 'starts' to the top-level function in this file if present.
+            target = None
+            for n in tree.root_node.children:
+                if n.type in ("function_declaration", "lexical_declaration"):
+                    name_node = n.child_by_field_name("name")
+                    if name_node:
+                        target = _get_node_text(name_node).strip()
+                        break
+                    # const main = () => ...
+                    for c in n.named_children:
+                        if c.type == "variable_declarator":
+                            nn = c.child_by_field_name("name")
+                            if nn:
+                                target = _get_node_text(nn).strip()
+                                break
+            patterns.append({
+                "kind": "entrypoint",
+                "name": "main",
+                "target": target,
+                "range": [1, 0, 1, 0],
+                "raw_text": "source-level entrypoint",
+            })
+
         # Sort patterns deterministically by line number
         patterns.sort(key=lambda p: (p["range"][0], p["name"]))
         return patterns

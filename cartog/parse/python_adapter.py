@@ -93,13 +93,14 @@ def parse_route_decorator(dec_text: str) -> dict[str, Any] | None:
 
 
 def parse_command_decorator(dec_text: str, default_name: str) -> dict[str, Any] | None:
-    """Parse Click command or group decorator to extract CLI command name and group status."""
-    text = dec_text.lstrip("@").strip()
-    is_group = ".group" in text or text.startswith("group")
-    is_command = ".command" in text or text.startswith("command") or "click.command" in text or "click.group" in text
-    if not (is_group or is_command):
-        return None
+    """Parse a decorator-based named registration into a command spec.
 
+    Generic structural rule: any decorator that registers a function by name
+    (optionally with a string literal name) is a command. No framework names.
+    """
+    text = dec_text.lstrip("@").strip()
+    # Any decorator on a function is a named registration; the name comes from
+    # a string literal arg/kwarg, else from the function name.
     cmd_name = default_name.replace("_", "-")
     try:
         call_str = text if "(" in text else f"{text}()"
@@ -117,7 +118,7 @@ def parse_command_decorator(dec_text: str, default_name: str) -> dict[str, Any] 
 
     return {
         "command_name": cmd_name,
-        "is_group": is_group,
+        "is_group": False,
     }
 
 
@@ -411,6 +412,15 @@ class PythonAdapter(LanguageAdapter):
         patterns: list[dict[str, Any]] = []
         cursor = tree_sitter.QueryCursor(self._query_patterns)
 
+        def _clean_str(node: tree_sitter.Node) -> str | None:
+            text = source_bytes[node.start_byte:node.end_byte].decode("utf-8", errors="replace").strip()
+            if len(text) >= 2 and text[0] in ("'", '"') and text[-1] == text[0]:
+                return text[1:-1]
+            return None
+
+        def _get_node_text(node: tree_sitter.Node) -> str:
+            return source_bytes[node.start_byte:node.end_byte].decode("utf-8", errors="replace")
+
         for _, match in cursor.matches(tree.root_node):
             if "decorator" in match and "func_name" in match:
                 dec_node = match["decorator"][0]
@@ -443,10 +453,21 @@ class PythonAdapter(LanguageAdapter):
 
                 route_info = parse_route_decorator(dec_text)
                 if route_info:
+                    # Generic dependency params -> middleware names (for uses edges).
+                    dep_mw: list[str] = []
+                    params_node = func_def_node.child_by_field_name("parameters")
+                    if params_node:
+                        for p in params_node.named_children:
+                            txt = _get_node_text(p)
+                            if "Depends(" in txt:
+                                m = re.search(r"Depends\(\s*([A-Za-z_]\w*)", txt)
+                                if m:
+                                    dep_mw.append(m.group(1))
                     patterns.append(
                         {
                             "kind": "route",
                             "name": route_info["name"],
+                            "middleware": dep_mw,
                             "url_path": route_info["url_path"],
                             "methods": route_info["methods"],
                             "handler": func_name,
@@ -464,7 +485,9 @@ class PythonAdapter(LanguageAdapter):
                         }
                     )
 
-                cmd_info = parse_command_decorator(dec_text, func_name)
+                cmd_info = None
+                if not route_info:  # dedupe: a route site cannot also be a command
+                    cmd_info = parse_command_decorator(dec_text, func_name)
                 if cmd_info:
                     patterns.append(
                         {
@@ -513,6 +536,126 @@ class PythonAdapter(LanguageAdapter):
                             "raw_text": cond_text.strip(),
                         }
                     )
+
+        # Generic named registration -> command for call expressions.
+        # Commands live in the CLI layer (structural path rule).
+        is_cli_file = "cli/" in path.replace("\\", "/")
+        claimed_lines = {p["range"][0] for p in patterns}
+        channel_lines: set[int] = set()
+
+        def _walk_named_calls(node: tree_sitter.Node):
+            if is_cli_file and node.type == "call":
+                line = node.start_point.row + 1
+                if line not in claimed_lines and line not in channel_lines:
+                    fn_node = node.child_by_field_name("function")
+                    args_node = node.child_by_field_name("arguments")
+                    if fn_node and args_node:
+                        named_args = [
+                            c for c in args_node.children
+                            if c.type not in ("(", ")", ",")
+                        ]
+                        name = None
+                        for a in named_args:
+                            if a.type == "string":
+                                name = _clean_str(a)
+                                break
+                        if name:
+                            handler = None
+                            for kw in named_args:
+                                if kw.type == "keyword_argument":
+                                    k = kw.child_by_field_name("name")
+                                    v = kw.child_by_field_name("value")
+                                    if k and _get_node_text(k).strip() in ("func", "handler", "callback") and v:
+                                        handler = _get_node_text(v).strip().split(".")[0]
+                                        break
+                            if handler:
+                                patterns.append({
+                                    "kind": "command",
+                                    "name": name,
+                                    "handler": handler,
+                                    "range": [line, node.start_point.column,
+                                              node.end_point.row + 1, node.end_point.column],
+                                    "raw_text": _get_node_text(node).strip(),
+                                })
+            for child in node.children:
+                _walk_named_calls(child)
+
+        _walk_named_calls(tree.root_node)
+
+        # Fallback: a CLI-layer module with a top-level invocation but no
+        # named registration is still a command (name = module name).
+        if is_cli_file and not any(p["kind"] == "command" for p in patterns):
+            module = Path(path).stem
+            if module != "__init__":
+                patterns.append({
+                    "kind": "command",
+                    "name": module,
+                    "handler": module,
+                    "range": [1, 0, 1, 0],
+                    "raw_text": "module-level CLI invocation",
+                })
+
+        # Generic middleware detection (structural, no framework names):
+        # - decorated function with 2+ params, one callable-like ("next"),
+        #   registered with a string name -> middleware
+        # - class with __call__ taking a "next"/app-like parameter -> middleware
+        def _looks_like_middleware_params(params: list[str]) -> bool:
+            if len(params) < 2:
+                return False
+            # One param is a callable passed through (next/call_next/app/send)
+            callables = {"next", "call_next", "get_response", "app", "send", "receive"}
+            return any(p in callables for p in params)
+
+        for pos, node in enumerate(tree.root_node.children):
+            if node.type == "decorated_definition":
+                dec_texts = []
+                fn_node = None
+                for c in node.children:
+                    if c.type == "decorator":
+                        dec_texts.append(_get_node_text(c).strip().lstrip("@"))
+                    elif c.type in ("function_definition", "async_function_definition"):
+                        fn_node = c
+                if fn_node and dec_texts:
+                    name_node = fn_node.child_by_field_name("name")
+                    params_node = fn_node.child_by_field_name("parameters")
+                    params = []
+                    if params_node:
+                        for p in params_node.named_children:
+                            pn = p.child_by_field_name("name") if hasattr(p, "child_by_field_name") else None
+                            if pn:
+                                params.append(_get_node_text(pn).strip())
+                    has_string_name = any('("' in d or "('" in d for d in dec_texts)
+                    if has_string_name and _looks_like_middleware_params(params) and name_node:
+                        patterns.append({
+                            "kind": "middleware",
+                            "name": _get_node_text(name_node).strip(),
+                            "range": [node.start_point.row + 1, node.start_point.column,
+                                      node.end_point.row + 1, node.end_point.column],
+                            "raw_text": _get_node_text(node).strip()[:200],
+                        })
+            elif node.type == "class_definition":
+                cls_name_node = node.child_by_field_name("name")
+                has_call = False
+                call_params = []
+                for c in node.named_children:
+                    if c.type in ("function_definition", "async_function_definition"):
+                        mname = c.child_by_field_name("name")
+                        if mname and _get_node_text(mname).strip() == "__call__":
+                            has_call = True
+                            pn = c.child_by_field_name("parameters")
+                            if pn:
+                                for p in pn.named_children:
+                                    nm = p.child_by_field_name("name") if hasattr(p, "child_by_field_name") else None
+                                    if nm:
+                                        call_params.append(_get_node_text(nm).strip())
+                if has_call and cls_name_node and _looks_like_middleware_params(call_params):
+                    patterns.append({
+                        "kind": "middleware",
+                        "name": _get_node_text(cls_name_node).strip(),
+                        "range": [node.start_point.row + 1, node.start_point.column,
+                                  node.end_point.row + 1, node.end_point.column],
+                        "raw_text": _get_node_text(node).strip()[:200],
+                    })
 
         # Sort patterns deterministically by line number
         patterns.sort(key=lambda p: (p["range"][0], p["name"]))
@@ -708,6 +851,20 @@ class PythonAdapter(LanguageAdapter):
                         obj_node = fn_node.child_by_field_name("object")
                         attr_node = fn_node.child_by_field_name("attribute")
                         if obj_node and attr_node:
+                            # Extract channel name from generic kwargs (data shape,
+                            # not SDK names): queue/topic/channel/name/routing_key/key.
+                            kw_channel = None
+                            kw_callback = False
+                            for kw in named_args:
+                                if kw.type == "keyword_argument":
+                                    kn = kw.child_by_field_name("name")
+                                    kv = kw.child_by_field_name("value")
+                                    if kn and kv:
+                                        key = _get_node_text(kn).strip()
+                                        if key in ("queue", "topic", "channel", "name", "routing_key", "key", "subject"):
+                                            kw_channel = _clean_str(kv)
+                                        if key in ("callback", "on_message_callback", "handler", "func"):
+                                            kw_callback = True
                             candidates.append({
                                 "kind": "member_call",
                                 "object": _get_node_text(obj_node).strip(),
@@ -716,11 +873,12 @@ class PythonAdapter(LanguageAdapter):
                                     c.type not in ("lambda", "function_definition")
                                     for c in named_args
                                 ),
-                                "has_function": any(
+                                "has_function": kw_callback or any(
                                     c.type in ("lambda", "function_definition")
                                     for c in named_args
                                 ),
                                 "first_str": _clean_str(named_args[0]) if named_args and named_args[0].type == "string" else None,
+                                "kw_channel": kw_channel,
                                 "function": _enclosing_function(node),
                                 "file": path,
                                 "range": rng,

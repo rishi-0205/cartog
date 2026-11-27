@@ -517,6 +517,20 @@ def build_graph(
                     evidence=[ev_line],
                 )
             )
+        elif pat.get("handler"):
+            # Handler name declared but not resolvable to a symbol (e.g. a
+            # default-import router alias in app.use mounts). Do not claim a
+            # handler we cannot back with an edge — record it in unresolved
+            # instead. This keeps validate_graph honest without fabricating a
+            # serves edge to an arbitrary node kind.
+            graph.unresolved.append({
+                "reason": "unresolved_handler",
+                "file": f.path,
+                "line": pat.get("range", [1])[0],
+                "handler": handler_name,
+                "route": pat.get("name"),
+            })
+            pat_node.attrs.pop("handler", None)
 
     # 2c. Message-broker channel pairing (Part 2, messaging).
     # Step 1: Build a global binding map (variable name -> channel name)
@@ -548,6 +562,8 @@ def build_graph(
             # a string first arg, use that string as a potential channel name.
             if ch_name is None and cand.get("first_str") is not None:
                 ch_name = cand["first_str"]
+            if ch_name is None and cand.get("kw_channel") is not None:
+                ch_name = cand["kw_channel"]
             if ch_name is None:
                 continue
             if cand["has_payload"] and not cand["has_function"]:
@@ -653,23 +669,45 @@ def build_graph(
                 evidence=[f"{w['file']}:{w['range'][0]}"] if w.get("range") else [],
             ))
 
-        # produces edges: enclosing function -> channel
+        # produces edges: enclosing function -> channel. Also attribute to a
+        # same-named callee function (generic wrapper attribution): when a
+        # service calls send_task("x",...) and a function named send_task
+        # exists, both get the produces edge. No SDK names involved.
         for p in producers:
-            func_name = p.get("function")
-            src_id = None
-            if func_name:
+            func_names = [p.get("function")]
+            for callee_key in ("method", "function_name", "callee"):
+                if p.get(callee_key) and p.get(callee_key) not in func_names:
+                    func_names.append(p.get(callee_key))
+            src_ids: list[str] = []
+            for fname in func_names:
+                if not fname:
+                    continue
+                # Enclosing function: same file only. Callee attribution: any file
+                # (services import broker wrappers from queue modules).
                 for node in graph.nodes.values():
-                    if node.path == p.get("file") and node.name == func_name and node.kind in ("function", "method"):
-                        src_id = node.id
-                        break
-            if src_id is None:
-                src_id = make_node_id("file", p["file"], p["file"])
-            if src_id in graph.nodes:
-                graph.add_edge(Edge(
-                    source=src_id, target=ch_nid, kind="produces",
-                    confidence="inferred",
-                    evidence=[f"{p['file']}:{p['range'][0]}"] if p.get("range") else [],
-                ))
+                    if node.name == fname and node.kind in ("function", "method"):
+                        if fname != p.get("function") or node.path == p.get("file"):
+                            if node.id not in src_ids:
+                                src_ids.append(node.id)
+                            break
+            # Range-based fallback: smallest enclosing function by evidence line.
+            if not src_ids and p.get("range"):
+                line = p["range"][0]
+                candidates = [
+                    n for n in graph.nodes.values()
+                    if n.path == p.get("file") and n.kind in ("function", "method")
+                    and n.range and n.range.start_line <= line <= n.range.end_line
+                ]
+                if candidates:
+                    src_ids.append(min(candidates, key=lambda n: n.range.end_line - n.range.start_line).id)
+            # If unresolvable, abstain — never fabricate a file-level endpoint.
+            for src_id in src_ids:
+                if src_id in graph.nodes:
+                    graph.add_edge(Edge(
+                        source=src_id, target=ch_nid, kind="produces",
+                        confidence="inferred",
+                        evidence=[f"{p['file']}:{p['range'][0]}"] if p.get("range") else [],
+                    ))
 
         # consumes edges for consumer-side sites that are not workers.
         if not workers:
@@ -681,9 +719,16 @@ def build_graph(
                         if node.path == c.get("file") and node.name == func_name and node.kind in ("function", "method"):
                             tgt_id = node.id
                             break
-                if tgt_id is None:
-                    tgt_id = make_node_id("file", c["file"], c["file"])
-                if tgt_id in graph.nodes and tgt_id != ch_nid:
+                if tgt_id is None and c.get("range"):
+                    line = c["range"][0]
+                    candidates = [
+                        n for n in graph.nodes.values()
+                        if n.path == c.get("file") and n.kind in ("function", "method")
+                        and n.range and n.range.start_line <= line <= n.range.end_line
+                    ]
+                    if candidates:
+                        tgt_id = min(candidates, key=lambda n: n.range.end_line - n.range.start_line).id
+                if tgt_id is not None and tgt_id in graph.nodes and tgt_id != ch_nid:
                     existing = any(
                         e.source == ch_nid and e.target == tgt_id and e.kind == "consumes"
                         for e in graph.edges

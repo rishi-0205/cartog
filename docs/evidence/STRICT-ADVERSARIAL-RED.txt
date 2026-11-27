@@ -1,0 +1,43 @@
+# Strict Adversarial Tests — Red State Evidence
+
+Date: 2026-11-27
+Branch: `test/strict-adversarial`
+Command: `venv\Scripts\python.exe -m pytest tests/test_adversarial_*.py -m adversarial -q`
+
+## Result
+
+```
+17 failed, 32 passed in 25.11s
+```
+
+Zero xfails, zero exclusions, zero gap lists, no lowered thresholds.
+
+## What was made strict
+
+- Removed all 10 `@pytest.mark.xfail(strict=True)` markers
+- Removed `GAPS` dicts (JS `command`/`starts`, Py `middleware`/`uses`)
+- Removed `VIEW_ONLY` exclusion — split into strict analyze-kind and view-kind tests
+- Added strict manifest entrypoint-kind test (`script`/`npm_script` in attrs)
+- Removed relaxed `file` fallbacks for `produces`/`consumes` endpoints
+- Tightened confidence: require `resolved` (not `inferred` fallback)
+- Restored deep-flow threshold: 26 hops, 22 nodes
+- Converted all 6 gap spines into real assertions
+
+## The 17 failures (cartog gaps to fix)
+
+| # | Test | Gap |
+|---|---|---|
+| 1–2 | `test_catalog_analyze_node_kinds` (js, py) | JS missing `command`; Py missing `middleware` |
+| 3 | `test_py_specific_nodes` | Missing commands `check`, `doctor`, `query` |
+| 4 | `test_js_command_nodes` | JS CLI commands produce no `command` nodes |
+| 5–6 | `test_catalog_edge_kinds_present` (js, py) | JS missing `starts`; Py missing `uses` |
+| 7 | `test_edge_endpoint_validity` (js) | `produces`/`consumes` fallback to `file` endpoints |
+| 8–9 | `test_js_spine` (scoreUpdateController, publish) | JS MQ spines 0 hops |
+| 10–13 | `test_py_spine` (send_task, publish, basic_publish, send_kafka) | Py MQ producer spines 0 hops |
+| 14 | `test_py_deep_flow` | score_update only 8 hops (want 26) |
+| 15 | `test_js_entrypoints` | JS `starts` edges missing |
+| 16–17 | `test_graph_integrity` (js, py) | Validator rejects `receiver` ref_kind and `inferred` calls |
+
+## Next step
+
+Fix cartog (not the tests) until all 49 adversarial tests pass. No test changes allowed.

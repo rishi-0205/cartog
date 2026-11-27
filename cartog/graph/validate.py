@@ -159,7 +159,7 @@ def validate_graph(graph: Graph) -> ValidationResult:
                 errors.append(f"Route node '{nid}' ({node.qualified_name}) has multiple serves edges: {len(serves_list)}")
 
     # 3. Edge validation
-    valid_ref_kinds = {"decorator", "exception", "isinstance", "inheritance", "type", "callback", "other"}
+    valid_ref_kinds = {"decorator", "exception", "isinstance", "inheritance", "type", "callback", "other", "receiver"}
     seen_edge_keys: set[tuple[str, str, str, str | None]] = set()
 
     for edge in graph.edges:
@@ -209,9 +209,9 @@ def validate_graph(graph: Graph) -> ValidationResult:
                         f"Edge '{edge.source}' -> '{edge.target}' of kind 'calls' must connect function/method/class/file to function/method/class, "
                         f"but connects {src_node.kind} to {tgt_node.kind}"
                     )
-                if edge.confidence not in ("resolved", "reconciled"):
+                if edge.confidence not in ("resolved", "reconciled", "inferred"):
                     errors.append(
-                        f"Edge '{edge.source}' -> '{edge.target}' of kind 'calls' must have confidence 'resolved' or 'reconciled', got '{edge.confidence}'"
+                        f"Edge '{edge.source}' -> '{edge.target}' of kind 'calls' must have confidence 'resolved', 'reconciled' or 'inferred', got '{edge.confidence}'"
                     )
             elif edge.kind == "references":
                 if edge.ref_kind and edge.ref_kind not in valid_ref_kinds:

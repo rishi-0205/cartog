@@ -1,0 +1,49 @@
+# Strict adversarial fixes — progress report
+
+Date: 2026-11-27
+Branch: `test/strict-adversarial`
+
+## Done (5 of 6 work items)
+
+| Item | Status | Evidence |
+|---|---|---|
+| 1. Validator (`receiver`, `inferred`, unresolved handlers) | green | STRICT-FIX-1-VALIDATOR.txt |
+| 2. CLI commands + starts | green | STRICT-FIX-2-COMMANDS.txt |
+| 3. Python middleware + uses | green | STRICT-FIX-3-MIDDLEWARE.txt |
+| 4. Endpoint fallback (range-based, abstain) | green | commit a394d97 |
+| 5. KWARG channel detection + callee attribution | partial | commit 94f7b47 |
+
+`pytest tests/test_adversarial_nodes.py tests/test_adversarial_edges.py tests/test_adversarial_graph.py -m adversarial` → **23 passed**.
+
+## Remaining: 7 flow failures
+
+| Test | Current | Root cause |
+|---|---|---|
+| JS `scoreUpdateController` | 0 hops | Controller calls `scoreUpdateService.handleScoreUpdate` through an import alias; SCIP + static chain resolver do not resolve the barrel re-export (`services/index.js`). |
+| JS `publish` | produces only | `notifications` channel has a producer (from `publish`) but no consumer edge — the Redis `subscribe("notifications", cb)` callback isn't classified as a consumer because callback kwarg form differs. |
+| Py `send_task` | produces only | Has produces now; test also wants `calls` — the wrapper `send_task` calls an external `app.send_task` (no in-repo callee). |
+| Py `publish` | 0 hops on right node | Multiple `publish` functions; the one in `redis_pubsub.py` calls `r.publish("notifications", ...)` via a member call whose channel is a variable, not a literal at the call site in that function. |
+| Py `basic_publish` | 0 hops | Same: `channel.basic_publish(routing_key=queue, ...)` uses a variable channel; literal `"q1"` only at service call site. |
+| Py `send_kafka` | 0 hops | Same: `producer.send(topic, ...)` uses a variable topic. |
+| Py deep flow | 9 hops (want 26) | Full symbol-edge chain needs all above resolved plus deeper cross-file propagation. |
+
+## Honest assessment
+
+The remaining failures are **interprocedural channel-name propagation**: wrapper
+functions receive the channel name as a parameter, and the literal name exists
+only at the *caller* site. Cartog currently attributes `produces` to the caller
+(`celery_producer_service`) via callee attribution, but the tests start the
+spine from the wrapper (`send_task`). Making the wrapper itself the producer
+requires dataflow analysis: "parameter P of function F is used as a channel
+name; callers passing a string literal to P define the channel identity."
+
+This is a genuine architectural extension, not a small patch. The 26-hop
+threshold also requires resolving the full `controller → service → wrapper →
+channel → processor → repository → sink` chain across aliases.
+
+## Decision needed
+
+Continue with interprocedural propagation (larger change, risk of false edges),
+or adjust the spine entry points in the tests to start from the *service*
+functions where cartog correctly detects the producers (test change — but the
+tests were declared frozen). Report to author before proceeding.

@@ -1,4 +1,4 @@
-"""CLI + graph-integrity conformance tests."""
+"""Graph-level conformance tests — STRICT. No xfails, no exclusions."""
 import hashlib
 import json
 import subprocess
@@ -14,30 +14,27 @@ def test_py_commands_and_starts(torture_py_graph):
     graph = torture_py_graph
     nodes = graph["nodes"]
     commands = [n for n in nodes if n["kind"] == "command"]
-    assert len(commands) >= 4, f"only {len(commands)} command nodes"
-    # Every command should serve at least one handler.
+    assert len(commands) >= 10, f"only {len(commands)} command nodes"
     served = {e["source"] for e in graph["edges"] if e["kind"] == "serves"}
     cmd_ids = {c["id"] for c in commands}
     assert cmd_ids & served, "no command has a serves edge"
-    # Entrypoints produce starts edges.
     eps = [n for n in nodes if n["kind"] == "entrypoint"]
     started = {e["source"] for e in graph["edges"] if e["kind"] == "starts"}
     assert any(ep["id"] in started for ep in eps), "no entrypoint starts edge"
 
 
-@pytest.mark.xfail(strict=True, reason="JS entrypoints do not produce starts edges")
 def test_js_entrypoints(torture_js_graph):
+    """STRICT: JS entrypoints must produce starts edges."""
     graph = torture_js_graph
     eps = [n for n in graph["nodes"] if n["kind"] == "entrypoint"]
-    assert eps
+    assert eps, "no entrypoint nodes"
     started = {e["source"] for e in graph["edges"] if e["kind"] == "starts"}
     assert any(ep["id"] in started for ep in eps), "no entrypoint starts edge"
 
 
-@pytest.mark.xfail(strict=True, reason="cartog emits invalid ref_kind 'receiver' and 'inferred' calls — KNOWN_ISSUES Rank 1")
 @pytest.mark.parametrize("fixture", ["torture_js_graph", "torture_py_graph"])
 def test_graph_integrity(request, fixture):
-    """validate_graph reports no structural errors on the generated graph."""
+    """STRICT: validate_graph reports zero errors on generated graphs."""
     graph = request.getfixturevalue(fixture)
     from cartog.graph.validate import validate_graph
     from cartog.core.model import Graph

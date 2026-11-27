@@ -1,0 +1,34 @@
+# Work Item 2 — Named registration → command + starts (green)
+
+Date: 2026-11-27
+Branch: `test/strict-adversarial`
+
+## Changes (cartog source, no test edits)
+
+Generic structural rules — no SDK names, no verb lists:
+
+- `cartog/parse/js_adapter.py`:
+  - Generic named registration → `command`: a call chain in a CLI-layer file
+    with a string literal name + handler function reference. Dedupe against
+    route call sites (line-based). Chained form `X.command("n").action(fn)`
+    handled by walking the inner call.
+  - Source-level entrypoint: shebang or `program.parse()` → `entrypoint` with
+    a resolved top-level function target → `starts` edge.
+- `cartog/parse/python_adapter.py`:
+  - `parse_command_decorator` now treats any decorator on a function as a
+    named registration; name from string arg/kwarg, else function name.
+    Deduped against route decorators.
+  - Generic named-call registration in CLI-layer files (argparse `add_parser`).
+  - Fallback: CLI module with no named registration → command named after module
+    (e.g. `query.py` → `query`).
+
+## Result
+
+`pytest tests/test_adversarial_nodes.py -m adversarial -q`
+before: 3 failed, 2 errors
+after: 1 failed (Python middleware — Work item 3), 9 passed
+
+JS: `command` nodes and `starts` edges now green.
+Python: all 11 expected commands now detected.
+
+Remaining strict failures: 13.
