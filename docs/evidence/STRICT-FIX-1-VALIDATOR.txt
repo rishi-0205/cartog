@@ -1,0 +1,25 @@
+# Work Item 1 — Validator fixes (red → green)
+
+Date: 2026-11-27
+Branch: `test/strict-adversarial`
+
+## Changes (cartog source, no test edits)
+
+- `cartog/graph/validate.py`: added `receiver` to `valid_ref_kinds`
+  (cartog emits it in `classify_occurrence()` — validator/emitter disagreed).
+- `cartog/graph/validate.py`: allow `inferred` confidence on `calls` edges
+  (tree-sitter static resolver emits it legitimately; label is honest).
+- `cartog/graph/merge.py`: when a route declares a handler that cannot be
+  resolved to a symbol (default-import router alias in `app.use` mounts),
+  remove the `handler` attr and record `unresolved_handler` in `unresolved`
+  instead of fabricating a `serves` edge. Validator stays strict; graph stays
+  honest.
+
+## Result
+
+`pytest tests/test_adversarial_graph.py -m adversarial -q`
+before: 4 failed, 2 errors
+after: 1 failed (`test_js_entrypoints` — Work item 2), 5 passed
+
+`test_graph_integrity` now passes for both repos (was 2 failures).
+Remaining 16 strict failures unchanged.

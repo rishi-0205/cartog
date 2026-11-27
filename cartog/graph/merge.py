@@ -517,6 +517,20 @@ def build_graph(
                     evidence=[ev_line],
                 )
             )
+        elif pat.get("handler"):
+            # Handler name declared but not resolvable to a symbol (e.g. a
+            # default-import router alias in app.use mounts). Do not claim a
+            # handler we cannot back with an edge — record it in unresolved
+            # instead. This keeps validate_graph honest without fabricating a
+            # serves edge to an arbitrary node kind.
+            graph.unresolved.append({
+                "reason": "unresolved_handler",
+                "file": f.path,
+                "line": pat.get("range", [1])[0],
+                "handler": handler_name,
+                "route": pat.get("name"),
+            })
+            pat_node.attrs.pop("handler", None)
 
     # 2c. Message-broker channel pairing (Part 2, messaging).
     # Step 1: Build a global binding map (variable name -> channel name)
