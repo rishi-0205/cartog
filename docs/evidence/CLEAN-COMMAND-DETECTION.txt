@@ -1,0 +1,16 @@
+# Clean command detection — evidence
+
+Date: 2026-11-28
+Branch: `fix/clean-command-detection`
+
+## Changes
+- `cartog/parse/js_adapter.py`: filter command names that aren't identifier-like
+  (no spaces, no leading `-`, alphanumeric+hyphen+underscore only)
+- `cartog/parse/python_adapter.py`: `parse_command_decorator` now requires the
+  generic concept "command" or "group" in the decorator text (not SDK names).
+  `_walk_named_calls` filters invalid names.
+
+## Result
+- Adversarial suite: 55 passed, 0 failed
+- Full suite: 309 passed, 4 skipped, 1 warning
+- Entry-filter dropdown now shows only real routes/commands (no `--alias`, `cfg`, `callback`, etc.)

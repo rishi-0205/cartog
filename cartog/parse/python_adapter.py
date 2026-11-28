@@ -99,9 +99,11 @@ def parse_command_decorator(dec_text: str, default_name: str) -> dict[str, Any] 
     (optionally with a string literal name) is a command. No framework names.
     """
     text = dec_text.lstrip("@").strip()
-    is_group = text.startswith("group") or ".group" in text or "group(" in text
-    # Any decorator on a function is a named registration; the name comes from
-    # a string literal arg/kwarg, else from the function name.
+    # Generic concept: command or group (every CLI framework uses these words)
+    is_command = "command" in text.lower() or "group" in text.lower()
+    if not is_command:
+        return None
+    is_group = "group" in text.lower()
     cmd_name = default_name.replace("_", "-")
     try:
         call_str = text if "(" in text else f"{text}()"
@@ -562,6 +564,8 @@ class PythonAdapter(LanguageAdapter):
                                 break
                         # Filter out option strings (--foo) and non-identifier names
                         if name and (name.startswith("-") or " " in name):
+                            name = None
+                        if name and (name.startswith("-") or " " in name or not name.replace("-", "").replace("_", "").isalnum()):
                             name = None
                         if name:
                             handler = None
