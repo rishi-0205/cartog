@@ -1305,8 +1305,10 @@ class JsAdapter(LanguageAdapter):
         # 3. Generic named registration -> command (no SDK/verb list).
         # Commands live in the CLI layer (structural path rule); other files
         # with string+handler calls (events, logs, cron) are not commands.
-        is_cli_file = ("cli/" in path.replace("\\", "/") or
-                       path.replace("\\", "/").startswith("bin/"))
+        is_cli_file = (
+            "cli/commands/" in path.replace("\\", "/") or
+            path.replace("\\", "/").startswith("bin/")
+        )
         route_lines: set[int] = {p["range"][0] for p in patterns if p["kind"] == "route"}
 
         def _find_handler(named_args: list[tree_sitter.Node]) -> str | None:

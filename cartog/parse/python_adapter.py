@@ -542,7 +542,10 @@ class PythonAdapter(LanguageAdapter):
 
         # Generic named registration -> command for call expressions.
         # Commands live in the CLI layer (structural path rule).
-        is_cli_file = "cli/" in path.replace("\\", "/")
+        is_cli_file = (
+            path.replace("\\", "/").startswith("cli/commands/") or
+            path.replace("\\", "/") == "cli/app.py"
+        )
         claimed_lines = {p["range"][0] for p in patterns}
         channel_lines: set[int] = set()
 
