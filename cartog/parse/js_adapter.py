@@ -1335,7 +1335,7 @@ class JsAdapter(LanguageAdapter):
                         if named_args and named_args[0].type == "string":
                             name = clean_string_literal(_get_node_text(named_args[0]))
                         # Filter out option strings and non-command names
-                        if name and (name.startswith("-") or " " in name):
+                        if name and (name.startswith("-") or " " in name or not name.replace("-", "").replace("_", "").isalnum()):
                             name = None
                         # Chained form: X.command("name").action(handler) —
                         # the outer call has the handler, the inner has the name.
