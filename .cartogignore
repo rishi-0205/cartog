@@ -1,0 +1,6 @@
+# Adversarial torture samples are test fixtures, not part of cartog itself.
+# Excluded from self-analysis so cartog's graph describes cartog.
+samples/
+
+# Generated analysis outputs are never source.
+cartog-out/

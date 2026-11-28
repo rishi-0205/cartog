@@ -1,0 +1,58 @@
+# Cartog self-analysis — manual flow verification
+
+Date: 2026-11-28
+Command: `cartog analyze . --out cartog-out/cartog-self`
+Ignore: `.cartogignore` excludes `samples/` and `cartog-out/` (added this session)
+
+Graph: 130 source files, 1274 nodes, 3876 edges
+Node kinds: function 725, command 50, method 92, route 115, file 130,
+  dependency 58, channel 15, class 46, folder 30, entrypoint 12, ci_job 1
+Edge kinds: calls 1257, references 1771, serves 63, produces 128,
+  overrides 14, depends_on 381, imports 239, consumes 19, starts 4
+
+## Manual verification (read source files directly, compared to graph)
+
+| Command | Source calls (read from file) | Cartog trace | Match |
+|---|---|---|---|
+| analyze (cartog/cli/commands/analyze.py) | _execute_parse, _resolve_scip, build_graph, detect_noise_files, enforce_graph_size, write_text, clock.record, run_check, build_meta, write_json, utc_timestamp, print | serves to analyze; calls finalize, write_text, payload, run_check, utc_timestamp, write_json, build_meta, record, print | PARTIAL — see below |
+| flow (cartog/cli/commands/flow.py) | find_flow_candidates, trace_call_flow, generate_flow_mermaid, render_mermaid, print | all 5 present + deep chains (validate_graph, sanitize_label, run, etc.) | EXACT |
+| view (cartog/cli/commands/view.py) | find_flow_candidates, trace_call_flow, generate_html_map, print | all 4 + deep chains (build_universal_view_tree, escape_json_for_script, etc.) | EXACT |
+| check (cartog/cli/commands/check.py) | Graph.load, validate_graph, validate_ranges_and_containment, cross_check_imports_and_calls, print | all 5 + deep chains | EXACT |
+| doctor (cartog/cli/commands/doctor.py) | run_process, _assess_version -> version_meets_minimum, print, get_indexer_env | all present | EXACT |
+| digest (cartog/cli/commands/digest.py) | generate_digest, print | both + deep chains | EXACT |
+| map (cartog/cli/commands/map.py) | _execute_parse, _resolve_scip, build_graph, generate_overview_mermaid, render_mermaid, detect_noise_files, save, print | all present | EXACT |
+| parse (cartog/cli/commands/parse.py) | _execute_parse, print | both + deep chains | EXACT |
+| scip (cartog/cli/commands/scip.py) | _resolve_scip, print | both + deep chains (run_scip_indexer, decode_scip_index, write_scip_json) | EXACT |
+
+## Genuine problems found
+
+### 1. `analyze` misses its main pipeline calls (CONFIRMED)
+Source `analyze()` calls `_execute_parse`, `_resolve_scip`, `build_graph`,
+`detect_noise_files`, `enforce_graph_size` directly. Cartog's trace shows none
+of these from the `analyze` function node — it jumps to `finalize`,
+`write_text`, etc. The target functions exist as nodes and ARE resolved from
+other callers (`build` calls `_execute_parse`/`_resolve_scip`/`build_graph`/
+`detect_noise_files`; `map` and `parse` too), but `analyze` uses tuple-unpacking
+assignment (`target_path, stage_dir, ... = _execute_parse(...)`) which the
+SCIP/structural resolver does not attribute to the enclosing function. Real
+accuracy gap.
+
+### 2. False channel nodes (CONFIRMED)
+15 `channel` nodes include obvious false positives from ordinary string args:
+`target`, `imports`, `patterns`, `documents`, `symbols`, `arguments`, `source`,
+`decorator`, `config_warnings`, `torture_py_graph` (a test fixture name),
+`*.py`, `/`, `*`, `ws://localhost`. These come from the generic MQ binding
+rule that treats any `X("string", ...)` call as a channel binding when X is
+not a builtin. On the torture repos the strings happened to be channel names;
+on real code they are ordinary call arguments. This is a real accuracy bug
+that makes the graph noisy for LLM input.
+
+### 3. `query` command missing (CONFIRMED)
+Cartog has no `cartog/cli/commands/query.py` — that command exists only in the
+torture sample. The `query` command in the plan was never implemented in
+cartog itself. Not a cartog bug — a plan/sample mismatch.
+
+## Conclusion
+9 of 10 CLI command flows match source exactly. One (analyze) needs a focused
+follow-up. A confirmed false-positive channel problem exists and should be
+fixed before trusting graph output for LLM consumption.

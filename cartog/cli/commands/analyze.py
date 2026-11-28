@@ -524,7 +524,7 @@ def analyze(
                         v_nodes, _ = trace_call_flow(graph, starts=[start])
                         entry_points_payload.append({
                             "id": start.id,
-                            "name": f"{start.name or start.qualified_name}  ({start.path})",
+                            "name": start.name or start.qualified_name,
                             "visited": [n.id for n in v_nodes],
                         })
                     flow_html = generate_html_map(

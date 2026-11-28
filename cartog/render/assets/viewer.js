@@ -489,15 +489,55 @@
 
   function applyLayout(layoutName, cy) {
     if (layoutName === 'dag') {
-      cy.layout({
-        name: 'breadthfirst',
-        directed: true,
-        spacingFactor: 2.0,
-        animate: true,
-        animationDuration: 400,
-        fit: true,
-        padding: 50
-      }).run();
+      // Left-to-right flow: BFS from root nodes, assign x by depth.
+      // Cytoscape's breadthfirst is top-down only, so we compute positions manually.
+      const outEdges = new Map();
+      cy.edges().forEach(e => {
+        const s = e.source().id();
+        if (!outEdges.has(s)) outEdges.set(s, []);
+        outEdges.get(s).push(e.target().id());
+      });
+      const inDegree = new Map();
+      cy.nodes().forEach(n => inDegree.set(n.id(), 0));
+      cy.edges().forEach(e => {
+        const t = e.target().id();
+        inDegree.set(t, (inDegree.get(t) || 0) + 1);
+      });
+      const roots = cy.nodes().filter(n => (inDegree.get(n.id()) || 0) === 0);
+      if (roots.length === 0) roots = cy.nodes().filter((n, i) => i === 0);
+      const depthMap = new Map();
+      const queue = [];
+      roots.forEach(r => { queue.push(r.id()); depthMap.set(r.id(), 0); });
+      const visited = new Set();
+      while (queue.length > 0) {
+        const id = queue.shift();
+        if (visited.has(id)) continue;
+        visited.add(id);
+        const depth = depthMap.get(id) || 0;
+        (outEdges.get(id) || []).forEach(tid => {
+          if (!visited.has(tid) && !depthMap.has(tid)) {
+            depthMap.set(tid, depth + 1);
+            queue.push(tid);
+          }
+        });
+      }
+      // Assign positions by depth, stacking within each level.
+      const levels = new Map();
+      depthMap.forEach((d, id) => {
+        if (!levels.has(d)) levels.set(d, []);
+        levels.get(d).push(id);
+      });
+      const hSpacing = 220;
+      const vSpacing = 90;
+      cy.batch(() => {
+        levels.forEach((ids, depth) => {
+          ids.forEach((id, idx) => {
+            const node = cy.getElementById(id);
+            node.position({ x: depth * hSpacing, y: idx * vSpacing });
+          });
+        });
+      });
+      cy.animate({ fit: { padding: 50 }, duration: 400 });
     } else if (layoutName === 'grid') {
       cy.layout({
         name: 'grid',
@@ -553,8 +593,11 @@
   }
 
   function setupToolbar(cy, api) {
+    const isFlowMode = (data.meta || {}).is_flow || (data.entry_points || []).length > 0;
     const selectLayout = document.getElementById('select-layout');
-    if (selectLayout) {
+    if (selectLayout && isFlowMode) {
+      selectLayout.value = 'dag';
+    }
       selectLayout.addEventListener('change', (e) => {
         applyLayout(e.target.value, cy);
       });
@@ -666,8 +709,12 @@
 
     const entryFilter = document.getElementById('entry-filter');
     const entryPoints = (data.entry_points || []);
+    const isFlowMode = (data.meta || {}).is_flow || entryPoints.length > 0;
     if (entryFilter && entryPoints.length > 0) {
       entryFilter.style.display = '';
+      // Multi-select: allow selecting multiple entry points to see combined flows.
+      entryFilter.setAttribute('multiple', 'multiple');
+      entryFilter.setAttribute('size', '1');
       const allOpt = document.createElement('option');
       allOpt.value = '__all__';
       allOpt.textContent = 'All entry points';
@@ -676,17 +723,22 @@
         const opt = document.createElement('option');
         opt.value = ep.id || ep.name;
         opt.textContent = ep.name;
+        opt.title = ep.path || ep.id || '';
         entryFilter.appendChild(opt);
       });
       const visitedById = new Map(entryPoints.map((ep) => [ep.id || ep.name, new Set(ep.visited || [])]));
-      entryFilter.addEventListener('change', (e) => {
-        const val = e.target.value;
+      function applyEntryFilter() {
+        const selected = Array.from(entryFilter.selectedOptions).map(o => o.value);
         cy.batch(() => {
-          if (val === '__all__') {
+          if (selected.length === 0 || selected.includes('__all__')) {
             cy.nodes().style('display', 'element');
             cy.edges().style('display', 'element');
           } else {
-            const visited = visitedById.get(val) || new Set();
+            const visited = new Set();
+            selected.forEach(val => {
+              const v = visitedById.get(val);
+              if (v) v.forEach(id => visited.add(id));
+            });
             cy.nodes().each((node) => {
               node.style('display', visited.has(node.id()) ? 'element' : 'none');
             });
@@ -698,7 +750,15 @@
           }
         });
         try { cy.fit(cy.nodes(':visible'), 60); } catch (err) { /* ignore */ }
-      });
+      }
+      entryFilter.addEventListener('change', applyEntryFilter);
+      // Auto-trace first entry point on load in flow mode (no search needed).
+      const isFlowMode = (data.meta || {}).is_flow;
+      if (isFlowMode && entryPoints.length > 0) {
+        entryFilter.options[1].selected = true;
+        applyEntryFilter();
+        setTimeout(() => applyLayout('dag', cy), 100);
+      }
     }
 
     const btnCloseSidebar = document.getElementById('btn-close-sidebar');

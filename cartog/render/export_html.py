@@ -314,8 +314,8 @@ def generate_html_map(
         <select id="entry-filter" class="select-ctrl" title="Filter by entry point" style="display:none;"></select>
         <input type="text" id="search-input" class="search-box" placeholder="Filter symbols, files..." aria-label="Search">
         <select id="select-layout" class="select-ctrl" title="Layout Algorithm">
-          <option value="fcose">Layout: Blueprint (fCoSE)</option>
-          <option value="dag">Layout: Hierarchical (DAG)</option>
+          {'<option value="dag" selected>Layout: Hierarchical (DAG) — Left to Right</option>' if flow_nodes else '<option value="dag">Layout: Hierarchical (DAG)</option>'}
+          {'<option value="fcose" selected>Layout: Blueprint (fCoSE)</option>' if not flow_nodes else '<option value="fcose">Layout: Blueprint (fCoSE)</option>'}
           <option value="grid">Layout: Grid</option>
         </select>
         <select id="select-routing" class="select-ctrl" title="Edge Routing Style">

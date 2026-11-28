@@ -560,6 +560,9 @@ class PythonAdapter(LanguageAdapter):
                             if a.type == "string":
                                 name = _clean_str(a)
                                 break
+                        # Filter out option strings (--foo) and non-identifier names
+                        if name and (name.startswith("-") or " " in name):
+                            name = None
                         if name:
                             handler = None
                             for kw in named_args:
@@ -611,10 +614,10 @@ class PythonAdapter(LanguageAdapter):
                                             "raw_text": _get_node_text(other).strip(),
                                         })
                                     break
-                            if path and handler and any(
-                                (n["path"] == path or n["name"] == path)
-                                for n in patterns if n["kind"] == "route"
-                            ) is False:
+                            if path and handler and not any(
+                                n.get("path") == path or n.get("name") == path
+                                for n in patterns if n.get("kind") == "route"
+                            ):
                                 patterns.append({
                                     "kind": "route",
                                     "name": f"USE {path}" if "include_router" in _get_node_text(fn_node) else f"GET {path}",
