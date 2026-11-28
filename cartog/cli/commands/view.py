@@ -133,6 +133,17 @@ def view(
         )
 
     rollup_stats: dict[str, int] = {}
+    # Compute entry points (routes + commands) for the viewer dropdown.
+    # This makes the viewer useful without --flow: users can pick any entry point.
+    entry_points_payload = []
+    entry_starts = [n for n in graph.nodes.values() if n.kind in ("route", "command", "entrypoint")]
+    for start in entry_starts:
+        v_nodes, _ = trace_call_flow(graph, starts=[start])
+        entry_points_payload.append({
+            "id": start.id,
+            "name": start.name or start.qualified_name,
+            "visited": [n.id for n in v_nodes],
+        })
     generate_html_map(
         graph,
         out_file=out_file,
@@ -143,6 +154,7 @@ def view(
         flow_edges=flow_edges,
         include_helpers=include_helpers,
         stats=rollup_stats,
+        entry_points=entry_points_payload if entry_points_payload else None,
     )
 
     rolled_up = rollup_stats.get("rolled_up_edges", 0)
